@@ -2,6 +2,13 @@
 transactions-*.csv
 rents-*.csv
 
+# Parquet snapshots — too large for GitHub; rebuild via scripts/dld_refresh.sh
+data/*.parquet
+
+# Intermediate JSON outputs (inlined into HTML at build time)
+_data_rent_aggregates.json
+_data_rents.json
+
 # Python / OS junk
 __pycache__/
 .DS_Store
