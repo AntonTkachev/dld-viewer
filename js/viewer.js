@@ -226,17 +226,57 @@ function renderBody(a, props) {
   `;
 }
 
+function projName(p) { return p || t('not_specified'); }
+
+// Row in the room-median breakdown.
+// 'all' is excluded — it duplicates the headline 4-card stats.
+const ROOM_BREAKDOWN = ['studio','1br','2br','3br','4br+','villa','other'];
+function roomBreakdownIcon(k) {
+  return (k === 'villa') ? '🏡' : (k === 'other') ? '·' : '🏢';
+}
+
+function renderRoomBreakdown(a) {
+  const bu = a.by_rooms_unit || {};
+  const rows = ROOM_BREAKDOWN
+    .filter(k => bu[k] && bu[k].n > 0)
+    .map(k => {
+      const r = bu[k];
+      return `<tr>
+        <td>${roomBreakdownIcon(k)} ${roomLabel(k)}</td>
+        <td class="num">${fmtInt(r.n)}</td>
+        <td class="num">${r.med ? fmtAedDP(r.med) : '—'}</td>
+        <td class="num">${r.ppsqm ? fmtInt(r.ppsqm) : '—'}</td>
+      </tr>`;
+    }).join('');
+  if (!rows) return '';
+  return `
+    <div class="dp-section">
+      <h3>${t('rooms_breakdown_title')}</h3>
+      <table class="dp-table">
+        <thead><tr>
+          <th>${t('th_rooms_type')}</th>
+          <th class="num">${t('th_count')}</th>
+          <th class="num">${t('th_med_aed')}</th>
+          <th class="num">${t('th_aed_psqm')}</th>
+        </tr></thead>
+        <tbody>${rows}</tbody>
+      </table>
+    </div>
+  `;
+}
+
 function renderBodySale(a, props) {
-  const dldRow = props.__dubai__
-    ? `<span style="font-size:11px;color:#666;margin-left:6px">${t('dp_dubai_subtitle')}</span>`
-    : (props.dld_area_id ? `<span style="font-size:11px;color:#666;margin-left:6px">DLD ${props.dld_area_id}</span>` : '');
-  const proj_rows = a.top_projects.map(p => `<tr><td>${p.proj}</td><td class="num">${fmtInt(p.n)}</td><td class="num">${fmtAedDP(p.med)}</td><td class="num">${fmtAedDP(p.total)}</td></tr>`).join('');
-  const deal_rows = a.top_deals.map(d => `<tr><td>${d.d}</td><td>${d.proj}</td><td>${d.room}</td><td class="num">${d.area? d.area.toFixed(0):'—'}</td><td class="num">${fmtAedDP(d.val)}</td><td><span class="dp-tag-op dp-tag-op-${d.op}">${d.op}</span></td></tr>`).join('');
-  const recent_rows = a.recent.map(d => `<tr><td>${d.d}</td><td>${d.proj}</td><td>${d.room}</td><td class="num">${fmtAedDP(d.val)}</td><td><span class="dp-tag-g dp-tag-g-${d.g}">${d.g}</span></td></tr>`).join('');
+  const isDubai = !!props.__dubai__;
+  const proj_rows = a.top_projects.map(p => {
+    const areaCell = isDubai ? `<td>${p.area || '—'}</td>` : '';
+    return `<tr><td>${projName(p.proj)}</td>${areaCell}<td class="num">${fmtInt(p.n)}</td><td class="num">${fmtAedDP(p.med)}</td><td class="num">${fmtAedDP(p.total)}</td></tr>`;
+  }).join('');
+  const deal_rows = a.top_deals.map(d => `<tr><td>${d.d}</td><td>${projName(d.proj)}</td><td>${d.room}</td><td class="num">${d.area ? fmtInt(d.area) : '—'}</td><td class="num">${fmtAedDP(d.val)}</td><td><span class="dp-tag-op dp-tag-op-${d.op}">${d.op}</span></td></tr>`).join('');
+  const recent_rows = a.recent.map(d => `<tr><td>${d.d}</td><td>${projName(d.proj)}</td><td>${d.room}</td><td class="num">${fmtAedDP(d.val)}</td><td><span class="dp-tag-g dp-tag-g-${d.g}">${d.g}</span></td></tr>`).join('');
+
+  const proj_th_area = isDubai ? `<th>${t('th_district')}</th>` : '';
 
   return `
-    <div style="font-size:12px;color:#666;margin-bottom:14px">${dldRow}</div>
-
     <div class="period-chips" id="dp-period-chips">${renderPeriodChips()}</div>
     <div class="dp-stats" id="dp-stats-sale">${renderStatsSale(a)}</div>
 
@@ -259,57 +299,27 @@ function renderBodySale(a, props) {
       </div>
     </div>
 
-    <div class="dp-section">
-      <h3>${t("sp_section_rooms")}</h3>
-      <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
-        <div>
-          <div style="font-size:11px;color:#666;margin-bottom:2px">${t("sp_subsection_count")}</div>
-          <div class="dp-chart" style="height:180px"><button class="chart-expand-btn" title="${t('chart_expand')}" onclick="expandChart('ch-rooms-count', '${t('sp_section_rooms')} — ${t('sp_subsection_count')}')">⛶</button><canvas id="ch-rooms-count"></canvas></div>
-        </div>
-        <div>
-          <div style="font-size:11px;color:#666;margin-bottom:2px">${t("sp_subsection_volume")}</div>
-          <div class="dp-chart" style="height:180px"><button class="chart-expand-btn" title="${t('chart_expand')}" onclick="expandChart('ch-rooms-volume', '${t('sp_section_rooms')} — ${t('sp_subsection_volume')}')">⛶</button><canvas id="ch-rooms-volume"></canvas></div>
-        </div>
-      </div>
-    </div>
+    ${renderRoomBreakdown(a)}
 
     <div class="dp-section">
       <h3>${t("sp_section_offplan")}</h3>
       <div class="dp-chart" style="height:160px"><button class="chart-expand-btn" title="${t('chart_expand')}" onclick="expandChart('ch-offplan', '${t('sp_section_offplan')}')">⛶</button><canvas id="ch-offplan"></canvas></div>
     </div>
 
-    <div class="dp-section">
-      <h3>${t("ptype_breakdown")}</h3>
-      <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:6px">
-        <div class="dp-stat" style="background:#fef3e6;border-color:#f5d8a8">
-          <div class="k">🏡 ${t("ptype_villa").replace('🏡 ','')}</div>
-          <div class="v" style="font-size:14px">${fmtInt(a.villa?a.villa.n:0)}</div>
-          <div class="sub">${a.villa&&a.villa.med?fmtAedDP(a.villa.med):'—'}</div>
-          <div class="sub">${a.villa&&a.villa.med_ppsqm?fmtInt(a.villa.med_ppsqm)+' '+t('ptype_ppsqm'):''}</div>
-        </div>
-        <div class="dp-stat" style="background:#e7f3ff;border-color:#a8d0f5">
-          <div class="k">🏢 ${t("ptype_flat").replace('🏢 ','')}</div>
-          <div class="v" style="font-size:14px">${fmtInt(a.flat?a.flat.n:0)}</div>
-          <div class="sub">${a.flat&&a.flat.med?fmtAedDP(a.flat.med):'—'}</div>
-          <div class="sub">${a.flat&&a.flat.med_ppsqm?fmtInt(a.flat.med_ppsqm)+' '+t('ptype_ppsqm'):''}</div>
-        </div>
-      </div>
-    </div>
+    <details class="dp-collapsible">
+      <summary>${t("sp_section_top_projects")}</summary>
+      <table class="dp-table"><thead><tr><th>${t("th_project")}</th>${proj_th_area}<th class="num">${t("th_n")}</th><th class="num">${t("th_median")}</th><th class="num">${t("th_volume")}</th></tr></thead><tbody>${proj_rows}</tbody></table>
+    </details>
 
-    <div class="dp-section">
-      <h3>${t("sp_section_top_projects")}</h3>
-      <table class="dp-table"><thead><tr><th>${t("th_project")}</th><th class="num">${t("th_n")}</th><th class="num">${t("th_median")}</th><th class="num">${t("th_volume")}</th></tr></thead><tbody>${proj_rows}</tbody></table>
-    </div>
-
-    <div class="dp-section">
-      <h3>${t("sp_section_top_deals")}</h3>
+    <details class="dp-collapsible">
+      <summary>${t("sp_section_top_deals")}</summary>
       <table class="dp-table"><thead><tr><th>${t("th_date")}</th><th>${t("th_project")}</th><th>${t("th_br")}</th><th class="num">${t("th_sqm")}</th><th class="num">${t("th_aed")}</th><th></th></tr></thead><tbody>${deal_rows}</tbody></table>
-    </div>
+    </details>
 
-    <div class="dp-section">
-      <h3>${t("sp_section_recent")}</h3>
+    <details class="dp-collapsible">
+      <summary>${t("sp_section_recent")}</summary>
       <table class="dp-table"><thead><tr><th>${t("th_date")}</th><th>${t("th_project")}</th><th>${t("th_br")}</th><th class="num">${t("th_aed")}</th><th>${t("th_type")}</th></tr></thead><tbody>${recent_rows}</tbody></table>
-    </div>
+    </details>
   `;
 }
 
@@ -317,9 +327,6 @@ function renderBodyRent(r, props) {
   if (!r || !r.n) {
     return `<div class="dp-empty">${t('rent_no_data')}</div>`;
   }
-  const dldRow = props.__dubai__
-    ? `<span style="font-size:11px;color:#666;margin-left:6px">${t('dp_dubai_subtitle')}</span>`
-    : (props.dld_area_id ? `<span style="font-size:11px;color:#666;margin-left:6px">DLD ${props.dld_area_id}</span>` : '');
 
   const subOrder = ['Flat','Villa','Studio','Office','Shop','Warehouse','Hotel','Showroom','Complex Villas','Labor Camps','Other'];
   const sub = r.by_subtype || {};
@@ -336,16 +343,14 @@ function renderBodyRent(r, props) {
     return `<tr><td>${k}</td><td class="num">${fmtInt(v)}</td><td class="num">${pct}%</td></tr>`;
   }).join('');
 
-  const proj_rows = (r.top_projects||[]).map(p => `<tr><td>${p.proj}</td><td class="num">${fmtInt(p.n)}</td><td class="num">${fmtAedDP(p.med)}</td></tr>`).join('');
+  const proj_rows = (r.top_projects||[]).map(p => `<tr><td>${projName(p.proj)}</td><td class="num">${fmtInt(p.n)}</td><td class="num">${fmtAedDP(p.med)}</td></tr>`).join('');
 
   const recent_rows = (r.recent||[]).map(d => {
     const vTag = d.v === 'N' ? t('rent_v_new') : t('rent_v_renew');
-    return `<tr><td>${d.d}</td><td>${d.proj}</td><td>${d.sub}</td><td class="num">${d.sqm||'—'}</td><td class="num">${fmtAedDP(d.val)}</td><td><span class="dp-tag-g dp-tag-g-${d.v==='N'?'O':'R'}">${vTag}</span></td></tr>`;
+    return `<tr><td>${d.d}</td><td>${projName(d.proj)}</td><td>${d.sub}</td><td class="num">${d.sqm ? fmtInt(d.sqm) : '—'}</td><td class="num">${fmtAedDP(d.val)}</td><td><span class="dp-tag-g dp-tag-g-${d.v==='N'?'O':'R'}">${vTag}</span></td></tr>`;
   }).join('');
 
   return `
-    <div style="font-size:12px;color:#666;margin-bottom:14px">${dldRow}</div>
-
     <div class="period-chips" id="dp-period-chips-rent">${renderPeriodChipsRent()}</div>
     <div class="dp-stats" id="dp-stats-rent">${renderStatsRent(r)}</div>
 
@@ -373,15 +378,15 @@ function renderBodyRent(r, props) {
       <table class="dp-table"><thead><tr><th>${t("rent_section_usage")}</th><th class="num">${t("th_n")}</th><th class="num">%</th></tr></thead><tbody>${usage_rows}</tbody></table>
     </div>` : ''}
 
-    ${proj_rows ? `<div class="dp-section">
-      <h3>${t("rent_section_top_projects")}</h3>
+    ${proj_rows ? `<details class="dp-collapsible">
+      <summary>${t("rent_section_top_projects")}</summary>
       <table class="dp-table"><thead><tr><th>${t("th_project")}</th><th class="num">${t("th_n")}</th><th class="num">${t("rent_th_med")}</th></tr></thead><tbody>${proj_rows}</tbody></table>
-    </div>` : ''}
+    </details>` : ''}
 
-    ${recent_rows ? `<div class="dp-section">
-      <h3>${t("rent_section_recent")}</h3>
+    ${recent_rows ? `<details class="dp-collapsible">
+      <summary>${t("rent_section_recent")}</summary>
       <table class="dp-table"><thead><tr><th>${t("th_date")}</th><th>${t("th_project")}</th><th>${t("rent_th_subtype")}</th><th class="num">${t("th_sqm")}</th><th class="num">${t("th_aed")}</th><th>${t("rent_th_version")}</th></tr></thead><tbody>${recent_rows}</tbody></table>
-    </div>` : ''}
+    </details>` : ''}
   `;
 }
 

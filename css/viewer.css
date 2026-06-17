@@ -89,6 +89,13 @@
   .chart-modal-close{background:#fff;border:1px solid #d6dde6;border-radius:6px;padding:4px 10px;font-size:13px;cursor:pointer}
   .chart-modal-body{flex:1;padding:16px;position:relative;min-height:0}
   .chart-modal-body canvas{width:100%!important;height:100%!important}
+  .dp-collapsible{margin:8px 0 4px;border-top:1px solid #eef0f3;padding-top:8px}
+  .dp-collapsible > summary{cursor:pointer;list-style:none;font-size:13px;font-weight:600;color:#1f2933;padding:6px 4px;margin:-6px -4px;border-radius:4px;display:flex;align-items:center;gap:6px;user-select:none}
+  .dp-collapsible > summary::-webkit-details-marker{display:none}
+  .dp-collapsible > summary::before{content:'▸';font-size:10px;color:#94a3b8;transition:transform .15s}
+  .dp-collapsible[open] > summary::before{transform:rotate(90deg)}
+  .dp-collapsible > summary:hover{background:#f6f8fa}
+  .dp-collapsible > *:not(summary){margin-top:8px}
   .dp-table{width:100%;border-collapse:collapse;font-size:12px}
   .dp-table th, .dp-table td{padding:5px 6px;border-bottom:1px solid #f0f0f0;text-align:left;vertical-align:top}
   .dp-table th{font-size:10.5px;color:#888;font-weight:600;text-transform:uppercase;letter-spacing:.02em}
