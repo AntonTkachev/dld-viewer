@@ -12,3 +12,6 @@ _data_sale_aggregates.json
 # Python / OS junk
 __pycache__/
 .DS_Store
+
+# khda_refresh.sh log (cron-friendly target inside data/)
+data/.khda_refresh.log

@@ -17,6 +17,9 @@ setTimeout(() => {
           const inp = document.getElementById('search-input');
           if (inp) { inp.value = ''; setTimeout(()=>inp.focus(), 0); _renderSearchResults(''); }
         }
+        if (item.id === 'mp-mask') {
+          if (typeof renderMaskList === 'function') renderMaskList();
+        }
       }
     });
   });
@@ -745,6 +748,16 @@ function renderCharts(a) {
 
 
 // ===================== MAP =====================
+// SVG pattern defs for "no DLD data" hatched fill. Injected into the document
+// (not Leaflet's overlay <svg>) so url(#nodata-hatch) resolves the moment any
+// path is rendered, regardless of pane creation order.
+document.body.insertAdjacentHTML('beforeend',
+  '<svg width="0" height="0" style="position:absolute" aria-hidden="true">'
+  + '<defs><pattern id="nodata-hatch" patternUnits="userSpaceOnUse" width="8" height="8" patternTransform="rotate(45)">'
+  + '<rect width="8" height="8" fill="#f1f5f9"/>'
+  + '<line x1="0" y1="0" x2="0" y2="8" stroke="#94a3b8" stroke-width="1.4"/>'
+  + '</pattern></defs></svg>');
+
 const map = L.map('map').setView([25.12, 55.25], 10);
 L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
   attribution: '© OpenStreetMap contributors',
@@ -816,6 +829,134 @@ for (const f of GEOJSON.features) {
   });
 }
 
+// ===================== MASKS =====================
+// A "mask" picks what each polygon's `real_*` fields hold + which labels
+// the legend/popup use. Default = sales × all → identical to original.
+const MASKS = {
+  sales: {
+    labelKey: 'mask_sales', descKey: 'mask_sales_desc',
+    periods: ['1y','3y','5y','10y','all'], defaultPeriod: 'all',
+    data: {
+      all: AGGREGATES,
+      '1y':  (typeof TX_PERIODS !== 'undefined') ? TX_PERIODS['1y']  : {},
+      '3y':  (typeof TX_PERIODS !== 'undefined') ? TX_PERIODS['3y']  : {},
+      '5y':  (typeof TX_PERIODS !== 'undefined') ? TX_PERIODS['5y']  : {},
+      '10y': (typeof TX_PERIODS !== 'undefined') ? TX_PERIODS['10y'] : {},
+    },
+    pluck: r => ({ real_count: r.n || 0, real_total_aed: r.total || 0, real_med_price: r.med || 0, real_med_ppsqm: r.med_ppsqm || 0 }),
+    legendKey: 'legend_sales', popupCountKey: 'pp_trans_ytd', showVolume: true,
+  },
+  rents: {
+    labelKey: 'mask_rents', descKey: 'mask_rents_desc',
+    periods: ['1y','3y','5y','10y','all'], defaultPeriod: 'all',
+    data: {
+      all: (typeof RENT_AGGREGATES !== 'undefined') ? RENT_AGGREGATES : {},
+      '1y':  (typeof RENTS_PERIODS !== 'undefined') ? RENTS_PERIODS['1y']  : {},
+      '3y':  (typeof RENTS_PERIODS !== 'undefined') ? RENTS_PERIODS['3y']  : {},
+      '5y':  (typeof RENTS_PERIODS !== 'undefined') ? RENTS_PERIODS['5y']  : {},
+      '10y': (typeof RENTS_PERIODS !== 'undefined') ? RENTS_PERIODS['10y'] : {},
+    },
+    pluck: r => ({ real_count: r.n || 0, real_total_aed: 0, real_med_price: r.med_annual || r.med || 0, real_med_ppsqm: r.med_ppsqm || 0 }),
+    legendKey: 'legend_rents', popupCountKey: 'rent_sc_contracts', showVolume: false,
+  },
+};
+// Per-page bootstrap: SEO landing pages (/sales/, /rents/) inject these
+// before viewer.js to preselect the mask + period without changing UI state.
+let currentMask = (typeof window !== 'undefined' && window.__INITIAL_MASK__ && MASKS[window.__INITIAL_MASK__]) ? window.__INITIAL_MASK__ : 'sales';
+let currentMaskPeriod = (typeof window !== 'undefined' && window.__INITIAL_PERIOD__ && MASKS[currentMask] && MASKS[currentMask].periods.includes(window.__INITIAL_PERIOD__)) ? window.__INITIAL_PERIOD__ : 'all';
+
+// Snapshot baseline real_* (post-PARENT_OVERRIDES) so applyMask can restore cleanly.
+const BASE_REAL = new Map();
+for (const f of GEOJSON.features) {
+  const p = f.properties;
+  BASE_REAL.set(f, {
+    real_count:       p.real_count       || 0,
+    real_total_aed:   p.real_total_aed   || 0,
+    real_med_price:   p.real_med_price   || 0,
+    real_med_ppsqm:   p.real_med_ppsqm   || 0,
+    real_area_key:    p.real_area_key    || null,
+    real_match_kind:  p.real_match_kind  || null,
+    real_parent_name: p.real_parent_name || null,
+  });
+}
+
+function applyMask(maskId, period) {
+  const mask = MASKS[maskId];
+  if (!mask) return;
+  if (!mask.periods.includes(period)) period = mask.defaultPeriod;
+  currentMask = maskId;
+  currentMaskPeriod = period;
+  const data = mask.data[period] || {};
+  for (const f of GEOJSON.features) {
+    const base = BASE_REAL.get(f) || {};
+    f.properties.real_area_key    = base.real_area_key;
+    f.properties.real_match_kind  = base.real_match_kind;
+    f.properties.real_parent_name = base.real_parent_name;
+    const rec = base.real_area_key && data[base.real_area_key];
+    if (rec) {
+      Object.assign(f.properties, mask.pluck(rec));
+    } else {
+      f.properties.real_count = 0;
+      f.properties.real_total_aed = 0;
+      f.properties.real_med_price = 0;
+      f.properties.real_med_ppsqm = 0;
+    }
+  }
+  if (typeof renderChoro === 'function') renderChoro();
+  if (typeof updateMaskCurrentLabel === 'function') updateMaskCurrentLabel();
+}
+
+function updateMaskCurrentLabel() {
+  const el = document.getElementById('mp-mask-current');
+  if (!el) return;
+  const mask = MASKS[currentMask];
+  if (!mask) return;
+  const lbl = t(mask.labelKey);
+  el.textContent = (mask.periods.length > 1 && currentMaskPeriod !== 'all')
+    ? lbl + ' · ' + t('period_' + currentMaskPeriod)
+    : lbl;
+}
+
+function renderMaskList() {
+  const list = document.getElementById('mp-mask-list');
+  if (!list) return;
+  list.innerHTML = '';
+  for (const [id, mask] of Object.entries(MASKS)) {
+    const row = document.createElement('div');
+    row.className = 'mask-row' + (id === currentMask ? ' active' : '');
+    row.dataset.mask = id;
+    const periodHTML = mask.periods.length > 1
+      ? `<div class="mask-row-periods">
+           <span class="pc-lbl">${t('mask_period_label')}</span>
+           ${mask.periods.map(p =>
+              `<button type="button" class="mask-period-chip${(id===currentMask && p===currentMaskPeriod)?' active':''}" data-period="${p}">${t('period_' + p)}</button>`
+           ).join('')}
+         </div>`
+      : '';
+    row.innerHTML = `
+      <div class="mask-row-head">
+        <div class="mask-row-radio"></div>
+        <div class="mask-row-title">${t(mask.labelKey)}</div>
+      </div>
+      <div class="mask-row-desc">${t(mask.descKey)}</div>
+      ${periodHTML}
+    `;
+    row.addEventListener('click', e => {
+      if (e.target.closest('.mask-period-chip')) return;
+      applyMask(id, (id === currentMask) ? currentMaskPeriod : mask.defaultPeriod);
+      renderMaskList();
+    });
+    row.querySelectorAll('.mask-period-chip').forEach(chip => {
+      chip.addEventListener('click', e => {
+        e.stopPropagation();
+        applyMask(id, chip.dataset.period);
+        renderMaskList();
+      });
+    });
+    list.appendChild(row);
+  }
+}
+
 // ===================== LOCATION LEVELS =====================
 // Each feature is tagged with `_level` = depth of its containment chain:
 // 0 = nothing contains it; 1 = contained by a level-0; 2 = contained by a level-1; etc.
@@ -883,6 +1024,24 @@ function _featContains(f, pt){
   // Sort: biggest first. Renderer adds in array order → smallest on top in SVG.
   GEOJSON.features.sort((a, b) => b._bboxArea - a._bboxArea);
   console.log('location levels:', counts.map((c,i)=>`L${i}=${c}`).join(' '));
+})();
+
+// ===================== NEW DEVELOPMENTS PER DISTRICT =====================
+// Count construction projects whose centroid falls inside each district polygon.
+// Polygons are now sorted DESC by bbox area, so walking the array in reverse
+// gives us smallest-first — a project lands in its tightest container.
+(function tagProjectsToDistricts() {
+  if (typeof PROJECTS === 'undefined') return;
+  for (const p of PROJECTS) {
+    if (!Number.isFinite(p.lat) || !Number.isFinite(p.lon)) continue;
+    for (let i = GEOJSON.features.length - 1; i >= 0; i--) {
+      const f = GEOJSON.features[i];
+      if (_featContains(f, [p.lon, p.lat])) {
+        f.properties._new_dev_count = (f.properties._new_dev_count || 0) + 1;
+        break;
+      }
+    }
+  }
 })();
 
 // ===================== DISTRICT SEARCH =====================
@@ -954,32 +1113,40 @@ function _onSearchSelect(feat){
 
 let choro;
 function renderChoro(){
+  const mask = MASKS[currentMask] || MASKS.sales;
   const metric = 'real_count';
   const scale = 'log';
-  const metricKey = currentPType==='villa' ? 'real_count_villa' : currentPType==='flat' ? 'real_count_flat' : 'real_count';
-  const vs = GEOJSON.features.map(f => f.properties[metricKey] || (currentPType==='all' ? (f.properties.count || 0) : 0));
+  const metricKey = 'real_count';
+  const vs = GEOJSON.features.map(f => f.properties[metricKey] || 0);
   const breaks = scale==='quantile'?qBreaks(vs,RAMP.length):scale==='log'?logBreaks(vs,RAMP.length):lBreaks(vs,RAMP.length);
   if(choro) map.removeLayer(choro);
   choro = L.geoJSON(GEOJSON,{
     filter: f => (f._level !== undefined ? f._level >= minLevel : true),
     style: f => {
-      const v = (f.properties[metricKey] || (currentPType==='all' ? f.properties.count : 0) || 0), z = v===0;
-      return {weight:0.6,color:'#1f2933',fillColor:z?'#dde3ea':RAMP[classify(v,breaks)],fillOpacity:z?0.25:0.7};
+      const v = (f.properties[metricKey] || 0), z = v===0;
+      return z
+        ? {weight:0.8,color:'#64748b',fillColor:'url(#nodata-hatch)',fillOpacity:1,dashArray:'4,3'}
+        : {weight:0.6,color:'#1f2933',fillColor:RAMP[classify(v,breaks)],fillOpacity:0.7};
     },
     onEachFeature: (f, layer) => {
       const p = f.properties;
       layer.bindPopup(() => {
+        const m = MASKS[currentMask] || MASKS.sales;
         const sourceLabel = ({'osm-admin':'OSM admin_level=10','osm-place':'OSM place='+(p.kind||''),'osm-residential':'OSM landuse=residential'})[p.source] || 'OSM';
         const dldRow = '';
+        const newDev = p._new_dev_count || 0;
+        const newDevRow = newDev ? `<div class="stat"><span class="k">${t("new_buildings")} <span class="src-tag src-osm">OSM</span></span><span class="v">${newDev}</span></div>` : '';
+        const volumeRow = m.showVolume ? `<div class="stat"><span class="k">${t("pp_volume")}</span><span class="v">${(p.real_total_aed||0)>=1e9?((p.real_total_aed/1e9).toFixed(2)+' '+t('abbr_b')):((p.real_total_aed/1e6).toFixed(1)+' '+t('abbr_m'))}</span></div>` : '';
         const realRows = p.real_count ? `
-          <div class="stat"><span class="k">${t("pp_trans_ytd")} <span class="src-tag" style="background:#e6f7e6;color:#0a7f00">DLD</span>${p.real_match_kind==='parent'?' <span class="src-tag" style="background:#fff5e6;color:#7a4c00">parent: '+p.real_parent_name+'</span>':''}</span><span class="v">${p.real_count.toLocaleString('ru-RU')}</span></div>
-          <div class="stat"><span class="k">${t("pp_volume")}</span><span class="v">${(p.real_total_aed||0)>=1e9?((p.real_total_aed/1e9).toFixed(2)+' '+t('abbr_b')):((p.real_total_aed/1e6).toFixed(1)+' '+t('abbr_m'))}</span></div>
+          <div class="stat"><span class="k">${t(m.popupCountKey || "pp_trans_ytd")} <span class="src-tag" style="background:#e6f7e6;color:#0a7f00">DLD</span>${p.real_match_kind==='parent'?' <span class="src-tag" style="background:#fff5e6;color:#7a4c00">parent: '+p.real_parent_name+'</span>':''}</span><span class="v">${p.real_count.toLocaleString('ru-RU')}</span></div>
+          ${volumeRow}
           <div class="stat"><span class="k">${t("pp_median")}</span><span class="v">${((p.real_med_price||0)/1e6).toFixed(2)} ${t('abbr_m')}</span></div>
           <div class="stat"><span class="k">${t("pp_median_psqm")}</span><span class="v">${(p.real_med_ppsqm||0).toLocaleString('ru-RU')}</span></div>
+          ${newDevRow}
           <div style="margin-top:8px"><button onclick='openDistrictByKey(${JSON.stringify(p.real_area_key)})' style="background:#0366d6;color:#fff;border:none;padding:6px 12px;border-radius:4px;cursor:pointer;font-size:12px;font-weight:600">${t("pp_open")}</button></div>
         ` : `
-          <div class="stat"><span class="k">${t("pp_trans_placeholder")} <span class="src-tag src-fake">PLACEHOLDER</span></span><span class="v">${(p.count||0).toLocaleString('ru-RU')}</span></div>
-          <div class="muted" style="font-size:11px;color:#888;margin-top:4px">${t("pp_no_csv")}</div>
+          ${newDevRow}
+          <div class="muted" style="font-size:11px;color:#888;padding:4px 0">${t("no_dld_data")}</div>
         `;
         return `
           <h3>${p.name||'—'} <span class="src-tag src-osm">${sourceLabel}</span></h3>
@@ -997,12 +1164,12 @@ function renderChoro(){
   choro.bringToBack();
 
   // Legend
-  const fmt = METRIC_FMT[metric] || METRIC_FMT.count;
-  const title = ({count:t('ch_count'),real_count:t('ch_count'),total_aed:t('pp_volume'),median_price_aed:t('pp_median'),avg_sqm:t('sc_area')})[metric] || t('ch_count');
+  const fmt = METRIC_FMT.count;
+  const title = t(mask.legendKey || 'ch_count');
   const all = [Math.min(...vs), ...breaks, Math.max(...vs)];
   let html = `<div style="font-weight:600;margin-bottom:4px">${title}</div>`;
   for(let i=0;i<RAMP.length;i++) html += `<div class="row"><span class="sw" style="background:${RAMP[i]}"></span>${fmt(all[i])} – ${fmt(all[i+1])}</div>`;
-  html += `<div class="row"><span class="sw" style="background:#dde3ea;opacity:.5"></span>${t('legend_no_data')}</div>`;
+  html += `<div class="row"><span class="sw" style="background:repeating-linear-gradient(45deg,#f1f5f9,#f1f5f9 3px,#94a3b8 3px,#94a3b8 4px)"></span>${t('legend_no_data')}</div>`;
   document.getElementById('legend').innerHTML = html;
 }
 // metric/scale selectors are hidden — listeners disabled
@@ -1012,18 +1179,24 @@ function renderChoro(){
 // ===================== METRO LINES + STATIONS =====================
 // All metro lines and stations in a single toggle layer
 const metroLayer = L.layerGroup();
+// Merge Tram into the metro features so the single toggle controls both.
+if (typeof TRAM_LINE !== 'undefined') METRO_LINES.features.push(TRAM_LINE);
 for (const f of METRO_LINES.features) {
   L.geoJSON(f, {style: {color: f.properties.color, weight: 4, opacity: 0.9, dashArray: f.properties.status==='construction' ? '8,6' : null}}).addTo(metroLayer);
 }
-function getGroupLabel(g) { return ({red:t('metro_line_red'), green:t('metro_line_green'), blue:t('metro_line_blue')})[g]; }
-const GROUP_PIN = {red:'metro-red', green:'metro-green', blue:'metro-blue'};
+function getGroupLabel(g) { return ({red:t('metro_line_red'), green:t('metro_line_green'), blue:t('metro_line_blue'), tram:t('metro_line_tram'), gold:t('metro_line_gold')})[g] || g; }
+const GROUP_PIN = {red:'metro-red', green:'metro-green', blue:'metro-blue', tram:'metro-tram', gold:'metro-gold'};
+if (typeof TRAM_STATIONS !== 'undefined') {
+  for (const s of TRAM_STATIONS) METRO_STATIONS.push(s);
+}
 for (const s of METRO_STATIONS) {
   const groups = s.groups || [s.group];
   const labelLines = groups.map(g => getGroupLabel(g)).join(' / ');
   const isInterchange = groups.length > 1;
   // Render once per station, with the first group's colour (or red if multiple to highlight interchanges)
   const primary = groups[0];
-  const icon = L.divIcon({className:'', html:`<div class="pin ${GROUP_PIN[primary]}">M</div>`, iconSize:[24,24], iconAnchor:[12,12]});
+  const pinLetter = (primary === 'tram') ? 'T' : 'M';
+  const icon = L.divIcon({className:'', html:`<div class="pin ${GROUP_PIN[primary]}">${pinLetter}</div>`, iconSize:[24,24], iconAnchor:[12,12]});
   const m = L.marker([s.lat, s.lon], {icon});
   m.bindPopup(() => `
     <h3>🚇 ${s.name || t('station_default')} <span class="src-tag src-osm">OSM</span></h3>
@@ -1033,24 +1206,56 @@ for (const s of METRO_STATIONS) {
   m.addTo(metroLayer);
 }
 
-// ===================== SCHOOLS (enriched) =====================
+// ===================== SCHOOLS (KHDA-enriched) =====================
 const schoolLayer = L.layerGroup();
-const ratingColor = {Outstanding:'#0a7f00','Very good':'#3aaf2f',Good:'#90c443',Acceptable:'#f0a020',Weak:'#cc4040'};
-const fmtAed = v => v >= 1e6 ? (v/1e6).toFixed(2)+' '+t('abbr_m') : v.toLocaleString();
+const _rcls = v => (v || '').replace(/\s+/g, '');
 for (const s of SCHOOLS) {
   const icon = L.divIcon({className:'', html:`<div class="pin school">🏫</div>`, iconSize:[24,24], iconAnchor:[12,12]});
   const m = L.marker([s.lat, s.lon], {icon});
-  const ratingClass = s.rating.replace(' ','');
-  m.bindPopup(() => `
-    <h3>🏫 ${s.name} <span class="src-tag src-fake">KHDA?</span></h3>
-    <div class="stat"><span class="k">${t("sch_curr")}</span><span class="v">${s.curriculum}</span></div>
-    <div class="stat"><span class="k">${t("sch_langs")}</span><span class="v">${s.languages.map(l=>`<span class="lang-chip">${l}</span>`).join('')}</span></div>
-    <div class="stat"><span class="k">${t("sch_rating")}</span><span class="v"><span class="rating ${ratingClass}">${s.rating}</span></span></div>
-    <div class="stat"><span class="k">${t("sch_fees")}</span><span class="v">${fmtAed(s.fee_low_aed)} – ${fmtAed(s.fee_high_aed)}</span></div>
-    <div class="stat"><span class="k">${t("sch_capacity")}</span><span class="v">${s.capacity.toLocaleString('ru-RU')}</span></div>
-    <div class="stat"><span class="k">${t("sch_enrol")}</span><span class="v">${s.enrolment.toLocaleString('ru-RU')} (${Math.round(s.enrolment/s.capacity*100)}%)</span></div>
-    <div class="muted" style="margin-top:6px;font-size:11px;color:#a30808">⚠ Куррикулум/языки/цены — синтетика. Координаты и имя — OSM. Заменится из KHDA CSV.</div>
-  `);
+  m.bindPopup(() => {
+    const hasName = s.name && s.name !== '(unnamed school)';
+    // Arabic name renders RTL; we set dir on the title so it doesn't get
+    // visually broken when mixed with Latin browser fonts.
+    const nameIsArabic = hasName && /[؀-ۿ]/.test(s.name);
+    const titleAttr = nameIsArabic ? ' dir="rtl" style="text-align:right"' : '';
+    const displayName = hasName
+      ? `<span${titleAttr}>${s.name}</span>`
+      : ('<span style="color:#888">' + t('no_name') + '</span>');
+    const arSubtitle = (s.name_ar && s.name_ar !== s.name)
+      ? `<div class="muted" dir="rtl" style="color:#888;margin-bottom:4px;text-align:right">${s.name_ar}</div>`
+      : '';
+    if (!s.in_khda) {
+      const osmRows = [];
+      if (s.operator)       osmRows.push(`<div class="stat"><span class="k">${t('h_op')}</span><span class="v">${s.operator}</span></div>`);
+      if (s.school_type)    osmRows.push(`<div class="stat"><span class="k">${t('sch_curr')}</span><span class="v">${s.school_type}</span></div>`);
+      if (s.school_gender)  osmRows.push(`<div class="stat"><span class="k">${t('sch_gender')}</span><span class="v">${s.school_gender}</span></div>`);
+      if (s.addr_suburb)    osmRows.push(`<div class="stat"><span class="k">${t('sch_area')}</span><span class="v">${s.addr_suburb}</span></div>`);
+      if (s.website)        osmRows.push(`<div class="stat"><span class="k">${t('h_web')}</span><span class="v"><a href="${s.website}" target="_blank">${s.website.replace(/^https?:\/\//,'').replace(/\/$/,'').slice(0,32)}</a></span></div>`);
+      if (s.wikidata)       osmRows.push(`<div class="stat"><span class="k">Wikidata</span><span class="v"><a href="https://www.wikidata.org/wiki/${s.wikidata}" target="_blank">${s.wikidata}</a></span></div>`);
+      return `
+        <h3>🏫 ${displayName} <span class="src-tag src-osm">OSM</span></h3>
+        ${arSubtitle}
+        ${osmRows.join('')}
+        <div class="muted" style="font-size:11px;color:#888;margin-top:6px">${t('sch_not_in_khda')}</div>
+      `;
+    }
+    const srcTag = '<span class="src-tag" style="background:#e6f7e6;color:#0a7f00">KHDA</span>';
+    const rows = [];
+    if (s.curriculum)  rows.push(`<div class="stat"><span class="k">${t('sch_curr')}</span><span class="v">${s.curriculum}</span></div>`);
+    if (s.grade_range) rows.push(`<div class="stat"><span class="k">${t('sch_grade_range')}</span><span class="v">${s.grade_range}</span></div>`);
+    if (s.area)        rows.push(`<div class="stat"><span class="k">${t('sch_area')}</span><span class="v">${s.area}</span></div>`);
+    if (s.phone)       rows.push(`<div class="stat"><span class="k">${t('sch_phone')}</span><span class="v"><a href="tel:${s.phone}">${s.phone}</a></span></div>`);
+    if (s.rating)      rows.push(`<div class="stat"><span class="k">${t('sch_rating')}</span><span class="v"><span class="rating ${_rcls(s.rating)}">${s.rating}</span></span></div>`);
+    if (s.wellbeing)   rows.push(`<div class="stat"><span class="k">${t('sch_wellbeing')}</span><span class="v"><span class="rating ${_rcls(s.wellbeing)}">${s.wellbeing}</span></span></div>`);
+    if (s.inclusion)   rows.push(`<div class="stat"><span class="k">${t('sch_inclusion')}</span><span class="v"><span class="rating ${_rcls(s.inclusion)}">${s.inclusion}</span></span></div>`);
+    const detailsUrl = `https://web.khda.gov.ae/en/Education-Directory/Schools/School-Details?Id=${s.khda_id}&CenterID=${s.center_id}`;
+    return `
+      <h3>🏫 ${displayName} ${srcTag}</h3>
+      ${arSubtitle}
+      ${rows.join('')}
+      <div style="margin-top:6px"><a href="${detailsUrl}" target="_blank" style="font-size:11px">KHDA School Details ↗</a></div>
+    `;
+  });
   m.addTo(schoolLayer);
 }
 
@@ -1081,28 +1286,47 @@ for (const u of UNIVERSITIES) {
   const icon = L.divIcon({className:'', html:`<div class="pin university">🎓</div>`, iconSize:[24,24], iconAnchor:[12,12]});
   const m = L.marker([u.lat, u.lon], {icon});
   m.bindPopup(() => {
-  const realRows = [];
-  if (u.operator) realRows.push(`<div class="stat"><span class="k">${t("uni_op")}</span><span class="v">${u.operator}</span></div>`);
-  if (u.operator_type) realRows.push(`<div class="stat"><span class="k">${t("uni_op_type")}</span><span class="v">${u.operator_type}</span></div>`);
-  if (u.addr_city) realRows.push(`<div class="stat"><span class="k">${t("uni_city")}</span><span class="v">${u.addr_city}</span></div>`);
-  if (u.website) realRows.push(`<div class="stat"><span class="k">${t("uni_web")}</span><span class="v"><a href="${u.website}" target="_blank">${u.website.replace(/^https?:\/\//,'').replace(/\/$/, '').slice(0,32)}</a></span></div>`);
-  if (u.wikipedia) {
-    const wpUrl = 'https://' + u.wikipedia.replace(':', '.wikipedia.org/wiki/').replace(/ /g,'_');
-    realRows.push(`<div class="stat"><span class="k">Wikipedia</span><span class="v"><a href="${wpUrl}" target="_blank">${u.wikipedia}</a></span></div>`);
-  }
-  return `
-    <h3>🎓 ${u.name} <span class="src-tag src-osm">OSM</span></h3>
-    ${u.name_ar ? `<div class="muted" style="color:#888;margin-bottom:4px">${u.name_ar}</div>` : ''}
-    ${realRows.join('')}
-    <div style="border-top:1px solid #eee;margin:6px 0 4px"></div>
-    <div class="stat"><span class="k">${t("uni_country")} <span class="src-tag src-fake">~</span></span><span class="v">${u.country_origin}</span></div>
-    <div class="stat"><span class="k">${t("uni_progs")} <span class="src-tag src-fake">~</span></span><span class="v" style="text-align:right;max-width:170px">${u.programs.map(p=>`<span class="lang-chip">${p}</span>`).join('')}</span></div>
-    <div class="stat"><span class="k">${t("uni_accred")} <span class="src-tag src-fake">~</span></span><span class="v">${u.accreditation}</span></div>
-    <div class="stat"><span class="k">${t("uni_tuition")} <span class="src-tag src-fake">~</span></span><span class="v">${fmtAedU(u.tuition_low_aed)} – ${fmtAedU(u.tuition_high_aed)}</span></div>
-    <div class="stat"><span class="k">${t("uni_students")} <span class="src-tag src-fake">~</span></span><span class="v">${u.students.toLocaleString('ru-RU')}</span></div>
-    <div class="muted" style="margin-top:6px;font-size:11px;color:#a30808">${t("uni_warn")}</div>
-  `;
-});
+    const hasName = u.name && u.name !== '(unnamed)';
+    const isAr = hasName && /[؀-ۿ]/.test(u.name);
+    const titleAttr = isAr ? ' dir="rtl" style="text-align:right"' : '';
+    const displayName = hasName ? `<span${titleAttr}>${u.name}</span>` : `<span style="color:#888">${t('no_name')}</span>`;
+    const arSub = (u.name_ar && u.name_ar !== u.name)
+      ? `<div class="muted" dir="rtl" style="color:#888;margin-bottom:4px;text-align:right">${u.name_ar}</div>`
+      : '';
+    const srcTag = u.in_khda
+      ? '<span class="src-tag" style="background:#e6f7e6;color:#0a7f00">KHDA</span>'
+      : '<span class="src-tag src-osm">OSM</span>';
+    const rows = [];
+    if (u.in_khda) {
+      if (u.khda_area)        rows.push(`<div class="stat"><span class="k">${t('uni_city')}</span><span class="v">${u.khda_area}</span></div>`);
+      if (u.khda_established) rows.push(`<div class="stat"><span class="k">${t('uni_established')}</span><span class="v">${u.khda_established}</span></div>`);
+      if (u.khda_stars)       rows.push(`<div class="stat"><span class="k">${t('uni_khda_stars')}</span><span class="v"><span class="rating Verygood">${'★'.repeat(parseInt(u.khda_stars,10)||0)}${'☆'.repeat(5-(parseInt(u.khda_stars,10)||0))}</span> ${u.khda_rating_year ? `<span style="color:#888;font-size:11px">${u.khda_rating_year}</span>` : ''}</span></div>`);
+    }
+    if (u.operator)      rows.push(`<div class="stat"><span class="k">${t('uni_op')}</span><span class="v">${u.operator}</span></div>`);
+    if (u.website)       rows.push(`<div class="stat"><span class="k">${t('uni_web')}</span><span class="v"><a href="${u.website}" target="_blank">${u.website.replace(/^https?:\/\//,'').replace(/\/$/,'').slice(0,32)}</a></span></div>`);
+    if (u.wikipedia) {
+      const wpUrl = 'https://' + u.wikipedia.replace(':', '.wikipedia.org/wiki/').replace(/ /g,'_');
+      rows.push(`<div class="stat"><span class="k">Wikipedia</span><span class="v"><a href="${wpUrl}" target="_blank">${u.wikipedia}</a></span></div>`);
+    }
+    if (u.wikidata && !u.wikipedia) rows.push(`<div class="stat"><span class="k">Wikidata</span><span class="v"><a href="https://www.wikidata.org/wiki/${u.wikidata}" target="_blank">${u.wikidata}</a></span></div>`);
+    const detailsLink = u.khda_uni_id
+      ? `<div style="margin-top:6px"><a href="https://web.khda.gov.ae/en/Education-Directory/Higher-Education/Higher-Education-Details?CenterID=${u.khda_uni_id}" target="_blank" style="font-size:11px">KHDA Details ↗</a></div>`
+      : '';
+    const notInKhdaNote = (!u.in_khda)
+      ? `<div class="muted" style="font-size:11px;color:#888;margin-top:6px">${t('uni_not_in_khda')}</div>`
+      : '';
+    const khdaOnlyNote = (u.source === 'khda')
+      ? `<div class="muted" style="font-size:11px;color:#888;margin-top:4px">${t('uni_khda_only_geocoded')}</div>`
+      : '';
+    return `
+      <h3>🎓 ${displayName} ${srcTag}</h3>
+      ${arSub}
+      ${rows.join('')}
+      ${khdaOnlyNote}
+      ${notInKhdaNote}
+      ${detailsLink}
+    `;
+  });
   m.addTo(uniLayer);
 }
 
@@ -1149,6 +1373,32 @@ for (const h of HOSPITALS) {
   m.addTo(hospLayer);
 }
 
+// ===================== CLINICS (OSM) =====================
+const clinicLayer = L.layerGroup();
+for (const c of (typeof CLINICS !== 'undefined' ? CLINICS : [])) {
+  const icon = L.divIcon({className:'', html:`<div class="pin clinic">🩺</div>`, iconSize:[20,20], iconAnchor:[10,10]});
+  const m = L.marker([c.lat, c.lon], {icon});
+  m.bindPopup(() => {
+    const rows = [];
+    rows.push(`<div class="muted" style="color:#888;margin-bottom:4px">${c.kind === 'doctors' ? 'amenity=doctors' : 'amenity=clinic'}</div>`);
+    if (c.healthcare_speciality) {
+      const specs = String(c.healthcare_speciality).split(';').map(s => s.trim()).filter(Boolean);
+      rows.push(`<div class="stat"><span class="k">${t("h_specs_real")}</span><span class="v" style="text-align:right;max-width:200px;white-space:normal;font-size:11px">${specs.map(s=>`<span class="lang-chip">${s}</span>`).join('')}</span></div>`);
+    }
+    if (c.operator) rows.push(`<div class="stat"><span class="k">${t("h_op")}</span><span class="v">${c.operator}</span></div>`);
+    if (c.phone) rows.push(`<div class="stat"><span class="k">${t("h_phone")}</span><span class="v"><a href="tel:${c.phone}">${c.phone}</a></span></div>`);
+    if (c.website) rows.push(`<div class="stat"><span class="k">${t("h_web")}</span><span class="v"><a href="${c.website}" target="_blank">${c.website.replace(/^https?:\/\//,'').replace(/\/$/,'').slice(0,32)}</a></span></div>`);
+    if (c.opening_hours) rows.push(`<div class="stat"><span class="k">${t("ml_hours")}</span><span class="v" style="font-size:11.5px">${c.opening_hours}</span></div>`);
+    if (c.addr_city) rows.push(`<div class="stat"><span class="k">${t("h_city")}</span><span class="v">${c.addr_city}</span></div>`);
+    return `
+      <h3>🩺 ${c.name || ('<span style="color:#888">' + t('no_name') + '</span>')} <span class="src-tag src-osm">OSM</span></h3>
+      ${c.name_ar ? `<div class="muted" style="color:#888;margin-bottom:4px">${c.name_ar}</div>` : ''}
+      ${rows.join('')}
+    `;
+  });
+  m.addTo(clinicLayer);
+}
+
 // ===================== MOSQUES (enriched) =====================
 const mosqueLayer = L.layerGroup();
 for (const mo of MOSQUES) {
@@ -1156,14 +1406,17 @@ for (const mo of MOSQUES) {
   const m = L.marker([mo.lat, mo.lon], {icon});
   m.bindPopup(() => {
   const realRows = [];
-  if (mo.denomination) realRows.push(`<div class="stat"><span class="k">${t("mo_denom")}</span><span class="v">${mo.denomination}</span></div>`);
+  // Hide low-signal "denomination: sunni" (default for 99% of UAE mosques)
+  if (mo.denomination && String(mo.denomination).toLowerCase() !== 'sunni') {
+    realRows.push(`<div class="stat"><span class="k">${t("mo_denom")}</span><span class="v">${mo.denomination}</span></div>`);
+  }
   if (mo.addr_street) realRows.push(`<div class="stat"><span class="k">${t("mo_street")}</span><span class="v">${mo.addr_street}</span></div>`);
   if (mo.addr_city) realRows.push(`<div class="stat"><span class="k">${t("mo_city")}</span><span class="v">${mo.addr_city}</span></div>`);
   if (mo.wheelchair) realRows.push(`<div class="stat"><span class="k">${t("mo_wheel")}</span><span class="v">${mo.wheelchair==='yes'?'✓ да':mo.wheelchair}</span></div>`);
   if (mo.image) realRows.push(`<div class="stat"><span class="k">${t("mo_image")}</span><span class="v"><a href="${mo.image}" target="_blank">${t("view_t")}</a></span></div>`);
 
+  // Drop the synthetic "size" row — it duplicates capacity and "Mahalla" is untranslated.
   const synth = `
-    <div class="stat"><span class="k">${t("mo_size")} <span class="src-tag src-fake">~</span></span><span class="v">${mo.size_label}</span></div>
     <div class="stat"><span class="k">${t("mo_cap")} <span class="src-tag src-fake">~</span></span><span class="v">${mo.capacity.toLocaleString('ru-RU')}</span></div>
     <div class="stat"><span class="k">${t("mo_khutbah")} <span class="src-tag src-fake">~</span></span><span class="v">${mo.khutbah_langs.map(l=>`<span class="lang-chip">${l}</span>`).join('')}</span></div>
     <div class="stat"><span class="k">${t("mo_women")} <span class="src-tag src-fake">~</span></span><span class="v">${mo.women_section?t('yes_t'):t('no_t')}</span></div>
@@ -1186,6 +1439,63 @@ for (const mo of MOSQUES) {
 // ===================== PROJECTS (under construction, enriched) =====================
 const projectLayer = L.layerGroup();
 const fmtAedP = v => v >= 1e6 ? (v/1e6).toFixed(2)+' '+t('abbr_m') : v.toLocaleString();
+
+// Parse a flexible date string: "YYYY", "YYYY-MM", "YYYY-MM-DD", or null.
+// Returns the year as float (e.g. 2025.5 ≈ Jul 2025) — good enough for a progress bar.
+function _projYear(s) {
+  if (!s) return null;
+  const m = String(s).match(/^(\d{4})(?:-(\d{1,2}))?/);
+  if (!m) return null;
+  const y = parseInt(m[1], 10);
+  const mo = m[2] ? Math.max(0, Math.min(11, parseInt(m[2], 10) - 1)) : 0;
+  return y + mo / 12;
+}
+
+function renderProjectProgress(p) {
+  const startY = _projYear(p.start_date);
+  const endY   = _projYear(p.handover_year);
+  if (p.cancelled || (!startY && !endY)) {
+    // No timeline to draw; fall back to a plain handover row if available.
+    return p.handover_year
+      ? `<div class="stat"><span class="k">${t("pj_handover")} <span class="src-tag src-fake">~</span></span><span class="v">${p.handover_year}</span></div>`
+      : '';
+  }
+  const todayY = (new Date()).getFullYear() + ((new Date()).getMonth() / 12);
+  // If we only have one end we still want to render something useful.
+  const s = startY ?? (endY ? endY - 3 : todayY);
+  const e = endY   ?? (startY ? startY + 3 : todayY + 2);
+  let pct = (todayY - s) / Math.max(0.1, (e - s));
+  let stage, stageKey, color;
+  if (todayY > e) {
+    // Past handover with no "delivered" flag → overdue
+    pct = 1;
+    stage = t('pj_overdue');
+    stageKey = 'overdue';
+    color = '#cc4040';
+  } else if (pct <= 0.33) {
+    stage = t('pj_in_progress');
+    stageKey = 'early';
+    color = '#94a3b8';
+  } else if (pct <= 0.75) {
+    stage = t('pj_in_progress');
+    stageKey = 'mid';
+    color = '#f0a020';
+  } else {
+    stage = t('pj_in_progress');
+    stageKey = 'late';
+    color = '#3aaf2f';
+  }
+  const widthPct = Math.max(2, Math.min(100, Math.round(pct * 100)));
+  const meta = stageKey === 'overdue'
+    ? `<span class="pj-stage pj-stage-overdue">${stage}</span><span>${endY ? endY.toFixed(0) : ''}</span>`
+    : `<span>${startY ? startY.toFixed(0) : '—'}</span><span class="pj-stage pj-stage-${stageKey}">${stage} · ${widthPct}%</span><span>${endY ? endY.toFixed(0) : '—'}</span>`;
+  return `
+    <div class="pj-progress">
+      <div class="pj-progress-bar"><div class="pj-progress-fill" style="width:${widthPct}%;background:${color}"></div></div>
+      <div class="pj-progress-meta">${meta}</div>
+    </div>
+  `;
+}
 for (const p of PROJECTS) {
   const icon = L.divIcon({className:'', html:`<div class="pin construction">🏗️</div>`, iconSize:[24,24], iconAnchor:[12,12]});
   const m = L.marker([p.lat, p.lon], {icon});
@@ -1193,21 +1503,24 @@ for (const p of PROJECTS) {
   const realRows = [];
   if (p.building_type_osm) realRows.push(`<div class="stat"><span class="k">${t("pj_osm_building")}</span><span class="v">${p.building_type_osm}</span></div>`);
   if (p.levels) realRows.push(`<div class="stat"><span class="k">${t("pj_levels")}</span><span class="v">${p.levels}</span></div>`);
-  if (p.height) realRows.push(`<div class="stat"><span class="k">${t("pj_height")}</span><span class="v">${p.height}</span></div>`);
-  if (p.start_date) realRows.push(`<div class="stat"><span class="k">Старт</span><span class="v">${p.start_date}</span></div>`);
+  if (p.start_date) realRows.push(`<div class="stat"><span class="k">${t("pj_start")}</span><span class="v">${p.start_date}</span></div>`);
   if (p.operator) realRows.push(`<div class="stat"><span class="k">${t("pj_operator_osm")}</span><span class="v">${p.operator}</span></div>`);
+  if (p.website) realRows.push(`<div class="stat"><span class="k">${t("pj_dev_web")}</span><span class="v"><a href="${p.website}" target="_blank">${p.website.replace(/^https?:\/\//,'').replace(/\/$/,'').slice(0,32)}</a></span></div>`);
+
+  // Progress bar: start → handover, coloured by stage; red when handover slipped
+  const progressHtml = renderProjectProgress(p);
 
   const cancelledBadge = p.cancelled ? '<span style="display:inline-block;padding:1px 6px;border-radius:3px;font-size:11px;background:#cc4040;color:#fff;margin-left:6px">CANCELLED</span>' : '';
   return `
     <h3>🏗️ ${p.name}${cancelledBadge} <span class="src-tag src-osm">OSM</span></h3>
     ${p.name_ar ? `<div class="muted" style="color:#888;margin-bottom:4px">${p.name_ar}</div>` : ''}
     ${realRows.join('')}
+    ${progressHtml}
     <div style="border-top:1px solid #eee;margin:6px 0 4px"></div>
     <div class="stat"><span class="k">${t("pj_type")} <span class="src-tag src-fake">~</span></span><span class="v">${p.ptype}</span></div>
     <div class="stat"><span class="k">${t("pj_dev")} <span class="src-tag src-fake">~</span></span><span class="v">${p.developer}</span></div>
     ${p.mix_label!=='—' ? `<div class="stat"><span class="k">${t("pj_mix")} <span class="src-tag src-fake">~</span></span><span class="v">${p.mix_label}</span></div>` : ''}
     ${p.units ? `<div class="stat"><span class="k">${t("pj_units")} <span class="src-tag src-fake">~</span></span><span class="v">${p.units.toLocaleString('ru-RU')}</span></div>` : ''}
-    ${p.handover_year ? `<div class="stat"><span class="k">${t("pj_handover")} <span class="src-tag src-fake">~</span></span><span class="v">${p.handover_year}</span></div>` : ''}
     <div class="stat"><span class="k">${t("pj_sale_status")} <span class="src-tag src-fake">~</span></span><span class="v" style="color:${p.cancelled?'#cc4040':p.sale_status==='Sold out'?'#0a7f00':'#b8590a'}">${p.sale_status}</span></div>
     ${p.price_from_aed ? `<div class="stat"><span class="k">${t("pj_price_from")} <span class="src-tag src-fake">~</span></span><span class="v">${fmtAedP(p.price_from_aed)} AED</span></div>` : ''}
     <div class="muted" style="margin-top:6px;font-size:11px;color:#a30808">${t("pj_warn")}</div>
@@ -1267,7 +1580,9 @@ for (const ml of MALLS) {
 
 
 // ===================== POI TOGGLES (in middle panel) =====================
-renderChoro();
+// Apply default mask (sales × all) — semantically identical to original
+// baked-in values, also normalises real_med_price for legacy keys.
+applyMask(currentMask, currentMaskPeriod);
 // Built-in named layers
 function poiBuiltinDefs() {
   return [
@@ -1275,6 +1590,7 @@ function poiBuiltinDefs() {
     {key:'schools', label:t('schools'),       count:SCHOOLS.length,        layer:schoolLayer},
     {key:'unis',    label:t('universities'),  count:UNIVERSITIES.length,   layer:uniLayer},
     {key:'hosps',   label:t('hospitals'),     count:HOSPITALS.length,      layer:hospLayer},
+    {key:'clinics', label:t('clinics'),       count:(typeof CLINICS !== 'undefined' ? CLINICS.length : 0), layer:clinicLayer},
     {key:'mosques', label:t('mosques'),       count:MOSQUES.length,        layer:mosqueLayer},
     {key:'proj',    label:t('construction'),  count:PROJECTS.length,       layer:projectLayer},
     {key:'malls',   label:t('malls'),         count:MALLS.length,          layer:mallLayer},

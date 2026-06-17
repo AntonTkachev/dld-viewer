@@ -1,0 +1,373 @@
+<!DOCTYPE html>
+<html lang="ru" dir="ltr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Сделки с недвижимостью в Дубае по районам — карта DLD</title>
+<meta name="description" content="Интерактивная карта сделок с недвижимостью в Дубае по районам. Данные Dubai Land Department (DLD): количество сделок, медианная цена, цена за м², объём в AED. Периоды: 1, 3, 5, 10 лет, всё время.">
+<meta name="keywords" content="сделки в Дубае, недвижимость Дубай, DLD статистика, цена за метр Дубай, карта районов Дубая">
+<meta name="robots" content="index,follow">
+<link rel="canonical" href="/transactions/">
+<meta property="og:type" content="website">
+<meta property="og:title" content="Сделки с недвижимостью в Дубае по районам — карта DLD">
+<meta property="og:description" content="Карта сделок Dubai Land Department по районам с фильтром по периодам.">
+<meta property="og:locale" content="ru_RU">
+<meta property="og:locale:alternate" content="en_US">
+<meta property="og:locale:alternate" content="ar_AE">
+<meta property="og:locale:alternate" content="hi_IN">
+<link rel="alternate" hreflang="ru" href="/transactions/">
+<link rel="alternate" hreflang="en" href="/transactions/?lang=en">
+<link rel="alternate" hreflang="ar" href="/transactions/?lang=ar">
+<link rel="alternate" hreflang="hi" href="/transactions/?lang=hi">
+<link rel="alternate" hreflang="x-default" href="/transactions/">
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "Dataset",
+  "name": "Сделки с недвижимостью в Дубае по районам",
+  "description": "Агрегированная статистика сделок с недвижимостью по районам Дубая на основе данных Dubai Land Department.",
+  "creator": {"@type": "Organization", "name": "DLD Viewer"},
+  "license": "https://www.dubaipulse.gov.ae/terms",
+  "isAccessibleForFree": true,
+  "spatialCoverage": {"@type": "Place", "name": "Dubai, UAE"}
+}
+</script>
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" crossorigin="anonymous">
+<style>
+  *, *::before, *::after { box-sizing: border-box; }
+  html, body { margin: 0; padding: 0; height: 100%; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif; color: #1f2933; background: #f8fafc; }
+  header {
+    position: sticky; top: 0; z-index: 1000;
+    display: flex; align-items: center; justify-content: space-between;
+    height: 52px; padding: 0 16px;
+    background: #fff; border-bottom: 1px solid #e2e8f0;
+  }
+  .brand { font-weight: 600; font-size: 15px; letter-spacing: -0.01em; }
+  .brand .subtitle { color: #64748b; font-weight: 400; margin-left: 6px; }
+  .langs { display: flex; gap: 4px; }
+  .lang { background: transparent; border: 1px solid #e2e8f0; padding: 4px 10px; border-radius: 4px; cursor: pointer; font-size: 12px; color: #475569; font-family: inherit; }
+  .lang.active { background: #1f2933; color: #fff; border-color: #1f2933; }
+  .period-bar {
+    position: sticky; top: 52px; z-index: 999;
+    display: flex; align-items: center; gap: 8px;
+    padding: 10px 16px; background: #fff; border-bottom: 1px solid #e2e8f0;
+    overflow-x: auto; white-space: nowrap;
+  }
+  .period-bar .label { font-size: 13px; color: #64748b; margin-right: 4px; }
+  .chip {
+    background: #fff; border: 1px solid #cbd5e1; padding: 6px 14px; border-radius: 999px;
+    cursor: pointer; font-size: 13px; color: #334155; font-family: inherit; font-weight: 500;
+    transition: all .12s ease;
+  }
+  .chip:hover { border-color: #94a3b8; }
+  .chip.active { background: #0f172a; color: #fff; border-color: #0f172a; }
+  #map { position: absolute; top: 104px; left: 0; right: 0; bottom: 0; }
+  .legend {
+    position: absolute; bottom: 20px; right: 20px; z-index: 500;
+    background: #fff; padding: 10px 14px; border-radius: 8px;
+    box-shadow: 0 2px 12px rgba(0,0,0,.08);
+    font-size: 12px; min-width: 180px;
+  }
+  .legend-title { font-weight: 600; margin-bottom: 8px; font-size: 12px; }
+  .legend-row { display: flex; align-items: center; gap: 8px; margin: 3px 0; }
+  .legend-swatch { width: 18px; height: 12px; border-radius: 2px; flex-shrink: 0; }
+  .legend-nodata { background-image: repeating-linear-gradient(45deg, #f1f5f9 0 4px, #94a3b8 4px 5.4px); }
+  .leaflet-popup-content-wrapper { border-radius: 8px; }
+  .leaflet-popup-content { margin: 12px 14px; font-size: 13px; min-width: 240px; }
+  .leaflet-popup-content h3 { margin: 0 0 6px; font-size: 14px; }
+  .leaflet-popup-content .stat { display: flex; justify-content: space-between; padding: 3px 0; border-bottom: 1px dotted #e2e8f0; }
+  .leaflet-popup-content .stat:last-child { border-bottom: none; }
+  .leaflet-popup-content .stat .k { color: #64748b; font-size: 12px; }
+  .leaflet-popup-content .stat .v { font-weight: 600; color: #1f2933; }
+  .leaflet-popup-content .muted { color: #94a3b8; font-size: 11px; font-style: italic; padding: 4px 0; }
+  .meta-foot {
+    position: absolute; left: 20px; bottom: 20px; z-index: 500;
+    background: rgba(255,255,255,.92); padding: 8px 12px; border-radius: 6px;
+    font-size: 11px; color: #64748b;
+    max-width: 380px;
+  }
+  .meta-foot strong { color: #1f2933; }
+  /* hatching pattern host */
+  .nodata-svg-defs { position: absolute; width: 0; height: 0; }
+  /* html lang=ar — RTL adjustments */
+  html[dir="rtl"] .legend { right: auto; left: 20px; }
+  html[dir="rtl"] .meta-foot { left: auto; right: 20px; }
+  @media (max-width: 640px) {
+    .legend { bottom: 12px; right: 12px; padding: 8px 10px; font-size: 11px; min-width: 140px; }
+    .meta-foot { display: none; }
+    .period-bar { padding: 8px 12px; gap: 6px; }
+    .chip { padding: 5px 10px; font-size: 12px; }
+  }
+</style>
+</head>
+<body>
+
+<svg class="nodata-svg-defs" aria-hidden="true">
+  <defs>
+    <pattern id="nodata-hatch" patternUnits="userSpaceOnUse" width="8" height="8" patternTransform="rotate(45)">
+      <rect width="8" height="8" fill="#f1f5f9"/>
+      <line x1="0" y1="0" x2="0" y2="8" stroke="#94a3b8" stroke-width="1.4"/>
+    </pattern>
+  </defs>
+</svg>
+
+<header>
+  <div class="brand">DLD Viewer<span class="subtitle" data-i18n="brand_subtitle">· Сделки</span></div>
+  <div class="langs">
+    <button class="lang active" data-lang="ru">RU</button>
+    <button class="lang" data-lang="en">EN</button>
+    <button class="lang" data-lang="ar">AR</button>
+    <button class="lang" data-lang="hi">HI</button>
+  </div>
+</header>
+
+<div class="period-bar" role="tablist" aria-label="Период">
+  <span class="label" data-i18n="period_label">Период:</span>
+  <button class="chip active" data-period="1y"  data-i18n="period_1y">1 год</button>
+  <button class="chip"        data-period="3y"  data-i18n="period_3y">3 года</button>
+  <button class="chip"        data-period="5y"  data-i18n="period_5y">5 лет</button>
+  <button class="chip"        data-period="10y" data-i18n="period_10y">10 лет</button>
+  <button class="chip"        data-period="all" data-i18n="period_all">Всё время</button>
+</div>
+
+<div id="map" role="application" aria-label="Карта районов Дубая"></div>
+
+<div class="legend" id="legend">
+  <div class="legend-title" data-i18n="legend_title">Сделок</div>
+  <div id="legend-rows"></div>
+  <div class="legend-row" style="margin-top:8px;border-top:1px solid #e2e8f0;padding-top:6px">
+    <div class="legend-swatch legend-nodata"></div>
+    <span data-i18n="legend_nodata">Нет данных DLD</span>
+  </div>
+</div>
+
+<div class="meta-foot">
+  <strong data-i18n="meta_source">Источник:</strong>
+  <span data-i18n="meta_desc">Dubai Land Department (data.dubai). Обновляется еженедельно.</span>
+</div>
+
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" crossorigin="anonymous"></script>
+<script>
+const POLYGONS = /*__POLYGONS__*/null;
+const PERIODS  = /*__PERIODS__*/null;
+
+const I18N = {
+  ru: {
+    brand_subtitle: '· Сделки',
+    period_label: 'Период:',
+    period_1y: '1 год', period_3y: '3 года', period_5y: '5 лет', period_10y: '10 лет', period_all: 'Всё время',
+    legend_title: 'Сделок за период',
+    legend_nodata: 'Нет данных DLD',
+    pp_count: 'Сделок',
+    pp_volume: 'Объём, AED',
+    pp_median: 'Медиана, AED',
+    pp_ppsqm: 'Медиана AED/м²',
+    pp_med_sqm: 'Медиана м²',
+    pp_nodata: 'Нет сделок DLD за этот период',
+    meta_source: 'Источник:',
+    meta_desc: 'Dubai Land Department (data.dubai). Обновляется еженедельно.',
+    abbr_b: 'млрд', abbr_m: 'млн', abbr_k: 'тыс'
+  },
+  en: {
+    brand_subtitle: '· Transactions',
+    period_label: 'Period:',
+    period_1y: '1Y', period_3y: '3Y', period_5y: '5Y', period_10y: '10Y', period_all: 'All time',
+    legend_title: 'Transactions',
+    legend_nodata: 'No DLD data',
+    pp_count: 'Transactions',
+    pp_volume: 'Volume, AED',
+    pp_median: 'Median, AED',
+    pp_ppsqm: 'Median AED/m²',
+    pp_med_sqm: 'Median m²',
+    pp_nodata: 'No DLD transactions in this period',
+    meta_source: 'Source:',
+    meta_desc: 'Dubai Land Department (data.dubai). Updated weekly.',
+    abbr_b: 'B', abbr_m: 'M', abbr_k: 'K'
+  },
+  ar: {
+    brand_subtitle: '· الصفقات',
+    period_label: 'الفترة:',
+    period_1y: 'سنة', period_3y: '3 سنوات', period_5y: '5 سنوات', period_10y: '10 سنوات', period_all: 'الكل',
+    legend_title: 'الصفقات',
+    legend_nodata: 'لا توجد بيانات',
+    pp_count: 'الصفقات',
+    pp_volume: 'القيمة، درهم',
+    pp_median: 'الوسيط، درهم',
+    pp_ppsqm: 'وسيط درهم/م²',
+    pp_med_sqm: 'وسيط م²',
+    pp_nodata: 'لا توجد صفقات في هذه الفترة',
+    meta_source: 'المصدر:',
+    meta_desc: 'دائرة الأراضي والأملاك في دبي. يتم التحديث أسبوعيًا.',
+    abbr_b: 'مليار', abbr_m: 'مليون', abbr_k: 'ألف'
+  },
+  hi: {
+    brand_subtitle: '· लेनदेन',
+    period_label: 'अवधि:',
+    period_1y: '1 वर्ष', period_3y: '3 वर्ष', period_5y: '5 वर्ष', period_10y: '10 वर्ष', period_all: 'सभी',
+    legend_title: 'लेनदेन',
+    legend_nodata: 'DLD डेटा नहीं',
+    pp_count: 'लेनदेन',
+    pp_volume: 'मूल्य, AED',
+    pp_median: 'मध्य, AED',
+    pp_ppsqm: 'मध्य AED/m²',
+    pp_med_sqm: 'मध्य m²',
+    pp_nodata: 'इस अवधि में कोई लेनदेन नहीं',
+    meta_source: 'स्रोत:',
+    meta_desc: 'दुबई भूमि विभाग (data.dubai). साप्ताहिक अद्यतन।',
+    abbr_b: 'अरब', abbr_m: 'करोड़', abbr_k: 'हज़ार'
+  }
+};
+
+const RAMP = ['#fff7ec','#fee8c8','#fdd49e','#fdbb84','#fc8d59','#ef6548','#d7301f','#b30000','#7f0000'];
+
+let curLang = 'ru';
+let curPeriod = '1y';
+let choro;
+
+function t(k) { return (I18N[curLang] && I18N[curLang][k]) || I18N.ru[k] || k; }
+function fmtNum(n) {
+  const loc = {ru:'ru-RU', en:'en-US', ar:'ar-AE', hi:'hi-IN'}[curLang] || 'ru-RU';
+  return (n||0).toLocaleString(loc);
+}
+function fmtAED(n) {
+  n = n || 0;
+  if (n >= 1e9) return (n/1e9).toFixed(2) + ' ' + t('abbr_b');
+  if (n >= 1e6) return (n/1e6).toFixed(1) + ' ' + t('abbr_m');
+  if (n >= 1e3) return Math.round(n/1e3) + ' ' + t('abbr_k');
+  return fmtNum(n);
+}
+
+// ─── i18n bind ──────────────────────────────────────────────
+function applyLang() {
+  document.documentElement.lang = curLang;
+  document.documentElement.dir = (curLang === 'ar') ? 'rtl' : 'ltr';
+  document.querySelectorAll('[data-i18n]').forEach(el => {
+    el.textContent = t(el.dataset.i18n);
+  });
+  // re-render legend texts and any open popups
+  drawLegend();
+  if (map) map.closePopup();
+}
+
+document.querySelectorAll('.lang').forEach(btn => {
+  btn.addEventListener('click', () => {
+    document.querySelectorAll('.lang').forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+    curLang = btn.dataset.lang;
+    applyLang();
+  });
+});
+
+// honor ?lang= query
+const urlLang = new URLSearchParams(location.search).get('lang');
+if (urlLang && I18N[urlLang]) {
+  curLang = urlLang;
+  document.querySelectorAll('.lang').forEach(b => b.classList.toggle('active', b.dataset.lang === urlLang));
+}
+
+// ─── period ─────────────────────────────────────────────────
+document.querySelectorAll('.chip[data-period]').forEach(btn => {
+  btn.addEventListener('click', () => {
+    document.querySelectorAll('.chip').forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+    curPeriod = btn.dataset.period;
+    renderChoro();
+  });
+});
+
+// honor ?period= query (canonical points to /transactions/ so this is shareable only)
+const urlPeriod = new URLSearchParams(location.search).get('period');
+if (urlPeriod && PERIODS[urlPeriod]) {
+  curPeriod = urlPeriod;
+  document.querySelectorAll('.chip').forEach(b => b.classList.toggle('active', b.dataset.period === urlPeriod));
+}
+
+// ─── map ────────────────────────────────────────────────────
+const map = L.map('map', { zoomControl: true, attributionControl: true }).setView([25.12, 55.25], 10);
+L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+  attribution: '© OpenStreetMap',
+  maxZoom: 18,
+}).addTo(map);
+
+// classify by log breaks
+function logBreaks(values, n) {
+  const positive = values.filter(v => v > 0).sort((a, b) => a - b);
+  if (positive.length < 2) return [];
+  const lo = Math.log(positive[0]), hi = Math.log(positive[positive.length - 1]);
+  const out = [];
+  for (let i = 1; i <= n; i++) out.push(Math.exp(lo + (hi - lo) * i / n));
+  return out;
+}
+function classify(v, breaks) {
+  for (let i = 0; i < breaks.length; i++) if (v <= breaks[i]) return i;
+  return breaks.length - 1;
+}
+
+let legendBreaks = [];
+function drawLegend() {
+  const rows = document.getElementById('legend-rows');
+  rows.innerHTML = '';
+  if (!legendBreaks.length) return;
+  // condensed: 4 levels (min, q33, q66, max)
+  const sample = [legendBreaks[Math.floor(RAMP.length*0.15)],
+                  legendBreaks[Math.floor(RAMP.length*0.45)],
+                  legendBreaks[Math.floor(RAMP.length*0.75)],
+                  legendBreaks[RAMP.length - 1]];
+  const colors = [RAMP[1], RAMP[3], RAMP[5], RAMP[8]];
+  sample.forEach((v, i) => {
+    if (!v) return;
+    const div = document.createElement('div');
+    div.className = 'legend-row';
+    div.innerHTML = `<div class="legend-swatch" style="background:${colors[i]}"></div><span>${i === 0 ? '<' : '≤'} ${fmtNum(Math.round(v))}</span>`;
+    rows.appendChild(div);
+  });
+}
+
+function renderChoro() {
+  const agg = PERIODS[curPeriod] || {};
+  const vs = POLYGONS.features.map(f => {
+    const k = f.properties.real_area_key;
+    return (k && agg[k]?.n) || 0;
+  });
+  legendBreaks = logBreaks(vs, RAMP.length);
+
+  if (choro) map.removeLayer(choro);
+  choro = L.geoJSON(POLYGONS, {
+    style: f => {
+      const k = f.properties.real_area_key;
+      const v = (k && agg[k]?.n) || 0;
+      return v === 0
+        ? { weight: 0.6, color: '#94a3b8', fillColor: 'url(#nodata-hatch)', fillOpacity: 1, dashArray: '3,3' }
+        : { weight: 0.5, color: '#1f2933', fillColor: RAMP[classify(v, legendBreaks)], fillOpacity: 0.7 };
+    },
+    onEachFeature: (f, layer) => {
+      layer.bindPopup(() => {
+        const p = f.properties;
+        const k = p.real_area_key;
+        const rec = (k && agg[k]) || null;
+        const head = `<h3>${p.name || '—'}</h3>${p.name_ar ? '<div class="muted">' + p.name_ar + '</div>' : ''}`;
+        if (!rec || !rec.n) {
+          return head + `<div class="muted">${t('pp_nodata')}</div>`;
+        }
+        return head
+          + `<div class="stat"><span class="k">${t('pp_count')}</span><span class="v">${fmtNum(rec.n)}</span></div>`
+          + `<div class="stat"><span class="k">${t('pp_volume')}</span><span class="v">${fmtAED(rec.total)}</span></div>`
+          + `<div class="stat"><span class="k">${t('pp_median')}</span><span class="v">${fmtAED(rec.med)}</span></div>`
+          + (rec.med_ppsqm ? `<div class="stat"><span class="k">${t('pp_ppsqm')}</span><span class="v">${fmtNum(rec.med_ppsqm)}</span></div>` : '')
+          + (rec.med_sqm   ? `<div class="stat"><span class="k">${t('pp_med_sqm')}</span><span class="v">${fmtNum(rec.med_sqm)}</span></div>` : '');
+      });
+      layer.on({
+        mouseover: e => e.target.setStyle({ weight: 2, color: '#000' }),
+        mouseout:  e => choro.resetStyle(e.target),
+      });
+    },
+  }).addTo(map);
+
+  drawLegend();
+}
+
+applyLang();
+renderChoro();
+</script>
+</body>
+</html>

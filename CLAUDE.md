@@ -73,6 +73,10 @@ scripts/
   dld_check_new.sh      ← compare API listing vs local — flag if newer exists
   dld_refresh.sh        ← orchestrates download → parquet
   dld_filter.py         ← optional: filter CSV.gz by date column (pre-parquet era)
+  khda_scrape.py        ← fetch KHDA Education Directory → data/khda_schools.csv
+  osm_schools_pull.py   ← Overpass `amenity=school` in Dubai bbox → data/osm_schools.json
+  khda_merge_into_viewer.py ← join OSM + KHDA, write SCHOOLS into dld_viewer.html
+  khda_refresh.sh       ← weekly orchestrator: runs all three above in sequence
 ```
 
 Raw downloads live outside the repo (`~/Downloads/...`) because they're large (~2.4 GB) and regeneratable. `.gitignore` blocks `transactions-*.csv` / `rents-*.csv` in repo root (legacy DLD-portal exports — superseded by Parquet).
@@ -80,6 +84,29 @@ Raw downloads live outside the repo (`~/Downloads/...`) because they're large (~
 ## Don't trust the DLD-portal CSV files
 
 `rents-YYYY-MM-DD.csv` and `transactions-YYYY-MM-DD.csv` (UPPERCASE columns) come from the manual DLD portal export. They are **silently truncated** (~12K rows for rents; transactions are larger but use community-name `AREA_EN` instead of admin sector). The Parquet files in `data/` are the source of truth.
+
+## KHDA schools (Education Directory)
+
+- Source: <https://web.khda.gov.ae/en/Education-Directory/Schools> — server-rendered ASP.NET page; **no CSV/JSON export**.
+- Dubai Pulse dataset `468962` (<https://data.dubai/en/l/468962>) looks like a schools dataset but is a search-only service — listing API returns `metadata: []` (no downloadable files).
+- All ~233 school cards are embedded in the initial HTML. `scripts/khda_scrape.py` GETs the page and parses each card's `lblArea` / `lblTelephone` / `lblCurriculums` / `lblgradeRange` + the DSIB overall + Wellbeing + Inclusion rating badges into `data/khda_schools.csv`.
+- The OSM seed comes from `scripts/osm_schools_pull.py` (Overpass `amenity=school` over the Dubai bbox). It drops mapper noise: bare nodes with no other tags, and `barrier`-tagged entries (fences mistakenly tagged as schools). About 60/416 elements get filtered this way; the remainder (~355) becomes `data/osm_schools.json`.
+- `scripts/khda_merge_into_viewer.py` joins KHDA onto that OSM seed in five stages, first-wins:
+  1. **Exact normalized** — strip case/punctuation/suffix words (`L.L.C`, `Branch`, `Dubai`, …).
+  2. **Token-set Jaccard ≥ 0.6** with subset bonus.
+  3. **SequenceMatcher ≥ 0.74** for typos (e.g. *Engllish* vs *English*); guarded by "at least one distinctive token in common" to avoid generic `School/School` matches.
+  4. **Proximity tiebreaker** — when stage 2 reported ambiguity (e.g. KHDA has two *Al Mawakeb* branches), prefer the candidate whose `area` substring appears in OSM `addr_suburb` / `name`.
+  5. **Polygon proximity** — last-ditch: find the GEOJSON polygon containing the OSM marker, then accept a weak (SeqMatch ≥ 0.55) match if exactly one KHDA candidate is tagged with that polygon's name.
+- Also pre-filtered out before matching: OSM `amenity=school` entries whose name contains *university* / *driving institute* / *musical arts* / *accommodation* — KHDA covers K-12 only.
+- Refresh end-to-end (always re-fetches everything — total payload is small enough that diff-check isn't worth it):
+  ```bash
+  scripts/khda_refresh.sh
+  ```
+  Wire it into cron for a weekly run, e.g. Sundays 04:30:
+  ```
+  30 4 * * 0  cd /Users/anton/IdeaProjects/dld_viewer && scripts/khda_refresh.sh >> data/.khda_refresh.log 2>&1
+  ```
+- Current state: 107/274 named OSM schools matched, ~126 KHDA-only have no OSM coordinates. The remaining 167 unmatched OSM-named schools are a mix of (a) arabic-only-name madrasas (KHDA names are English only), (b) genuinely missing from KHDA (kindergartens, special-needs centres), (c) small private schools KHDA listed under a different legal-entity name we can't fuzzy-match safely.
 
 ## Source / API reference
 
