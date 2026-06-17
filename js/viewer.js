@@ -839,17 +839,23 @@ for (const f of GEOJSON.features) {
 //   overlay(r) — string label to render on top of polygon centroids (no overlay if absent)
 //   popupRows(p, t, fmt) — custom popup body (default = sales/rents rows)
 //   legendFmt  — format function for legend ranges (default = METRIC_FMT.count)
-const _P = name => (typeof window !== 'undefined' && window[name]) || {};
+// Resolve inlined per-period datasets. They're injected as `const X = {...}`
+// which lands in the script's declarative scope (NOT on `window`), so we need
+// direct typeof checks to read them safely without a ReferenceError.
+const _TX_P      = (typeof TX_PERIODS      !== 'undefined') ? TX_PERIODS      : {};
+const _RENTS_P   = (typeof RENTS_PERIODS   !== 'undefined') ? RENTS_PERIODS   : {};
+const _GROWTH_P  = (typeof GROWTH_PERIODS  !== 'undefined') ? GROWTH_PERIODS  : {};
+const _PAYBACK_P = (typeof PAYBACK_PERIODS !== 'undefined') ? PAYBACK_PERIODS : {};
 const MASKS = {
   sales: {
     labelKey: 'mask_sales', descKey: 'mask_sales_desc',
     periods: ['1y','3y','5y','10y','all'], defaultPeriod: 'all',
     data: {
-      all: AGGREGATES,
-      '1y':  _P('TX_PERIODS')['1y']  || {},
-      '3y':  _P('TX_PERIODS')['3y']  || {},
-      '5y':  _P('TX_PERIODS')['5y']  || {},
-      '10y': _P('TX_PERIODS')['10y'] || {},
+      all:   AGGREGATES,
+      '1y':  _TX_P['1y']  || {},
+      '3y':  _TX_P['3y']  || {},
+      '5y':  _TX_P['5y']  || {},
+      '10y': _TX_P['10y'] || {},
     },
     pluck: r => ({ real_count: r.n || 0, real_total_aed: r.total || 0, real_med_price: r.med || 0, real_med_ppsqm: r.med_ppsqm || 0, real_metric: r.n || 0 }),
     legendKey: 'legend_sales', popupCountKey: 'pp_trans_ytd', showVolume: true,
@@ -858,11 +864,11 @@ const MASKS = {
     labelKey: 'mask_rents', descKey: 'mask_rents_desc',
     periods: ['1y','3y','5y','10y','all'], defaultPeriod: 'all',
     data: {
-      all: (typeof RENT_AGGREGATES !== 'undefined') ? RENT_AGGREGATES : {},
-      '1y':  _P('RENTS_PERIODS')['1y']  || {},
-      '3y':  _P('RENTS_PERIODS')['3y']  || {},
-      '5y':  _P('RENTS_PERIODS')['5y']  || {},
-      '10y': _P('RENTS_PERIODS')['10y'] || {},
+      all:   (typeof RENT_AGGREGATES !== 'undefined') ? RENT_AGGREGATES : {},
+      '1y':  _RENTS_P['1y']  || {},
+      '3y':  _RENTS_P['3y']  || {},
+      '5y':  _RENTS_P['5y']  || {},
+      '10y': _RENTS_P['10y'] || {},
     },
     pluck: r => ({ real_count: r.n || 0, real_total_aed: 0, real_med_price: r.med_annual || r.med || 0, real_med_ppsqm: r.med_ppsqm || 0, real_metric: r.n || 0 }),
     legendKey: 'legend_rents', popupCountKey: 'rent_sc_contracts', showVolume: false,
@@ -871,10 +877,10 @@ const MASKS = {
     labelKey: 'mask_growth', descKey: 'mask_growth_desc',
     periods: ['1y','3y','5y','10y'], defaultPeriod: '5y',
     data: {
-      '1y':  _P('GROWTH_PERIODS')['1y']  || {},
-      '3y':  _P('GROWTH_PERIODS')['3y']  || {},
-      '5y':  _P('GROWTH_PERIODS')['5y']  || {},
-      '10y': _P('GROWTH_PERIODS')['10y'] || {},
+      '1y':  _GROWTH_P['1y']  || {},
+      '3y':  _GROWTH_P['3y']  || {},
+      '5y':  _GROWTH_P['5y']  || {},
+      '10y': _GROWTH_P['10y'] || {},
     },
     pluck: r => ({
       real_count: r.n || 0, real_total_aed: 0,
@@ -898,11 +904,11 @@ const MASKS = {
     labelKey: 'mask_payback', descKey: 'mask_payback_desc',
     periods: ['studio','1br','2br','3br','4br_plus'], defaultPeriod: '1br',
     data: {
-      'studio':   _P('PAYBACK_PERIODS')['studio']   || {},
-      '1br':      _P('PAYBACK_PERIODS')['1br']      || {},
-      '2br':      _P('PAYBACK_PERIODS')['2br']      || {},
-      '3br':      _P('PAYBACK_PERIODS')['3br']      || {},
-      '4br_plus': _P('PAYBACK_PERIODS')['4br_plus'] || {},
+      'studio':   _PAYBACK_P['studio']   || {},
+      '1br':      _PAYBACK_P['1br']      || {},
+      '2br':      _PAYBACK_P['2br']      || {},
+      '3br':      _PAYBACK_P['3br']      || {},
+      '4br_plus': _PAYBACK_P['4br_plus'] || {},
     },
     pluck: r => ({
       real_count: (r.n_sale || 0) + (r.n_rent || 0),
