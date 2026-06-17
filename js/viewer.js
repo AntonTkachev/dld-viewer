@@ -860,11 +860,11 @@ const MASKS = {
     pluck: r => ({ real_count: r.n || 0, real_total_aed: r.total || 0, real_med_price: r.med || 0, real_med_ppsqm: r.med_ppsqm || 0, real_metric: r.n || 0 }),
     legendKey: 'legend_sales', popupCountKey: 'pp_trans_ytd', showVolume: true,
     tableColumns: [
-      { key: 'name',      labelKey: 'tv_col_district', type: 'str',  defaultSort: false },
-      { key: 'n',         labelKey: 'tv_col_n_sales',  type: 'int',  defaultSort: true, defaultSortDir: 'desc' },
-      { key: 'total',     labelKey: 'tv_col_volume',   type: 'aed_big' },
-      { key: 'med',       labelKey: 'tv_col_median',   type: 'aed_big' },
-      { key: 'med_ppsqm', labelKey: 'tv_col_ppsqm',    type: 'int' },
+      { key: 'name',      labelKey: 'tv_col_district', type: 'str',    width: '32%', defaultSort: false },
+      { key: 'n',         labelKey: 'tv_col_n_sales',  type: 'int',    width: '13%', defaultSort: true, defaultSortDir: 'desc' },
+      { key: 'total',     labelKey: 'tv_col_volume',   type: 'aed_big',width: '20%' },
+      { key: 'med',       labelKey: 'tv_col_median',   type: 'aed_big',width: '18%' },
+      { key: 'med_ppsqm', labelKey: 'tv_col_ppsqm',    type: 'int',    width: '17%' },
     ],
   },
   rents: {
@@ -880,10 +880,10 @@ const MASKS = {
     pluck: r => ({ real_count: r.n || 0, real_total_aed: 0, real_med_price: r.med_annual || r.med || 0, real_med_ppsqm: r.med_ppsqm || 0, real_metric: r.n || 0 }),
     legendKey: 'legend_rents', popupCountKey: 'rent_sc_contracts', showVolume: false,
     tableColumns: [
-      { key: 'name',                                 labelKey: 'tv_col_district', type: 'str' },
-      { key: 'n',                                    labelKey: 'tv_col_n_rents', type: 'int', defaultSort: true, defaultSortDir: 'desc' },
-      { key: r => r.med_annual || r.med,             labelKey: 'tv_col_median_annual', type: 'aed_big' },
-      { key: 'med_ppsqm',                            labelKey: 'tv_col_ppsqm_year', type: 'int' },
+      { key: 'name',                       labelKey: 'tv_col_district',      type: 'str',     width: '38%' },
+      { key: 'n',                          labelKey: 'tv_col_n_rents',       type: 'int',     width: '17%', defaultSort: true, defaultSortDir: 'desc' },
+      { key: r => r.med_annual || r.med,   labelKey: 'tv_col_median_annual', type: 'aed_big', width: '25%' },
+      { key: 'med_ppsqm',                  labelKey: 'tv_col_ppsqm_year',    type: 'int',     width: '20%' },
     ],
   },
   growth: {
@@ -921,12 +921,12 @@ const MASKS = {
     `;
     },
     tableColumns: [
-      { key: 'name',         labelKey: 'tv_col_district',    type: 'str' },
-      { key: 'growth_pct',   labelKey: 'tv_col_growth_pct',  type: 'pct', defaultSort: true, defaultSortDir: 'desc' },
-      { key: 'med_now',      labelKey: 'tv_col_med_now',     type: 'int' },
-      { key: 'med_then',     labelKey: 'tv_col_med_then',    type: 'int' },
-      { key: 'fallback_yrs', labelKey: 'tv_col_history',     type: 'yrs_opt' },
-      { key: 'n',            labelKey: 'tv_col_n_last_year', type: 'int' },
+      { key: 'name',         labelKey: 'tv_col_district',    type: 'str',     width: '28%' },
+      { key: 'growth_pct',   labelKey: 'tv_col_growth_pct',  type: 'pct',     width: '12%', defaultSort: true, defaultSortDir: 'desc' },
+      { key: 'med_now',      labelKey: 'tv_col_med_now',     type: 'int',     width: '15%' },
+      { key: 'med_then',     labelKey: 'tv_col_med_then',    type: 'int',     width: '15%' },
+      { key: 'fallback_yrs', labelKey: 'tv_col_history',     type: 'yrs_opt', width: '14%' },
+      { key: 'n',            labelKey: 'tv_col_n_last_year', type: 'int',     width: '16%' },
     ],
   },
   payback: {
@@ -962,12 +962,12 @@ const MASKS = {
       <div class="stat"><span class="k">${t('pp_n_rent')}</span><span class="v">${(p.real_n_rent||0).toLocaleString('ru-RU')}</span></div>
     `,
     tableColumns: [
-      { key: 'name',       labelKey: 'tv_col_district',    type: 'str' },
-      { key: 'years',      labelKey: 'tv_col_payback_yrs', type: 'yrs', defaultSort: true, defaultSortDir: 'asc' },
-      { key: 'sale_ppsqm', labelKey: 'tv_col_sale_ppsqm',  type: 'int' },
-      { key: 'rent_ppsqm', labelKey: 'tv_col_rent_ppsqm',  type: 'int' },
-      { key: 'n_sale',     labelKey: 'tv_col_n_sale_2y',   type: 'int' },
-      { key: 'n_rent',     labelKey: 'tv_col_n_rent_2y',   type: 'int' },
+      { key: 'name',       labelKey: 'tv_col_district',    type: 'str', width: '28%' },
+      { key: 'years',      labelKey: 'tv_col_payback_yrs', type: 'yrs', width: '14%', defaultSort: true, defaultSortDir: 'asc' },
+      { key: 'sale_ppsqm', labelKey: 'tv_col_sale_ppsqm',  type: 'int', width: '15%' },
+      { key: 'rent_ppsqm', labelKey: 'tv_col_rent_ppsqm',  type: 'int', width: '15%' },
+      { key: 'n_sale',     labelKey: 'tv_col_n_sale_2y',   type: 'int', width: '14%' },
+      { key: 'n_rent',     labelKey: 'tv_col_n_rent_2y',   type: 'int', width: '14%' },
     ],
   },
 };
@@ -1274,6 +1274,7 @@ function renderTable() {
   const start = (state.page - 1) * PAGE_SIZE;
   const pageRows = rows.slice(start, start + PAGE_SIZE);
 
+  const cols = mask.tableColumns.map(c => `<col${c.width ? ' style="width:' + c.width + '"' : ''}>`).join('');
   const ths = mask.tableColumns.map(c => {
     const ident = _tableColIdent(c);
     const sortedCls = (ident === state.sortKey) ? (' sorted-' + state.sortDir) : '';
@@ -1304,7 +1305,7 @@ function renderTable() {
 
   const tbl = document.getElementById('tv-table');
   if (!tbl) return;
-  tbl.innerHTML = `<thead><tr>${ths}</tr></thead><tbody>${dubaiHtml}${bodyHtml}</tbody>`;
+  tbl.innerHTML = `<colgroup>${cols}</colgroup><thead><tr>${ths}</tr></thead><tbody>${dubaiHtml}${bodyHtml}</tbody>`;
 
   const cnt = document.getElementById('tv-count');
   if (cnt) cnt.textContent = total.toLocaleString('ru-RU') + ' ' + t('tv_count_label');
