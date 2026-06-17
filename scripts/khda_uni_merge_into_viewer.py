@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """
 Merge KHDA Higher Education entries into the OSM-derived UNIVERSITIES list in
-dld_viewer.html. Sources:
+index.html. Sources:
   - data/osm_universities.json   (run osm_universities_pull.py first)
   - data/khda_universities.csv   (run khda_universities_scrape.py first)
 
@@ -15,15 +15,13 @@ import csv
 import difflib
 import json
 import re
-import shutil
 import sys
 from pathlib import Path
 
-ROOT  = Path(__file__).resolve().parent.parent
-HTML  = ROOT / 'dld_viewer.html'
-INDEX = ROOT / 'index.html'
-KHDA  = ROOT / 'data' / 'khda_universities.csv'
-OSM   = ROOT / 'data' / 'osm_universities.json'
+ROOT = Path(__file__).resolve().parent.parent
+HTML = ROOT / 'index.html'
+KHDA = ROOT / 'data' / 'khda_universities.csv'
+OSM  = ROOT / 'data' / 'osm_universities.json'
 
 STOP = {
     'university', 'college', 'institute', 'school', 'academy', 'private',
@@ -347,13 +345,12 @@ def main():
         lines = f.readlines()
     idx = next((i for i, l in enumerate(lines) if l.startswith('const UNIVERSITIES = ')), None)
     if idx is None:
-        print('UNIVERSITIES const not found in dld_viewer.html', file=sys.stderr)
+        print('UNIVERSITIES const not found in index.html', file=sys.stderr)
         return 1
     lines[idx] = 'const UNIVERSITIES = ' + json.dumps(unis, separators=(',', ':'), ensure_ascii=False) + ';\n'
     with HTML.open('w', encoding='utf-8') as f:
         f.writelines(lines)
-    shutil.copyfile(HTML, INDEX)
-    print(f'Patched line {idx + 1} and synced index.html')
+    print(f'Patched line {idx + 1} of index.html')
     return 0
 
 if __name__ == '__main__':
