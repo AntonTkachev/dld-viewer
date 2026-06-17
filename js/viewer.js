@@ -1345,19 +1345,35 @@ function renderTable() {
 
 // Close the table view, switch to map, and zoom + open the polygon popup
 // for the given area_key. Used by district-name links in the table view.
+function _openDistrictByKey(areaKey) {
+  if (areaKey === '__dubai__') {
+    if (typeof window.openDubai === 'function') window.openDubai();
+    return;
+  }
+  const feat = GEOJSON.features.find(f => f.properties.real_area_key === areaKey);
+  if (feat && typeof _onSearchSelect === 'function') _onSearchSelect(feat);
+}
+
 function _openDistrictFromTable(areaKey) {
   if (!areaKey) return;
-  setView('map');
-  // setView triggers map.invalidateSize after 50ms; wait for the viewport to
-  // settle before flying so the camera lands correctly.
-  setTimeout(() => {
-    if (areaKey === '__dubai__') {
-      if (typeof window.openDubai === 'function') window.openDubai();
+  // On file://, setView('map') falls through to a real page navigation
+  // because pushState is blocked. Stash the district in the URL hash so the
+  // destination page can finish the open after it boots.
+  if (typeof window !== 'undefined' && window.location.protocol === 'file:') {
+    const href = _hrefForPage(currentMask, 'map');
+    if (href) {
+      window.location.href = href + '#district=' + encodeURIComponent(areaKey);
       return;
     }
-    const feat = GEOJSON.features.find(f => f.properties.real_area_key === areaKey);
-    if (feat) _onSearchSelect(feat);
-  }, 200);
+  }
+  // http(s): in-place. Flip view, force a layout tick, then fly + popup.
+  // Two rAFs — first lets the browser paint after display:none is removed,
+  // second runs after Leaflet sees the restored dimensions.
+  setView('map');
+  requestAnimationFrame(() => requestAnimationFrame(() => {
+    if (typeof map !== 'undefined' && map.invalidateSize) map.invalidateSize();
+    _openDistrictByKey(areaKey);
+  }));
 }
 
 function _periodLabel(mask, p) {
@@ -1550,12 +1566,17 @@ function _featContains(f, pt){
 // gives us smallest-first — a project lands in its tightest container.
 (function tagProjectsToDistricts() {
   if (typeof PROJECTS === 'undefined') return;
+  // PROJECTS is now district-level aggregates — each entry already carries
+  // the in-flight count for its polygon, so we just route it to the smallest
+  // enclosing district feature for the side-panel badge.
   for (const p of PROJECTS) {
     if (!Number.isFinite(p.lat) || !Number.isFinite(p.lon)) continue;
+    const count = p.in_flight || 0;
+    if (!count) continue;
     for (let i = GEOJSON.features.length - 1; i >= 0; i--) {
       const f = GEOJSON.features[i];
       if (_featContains(f, [p.lon, p.lat])) {
-        f.properties._new_dev_count = (f.properties._new_dev_count || 0) + 1;
+        f.properties._new_dev_count = (f.properties._new_dev_count || 0) + count;
         break;
       }
     }
@@ -1981,86 +2002,83 @@ for (const mo of MOSQUES) {
   m.addTo(mosqueLayer);
 }
 
-// ===================== PROJECTS (RERA, geocoded by area centroid) =====================
-// One marker per RERA-registered real-estate development still in motion
-// (ACTIVE / NOT_STARTED / PENDING / CONDITIONAL_ACTIVATING). Source: Dubai
-// Pulse dataset 467654, refreshed via scripts/dld_projects_pull.py +
-// dld_projects_merge_into_viewer.py. No coordinates in the source —
-// we drop pins at the master_project_en / area_name_en polygon centroid
-// with deterministic jitter so co-located projects don't pile up.
+// ===================== PROJECTS (RERA, aggregated per district) =====================
+// One marker per master_project_en / area_name_en polygon — NOT per project.
+// The badge shows the in-flight count; the popup breaks down by status,
+// lists top developers, sums composition, and links to a per-district detail
+// page (still a placeholder — page is being built separately).
+//
+// Source: Dubai Pulse dataset 467654 (RERA Real Estate Projects), refreshed
+// via scripts/dld_projects_pull.py + dld_projects_merge_into_viewer.py.
 const projectLayer = L.layerGroup();
 const STATUS_META = {
-  ACTIVE:                  {color: '#3aaf2f', key: 'pj_status_active'},
-  NOT_STARTED:             {color: '#94a3b8', key: 'pj_status_not_started'},
-  PENDING:                 {color: '#f0a020', key: 'pj_status_pending'},
-  CONDITIONAL_ACTIVATING:  {color: '#7a4c00', key: 'pj_status_cond_activating'},
+  ACTIVE:                 {color: '#3aaf2f', key: 'pj_status_active'},
+  NOT_STARTED:            {color: '#94a3b8', key: 'pj_status_not_started'},
+  PENDING:                {color: '#f0a020', key: 'pj_status_pending'},
+  CONDITIONAL_ACTIVATING: {color: '#7a4c00', key: 'pj_status_cond_activating'},
+  FINISHED:               {color: '#1d4ed8', key: 'pj_status_finished'},
+  CANCELLED:              {color: '#cc4040', key: 'pj_status_cancelled'},
+  FRIEZED:                {color: '#7a4c00', key: 'pj_status_frozen'},
 };
-for (const p of PROJECTS) {
+for (const d of PROJECTS) {
+  // Badge size scales weakly with in-flight count so big districts look fuller.
+  const n = d.in_flight;
+  const size = n >= 100 ? 44 : n >= 30 ? 38 : 32;
   const icon = L.divIcon({
     className: '',
-    html: `<div class="pin construction">🏗️</div>`,
-    iconSize: [24, 24], iconAnchor: [12, 12],
+    html: `<div class="pin construction-cluster" style="width:${size}px;height:${size}px"><span class="pin-count">${n}</span><span class="pin-emoji">🏗️</span></div>`,
+    iconSize: [size, size], iconAnchor: [size/2, size/2],
   });
-  const m = L.marker([p.lat, p.lon], {icon});
+  const m = L.marker([d.lat, d.lon], {icon});
   m.bindPopup(() => {
     const rows = [];
-    const st = STATUS_META[p.status] || STATUS_META.PENDING;
-    rows.push(`<div class="stat"><span class="k">${t('pj_status')}</span><span class="v" style="color:${st.color}">${t(st.key)} · ${p.percent ?? '?'}%</span></div>`);
 
-    // Real progress bar driven by percent_completed.
-    if (Number.isFinite(p.percent)) {
-      const widthPct = Math.max(2, Math.min(100, p.percent));
-      let barColor = st.color;
-      // Past end_date but not finished → late
-      if (p.end_date && p.percent < 100) {
-        const today = new Date().toISOString().slice(0, 10);
-        if (today > p.end_date) barColor = '#cc4040';
-      }
-      rows.push(`
-        <div class="pj-progress">
-          <div class="pj-progress-bar"><div class="pj-progress-fill" style="width:${widthPct}%;background:${barColor}"></div></div>
-          <div class="pj-progress-meta">
-            <span>${p.start_date || '—'}</span>
-            <span class="pj-stage">${widthPct}%</span>
-            <span>${p.end_date || '—'}</span>
-          </div>
-        </div>`);
+    // Status breakdown — show every non-zero count, coloured. In-flight
+    // states first, then FINISHED/CANCELLED so the eye lands on what's
+    // currently happening.
+    const order = ['ACTIVE','NOT_STARTED','PENDING','CONDITIONAL_ACTIVATING','FINISHED','CANCELLED','FRIEZED'];
+    const chips = [];
+    for (const s of order) {
+      const v = d.by_status[s] || 0;
+      if (!v) continue;
+      const meta = STATUS_META[s] || {color:'#888', key:'pj_status'};
+      chips.push(`<span class="pj-status-chip" style="background:${meta.color}1a;color:${meta.color}">${t(meta.key)} · ${v}</span>`);
+    }
+    rows.push(`<div class="stat"><span class="k">${t('pj_count_by_status')}</span><span class="v" style="text-align:right;max-width:220px;display:flex;flex-wrap:wrap;gap:3px;justify-content:flex-end">${chips.join('')}</span></div>`);
+
+    if (Number.isFinite(d.avg_percent)) {
+      rows.push(`<div class="stat"><span class="k">${t('pj_avg_percent')}</span><span class="v" style="color:#3aaf2f">${d.avg_percent}%</span></div>`);
     }
 
-    if (p.developer) rows.push(`<div class="stat"><span class="k">${t('pj_dev')}</span><span class="v" dir="rtl" style="text-align:right;max-width:200px;font-size:11.5px">${p.developer}</span></div>`);
-    if (p.master_developer && p.master_developer !== p.developer)
-      rows.push(`<div class="stat"><span class="k">${t('pj_master_dev')}</span><span class="v" dir="rtl" style="text-align:right;max-width:200px;font-size:11.5px">${p.master_developer}</span></div>`);
-    if (p.escrow)    rows.push(`<div class="stat"><span class="k">${t('pj_escrow')}</span><span class="v" dir="rtl" style="text-align:right;max-width:200px;font-size:11px">${p.escrow}</span></div>`);
-    if (p.master)    rows.push(`<div class="stat"><span class="k">${t('pj_master')}</span><span class="v">${p.master}</span></div>`);
-    if (p.area)      rows.push(`<div class="stat"><span class="k">${t('pj_area')}</span><span class="v">${p.area}</span></div>`);
-    if (p.zoning)    rows.push(`<div class="stat"><span class="k">${t('pj_zoning')}</span><span class="v">${p.zoning}</span></div>`);
-
-    const compositionParts = [];
-    if (p.units > 0)     compositionParts.push(`${p.units.toLocaleString('ru-RU')} ${t('pj_units_n')}`);
-    if (p.villas > 0)    compositionParts.push(`${p.villas.toLocaleString('ru-RU')} ${t('pj_villas_n')}`);
-    if (p.buildings > 0) compositionParts.push(`${p.buildings.toLocaleString('ru-RU')} ${t('pj_buildings_n')}`);
-    if (p.lands > 0)     compositionParts.push(`${p.lands.toLocaleString('ru-RU')} ${t('pj_lands_n')}`);
-    if (compositionParts.length) {
-      rows.push(`<div class="stat"><span class="k">${t('pj_composition')}</span><span class="v" style="text-align:right;max-width:200px;font-size:11.5px">${compositionParts.join(', ')}</span></div>`);
+    // Composition totals
+    const comp = [];
+    if (d.total_units > 0)     comp.push(`${d.total_units.toLocaleString('ru-RU')} ${t('pj_units_n')}`);
+    if (d.total_villas > 0)    comp.push(`${d.total_villas.toLocaleString('ru-RU')} ${t('pj_villas_n')}`);
+    if (d.total_buildings > 0) comp.push(`${d.total_buildings.toLocaleString('ru-RU')} ${t('pj_buildings_n')}`);
+    if (d.total_lands > 0)     comp.push(`${d.total_lands.toLocaleString('ru-RU')} ${t('pj_lands_n')}`);
+    if (comp.length) {
+      rows.push(`<div class="stat"><span class="k">${t('pj_composition_total')}</span><span class="v" style="text-align:right;max-width:200px;font-size:11.5px">${comp.join(', ')}</span></div>`);
     }
-    if (p.completion_date)
-      rows.push(`<div class="stat"><span class="k">${t('pj_completion')}</span><span class="v">${p.completion_date}</span></div>`);
 
-    // Title = the project_name itself. 98% are Arabic — render with RTL so
-    // it reads correctly. The English-side identity (master_project_en +
-    // area) is already shown in the rows above as separate stats.
-    const isAr = p.name && /[؀-ۿ]/.test(p.name);
-    const titleSpan = p.name
-      ? `<span${isAr ? ' dir="rtl" style="display:inline-block"' : ''}>${p.name}</span>`
-      : `<span style="color:#888">${t('no_name')}</span>`;
-    const geoNote = p.geocode_kind === 'area'
+    // Top developers — name is Arabic, render RTL.
+    if (d.top_developers && d.top_developers.length) {
+      const devLines = d.top_developers.slice(0, 5).map(([name, count]) =>
+        `<div style="display:flex;justify-content:space-between;gap:8px;font-size:11.5px"><span dir="rtl" style="flex:1;text-align:right">${name}</span><span style="color:#888">${count}</span></div>`
+      ).join('');
+      rows.push(`<div class="stat"><span class="k">${t('pj_top_devs')}</span><span class="v" style="text-align:right;max-width:220px">${devLines}</span></div>`);
+    }
+
+    const geoNote = d.geocode_kind === 'area'
       ? `<div class="muted" style="margin-top:6px;font-size:11px;color:#888">${t('pj_geocode_area')}</div>`
       : '';
+    const openAll = `<div style="margin-top:8px"><button class="pj-open-all" disabled title="${t('pj_open_all_soon')}">${t('pj_open_all')} (${d.total}) →</button></div>`;
 
     return `
-      <h3>🏗️ ${titleSpan} <span class="src-tag" style="background:#e6f7e6;color:#0a7f00">RERA</span></h3>
+      <h3>🏗️ ${d.name} <span class="src-tag" style="background:#e6f7e6;color:#0a7f00">RERA</span></h3>
+      <div class="muted" style="color:#888;margin-bottom:4px;font-size:11.5px">${d.in_flight} ${t('pj_in_flight_label')} / ${d.total} ${t('pj_total_label')}</div>
       ${rows.join('')}
       ${geoNote}
+      ${openAll}
     `;
   });
   m.addTo(projectLayer);
