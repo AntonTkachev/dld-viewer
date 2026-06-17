@@ -2139,6 +2139,19 @@ for (const ml of MALLS) {
 // baked-in values, also normalises real_med_price for legacy keys.
 applyMask(currentMask, currentMaskPeriod, { pushUrl: false });
 if (currentView === 'table') setView('table', { pushUrl: false, force: true });
+
+// If landing with #district=… in the URL (e.g. after a file:// table click),
+// open the polygon once the choropleth + map are ready, then strip the hash.
+(function _bootOpenDistrictFromHash() {
+  const m = window.location.hash && window.location.hash.match(/^#district=(.+)$/);
+  if (!m) return;
+  const areaKey = decodeURIComponent(m[1]);
+  setTimeout(() => {
+    _openDistrictByKey(areaKey);
+    try { history.replaceState({}, '', window.location.pathname + window.location.search); }
+    catch (e) { /* file:// may reject — leave the hash, it's harmless */ }
+  }, 400);
+})();
 // Built-in named layers
 function poiBuiltinDefs() {
   return [
