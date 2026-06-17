@@ -754,7 +754,6 @@ function renderCharts(a) {
 document.body.insertAdjacentHTML('beforeend',
   '<svg width="0" height="0" style="position:absolute" aria-hidden="true">'
   + '<defs><pattern id="nodata-hatch" patternUnits="userSpaceOnUse" width="8" height="8" patternTransform="rotate(45)">'
-  + '<rect width="8" height="8" fill="#f1f5f9"/>'
   + '<line x1="0" y1="0" x2="0" y2="8" stroke="#94a3b8" stroke-width="1.4"/>'
   + '</pattern></defs></svg>');
 
@@ -1169,7 +1168,7 @@ function renderChoro(){
   const all = [Math.min(...vs), ...breaks, Math.max(...vs)];
   let html = `<div style="font-weight:600;margin-bottom:4px">${title}</div>`;
   for(let i=0;i<RAMP.length;i++) html += `<div class="row"><span class="sw" style="background:${RAMP[i]}"></span>${fmt(all[i])} – ${fmt(all[i+1])}</div>`;
-  html += `<div class="row"><span class="sw" style="background:repeating-linear-gradient(45deg,#f1f5f9,#f1f5f9 3px,#94a3b8 3px,#94a3b8 4px)"></span>${t('legend_no_data')}</div>`;
+  html += `<div class="row"><span class="sw" style="background:repeating-linear-gradient(45deg,transparent,transparent 3px,#94a3b8 3px,#94a3b8 4px)"></span>${t('legend_no_data')}</div>`;
   document.getElementById('legend').innerHTML = html;
 }
 // metric/scale selectors are hidden — listeners disabled
