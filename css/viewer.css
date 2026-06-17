@@ -166,6 +166,13 @@
   .mask-period-chip{background:#fff;border:1px solid #d6dde6;color:#374151;padding:3px 10px;border-radius:12px;font-size:11px;font-weight:500;cursor:pointer;line-height:1.4;transition:background .12s,border-color .12s,color .12s;font-family:inherit}
   .mask-period-chip:hover{background:#f1f5fb;border-color:#9bb6e2}
   .mask-period-chip.active{background:#0f172a;border-color:#0f172a;color:#fff}
+  /* SEO-page footer inside mask dropdown */
+  .mp-mask-page{display:flex;flex-wrap:wrap;align-items:center;gap:4px;padding:8px 10px;margin-top:4px;border-top:1px solid #eef0f3;font-size:11px;color:#666;font-family:inherit}
+  .mp-mask-page-k{color:#888;margin-right:2px}
+  .mp-mask-page-cur,.mp-mask-page-go{font-family:ui-monospace,SFMono-Regular,Menlo,monospace;font-weight:600;padding:2px 6px;border-radius:3px;border:1px solid transparent;font-size:11px}
+  .mp-mask-page-cur{background:#0f172a;color:#fff}
+  .mp-mask-page-go{color:#1d4ed8;text-decoration:none;background:#fff;border-color:#d6dde6;transition:background .12s,border-color .12s}
+  .mp-mask-page-go:hover{background:#eef3fc;border-color:#9bb6e2}
   /* Choropleth overlay labels (growth %, payback years) */
   .choro-overlay{background:transparent;border:0;pointer-events:none}
   .choro-overlay-text{display:inline-block;background:rgba(255,255,255,0.85);color:#1f2933;font-size:11px;font-weight:700;padding:1px 5px;border-radius:3px;white-space:nowrap;transform:translate(-50%,-50%);box-shadow:0 1px 2px rgba(0,0,0,0.18);font-variant-numeric:tabular-nums;line-height:1.25;pointer-events:none}
