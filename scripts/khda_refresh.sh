@@ -1,6 +1,8 @@
 #!/usr/bin/env bash
-# Full schools refresh: scrape KHDA, pull OSM, merge into the viewer.
-# Idempotent and cheap (~3 MB total over the wire, ~10s of CPU). Run weekly.
+# Weekly KHDA + OSM refresh: scrape schools + universities, pull OSM seeds,
+# merge into the viewer, regenerate /sales/ + /rents/ landings.
+#
+# Idempotent and cheap (~3 MB total over the wire, ~10s of CPU).
 #
 # Wire it into cron — Sundays at 04:30 local time:
 #   30 4 * * 0  cd /Users/anton/IdeaProjects/dld_viewer && scripts/khda_refresh.sh >> data/.khda_refresh.log 2>&1
@@ -16,23 +18,20 @@ cd "$REPO"
 ts() { date +'%Y-%m-%d %H:%M:%S'; }
 echo "[$(ts)] khda_refresh: start"
 
-# 1. KHDA Education Directory (K-12) → data/khda_schools.csv  (~30 KB)
+# 1. KHDA Education Directory — writes both data/khda_schools.csv and
+#    data/khda_universities.csv (~35 KB total).
 python3 scripts/khda_scrape.py
 
-# 2. KHDA Higher Education → data/khda_universities.csv  (~5 KB)
-python3 scripts/khda_universities_scrape.py
-
-# 3. OSM amenity=school in Dubai bbox → data/osm_schools.json  (~60 KB)
+# 2. OSM Overpass — writes both data/osm_schools.json and
+#    data/osm_universities.json (~75 KB total).
 python3 scripts/osm_schools_pull.py
 
-# 4. OSM amenity=university|college → data/osm_universities.json  (~12 KB)
-python3 scripts/osm_universities_pull.py
-
-# 5. Merge schools + universities into the viewer HTML + index.html.
+# 3. Merge KHDA into the viewer. khda_merge_into_viewer.py patches SCHOOLS
+#    and then chains to khda_uni_merge_into_viewer.py for UNIVERSITIES, so
+#    one call updates both consts in index.html.
 python3 scripts/khda_merge_into_viewer.py
-python3 scripts/khda_uni_merge_into_viewer.py
 
-# 6. Regenerate SEO landing pages /sales/ and /rents/ from the updated root.
+# 4. Regenerate SEO landing pages /sales/ and /rents/ from the updated root.
 python3 scripts/build_pages.py
 
 echo "[$(ts)] khda_refresh: done"

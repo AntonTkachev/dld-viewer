@@ -73,10 +73,14 @@ scripts/
   dld_check_new.sh      ← compare API listing vs local — flag if newer exists
   dld_refresh.sh        ← orchestrates download → parquet
   dld_filter.py         ← optional: filter CSV.gz by date column (pre-parquet era)
-  khda_scrape.py        ← fetch KHDA Education Directory → data/khda_schools.csv
-  osm_schools_pull.py   ← Overpass `amenity=school` in Dubai bbox → data/osm_schools.json
-  khda_merge_into_viewer.py ← join OSM + KHDA, write SCHOOLS into index.html
-  khda_refresh.sh       ← weekly orchestrator: runs all three above in sequence
+  khda_scrape.py        ← fetch KHDA K-12 + Higher-Ed directories
+                          → data/khda_schools.csv + khda_universities.csv
+  osm_schools_pull.py   ← Overpass amenity=school|university|college (Dubai bbox)
+                          → data/osm_schools.json + osm_universities.json
+  khda_merge_into_viewer.py ← join OSM + KHDA, write SCHOOLS into index.html;
+                              chains to khda_uni_merge_into_viewer.py for UNIVERSITIES
+  khda_uni_merge_into_viewer.py ← Higher-Ed-specific merge logic; called by the line above
+  khda_refresh.sh       ← weekly orchestrator: scrape → pull → merge → build_pages
 ```
 
 Raw downloads live outside the repo (`~/Downloads/...`) because they're large (~2.4 GB) and regeneratable. `.gitignore` blocks `transactions-*.csv` / `rents-*.csv` in repo root (legacy DLD-portal exports — superseded by Parquet).
