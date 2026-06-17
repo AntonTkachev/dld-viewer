@@ -1,50 +1,44 @@
 #!/usr/bin/env python3
 """
-Patch the `const PROJECTS = [...]` line in index.html using the RERA Real
-Estate Projects register (data/dld_projects.csv.gz, fetched by
-dld_projects_pull.py).
+Patch the `const PROJECTS = [...]` line in index.html with district-level
+aggregates of the RERA Real Estate Projects register
+(data/dld_projects.csv.gz, fetched by dld_projects_pull.py).
 
-What we keep:
-  - Status ACTIVE, NOT_STARTED, PENDING, CONDITIONAL_ACTIVATING
-    (everything still in construction / not yet started — drops FINISHED
-    and CANCELLED, which aren't "under construction")
-  - Projects whose `master_project_en` or `area_name_en` resolves to a
-    polygon in GEOJSON. The polygon centroid becomes the marker location
-    plus a small deterministic jitter so co-located projects don't overlap.
+One marker per master_project_en / area_name_en polygon (NOT one per
+project). Each entry carries the in-flight count for the badge, plus a
+status breakdown, top developers, and material composition for the popup.
 
-Output fields per project (no synthetic placeholders):
-  id, project_number, name, name_ar, lat, lon, geocode_kind,
-  master_project_en, area_name_en, status, percent_completed,
-  start_date, end_date, completion_date, developer, master_developer,
-  escrow_agent, zoning_authority, units, villas, buildings, lands,
-  classification_ar
+Shape per entry:
+  poly_key, name, lat, lon,
+  in_flight       — ACTIVE + NOT_STARTED + PENDING + CONDITIONAL_ACTIVATING
+  total           — all statuses
+  by_status       — {ACTIVE, NOT_STARTED, PENDING, FINISHED, CANCELLED, …}
+  top_developers  — [[developer_name, count], …]  (top 5)
+  total_units, total_villas, total_buildings, total_lands
+  avg_percent     — mean of percent_completed across in-flight rows (or null)
 """
 import csv
 import gzip
-import hashlib
 import json
 import re
 import sys
+from collections import Counter, defaultdict
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parent.parent
 HTML = ROOT / 'index.html'
 SRC  = ROOT / 'data' / 'dld_projects.csv.gz'
 
-STATES = ('ACTIVE', 'NOT_STARTED', 'PENDING', 'CONDITIONAL_ACTIVATING')
+IN_FLIGHT_STATES = {'ACTIVE', 'NOT_STARTED', 'PENDING', 'CONDITIONAL_ACTIVATING'}
 
-# Manual aliases for places that don't appear under their RERA name in our
-# GEOJSON. Resolved (RERA-side normalized name) → polygon (normalized) so the
-# centroid lookup hits.
+# Manual aliases for cases where the RERA-side name doesn't match the
+# GEOJSON polygon name. RERA-normalized → polygon-normalized.
 MASTER_ALIASES = {
-    'dubai maritime city':   'madinat dubai almelaheyah',  # Arabic-derived polygon name
-    'palm jabal ali':        'palm jebel ali',
-    'nad al sheba gardens':  'nad al sheba',
+    'palm jabal ali':       'palm jebel ali',
+    'nad al sheba gardens': 'nad al sheba',
 }
 AREA_ALIASES = {
-    'madinat dubai almelaheyah': 'madinat dubai almelaheyah',
-    'palm jabal ali':            'palm jebel ali',
-    'world islands':             'the world',
+    'world islands':         'the world',
 }
 
 
@@ -52,26 +46,23 @@ def norm(s: str) -> str:
     return re.sub(r'[^a-z0-9 ]', '', re.sub(r'\s+', ' ', (s or '').lower())).strip()
 
 
-def polygon_centroid(geom) -> tuple[float, float]:
-    """Centroid of polygon outer ring (or first ring of first poly for MultiPolygon)."""
+def polygon_centroid(geom):
+    """Centroid of polygon outer ring (or largest ring for MultiPolygon)."""
     if geom['type'] == 'Polygon':
         ring = geom['coordinates'][0]
     elif geom['type'] == 'MultiPolygon':
-        # Pick the ring with the most vertices (proxy for largest poly)
         rings = [p[0] for p in geom['coordinates']]
         ring = max(rings, key=len)
     else:
         return None, None
-    n = len(ring) - 1  # closing point repeats
+    n = len(ring) - 1
     if n <= 0:
         return None, None
-    lon = sum(p[0] for p in ring[:n]) / n
-    lat = sum(p[1] for p in ring[:n]) / n
-    return lat, lon
+    return sum(p[1] for p in ring[:n]) / n, sum(p[0] for p in ring[:n]) / n
 
 
 def build_polygon_index() -> dict:
-    """Return {normalized_name: (lat, lon)} from index.html GEOJSON."""
+    """{norm(name): (lat, lon, display_name)} from index.html GEOJSON."""
     with HTML.open() as f:
         h = f.read()
     m = re.search(r'^const GEOJSON = (\{.*?\});$', h, re.M)
@@ -88,109 +79,114 @@ def build_polygon_index() -> dict:
                 continue
             n = norm(v)
             if n and n not in out:
-                out[n] = c
+                out[n] = (c[0], c[1], v)
     return out
-
-
-def jitter(seed_key: str, max_deg: float = 0.0018) -> tuple[float, float]:
-    """Deterministic small offset, ±~200m at Dubai latitude."""
-    h = hashlib.md5(seed_key.encode()).digest()
-    # Two bytes → -1..1 for each axis
-    dx = (h[0] / 127.5) - 1.0
-    dy = (h[1] / 127.5) - 1.0
-    return dx * max_deg, dy * max_deg
 
 
 def lookup(polys: dict, raw: str, aliases: dict):
     if not raw:
-        return None, None
+        return None
     n = norm(raw)
     if n in polys:
-        return polys[n]
+        return n, polys[n]
     a = aliases.get(n)
     if a and a in polys:
-        return polys[a]
-    return None, None
+        return a, polys[a]
+    return None
+
+
+def to_int(s: str) -> int:
+    try:
+        return int(float(s))
+    except (TypeError, ValueError):
+        return 0
 
 
 def main() -> int:
     polys = build_polygon_index()
     print(f'Polygon centroids: {len(polys)}')
 
-    rows_kept = []
-    stats = {'in_scope': 0, 'matched_master': 0, 'matched_area': 0,
-             'unmatched': 0, 'no_coord': 0}
-    miss_examples = []
+    # Bucket rows by the resolved polygon key (master preferred, area fallback).
+    by_poly = defaultdict(list)
+    no_poly_master = Counter()
+    no_poly_area = Counter()
+    total_rows = 0
 
     with gzip.open(SRC, 'rt', encoding='utf-8') as f:
-        reader = csv.DictReader(f)
-        for r in reader:
-            if r['project_status'] not in STATES:
+        for r in csv.DictReader(f):
+            total_rows += 1
+            hit = lookup(polys, r['master_project_en'], MASTER_ALIASES)
+            geocode = 'master'
+            if hit is None:
+                hit = lookup(polys, r['area_name_en'], AREA_ALIASES)
+                geocode = 'area'
+            if hit is None:
+                if r['master_project_en']:
+                    no_poly_master[r['master_project_en']] += 1
+                elif r['area_name_en']:
+                    no_poly_area[r['area_name_en']] += 1
                 continue
-            stats['in_scope'] += 1
-            master, area = r['master_project_en'], r['area_name_en']
+            key, (lat, lon, display) = hit
+            r['__poly_key'] = key
+            r['__poly_lat'] = lat
+            r['__poly_lon'] = lon
+            r['__poly_display'] = display
+            r['__geocode'] = geocode
+            by_poly[key].append(r)
 
-            # Geocode: master first, then area, with alias fallback.
-            lat, lon = lookup(polys, master, MASTER_ALIASES)
-            geocode_kind = 'master'
-            if lat is None:
-                lat, lon = lookup(polys, area, AREA_ALIASES)
-                geocode_kind = 'area'
-            if lat is None:
-                stats['no_coord'] += 1
-                if len(miss_examples) < 6:
-                    miss_examples.append(f'{master!r}/{area!r}')
-                continue
+    # Build aggregate per polygon.
+    aggregates = []
+    for key, rows in by_poly.items():
+        statuses = Counter(r['project_status'] for r in rows)
+        in_flight = sum(statuses[s] for s in IN_FLIGHT_STATES)
+        # Choose display name: prefer the master_project_en that's most common
+        # among rows here, fall back to area_name_en, fall back to polygon's own name.
+        masters = Counter(r['master_project_en'] for r in rows if r['master_project_en'])
+        areas   = Counter(r['area_name_en']   for r in rows if r['area_name_en'])
+        display = (masters.most_common(1)[0][0] if masters
+                   else areas.most_common(1)[0][0] if areas
+                   else rows[0]['__poly_display'])
+        # Top developers (excluding empty)
+        devs = Counter(r['developer_name'] for r in rows if r['developer_name']).most_common(5)
+        # In-flight percent_completed average (skip 0 to avoid bias from
+        # NOT_STARTED rows that all sit at 0%).
+        active_pcts = [int(float(r['percent_completed'])) for r in rows
+                       if r['project_status'] == 'ACTIVE'
+                       and r['percent_completed']]
+        avg_pct = round(sum(active_pcts) / len(active_pcts), 1) if active_pcts else None
 
-            if geocode_kind == 'master':
-                stats['matched_master'] += 1
-            else:
-                stats['matched_area'] += 1
+        aggregates.append({
+            'poly_key': key,
+            'name': display,
+            'lat': round(rows[0]['__poly_lat'], 6),
+            'lon': round(rows[0]['__poly_lon'], 6),
+            'in_flight': in_flight,
+            'total': len(rows),
+            'by_status': dict(statuses),
+            'top_developers': devs,
+            'total_units':     sum(to_int(r['no_of_units'])     for r in rows),
+            'total_villas':    sum(to_int(r['no_of_villas'])    for r in rows),
+            'total_buildings': sum(to_int(r['no_of_buildings']) for r in rows),
+            'total_lands':     sum(to_int(r['no_of_lands'])     for r in rows),
+            'avg_percent': avg_pct,
+            'geocode_kind': 'master' if all(r['__geocode'] == 'master' for r in rows) else 'area',
+        })
 
-            # Deterministic jitter so projects in the same polygon spread out.
-            dlat, dlon = jitter(r['project_id'] or r['project_number'])
+    # Drop polygons with zero in-flight: they're 100% finished, nothing to show
+    # on a "construction" layer.
+    with_inflight = [a for a in aggregates if a['in_flight'] > 0]
 
-            # ARABIC name? — keep `name` populated regardless, but if it's
-            # Arabic, expose it as name_ar too so the viewer can show RTL.
-            pname = (r['project_name'] or '').strip()
-            is_ar = bool(re.search(r'[؀-ۿ]', pname))
-            entry = {
-                'id': r['project_id'],
-                'project_number': r['project_number'],
-                'name': pname,
-                'name_ar': pname if is_ar else '',
-                'lat': round(lat + dlat, 6),
-                'lon': round(lon + dlon, 6),
-                'geocode_kind': geocode_kind,
-                'master': master or '',
-                'area': area or '',
-                'status': r['project_status'],
-                'percent': int(float(r['percent_completed'])) if r['percent_completed'] else None,
-                'start_date': r['project_start_date'] or '',
-                'end_date': r['project_end_date'] or '',
-                'completion_date': r['completion_date'] or '',
-                'developer': r['developer_name'] or '',
-                'master_developer': r['master_developer_name'] or '',
-                'escrow': r['escrow_agent_name'] or '',
-                'zoning': r['zoning_authority_en'] or '',
-                'units': int(float(r['no_of_units'])) if r['no_of_units'] else 0,
-                'villas': int(float(r['no_of_villas'])) if r['no_of_villas'] else 0,
-                'buildings': int(float(r['no_of_buildings'])) if r['no_of_buildings'] else 0,
-                'lands': int(float(r['no_of_lands'])) if r['no_of_lands'] else 0,
-                'classification_ar': r['project_classification_ar'] or '',
-            }
-            rows_kept.append(entry)
-
-    stats['kept'] = len(rows_kept)
-    print(f'In-scope (ACTIVE/NOT_STARTED/PENDING/COND): {stats["in_scope"]}')
-    print(f'  matched by master_project_en: {stats["matched_master"]}')
-    print(f'  matched by area_name_en   : {stats["matched_area"]}')
-    print(f'  no coord (dropped)        : {stats["no_coord"]}')
-    print(f'Kept on map: {stats["kept"]}')
-    if miss_examples:
-        print('Miss samples (master/area):')
-        for x in miss_examples:
-            print(f'  {x}')
+    print(f'CSV rows: {total_rows}')
+    print(f'Bucketed into polygons: {len(aggregates)}')
+    print(f'  with at least one in-flight project: {len(with_inflight)}')
+    in_scope_rows = sum(a['in_flight'] for a in with_inflight)
+    print(f'  in-flight projects shown: {in_scope_rows}')
+    dropped_no_poly = sum(no_poly_master.values()) + sum(no_poly_area.values())
+    print(f'  CSV rows with no polygon: {dropped_no_poly}')
+    if no_poly_master:
+        print('Top missing masters:')
+        for m, n in no_poly_master.most_common(5):
+            print(f'  {n:>4}  {m!r}')
 
     # Patch index.html
     with HTML.open(encoding='utf-8') as f:
@@ -199,10 +195,12 @@ def main() -> int:
     if idx is None:
         print('PROJECTS const not found in index.html', file=sys.stderr)
         return 1
-    lines[idx] = 'const PROJECTS = ' + json.dumps(rows_kept, separators=(',', ':'), ensure_ascii=False) + ';\n'
+    lines[idx] = ('const PROJECTS = '
+                  + json.dumps(with_inflight, separators=(',', ':'), ensure_ascii=False)
+                  + ';\n')
     with HTML.open('w', encoding='utf-8') as f:
         f.writelines(lines)
-    print(f'Patched line {idx + 1} of index.html')
+    print(f'Patched line {idx + 1} of index.html — {len(with_inflight)} district markers')
     return 0
 
 

@@ -221,6 +221,8 @@
   #tv-table tbody tr:hover{background:#f9fafb}
   #tv-table tbody tr.dubai-row{background:#fff7ec;font-weight:600}
   #tv-table tbody tr.dubai-row:hover{background:#fdeacd}
+  .tv-district-link{color:#1d4ed8;text-decoration:none;cursor:pointer;font-weight:500}
+  .tv-district-link:hover{text-decoration:underline}
   .tv-empty{padding:30px;text-align:center;color:#888;font-size:13px}
   /* Choropleth overlay labels (growth %, payback years) */
   .choro-overlay{background:transparent;border:0;pointer-events:none}
