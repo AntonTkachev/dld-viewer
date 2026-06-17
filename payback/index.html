@@ -30,12 +30,14 @@
 <div id="map" class="with-panel-closed"></div>
 <div id="table-view">
   <div class="tv-toolbar">
-    <h1 id="tv-title">—</h1>
+    <div class="tv-pages" id="tv-pages"></div>
+    <div class="tv-periods" id="tv-periods"></div>
     <input id="tv-search" type="text" placeholder="Поиск..." autocomplete="off" spellcheck="false">
     <span class="tv-count" id="tv-count"></span>
     <button id="tv-back-map" type="button" title="На карту">⌖ На карту</button>
   </div>
   <div class="tv-scroll"><table id="tv-table"></table></div>
+  <div class="tv-pager" id="tv-pager"></div>
 </div>
 <div id="mp-panel">
   <div class="mp-item" id="mp-search">
@@ -117,7 +119,7 @@
 
 <div class="legend" id="legend"></div>
 
-<script>window.__INITIAL_MASK__="payback";window.__INITIAL_PERIOD__="1br";</script>
+<script>window.__INITIAL_MASK__="payback";window.__INITIAL_PERIOD__="1br";window.__INITIAL_VIEW__="map";</script>
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
 <script>

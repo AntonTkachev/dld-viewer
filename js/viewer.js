@@ -975,6 +975,11 @@ const MASKS = {
 // before viewer.js to preselect the mask + period without changing UI state.
 let currentMask = (typeof window !== 'undefined' && window.__INITIAL_MASK__ && MASKS[window.__INITIAL_MASK__]) ? window.__INITIAL_MASK__ : 'sales';
 let currentMaskPeriod = (typeof window !== 'undefined' && window.__INITIAL_PERIOD__ && MASKS[currentMask] && MASKS[currentMask].periods.includes(window.__INITIAL_PERIOD__)) ? window.__INITIAL_PERIOD__ : 'all';
+let currentView = (typeof window !== 'undefined' && window.__INITIAL_VIEW__ === 'table') ? 'table' : 'map';
+// Per-mask runtime UI state for the table view (sort + search). Persisted
+// across mask switches inside the same session so a user toggling between
+// /sales/table/ and /rents/table/ keeps a per-table sort intent.
+const _tableState = {};  // { [maskId]: { sortKey, sortDir, search } }
 
 // Snapshot baseline real_* (post-PARENT_OVERRIDES) so applyMask can restore cleanly.
 const BASE_REAL = new Map();
@@ -1000,7 +1005,8 @@ function _resetMaskFields(p) {
   for (const f of _MASK_FIELDS) p[f] = (f === 'real_metric' || f === 'real_fallback_yrs') ? null : 0;
 }
 
-function applyMask(maskId, period) {
+function applyMask(maskId, period, opts) {
+  opts = opts || {};
   const mask = MASKS[maskId];
   if (!mask) return;
   if (!mask.periods.includes(period)) period = mask.defaultPeriod;
@@ -1018,58 +1024,303 @@ function applyMask(maskId, period) {
   }
   if (typeof renderChoro === 'function') renderChoro();
   if (typeof updateMaskCurrentLabel === 'function') updateMaskCurrentLabel();
-  _pushMaskUrl(maskId);
+  if (currentView === 'table' && typeof renderTable === 'function') renderTable();
+  if (opts.pushUrl !== false) _pushPageUrl(maskId, currentView);
+}
+
+function setView(view, opts) {
+  opts = opts || {};
+  if (view !== 'map' && view !== 'table') return;
+  if (view === currentView && !opts.force) {
+    if (opts.pushUrl !== false) _pushPageUrl(currentMask, view);
+    return;
+  }
+  currentView = view;
+  document.body.classList.toggle('view-table', view === 'table');
+  if (view === 'table') {
+    renderTable();
+  } else if (typeof map !== 'undefined' && map.invalidateSize) {
+    // Map was display:none — needs a resize tick after un-hiding
+    setTimeout(() => map.invalidateSize(), 50);
+  }
+  if (typeof renderMaskList === 'function') renderMaskList();
+  if (typeof updateMaskCurrentLabel === 'function') updateMaskCurrentLabel();
+  if (opts.pushUrl !== false) _pushPageUrl(currentMask, view);
 }
 
 // ===================== URL routing for SEO masks =====================
-// Each SEO mask has its own landing under /<mask>/. Switching between them
-// via the dropdown or the cross-link pills updates the URL so the user can
-// share direct links and Back/Forward works. iteration order = pill order.
+// Each SEO mask owns two SEO landings: map (/<mask>/) and table
+// (/<mask>/table/). Switching mask or view via dropdown / footer pills
+// updates the URL so deep links + Back/Forward both work.
 const _SEO_MASKS = ['sales', 'rents', 'growth', 'payback'];
 
 function _isSeoMask(m) { return _SEO_MASKS.indexOf(m) !== -1; }
 
-function _currentPageMask() {
+function _currentPageState() {
   const p = (typeof window !== 'undefined' ? window.location.pathname : '') || '';
   for (const m of _SEO_MASKS) {
-    if (new RegExp('/' + m + '/(index\\.html)?$').test(p)) return m;
+    if (new RegExp('/' + m + '/table/(index\\.html)?$').test(p)) return { mask: m, view: 'table' };
+    if (new RegExp('/' + m + '/(index\\.html)?$').test(p))       return { mask: m, view: 'map' };
   }
-  return null;
+  return { mask: null, view: 'map' };
 }
+function _currentPageMask() { return _currentPageState().mask; }
 
-function _hrefForPage(targetMask) {
-  const current = _currentPageMask();
-  if (current === targetMask) return null;
-  // Construct relative path: from root → './<mask>/', from sibling → '../<mask>/'
-  const rel = (current === null) ? ('./' + targetMask + '/') : ('../' + targetMask + '/');
+function _hrefForPage(targetMask, targetView) {
+  targetView = targetView || 'map';
+  const cur = _currentPageState();
+  if (cur.mask === targetMask && cur.view === targetView) return null;
+  // upSteps = '../' count needed to reach project root from current page
+  const upSteps = (cur.mask ? 1 : 0) + (cur.view === 'table' ? 1 : 0);
+  let rel = upSteps ? '../'.repeat(upSteps) : './';
+  rel += targetMask + '/';
+  if (targetView === 'table') rel += 'table/';
+  // file:// browsers don't auto-resolve '/' to index.html — they show a
+  // directory listing. Append it explicitly so the link works either way.
+  if (typeof window !== 'undefined' && window.location.protocol === 'file:') rel += 'index.html';
   try { return new URL(rel, window.location.href).href; } catch (e) { return null; }
 }
 
-function _pushMaskUrl(maskId) {
+function _pushPageUrl(maskId, view) {
+  view = view || 'map';
   if (!_isSeoMask(maskId)) return;
-  if (_currentPageMask() === maskId) return;
-  const href = _hrefForPage(maskId);
+  const cur = _currentPageState();
+  if (cur.mask === maskId && cur.view === view) return;
+  const href = _hrefForPage(maskId, view);
   if (!href) return;
-  // Chrome/Safari block pushState across file:// origins. Fall back to a real
-  // navigation so the URL visibly updates (page reloads, but URL changes).
-  // On http(s), pushState gives a smooth in-place swap.
-  if (window.location.protocol === 'file:') {
-    window.location.href = href;
-    return;
-  }
-  try { history.pushState({ mask: maskId }, '', href); }
+  // Chrome/Safari block pushState across file:// origins → real navigation
+  if (window.location.protocol === 'file:') { window.location.href = href; return; }
+  try { history.pushState({ mask: maskId, view }, '', href); }
   catch (e) { window.location.href = href; }
 }
 
 window.addEventListener('popstate', () => {
-  const m = _currentPageMask();
-  if (m && m !== currentMask) {
-    const mk = MASKS[m];
-    if (!mk) return;
-    applyMask(m, mk.defaultPeriod);
-    if (typeof renderMaskList === 'function') renderMaskList();
+  const cur = _currentPageState();
+  if (cur.mask && cur.mask !== currentMask) {
+    const mk = MASKS[cur.mask];
+    if (mk) applyMask(cur.mask, mk.defaultPeriod, { pushUrl: false });
   }
+  if (cur.view !== currentView) setView(cur.view, { pushUrl: false });
+  if (typeof renderMaskList === 'function') renderMaskList();
 });
+
+// ===================== TABLE VIEW =====================
+function _tableValue(col, rec) {
+  return typeof col.key === 'function' ? col.key(rec) : rec[col.key];
+}
+function _tableColIdent(col) {
+  return typeof col.key === 'function' ? col.labelKey : col.key;
+}
+function _tableFmt(col, v) {
+  if (v === null || v === undefined || (typeof v === 'number' && isNaN(v))) return '—';
+  switch (col.type) {
+    case 'str': return String(v);
+    case 'int': return Number(v).toLocaleString('ru-RU');
+    case 'aed_big': {
+      const n = Number(v) || 0;
+      if (n >= 1e9) return (n/1e9).toFixed(2) + ' ' + t('abbr_b');
+      if (n >= 1e6) return (n/1e6).toFixed(1) + ' ' + t('abbr_m');
+      return n.toLocaleString('ru-RU');
+    }
+    case 'pct':     return (v >= 0 ? '+' : '') + Number(v).toFixed(1) + '%';
+    case 'yrs':
+    case 'yrs_opt': return Number(v).toFixed(1) + ' ' + t('unit_years');
+    default:        return String(v);
+  }
+}
+function _tableSort(rows, col, dir) {
+  const sign = dir === 'asc' ? 1 : -1;
+  return rows.slice().sort((a, b) => {
+    const va = _tableValue(col, a), vb = _tableValue(col, b);
+    const an = (va === null || va === undefined || (typeof va === 'number' && isNaN(va))) ? 1 : 0;
+    const bn = (vb === null || vb === undefined || (typeof vb === 'number' && isNaN(vb))) ? 1 : 0;
+    if (an !== bn) return an - bn;  // null/missing always sorted last
+    if (col.type === 'str') return sign * String(va).localeCompare(String(vb), 'ru');
+    return sign * (Number(va) - Number(vb));
+  });
+}
+
+const PAGE_SIZE = 50;
+
+function _renderTvPages() {
+  const el = document.getElementById('tv-pages');
+  if (!el) return;
+  el.innerHTML = '';
+  for (const m of _SEO_MASKS) {
+    const mk = MASKS[m];
+    if (!mk) continue;
+    const isCurrent = (m === currentMask);
+    const a = document.createElement('a');
+    a.className = 'tv-page-pill' + (isCurrent ? ' active' : '');
+    a.textContent = t(mk.labelKey);
+    if (isCurrent) {
+      a.setAttribute('aria-current', 'page');
+    } else {
+      const href = _hrefForPage(m, 'table');
+      if (href) a.href = href;
+      a.addEventListener('click', e => {
+        e.preventDefault();
+        applyMask(m, mk.defaultPeriod);
+      });
+    }
+    el.appendChild(a);
+  }
+}
+
+function _renderTvPeriods() {
+  const el = document.getElementById('tv-periods');
+  if (!el) return;
+  const mask = MASKS[currentMask];
+  el.innerHTML = '';
+  if (!mask || mask.periods.length <= 1) return;
+  const lbl = document.createElement('span');
+  lbl.className = 'tv-periods-k';
+  lbl.textContent = t(mask.periodLabelKey || 'mask_period_label');
+  el.appendChild(lbl);
+  for (const p of mask.periods) {
+    const btn = document.createElement('button');
+    btn.type = 'button';
+    btn.className = 'tv-period-chip' + (p === currentMaskPeriod ? ' active' : '');
+    btn.textContent = _periodLabel(mask, p);
+    btn.addEventListener('click', () => {
+      const state = _tableState[currentMask] || (_tableState[currentMask] = {});
+      state.page = 1;
+      applyMask(currentMask, p);
+    });
+    el.appendChild(btn);
+  }
+}
+
+function _renderTvPager(page, totalPages, total) {
+  const el = document.getElementById('tv-pager');
+  if (!el) return;
+  if (totalPages <= 1) { el.innerHTML = ''; return; }
+
+  const btns = [];
+  // Prev
+  btns.push(`<button class="tv-pager-btn${page<=1?' disabled':''}" data-page="${page-1}">‹</button>`);
+
+  // Numbered: 1, …, p-1, p, p+1, …, M  (sliding window of ±1 around current)
+  const windowSize = 1;
+  const want = new Set([1, totalPages, page]);
+  for (let d = 1; d <= windowSize; d++) {
+    if (page - d > 1) want.add(page - d);
+    if (page + d < totalPages) want.add(page + d);
+  }
+  const pages = Array.from(want).sort((a, b) => a - b);
+  let last = 0;
+  for (const p of pages) {
+    if (p - last > 1) btns.push(`<span class="tv-pager-ellipsis">…</span>`);
+    btns.push(`<button class="tv-pager-btn${p===page?' active':''}" data-page="${p}">${p}</button>`);
+    last = p;
+  }
+
+  // Next
+  btns.push(`<button class="tv-pager-btn${page>=totalPages?' disabled':''}" data-page="${page+1}">›</button>`);
+  btns.push(`<span class="tv-pager-info">${total.toLocaleString('ru-RU')} ${t('tv_count_label')}</span>`);
+  el.innerHTML = btns.join('');
+  el.querySelectorAll('.tv-pager-btn').forEach(b => {
+    b.addEventListener('click', () => {
+      if (b.classList.contains('disabled') || b.classList.contains('active')) return;
+      const p = parseInt(b.dataset.page, 10);
+      if (!Number.isFinite(p)) return;
+      const state = _tableState[currentMask] || (_tableState[currentMask] = {});
+      state.page = Math.max(1, Math.min(totalPages, p));
+      renderTable();
+      // Keep the table in view after a page change
+      const scroll = document.querySelector('#table-view .tv-scroll');
+      if (scroll) scroll.scrollTop = 0;
+    });
+  });
+}
+
+function renderTable() {
+  const mask = MASKS[currentMask];
+  if (!mask || !mask.tableColumns) return;
+
+  // Per-mask state (sort + search + page) survives mask switches in-session
+  const state = _tableState[currentMask] || (_tableState[currentMask] = {});
+  if (!state.sortKey) {
+    const def = mask.tableColumns.find(c => c.defaultSort) || mask.tableColumns[1] || mask.tableColumns[0];
+    state.sortKey = _tableColIdent(def);
+    state.sortDir = (def && def.defaultSortDir) || 'desc';
+  }
+  if (state.search === undefined) state.search = '';
+  if (!state.page) state.page = 1;
+
+  _renderTvPages();
+  _renderTvPeriods();
+
+  const searchEl = document.getElementById('tv-search');
+  if (searchEl && searchEl.value !== state.search) searchEl.value = state.search;
+  if (searchEl) searchEl.placeholder = t('tv_search_placeholder');
+
+  const data = mask.data[currentMaskPeriod] || {};
+  const dubaiKey = '__dubai__';
+  const q = state.search.toLowerCase().trim();
+  const matches = (rec) => !q || (rec.name || '').toLowerCase().includes(q);
+
+  let rows = [];
+  for (const [k, rec] of Object.entries(data)) {
+    if (k === dubaiKey) continue;
+    if (matches(rec)) rows.push(rec);
+  }
+  const sortCol = mask.tableColumns.find(c => _tableColIdent(c) === state.sortKey) || mask.tableColumns[0];
+  rows = _tableSort(rows, sortCol, state.sortDir);
+
+  const total = rows.length;
+  const totalPages = Math.max(1, Math.ceil(total / PAGE_SIZE));
+  if (state.page > totalPages) state.page = totalPages;
+  const start = (state.page - 1) * PAGE_SIZE;
+  const pageRows = rows.slice(start, start + PAGE_SIZE);
+
+  const ths = mask.tableColumns.map(c => {
+    const ident = _tableColIdent(c);
+    const sortedCls = (ident === state.sortKey) ? (' sorted-' + state.sortDir) : '';
+    const numCls = (c.type !== 'str') ? 'num' : '';
+    const cls = (numCls + sortedCls).trim();
+    return `<th data-col="${ident}"${cls ? ' class="' + cls + '"' : ''}>${t(c.labelKey)}</th>`;
+  }).join('');
+
+  const renderCell = (c, rec, isDubai) => {
+    const v = _tableValue(c, rec);
+    const isNum = c.type !== 'str';
+    const txt = _tableFmt(c, v);
+    let cls = isNum ? 'num' : '';
+    if (c.type === 'pct' && typeof v === 'number' && !isDubai) cls += ' ' + (v >= 0 ? 'pos' : 'neg');
+    cls = cls.trim();
+    return `<td${cls ? ' class="' + cls + '"' : ''}>${txt}</td>`;
+  };
+
+  // Dubai rollup pinned at the top of page 1 (and ONLY there) so the
+  // city-wide reference number is visible without polluting later pages.
+  let dubaiHtml = '';
+  if (state.page === 1 && data[dubaiKey] && matches(data[dubaiKey])) {
+    dubaiHtml = '<tr class="dubai-row">' + mask.tableColumns.map(c => renderCell(c, data[dubaiKey], true)).join('') + '</tr>';
+  }
+  const bodyHtml = pageRows.length
+    ? pageRows.map(rec => '<tr>' + mask.tableColumns.map(c => renderCell(c, rec, false)).join('') + '</tr>').join('')
+    : `<tr><td colspan="${mask.tableColumns.length}" class="tv-empty">${t('search_empty')}</td></tr>`;
+
+  const tbl = document.getElementById('tv-table');
+  if (!tbl) return;
+  tbl.innerHTML = `<thead><tr>${ths}</tr></thead><tbody>${dubaiHtml}${bodyHtml}</tbody>`;
+
+  const cnt = document.getElementById('tv-count');
+  if (cnt) cnt.textContent = total.toLocaleString('ru-RU') + ' ' + t('tv_count_label');
+
+  _renderTvPager(state.page, totalPages, total);
+
+  tbl.querySelectorAll('th').forEach(th => {
+    th.addEventListener('click', () => {
+      const k = th.dataset.col;
+      if (state.sortKey === k) state.sortDir = state.sortDir === 'asc' ? 'desc' : 'asc';
+      else { state.sortKey = k; state.sortDir = (sortCol.type === 'str') ? 'asc' : 'desc'; }
+      state.page = 1;
+      renderTable();
+    });
+  });
+}
 
 function _periodLabel(mask, p) {
   // payback mask uses room-class periods; everything else is years
@@ -1126,23 +1377,34 @@ function renderMaskList() {
     });
     list.appendChild(row);
   }
-  // Footer: SEO page pills — one per mask that owns a /<mask>/ landing.
-  // Current page is non-clickable; others are real <a href> so middle-click
-  // and copy-link work. Plain click is intercepted and routed through
-  // applyMask + _pushMaskUrl for the smooth in-place pushState.
+  // ── View toggle (Map / Table) ──────────────────────────────────────────
+  const viewRow = document.createElement('div');
+  viewRow.className = 'mp-mask-view';
+  viewRow.innerHTML = `
+    <span class="mp-mask-view-k">${t('view_label')}</span>
+    <button type="button" class="mp-mask-view-btn${currentView==='map'?' active':''}" data-view="map">${t('view_map')}</button>
+    <button type="button" class="mp-mask-view-btn${currentView==='table'?' active':''}" data-view="table">${t('view_table')}</button>
+  `;
+  viewRow.querySelectorAll('.mp-mask-view-btn').forEach(b => {
+    b.addEventListener('click', () => setView(b.dataset.view));
+  });
+  list.appendChild(viewRow);
+
+  // ── SEO page pills (preserve current view in hrefs) ───────────────────
   const cur = _currentPageMask();
   const foot = document.createElement('div');
   foot.className = 'mp-mask-page';
+  const viewSuffix = currentView === 'table' ? 'table/' : '';
   const parts = [`<span class="mp-mask-page-k">${t('current_page')}</span>`];
   for (const m of _SEO_MASKS) {
     const mk = MASKS[m];
     if (!mk) continue;
     const label = t(mk.labelKey);
-    const path  = '/' + m + '/';
+    const path  = '/' + m + '/' + viewSuffix;
     if (m === cur) {
       parts.push(`<span class="mp-mask-page-cur" title="${label}">${path}</span>`);
     } else {
-      const href = _hrefForPage(m) || '#';
+      const href = _hrefForPage(m, currentView) || '#';
       parts.push(`<a class="mp-mask-page-go" href="${href}" data-mask="${m}" title="${label}">${path}</a>`);
     }
   }
@@ -1159,6 +1421,21 @@ function renderMaskList() {
   });
   list.appendChild(foot);
 }
+
+// Wire table-view controls (script is in <body> end, so DOM exists)
+(function _wireTableUI() {
+  const searchEl = document.getElementById('tv-search');
+  if (searchEl) {
+    searchEl.addEventListener('input', e => {
+      const state = _tableState[currentMask] || (_tableState[currentMask] = {});
+      state.search = e.target.value;
+      state.page = 1;
+      renderTable();
+    });
+  }
+  const backBtn = document.getElementById('tv-back-map');
+  if (backBtn) backBtn.addEventListener('click', () => setView('map'));
+})();
 
 // ===================== LOCATION LEVELS =====================
 // Each feature is tagged with `_level` = depth of its containment chain:
@@ -1731,19 +2008,19 @@ for (const p of PROJECTS) {
     if (p.completion_date)
       rows.push(`<div class="stat"><span class="k">${t('pj_completion')}</span><span class="v">${p.completion_date}</span></div>`);
 
-    // Use master_project_en as display name (English, stable); fall back to
-    // project_name (Arabic 98% of time) under it.
-    const titleEn = p.master || (p.name && !/[؀-ۿ]/.test(p.name) ? p.name : '');
-    const titleAr = p.name_ar || (p.name && /[؀-ۿ]/.test(p.name) ? p.name : '');
-    const heading = titleEn || `<span style="color:#888">${t('no_name')}</span>`;
-    const arSub = titleAr ? `<div class="muted" dir="rtl" style="color:#888;margin-bottom:4px;text-align:right">${titleAr}</div>` : '';
+    // Title = the project_name itself. 98% are Arabic — render with RTL so
+    // it reads correctly. The English-side identity (master_project_en +
+    // area) is already shown in the rows above as separate stats.
+    const isAr = p.name && /[؀-ۿ]/.test(p.name);
+    const titleSpan = p.name
+      ? `<span${isAr ? ' dir="rtl" style="display:inline-block"' : ''}>${p.name}</span>`
+      : `<span style="color:#888">${t('no_name')}</span>`;
     const geoNote = p.geocode_kind === 'area'
       ? `<div class="muted" style="margin-top:6px;font-size:11px;color:#888">${t('pj_geocode_area')}</div>`
       : '';
 
     return `
-      <h3>🏗️ ${heading} <span class="src-tag" style="background:#e6f7e6;color:#0a7f00">RERA</span></h3>
-      ${arSub}
+      <h3>🏗️ ${titleSpan} <span class="src-tag" style="background:#e6f7e6;color:#0a7f00">RERA</span></h3>
       ${rows.join('')}
       ${geoNote}
     `;
@@ -1804,7 +2081,8 @@ for (const ml of MALLS) {
 // ===================== POI TOGGLES (in middle panel) =====================
 // Apply default mask (sales × all) — semantically identical to original
 // baked-in values, also normalises real_med_price for legacy keys.
-applyMask(currentMask, currentMaskPeriod);
+applyMask(currentMask, currentMaskPeriod, { pushUrl: false });
+if (currentView === 'table') setView('table', { pushUrl: false, force: true });
 // Built-in named layers
 function poiBuiltinDefs() {
   return [
