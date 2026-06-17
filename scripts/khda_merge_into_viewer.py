@@ -324,7 +324,15 @@ def main():
     with HTML.open('w', encoding='utf-8') as f:
         f.writelines(lines)
     print(f'Patched line {idx + 1} of index.html')
-    return 0
+
+    # Single entry point: also refresh UNIVERSITIES so callers don't have to
+    # remember a second script. KHDA HE has its own STOP set, area-alias
+    # table, and KHDA-only geocoding pass — kept in a dedicated module to
+    # avoid a parametrized super-config here.
+    print('\n--- universities ---')
+    import khda_uni_merge_into_viewer as uni
+    rc = uni.main()
+    return rc
 
 if __name__ == '__main__':
     sys.exit(main())
