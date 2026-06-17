@@ -887,18 +887,26 @@ const MASKS = {
       real_med_price: 0, real_med_ppsqm: r.med_now || 0,
       real_metric: (typeof r.growth_pct === 'number') ? r.growth_pct : null,
       real_med_then_ppsqm: r.med_then || 0,
+      real_fallback_yrs: (typeof r.fallback_yrs === 'number') ? r.fallback_yrs : null,
     }),
     legendKey: 'legend_growth', popupCountKey: 'pp_trans_ytd', showVolume: false,
     metricKey: 'real_metric', scaleMode: 'quantile', allowZero: true,
     overlay: r => (typeof r.growth_pct !== 'number') ? null
                   : ((r.growth_pct >= 0 ? '+' : '') + Math.round(r.growth_pct) + '%'),
     legendFmt: v => (v >= 0 ? '+' : '') + Math.round(v) + '%',
-    popupRows: (p, t) => p.real_metric === null || p.real_metric === undefined ? '' : `
+    popupRows: (p, t) => {
+      if (p.real_metric === null || p.real_metric === undefined) return '';
+      const fb = (typeof p.real_fallback_yrs === 'number')
+        ? `<div class="stat"><span class="k">${t('pp_fallback_yrs')}</span><span class="v">${p.real_fallback_yrs.toFixed(1)} ${t('unit_years')}</span></div>`
+        : '';
+      return `
       <div class="stat"><span class="k">${t('pp_growth_pct')} <span class="src-tag" style="background:#e6f7e6;color:#0a7f00">DLD</span></span><span class="v" style="font-weight:700">${p.real_metric >= 0 ? '+' : ''}${p.real_metric.toFixed(1)}%</span></div>
       <div class="stat"><span class="k">${t('pp_med_now_psqm')}</span><span class="v">${(p.real_med_ppsqm||0).toLocaleString('ru-RU')}</span></div>
       <div class="stat"><span class="k">${t('pp_med_then_psqm')}</span><span class="v">${(p.real_med_then_ppsqm||0).toLocaleString('ru-RU')}</span></div>
+      ${fb}
       <div class="stat"><span class="k">${t('pp_trans_ytd_growth')}</span><span class="v">${p.real_count.toLocaleString('ru-RU')}</span></div>
-    `,
+    `;
+    },
   },
   payback: {
     labelKey: 'mask_payback', descKey: 'mask_payback_desc',
@@ -921,6 +929,7 @@ const MASKS = {
     }),
     legendKey: 'legend_payback', popupCountKey: 'pp_trans_ytd', showVolume: false,
     metricKey: 'real_metric', scaleMode: 'quantile', allowZero: true,
+    invertRamp: true,  // fewer years to break even = better → yellow end of RAMP
     overlay: r => (typeof r.years !== 'number') ? null : r.years.toFixed(1),
     legendFmt: v => v.toFixed(1),
     periodLabelKey: 'mask_room_label',
@@ -956,10 +965,10 @@ for (const f of GEOJSON.features) {
 // Fields any mask might write — reset to neutral defaults before pluck() runs.
 const _MASK_FIELDS = [
   'real_count','real_total_aed','real_med_price','real_med_ppsqm',
-  'real_metric','real_med_then_ppsqm','real_n_sale','real_n_rent',
+  'real_metric','real_med_then_ppsqm','real_n_sale','real_n_rent','real_fallback_yrs',
 ];
 function _resetMaskFields(p) {
-  for (const f of _MASK_FIELDS) p[f] = (f === 'real_metric') ? null : 0;
+  for (const f of _MASK_FIELDS) p[f] = (f === 'real_metric' || f === 'real_fallback_yrs') ? null : 0;
 }
 
 function applyMask(maskId, period) {
@@ -1239,9 +1248,10 @@ function renderChoro(){
     filter: f => (f._level !== undefined ? f._level >= minLevel : true),
     style: f => {
       const v = f.properties[metricKey], z = isMissing(v);
-      return z
-        ? {weight:0.8,color:'#64748b',fillColor:'url(#nodata-hatch)',fillOpacity:1,dashArray:'4,3'}
-        : {weight:0.6,color:'#1f2933',fillColor:RAMP[classify(v,breaks)],fillOpacity:0.7};
+      if (z) return {weight:0.8,color:'#64748b',fillColor:'url(#nodata-hatch)',fillOpacity:1,dashArray:'4,3'};
+      let idx = classify(v, breaks);
+      if (mask.invertRamp) idx = RAMP.length - 1 - idx;
+      return {weight:0.6,color:'#1f2933',fillColor:RAMP[idx],fillOpacity:0.7};
     },
     onEachFeature: (f, layer) => {
       const p = f.properties;
@@ -1292,7 +1302,10 @@ function renderChoro(){
   const hi = vs.length ? Math.max(...vs) : 0;
   const all = [lo, ...breaks, hi];
   let html = `<div style="font-weight:600;margin-bottom:4px">${title}</div>`;
-  for(let i=0;i<RAMP.length;i++) html += `<div class="row"><span class="sw" style="background:${RAMP[i]}"></span>${fmt(all[i])} – ${fmt(all[i+1])}</div>`;
+  for(let i=0;i<RAMP.length;i++) {
+    const cIdx = mask.invertRamp ? (RAMP.length - 1 - i) : i;
+    html += `<div class="row"><span class="sw" style="background:${RAMP[cIdx]}"></span>${fmt(all[i])} – ${fmt(all[i+1])}</div>`;
+  }
   html += `<div class="row"><span class="sw" style="background:repeating-linear-gradient(45deg,transparent,transparent 3px,#94a3b8 3px,#94a3b8 4px)"></span>${t('legend_no_data')}</div>`;
   document.getElementById('legend').innerHTML = html;
 

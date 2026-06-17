@@ -5,7 +5,7 @@ For each room class (studio, 1br, 2br, 3br, 4br_plus) we emit
 years = median(meter_sale_price) / median(meter_rent_price_per_year)
 over the last 2 years of data.
 
-Sale prices come from tx.parquet (property_type_en='Unit' + rooms_en filter);
+Sale prices come from tx.parquet (rooms_en filter only — covers villas too);
 annual rent per m² is derived from rents.parquet as annual_amount / actual_area
 for the matching ejari_property_sub_type_en.
 
@@ -30,7 +30,8 @@ CLASSES = {
     '1br':      ("('1 B/R')",                                                 "('1bed room+Hall')"),
     '2br':      ("('2 B/R')",                                                 "('2 bed rooms+hall')"),
     '3br':      ("('3 B/R')",                                                 "('3 bed rooms+hall')"),
-    '4br_plus': ("('4 B/R','5 B/R','6 B/R','7 B/R','9 B/R','PENTHOUSE')",     "('4 bed rooms+hall','5 bed rooms+hall','6 bed rooms+hall')"),
+    '4br_plus': ("('4 B/R','5 B/R','6 B/R','7 B/R','8 B/R','9 B/R','PENTHOUSE')",
+                 "('4 bed rooms+hall','5 bed rooms+hall','6 bed rooms+hall','7 bed rooms+hall','8 bed rooms+hall','9 bed rooms+hall','10 bed rooms+hall')"),
 }
 
 ROLLUP = """
@@ -61,7 +62,6 @@ for code, (tx_rooms, rent_subtype) in CLASSES.items():
                  FILTER (WHERE TRY_CAST(meter_sale_price AS DOUBLE) > 0)) AS sale_ppsqm
     FROM '{TX}'
     WHERE area_name_en IS NOT NULL
-      AND property_type_en = 'Unit'
       AND rooms_en IN {tx_rooms}
       AND instance_date BETWEEN '{dfrom}' AND '{dto}'
     GROUP BY k
@@ -108,7 +108,7 @@ for code, (tx_rooms, rent_subtype) in CLASSES.items():
            ROUND(MEDIAN(TRY_CAST(meter_sale_price AS DOUBLE))
                  FILTER (WHERE TRY_CAST(meter_sale_price AS DOUBLE) > 0)) AS p
     FROM '{TX}'
-    WHERE area_name_en IS NOT NULL AND property_type_en = 'Unit'
+    WHERE area_name_en IS NOT NULL
       AND rooms_en IN {tx_rooms}
       AND instance_date BETWEEN '{dfrom}' AND '{dto}'
     """).fetchdf().iloc[0]
