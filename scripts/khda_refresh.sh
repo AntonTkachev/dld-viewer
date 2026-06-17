@@ -31,7 +31,11 @@ python3 scripts/osm_schools_pull.py
 #    one call updates both consts in index.html.
 python3 scripts/khda_merge_into_viewer.py
 
-# 4. Regenerate SEO landing pages /sales/ and /rents/ from the updated root.
+# 4. OSM medical (hospital + clinic + doctors) — pulls Overpass, writes
+#    data/osm_medical.json, patches `const MEDICAL = [...]` into index.html.
+python3 scripts/osm_medical_pull.py
+
+# 5. Regenerate SEO landing pages /sales/ and /rents/ from the updated root.
 python3 scripts/build_pages.py
 
 echo "[$(ts)] khda_refresh: done"

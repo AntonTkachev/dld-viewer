@@ -831,18 +831,27 @@ for (const f of GEOJSON.features) {
 // ===================== MASKS =====================
 // A "mask" picks what each polygon's `real_*` fields hold + which labels
 // the legend/popup use. Default = sales × all → identical to original.
+//
+// Optional per-mask config:
+//   metricKey  — which property drives choropleth color (default real_count)
+//   scaleMode  — 'log' (default), 'quantile', 'linear'
+//   allowZero  — if true, value 0 is colored (default false: 0 → no-data hatch)
+//   overlay(r) — string label to render on top of polygon centroids (no overlay if absent)
+//   popupRows(p, t, fmt) — custom popup body (default = sales/rents rows)
+//   legendFmt  — format function for legend ranges (default = METRIC_FMT.count)
+const _P = name => (typeof window !== 'undefined' && window[name]) || {};
 const MASKS = {
   sales: {
     labelKey: 'mask_sales', descKey: 'mask_sales_desc',
     periods: ['1y','3y','5y','10y','all'], defaultPeriod: 'all',
     data: {
       all: AGGREGATES,
-      '1y':  (typeof TX_PERIODS !== 'undefined') ? TX_PERIODS['1y']  : {},
-      '3y':  (typeof TX_PERIODS !== 'undefined') ? TX_PERIODS['3y']  : {},
-      '5y':  (typeof TX_PERIODS !== 'undefined') ? TX_PERIODS['5y']  : {},
-      '10y': (typeof TX_PERIODS !== 'undefined') ? TX_PERIODS['10y'] : {},
+      '1y':  _P('TX_PERIODS')['1y']  || {},
+      '3y':  _P('TX_PERIODS')['3y']  || {},
+      '5y':  _P('TX_PERIODS')['5y']  || {},
+      '10y': _P('TX_PERIODS')['10y'] || {},
     },
-    pluck: r => ({ real_count: r.n || 0, real_total_aed: r.total || 0, real_med_price: r.med || 0, real_med_ppsqm: r.med_ppsqm || 0 }),
+    pluck: r => ({ real_count: r.n || 0, real_total_aed: r.total || 0, real_med_price: r.med || 0, real_med_ppsqm: r.med_ppsqm || 0, real_metric: r.n || 0 }),
     legendKey: 'legend_sales', popupCountKey: 'pp_trans_ytd', showVolume: true,
   },
   rents: {
@@ -850,13 +859,72 @@ const MASKS = {
     periods: ['1y','3y','5y','10y','all'], defaultPeriod: 'all',
     data: {
       all: (typeof RENT_AGGREGATES !== 'undefined') ? RENT_AGGREGATES : {},
-      '1y':  (typeof RENTS_PERIODS !== 'undefined') ? RENTS_PERIODS['1y']  : {},
-      '3y':  (typeof RENTS_PERIODS !== 'undefined') ? RENTS_PERIODS['3y']  : {},
-      '5y':  (typeof RENTS_PERIODS !== 'undefined') ? RENTS_PERIODS['5y']  : {},
-      '10y': (typeof RENTS_PERIODS !== 'undefined') ? RENTS_PERIODS['10y'] : {},
+      '1y':  _P('RENTS_PERIODS')['1y']  || {},
+      '3y':  _P('RENTS_PERIODS')['3y']  || {},
+      '5y':  _P('RENTS_PERIODS')['5y']  || {},
+      '10y': _P('RENTS_PERIODS')['10y'] || {},
     },
-    pluck: r => ({ real_count: r.n || 0, real_total_aed: 0, real_med_price: r.med_annual || r.med || 0, real_med_ppsqm: r.med_ppsqm || 0 }),
+    pluck: r => ({ real_count: r.n || 0, real_total_aed: 0, real_med_price: r.med_annual || r.med || 0, real_med_ppsqm: r.med_ppsqm || 0, real_metric: r.n || 0 }),
     legendKey: 'legend_rents', popupCountKey: 'rent_sc_contracts', showVolume: false,
+  },
+  growth: {
+    labelKey: 'mask_growth', descKey: 'mask_growth_desc',
+    periods: ['1y','3y','5y','10y'], defaultPeriod: '5y',
+    data: {
+      '1y':  _P('GROWTH_PERIODS')['1y']  || {},
+      '3y':  _P('GROWTH_PERIODS')['3y']  || {},
+      '5y':  _P('GROWTH_PERIODS')['5y']  || {},
+      '10y': _P('GROWTH_PERIODS')['10y'] || {},
+    },
+    pluck: r => ({
+      real_count: r.n || 0, real_total_aed: 0,
+      real_med_price: 0, real_med_ppsqm: r.med_now || 0,
+      real_metric: (typeof r.growth_pct === 'number') ? r.growth_pct : null,
+      real_med_then_ppsqm: r.med_then || 0,
+    }),
+    legendKey: 'legend_growth', popupCountKey: 'pp_trans_ytd', showVolume: false,
+    metricKey: 'real_metric', scaleMode: 'quantile', allowZero: true,
+    overlay: r => (typeof r.growth_pct !== 'number') ? null
+                  : ((r.growth_pct >= 0 ? '+' : '') + Math.round(r.growth_pct) + '%'),
+    legendFmt: v => (v >= 0 ? '+' : '') + Math.round(v) + '%',
+    popupRows: (p, t) => p.real_metric === null || p.real_metric === undefined ? '' : `
+      <div class="stat"><span class="k">${t('pp_growth_pct')} <span class="src-tag" style="background:#e6f7e6;color:#0a7f00">DLD</span></span><span class="v" style="font-weight:700">${p.real_metric >= 0 ? '+' : ''}${p.real_metric.toFixed(1)}%</span></div>
+      <div class="stat"><span class="k">${t('pp_med_now_psqm')}</span><span class="v">${(p.real_med_ppsqm||0).toLocaleString('ru-RU')}</span></div>
+      <div class="stat"><span class="k">${t('pp_med_then_psqm')}</span><span class="v">${(p.real_med_then_ppsqm||0).toLocaleString('ru-RU')}</span></div>
+      <div class="stat"><span class="k">${t('pp_trans_ytd_growth')}</span><span class="v">${p.real_count.toLocaleString('ru-RU')}</span></div>
+    `,
+  },
+  payback: {
+    labelKey: 'mask_payback', descKey: 'mask_payback_desc',
+    periods: ['studio','1br','2br','3br','4br_plus'], defaultPeriod: '1br',
+    data: {
+      'studio':   _P('PAYBACK_PERIODS')['studio']   || {},
+      '1br':      _P('PAYBACK_PERIODS')['1br']      || {},
+      '2br':      _P('PAYBACK_PERIODS')['2br']      || {},
+      '3br':      _P('PAYBACK_PERIODS')['3br']      || {},
+      '4br_plus': _P('PAYBACK_PERIODS')['4br_plus'] || {},
+    },
+    pluck: r => ({
+      real_count: (r.n_sale || 0) + (r.n_rent || 0),
+      real_total_aed: 0,
+      real_med_price: r.sale_ppsqm || 0,
+      real_med_ppsqm: r.rent_ppsqm || 0,
+      real_metric: (typeof r.years === 'number') ? r.years : null,
+      real_n_sale: r.n_sale || 0,
+      real_n_rent: r.n_rent || 0,
+    }),
+    legendKey: 'legend_payback', popupCountKey: 'pp_trans_ytd', showVolume: false,
+    metricKey: 'real_metric', scaleMode: 'quantile', allowZero: true,
+    overlay: r => (typeof r.years !== 'number') ? null : r.years.toFixed(1),
+    legendFmt: v => v.toFixed(1),
+    periodLabelKey: 'mask_room_label',
+    popupRows: (p, t) => p.real_metric === null || p.real_metric === undefined ? '' : `
+      <div class="stat"><span class="k">${t('pp_payback_years')} <span class="src-tag" style="background:#e6f7e6;color:#0a7f00">DLD</span></span><span class="v" style="font-weight:700">${p.real_metric.toFixed(1)} ${t('unit_years')}</span></div>
+      <div class="stat"><span class="k">${t('pp_sale_ppsqm')}</span><span class="v">${(p.real_med_price||0).toLocaleString('ru-RU')} AED/м²</span></div>
+      <div class="stat"><span class="k">${t('pp_rent_ppsqm')}</span><span class="v">${(p.real_med_ppsqm||0).toLocaleString('ru-RU')} AED/м²/${t('unit_year_short')}</span></div>
+      <div class="stat"><span class="k">${t('pp_n_sale')}</span><span class="v">${(p.real_n_sale||0).toLocaleString('ru-RU')}</span></div>
+      <div class="stat"><span class="k">${t('pp_n_rent')}</span><span class="v">${(p.real_n_rent||0).toLocaleString('ru-RU')}</span></div>
+    `,
   },
 };
 // Per-page bootstrap: SEO landing pages (/sales/, /rents/) inject these
@@ -879,6 +947,15 @@ for (const f of GEOJSON.features) {
   });
 }
 
+// Fields any mask might write — reset to neutral defaults before pluck() runs.
+const _MASK_FIELDS = [
+  'real_count','real_total_aed','real_med_price','real_med_ppsqm',
+  'real_metric','real_med_then_ppsqm','real_n_sale','real_n_rent',
+];
+function _resetMaskFields(p) {
+  for (const f of _MASK_FIELDS) p[f] = (f === 'real_metric') ? null : 0;
+}
+
 function applyMask(maskId, period) {
   const mask = MASKS[maskId];
   if (!mask) return;
@@ -891,18 +968,19 @@ function applyMask(maskId, period) {
     f.properties.real_area_key    = base.real_area_key;
     f.properties.real_match_kind  = base.real_match_kind;
     f.properties.real_parent_name = base.real_parent_name;
+    _resetMaskFields(f.properties);
     const rec = base.real_area_key && data[base.real_area_key];
-    if (rec) {
-      Object.assign(f.properties, mask.pluck(rec));
-    } else {
-      f.properties.real_count = 0;
-      f.properties.real_total_aed = 0;
-      f.properties.real_med_price = 0;
-      f.properties.real_med_ppsqm = 0;
-    }
+    if (rec) Object.assign(f.properties, mask.pluck(rec));
   }
   if (typeof renderChoro === 'function') renderChoro();
   if (typeof updateMaskCurrentLabel === 'function') updateMaskCurrentLabel();
+}
+
+function _periodLabel(mask, p) {
+  // payback mask uses room-class periods; everything else is years
+  if (mask && mask.periods && mask.periods.includes('studio'))
+    return t('room_' + p);
+  return t('period_' + p);
 }
 
 function updateMaskCurrentLabel() {
@@ -911,9 +989,8 @@ function updateMaskCurrentLabel() {
   const mask = MASKS[currentMask];
   if (!mask) return;
   const lbl = t(mask.labelKey);
-  el.textContent = (mask.periods.length > 1 && currentMaskPeriod !== 'all')
-    ? lbl + ' · ' + t('period_' + currentMaskPeriod)
-    : lbl;
+  const showPer = mask.periods.length > 1 && currentMaskPeriod !== 'all';
+  el.textContent = showPer ? (lbl + ' · ' + _periodLabel(mask, currentMaskPeriod)) : lbl;
 }
 
 function renderMaskList() {
@@ -926,9 +1003,9 @@ function renderMaskList() {
     row.dataset.mask = id;
     const periodHTML = mask.periods.length > 1
       ? `<div class="mask-row-periods">
-           <span class="pc-lbl">${t('mask_period_label')}</span>
+           <span class="pc-lbl">${t(mask.periodLabelKey || 'mask_period_label')}</span>
            ${mask.periods.map(p =>
-              `<button type="button" class="mask-period-chip${(id===currentMask && p===currentMaskPeriod)?' active':''}" data-period="${p}">${t('period_' + p)}</button>`
+              `<button type="button" class="mask-period-chip${(id===currentMask && p===currentMaskPeriod)?' active':''}" data-period="${p}">${_periodLabel(mask, p)}</button>`
            ).join('')}
          </div>`
       : '';
@@ -1111,18 +1188,51 @@ function _onSearchSelect(feat){
 }
 
 let choro;
+let overlayLayer = null;
+function _refreshOverlay(mask) {
+  if (overlayLayer) { map.removeLayer(overlayLayer); overlayLayer = null; }
+  if (!mask || typeof mask.overlay !== 'function') return;
+  const data = mask.data[currentMaskPeriod] || {};
+  overlayLayer = L.layerGroup();
+  for (const f of GEOJSON.features) {
+    if (f._level !== undefined && f._level < minLevel) continue;
+    const key = f.properties.real_area_key;
+    if (!key) continue;
+    const rec = data[key];
+    if (!rec) continue;
+    const label = mask.overlay(rec);
+    if (label === null || label === undefined || label === '') continue;
+    const bb = _bbox(f.geometry);
+    const icon = L.divIcon({
+      className: 'choro-overlay',
+      html: `<span class="choro-overlay-text">${label}</span>`,
+      iconSize: [0, 0],
+      iconAnchor: [0, 0],
+    });
+    L.marker([bb.cy, bb.cx], { icon, interactive: false, keyboard: false }).addTo(overlayLayer);
+  }
+  overlayLayer.addTo(map);
+}
+
 function renderChoro(){
   const mask = MASKS[currentMask] || MASKS.sales;
-  const metric = 'real_count';
-  const scale = 'log';
-  const metricKey = 'real_count';
-  const vs = GEOJSON.features.map(f => f.properties[metricKey] || 0);
-  const breaks = scale==='quantile'?qBreaks(vs,RAMP.length):scale==='log'?logBreaks(vs,RAMP.length):lBreaks(vs,RAMP.length);
+  const metricKey = mask.metricKey || 'real_count';
+  const scale     = mask.scaleMode || 'log';
+  const allowZero = !!mask.allowZero;
+  const isMissing = (v) => v === null || v === undefined || isNaN(v) || (!allowZero && v === 0);
+  const vs = GEOJSON.features
+    .map(f => f.properties[metricKey])
+    .filter(v => !isMissing(v));
+  const breaks = vs.length
+    ? (scale==='quantile' ? qBreaks(vs,RAMP.length)
+       : scale==='log'    ? logBreaks(vs,RAMP.length)
+       :                    lBreaks(vs,RAMP.length))
+    : Array(RAMP.length - 1).fill(0);
   if(choro) map.removeLayer(choro);
   choro = L.geoJSON(GEOJSON,{
     filter: f => (f._level !== undefined ? f._level >= minLevel : true),
     style: f => {
-      const v = (f.properties[metricKey] || 0), z = v===0;
+      const v = f.properties[metricKey], z = isMissing(v);
       return z
         ? {weight:0.8,color:'#64748b',fillColor:'url(#nodata-hatch)',fillOpacity:1,dashArray:'4,3'}
         : {weight:0.6,color:'#1f2933',fillColor:RAMP[classify(v,breaks)],fillOpacity:0.7};
@@ -1132,26 +1242,33 @@ function renderChoro(){
       layer.bindPopup(() => {
         const m = MASKS[currentMask] || MASKS.sales;
         const sourceLabel = ({'osm-admin':'OSM admin_level=10','osm-place':'OSM place='+(p.kind||''),'osm-residential':'OSM landuse=residential'})[p.source] || 'OSM';
-        const dldRow = '';
         const newDev = p._new_dev_count || 0;
         const newDevRow = newDev ? `<div class="stat"><span class="k">${t("new_buildings")} <span class="src-tag src-osm">OSM</span></span><span class="v">${newDev}</span></div>` : '';
-        const volumeRow = m.showVolume ? `<div class="stat"><span class="k">${t("pp_volume")}</span><span class="v">${(p.real_total_aed||0)>=1e9?((p.real_total_aed/1e9).toFixed(2)+' '+t('abbr_b')):((p.real_total_aed/1e6).toFixed(1)+' '+t('abbr_m'))}</span></div>` : '';
-        const realRows = p.real_count ? `
-          <div class="stat"><span class="k">${t(m.popupCountKey || "pp_trans_ytd")} <span class="src-tag" style="background:#e6f7e6;color:#0a7f00">DLD</span>${p.real_match_kind==='parent'?' <span class="src-tag" style="background:#fff5e6;color:#7a4c00">parent: '+p.real_parent_name+'</span>':''}</span><span class="v">${p.real_count.toLocaleString('ru-RU')}</span></div>
-          ${volumeRow}
-          <div class="stat"><span class="k">${t("pp_median")}</span><span class="v">${((p.real_med_price||0)/1e6).toFixed(2)} ${t('abbr_m')}</span></div>
-          <div class="stat"><span class="k">${t("pp_median_psqm")}</span><span class="v">${(p.real_med_ppsqm||0).toLocaleString('ru-RU')}</span></div>
-          ${newDevRow}
-          <div style="margin-top:8px"><button onclick='openDistrictByKey(${JSON.stringify(p.real_area_key)})' style="background:#0366d6;color:#fff;border:none;padding:6px 12px;border-radius:4px;cursor:pointer;font-size:12px;font-weight:600">${t("pp_open")}</button></div>
-        ` : `
-          ${newDevRow}
-          <div class="muted" style="font-size:11px;color:#888;padding:4px 0">${t("no_dld_data")}</div>
-        `;
+        const detailsBtn = p.real_area_key ? `<div style="margin-top:8px"><button onclick='openDistrictByKey(${JSON.stringify(p.real_area_key)})' style="background:#0366d6;color:#fff;border:none;padding:6px 12px;border-radius:4px;cursor:pointer;font-size:12px;font-weight:600">${t("pp_open")}</button></div>` : '';
+        let bodyRows;
+        if (typeof m.popupRows === 'function') {
+          const rendered = m.popupRows(p, t);
+          bodyRows = rendered
+            ? `${rendered}${newDevRow}${detailsBtn}`
+            : `${newDevRow}<div class="muted" style="font-size:11px;color:#888;padding:4px 0">${t("no_dld_data")}</div>`;
+        } else {
+          const volumeRow = m.showVolume ? `<div class="stat"><span class="k">${t("pp_volume")}</span><span class="v">${(p.real_total_aed||0)>=1e9?((p.real_total_aed/1e9).toFixed(2)+' '+t('abbr_b')):((p.real_total_aed/1e6).toFixed(1)+' '+t('abbr_m'))}</span></div>` : '';
+          bodyRows = p.real_count ? `
+            <div class="stat"><span class="k">${t(m.popupCountKey || "pp_trans_ytd")} <span class="src-tag" style="background:#e6f7e6;color:#0a7f00">DLD</span>${p.real_match_kind==='parent'?' <span class="src-tag" style="background:#fff5e6;color:#7a4c00">parent: '+p.real_parent_name+'</span>':''}</span><span class="v">${p.real_count.toLocaleString('ru-RU')}</span></div>
+            ${volumeRow}
+            <div class="stat"><span class="k">${t("pp_median")}</span><span class="v">${((p.real_med_price||0)/1e6).toFixed(2)} ${t('abbr_m')}</span></div>
+            <div class="stat"><span class="k">${t("pp_median_psqm")}</span><span class="v">${(p.real_med_ppsqm||0).toLocaleString('ru-RU')}</span></div>
+            ${newDevRow}
+            ${detailsBtn}
+          ` : `
+            ${newDevRow}
+            <div class="muted" style="font-size:11px;color:#888;padding:4px 0">${t("no_dld_data")}</div>
+          `;
+        }
         return `
           <h3>${p.name||'—'} <span class="src-tag src-osm">${sourceLabel}</span></h3>
           <div class="muted" style="margin-bottom:6px;color:#888">${p.name_ar||''}</div>
-          ${dldRow}
-          ${realRows}
+          ${bodyRows}
         `;
       });
       layer.on({
@@ -1163,13 +1280,17 @@ function renderChoro(){
   choro.bringToBack();
 
   // Legend
-  const fmt = METRIC_FMT.count;
+  const fmt = mask.legendFmt || METRIC_FMT.count;
   const title = t(mask.legendKey || 'ch_count');
-  const all = [Math.min(...vs), ...breaks, Math.max(...vs)];
+  const lo = vs.length ? Math.min(...vs) : 0;
+  const hi = vs.length ? Math.max(...vs) : 0;
+  const all = [lo, ...breaks, hi];
   let html = `<div style="font-weight:600;margin-bottom:4px">${title}</div>`;
   for(let i=0;i<RAMP.length;i++) html += `<div class="row"><span class="sw" style="background:${RAMP[i]}"></span>${fmt(all[i])} – ${fmt(all[i+1])}</div>`;
   html += `<div class="row"><span class="sw" style="background:repeating-linear-gradient(45deg,transparent,transparent 3px,#94a3b8 3px,#94a3b8 4px)"></span>${t('legend_no_data')}</div>`;
   document.getElementById('legend').innerHTML = html;
+
+  _refreshOverlay(mask);
 }
 // metric/scale selectors are hidden — listeners disabled
 // document.getElementById('metric').addEventListener('change', renderChoro);
@@ -1329,73 +1450,52 @@ for (const u of UNIVERSITIES) {
   m.addTo(uniLayer);
 }
 
-// ===================== HOSPITALS (enriched) =====================
-const hospLayer = L.layerGroup();
-const fmtAedH = v => v >= 1e6 ? (v/1e6).toFixed(2)+' '+t('abbr_m') : v.toLocaleString();
-for (const h of HOSPITALS) {
-  const icon = L.divIcon({className:'', html:`<div class="pin hospital">🏥</div>`, iconSize:[24,24], iconAnchor:[12,12]});
-  const m = L.marker([h.lat, h.lon], {icon});
-  m.bindPopup(() => {
-  const realRows = [];
-  if (h.emergency) {
-    const yes = h.emergency === 'yes';
-    realRows.push(`<div class="stat"><span class="k">${t("h_emerg")}</span><span class="v" style="color:${yes?'#0a7f00':'#666'}">${yes?t('yes_t'):t('no_t')}</span></div>`);
-  }
-  if (h.operator) realRows.push(`<div class="stat"><span class="k">${t("h_op")}</span><span class="v">${h.operator}</span></div>`);
-  if (h.phone) realRows.push(`<div class="stat"><span class="k">${t("h_phone")}</span><span class="v"><a href="tel:${h.phone}">${h.phone}</a></span></div>`);
-  if (h.website) realRows.push(`<div class="stat"><span class="k">${t("h_web")}</span><span class="v"><a href="${h.website}" target="_blank">${h.website.replace(/^https?:\/\//,'').replace(/\/$/, '').slice(0,32)}</a></span></div>`);
-  if (h.wikipedia) {
-    const wpUrl = 'https://' + h.wikipedia.replace(':', '.wikipedia.org/wiki/').replace(/ /g,'_');
-    realRows.push(`<div class="stat"><span class="k">Wikipedia</span><span class="v"><a href="${wpUrl}" target="_blank">${h.wikipedia}</a></span></div>`);
-  }
-  if (h.addr_city) realRows.push(`<div class="stat"><span class="k">${t("h_city")}</span><span class="v">${h.addr_city}</span></div>`);
-  if (h.real_specialties && h.real_specialties.length) {
-    realRows.push(`<div class="stat"><span class="k">${t("h_specs_real")}</span><span class="v" style="text-align:right;max-width:170px">${h.real_specialties.map(s=>`<span class="lang-chip">${s}</span>`).join('')}</span></div>`);
-  }
-  return `
-    <h3>🏥 ${h.name} <span class="src-tag src-osm">OSM</span></h3>
-    ${h.name_ar ? `<div class="muted" style="color:#888;margin-bottom:4px">${h.name_ar}</div>` : ''}
-    ${realRows.join('')}
-    <div style="border-top:1px solid #eee;margin:6px 0 4px"></div>
-    <div class="stat"><span class="k">${t("h_type")} <span class="src-tag src-fake">~</span></span><span class="v" style="color:${h.type==='Public'?'#1d4ed8':'#7a4c00'}">${h.type}</span></div>
-    ${h.chain ? `<div class="stat"><span class="k">${t("h_chain")} <span class="src-tag src-fake">~</span></span><span class="v">${h.chain}</span></div>` : ''}
-    <div class="stat"><span class="k">${t("h_specs")} <span class="src-tag src-fake">~</span></span><span class="v" style="text-align:right;max-width:170px">${h.specialties_synth.map(s=>`<span class="lang-chip">${s}</span>`).join('')}</span></div>
-    <div class="stat"><span class="k">${t("h_doc_langs")} <span class="src-tag src-fake">~</span></span><span class="v">${h.languages.map(l=>`<span class="lang-chip">${l}</span>`).join('')}</span></div>
-    <div class="stat"><span class="k">${t("h_ins")} <span class="src-tag src-fake">~</span></span><span class="v" style="text-align:right;max-width:180px;font-size:11px">${h.insurance.join(', ')}</span></div>
-    <div class="stat"><span class="k">${t("h_beds")} <span class="src-tag src-fake">~</span></span><span class="v">${h.beds}</span></div>
-    <div class="stat"><span class="k">${t("h_consult")} <span class="src-tag src-fake">~</span></span><span class="v">${fmtAedH(h.consult_fee_aed)}</span></div>
-    <div class="stat"><span class="k">${t("h_jci")} <span class="src-tag src-fake">~</span></span><span class="v" style="color:${h.jci==='Yes'?'#0a7f00':'#666'}">${h.jci==='Yes'?'✓ да':'нет'}</span></div>
-    <div class="stat"><span class="k">${t("h_dha")} <span class="src-tag src-fake">~</span></span><span class="v">${h.dha_rating}</span></div>
-    <div class="muted" style="margin-top:6px;font-size:11px;color:#a30808">${t("h_warn")}</div>
-  `;
-});
-  m.addTo(hospLayer);
-}
-
-// ===================== CLINICS (OSM) =====================
-const clinicLayer = L.layerGroup();
-for (const c of (typeof CLINICS !== 'undefined' ? CLINICS : [])) {
-  const icon = L.divIcon({className:'', html:`<div class="pin clinic">🩺</div>`, iconSize:[20,20], iconAnchor:[10,10]});
-  const m = L.marker([c.lat, c.lon], {icon});
-  m.bindPopup(() => {
+// ===================== MEDICAL (OSM hospitals + clinics + doctors) =====================
+// One layer for all healthcare facilities. `kind` ∈ {hospital, clinic, doctors}
+// is the only distinction — DLD has no medical data, DHA's facility list is
+// behind a portal, so OSM tags are the source of truth.
+const medicalLayer = L.layerGroup();
+const MEDICAL_META = {
+  hospital: {emoji: '🏥', pin: 'hospital', size: 24},
+  clinic:   {emoji: '🩺', pin: 'clinic',   size: 20},
+  doctors:  {emoji: '👨‍⚕️', pin: 'clinic',  size: 20},
+};
+for (const m of MEDICAL) {
+  const meta = MEDICAL_META[m.kind] || MEDICAL_META.clinic;
+  const icon = L.divIcon({
+    className: '',
+    html: `<div class="pin ${meta.pin}">${meta.emoji}</div>`,
+    iconSize: [meta.size, meta.size],
+    iconAnchor: [meta.size / 2, meta.size / 2],
+  });
+  const mk = L.marker([m.lat, m.lon], {icon});
+  mk.bindPopup(() => {
     const rows = [];
-    rows.push(`<div class="muted" style="color:#888;margin-bottom:4px">${c.kind === 'doctors' ? 'amenity=doctors' : 'amenity=clinic'}</div>`);
-    if (c.healthcare_speciality) {
-      const specs = String(c.healthcare_speciality).split(';').map(s => s.trim()).filter(Boolean);
-      rows.push(`<div class="stat"><span class="k">${t("h_specs_real")}</span><span class="v" style="text-align:right;max-width:200px;white-space:normal;font-size:11px">${specs.map(s=>`<span class="lang-chip">${s}</span>`).join('')}</span></div>`);
+    rows.push(`<div class="stat"><span class="k">${t('med_kind')}</span><span class="v">${t('med_kind_' + m.kind)}</span></div>`);
+    if (m.emergency) {
+      const yes = m.emergency === 'yes';
+      rows.push(`<div class="stat"><span class="k">${t('h_emerg')}</span><span class="v" style="color:${yes ? '#0a7f00' : '#666'}">${yes ? t('yes_t') : t('no_t')}</span></div>`);
     }
-    if (c.operator) rows.push(`<div class="stat"><span class="k">${t("h_op")}</span><span class="v">${c.operator}</span></div>`);
-    if (c.phone) rows.push(`<div class="stat"><span class="k">${t("h_phone")}</span><span class="v"><a href="tel:${c.phone}">${c.phone}</a></span></div>`);
-    if (c.website) rows.push(`<div class="stat"><span class="k">${t("h_web")}</span><span class="v"><a href="${c.website}" target="_blank">${c.website.replace(/^https?:\/\//,'').replace(/\/$/,'').slice(0,32)}</a></span></div>`);
-    if (c.opening_hours) rows.push(`<div class="stat"><span class="k">${t("ml_hours")}</span><span class="v" style="font-size:11.5px">${c.opening_hours}</span></div>`);
-    if (c.addr_city) rows.push(`<div class="stat"><span class="k">${t("h_city")}</span><span class="v">${c.addr_city}</span></div>`);
+    if (m.healthcare_speciality) {
+      const specs = String(m.healthcare_speciality).split(';').map(s => s.trim()).filter(Boolean);
+      rows.push(`<div class="stat"><span class="k">${t('h_specs_real')}</span><span class="v" style="text-align:right;max-width:200px;white-space:normal;font-size:11px">${specs.map(s => `<span class="lang-chip">${s}</span>`).join('')}</span></div>`);
+    }
+    if (m.operator) rows.push(`<div class="stat"><span class="k">${t('h_op')}</span><span class="v">${m.operator}</span></div>`);
+    if (m.phone)    rows.push(`<div class="stat"><span class="k">${t('h_phone')}</span><span class="v"><a href="tel:${m.phone}">${m.phone}</a></span></div>`);
+    if (m.website)  rows.push(`<div class="stat"><span class="k">${t('h_web')}</span><span class="v"><a href="${m.website}" target="_blank">${m.website.replace(/^https?:\/\//, '').replace(/\/$/, '').slice(0, 32)}</a></span></div>`);
+    if (m.wikipedia) {
+      const wpUrl = 'https://' + m.wikipedia.replace(':', '.wikipedia.org/wiki/').replace(/ /g, '_');
+      rows.push(`<div class="stat"><span class="k">Wikipedia</span><span class="v"><a href="${wpUrl}" target="_blank">${m.wikipedia}</a></span></div>`);
+    }
+    if (m.opening_hours) rows.push(`<div class="stat"><span class="k">${t('ml_hours')}</span><span class="v" style="font-size:11.5px">${m.opening_hours}</span></div>`);
+    if (m.addr_city)     rows.push(`<div class="stat"><span class="k">${t('h_city')}</span><span class="v">${m.addr_city}</span></div>`);
     return `
-      <h3>🩺 ${c.name || ('<span style="color:#888">' + t('no_name') + '</span>')} <span class="src-tag src-osm">OSM</span></h3>
-      ${c.name_ar ? `<div class="muted" style="color:#888;margin-bottom:4px">${c.name_ar}</div>` : ''}
+      <h3>${meta.emoji} ${m.name || ('<span style="color:#888">' + t('no_name') + '</span>')} <span class="src-tag src-osm">OSM</span></h3>
+      ${m.name_ar ? `<div class="muted" dir="rtl" style="color:#888;margin-bottom:4px;text-align:right">${m.name_ar}</div>` : ''}
       ${rows.join('')}
     `;
   });
-  m.addTo(clinicLayer);
+  mk.addTo(medicalLayer);
 }
 
 // ===================== MOSQUES (enriched) =====================
@@ -1588,8 +1688,7 @@ function poiBuiltinDefs() {
     {key:'metro',   label:t('metro_all'),     count:METRO_STATIONS.length, layer:metroLayer},
     {key:'schools', label:t('schools'),       count:SCHOOLS.length,        layer:schoolLayer},
     {key:'unis',    label:t('universities'),  count:UNIVERSITIES.length,   layer:uniLayer},
-    {key:'hosps',   label:t('hospitals'),     count:HOSPITALS.length,      layer:hospLayer},
-    {key:'clinics', label:t('clinics'),       count:(typeof CLINICS !== 'undefined' ? CLINICS.length : 0), layer:clinicLayer},
+    {key:'medical', label:t('medical'),       count:MEDICAL.length,        layer:medicalLayer},
     {key:'mosques', label:t('mosques'),       count:MOSQUES.length,        layer:mosqueLayer},
     {key:'proj',    label:t('construction'),  count:PROJECTS.length,       layer:projectLayer},
     {key:'malls',   label:t('malls'),         count:MALLS.length,          layer:mallLayer},
