@@ -173,6 +173,55 @@
   .mp-mask-page-cur{background:#0f172a;color:#fff}
   .mp-mask-page-go{color:#1d4ed8;text-decoration:none;background:#fff;border-color:#d6dde6;transition:background .12s,border-color .12s}
   .mp-mask-page-go:hover{background:#eef3fc;border-color:#9bb6e2}
+  /* View toggle pills (Map / Table) — sit above page pills in mask body */
+  .mp-mask-view{display:flex;align-items:center;gap:4px;padding:6px 10px 0;font-size:11px;color:#666;font-family:inherit}
+  .mp-mask-view-k{color:#888;margin-right:2px}
+  .mp-mask-view-btn{font-family:inherit;font-weight:600;padding:3px 10px;border-radius:12px;border:1px solid #d6dde6;background:#fff;color:#374151;cursor:pointer;font-size:11px;transition:background .12s,border-color .12s,color .12s}
+  .mp-mask-view-btn:hover:not(.active){background:#f1f5fb;border-color:#9bb6e2}
+  .mp-mask-view-btn.active{background:#0f172a;border-color:#0f172a;color:#fff;cursor:default}
+  /* Full-screen table view */
+  #table-view{display:none;position:fixed;inset:0;background:#fff;flex-direction:column;z-index:5}
+  body.view-table #table-view{display:flex}
+  body.view-table #map{display:none}
+  body.view-table #detail-panel,
+  body.view-table #mp-panel,
+  body.view-table #legend{display:none !important}
+  .tv-toolbar{display:flex;align-items:center;flex-wrap:wrap;gap:10px 14px;padding:10px 16px;border-bottom:1px solid #e5e7eb;flex-shrink:0;background:#fff}
+  .tv-pages{display:flex;gap:4px;flex-wrap:wrap}
+  .tv-page-pill{padding:5px 12px;border-radius:14px;border:1px solid #d6dde6;background:#fff;color:#374151;font-size:12.5px;font-weight:600;cursor:pointer;text-decoration:none;font-family:inherit;transition:background .12s,border-color .12s,color .12s}
+  .tv-page-pill:hover:not(.active){background:#f1f5fb;border-color:#9bb6e2}
+  .tv-page-pill.active{background:#0f172a;border-color:#0f172a;color:#fff;cursor:default}
+  .tv-periods{display:flex;gap:4px;flex-wrap:wrap;align-items:center}
+  .tv-periods-k{font-size:11px;color:#888;margin-right:2px}
+  .tv-period-chip{background:#fff;border:1px solid #d6dde6;color:#374151;padding:3px 10px;border-radius:12px;font-size:11.5px;font-weight:500;cursor:pointer;font-family:inherit;transition:background .12s,border-color .12s,color .12s}
+  .tv-period-chip:hover:not(.active){background:#f1f5fb;border-color:#9bb6e2}
+  .tv-period-chip.active{background:#1d4ed8;border-color:#1d4ed8;color:#fff;cursor:default}
+  #tv-search{flex:0 1 260px;padding:6px 10px;border:1px solid #d6dde6;border-radius:6px;font-size:13px;font-family:inherit}
+  #tv-search:focus{outline:none;border-color:#1d4ed8;box-shadow:0 0 0 2px rgba(29,78,216,0.15)}
+  .tv-count{font-size:12px;color:#888;font-variant-numeric:tabular-nums}
+  #tv-back-map{margin-left:auto;background:#1d4ed8;color:#fff;border:0;border-radius:6px;padding:7px 14px;font-size:12.5px;font-weight:600;cursor:pointer;font-family:inherit}
+  #tv-back-map:hover{background:#1641aa}
+  .tv-pager{display:flex;align-items:center;justify-content:center;gap:4px;padding:10px;border-top:1px solid #e5e7eb;flex-shrink:0;background:#fff;font-size:12px}
+  .tv-pager-btn{background:#fff;border:1px solid #d6dde6;color:#374151;padding:4px 10px;border-radius:4px;cursor:pointer;font-family:inherit;font-size:12px;min-width:34px;font-variant-numeric:tabular-nums}
+  .tv-pager-btn:hover:not(.disabled):not(.active){background:#f1f5fb;border-color:#9bb6e2}
+  .tv-pager-btn.active{background:#0f172a;border-color:#0f172a;color:#fff;cursor:default}
+  .tv-pager-btn.disabled{opacity:.4;cursor:default;pointer-events:none}
+  .tv-pager-info{color:#666;margin:0 8px;font-variant-numeric:tabular-nums}
+  .tv-pager-ellipsis{color:#999;padding:0 2px}
+  .tv-scroll{overflow:auto;flex:1}
+  #tv-table{width:100%;border-collapse:collapse;font-size:13px;font-family:inherit}
+  #tv-table th,#tv-table td{padding:7px 12px;border-bottom:1px solid #eef0f3;text-align:left;white-space:nowrap}
+  #tv-table th{position:sticky;top:0;background:#f8fafc;font-weight:600;color:#0f172a;cursor:pointer;user-select:none;border-bottom:1px solid #d6dde6;z-index:1}
+  #tv-table th:hover{background:#eef3fc}
+  #tv-table th.sorted-asc::after{content:' ▲';opacity:0.6;font-size:10px}
+  #tv-table th.sorted-desc::after{content:' ▼';opacity:0.6;font-size:10px}
+  #tv-table td.num{text-align:right;font-variant-numeric:tabular-nums}
+  #tv-table td.pos{color:#0a7f00}
+  #tv-table td.neg{color:#cc4040}
+  #tv-table tbody tr:hover{background:#f9fafb}
+  #tv-table tbody tr.dubai-row{background:#fff7ec;font-weight:600}
+  #tv-table tbody tr.dubai-row:hover{background:#fdeacd}
+  .tv-empty{padding:30px;text-align:center;color:#888;font-size:13px}
   /* Choropleth overlay labels (growth %, payback years) */
   .choro-overlay{background:transparent;border:0;pointer-events:none}
   .choro-overlay-text{display:inline-block;background:rgba(255,255,255,0.85);color:#1f2933;font-size:11px;font-weight:700;padding:1px 5px;border-radius:3px;white-space:nowrap;transform:translate(-50%,-50%);box-shadow:0 1px 2px rgba(0,0,0,0.18);font-variant-numeric:tabular-nums;line-height:1.25;pointer-events:none}
