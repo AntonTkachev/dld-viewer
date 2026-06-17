@@ -1263,7 +1263,12 @@ function renderTable() {
   let rows = [];
   for (const [k, rec] of Object.entries(data)) {
     if (k === dubaiKey) continue;
-    if (matches(rec)) rows.push(rec);
+    if (matches(rec)) {
+      // attach area_key inline so the district cell can render a clickable
+      // link without us having to thread (key, rec) tuples through sort
+      rec._k = k;
+      rows.push(rec);
+    }
   }
   const sortCol = mask.tableColumns.find(c => _tableColIdent(c) === state.sortKey) || mask.tableColumns[0];
   rows = _tableSort(rows, sortCol, state.sortDir);
@@ -1290,6 +1295,15 @@ function renderTable() {
     let cls = isNum ? 'num' : '';
     if (c.type === 'pct' && typeof v === 'number' && !isDubai) cls += ' ' + (v >= 0 ? 'pos' : 'neg');
     cls = cls.trim();
+    // District-name cell — make it a clickable link that opens the polygon
+    // (or Dubai-wide panel for the rollup row) in map view.
+    if (c.key === 'name') {
+      const areaKey = isDubai ? '__dubai__' : (rec && rec._k);
+      if (areaKey) {
+        const safe = areaKey.replace(/"/g, '&quot;');
+        return `<td${cls ? ' class="' + cls + '"' : ''}><a class="tv-district-link" data-key="${safe}">${txt}</a></td>`;
+      }
+    }
     return `<td${cls ? ' class="' + cls + '"' : ''}>${txt}</td>`;
   };
 
@@ -1321,6 +1335,29 @@ function renderTable() {
       renderTable();
     });
   });
+  tbl.querySelectorAll('.tv-district-link').forEach(a => {
+    a.addEventListener('click', e => {
+      e.preventDefault();
+      _openDistrictFromTable(a.dataset.key);
+    });
+  });
+}
+
+// Close the table view, switch to map, and zoom + open the polygon popup
+// for the given area_key. Used by district-name links in the table view.
+function _openDistrictFromTable(areaKey) {
+  if (!areaKey) return;
+  setView('map');
+  // setView triggers map.invalidateSize after 50ms; wait for the viewport to
+  // settle before flying so the camera lands correctly.
+  setTimeout(() => {
+    if (areaKey === '__dubai__') {
+      if (typeof window.openDubai === 'function') window.openDubai();
+      return;
+    }
+    const feat = GEOJSON.features.find(f => f.properties.real_area_key === areaKey);
+    if (feat) _onSearchSelect(feat);
+  }, 200);
 }
 
 function _periodLabel(mask, p) {
