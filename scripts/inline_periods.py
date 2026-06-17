@@ -1,29 +1,50 @@
 #!/usr/bin/env python3
-"""Inline TX_PERIODS + RENTS_PERIODS into index.html.
+"""Inline mask period datasets into index.html.
 
-Reads transactions/data/{period}.json and rents/data/{period}.json,
-then inserts/replaces two const lines right after `const RENT_AGGREGATES`.
+Reads:
+  - transactions/data/{1y,3y,5y,10y,all}.json  → TX_PERIODS
+  - rents/data/{1y,3y,5y,10y,all}.json         → RENTS_PERIODS
+  - growth/data/{1y,3y,5y,10y}.json            → GROWTH_PERIODS
+  - payback/data/{studio,1br,2br,3br,4br_plus}.json → PAYBACK_PERIODS
 
-Per-mask SEO pages under /sales/ and /rents/ inherit these inlined
-constants because they're built from the root index.html template.
+Inserts/replaces the four `const ..._PERIODS = ...` lines right after
+`const RENT_AGGREGATES`.
+
+The /sales/ and /rents/ SEO pages inherit these from the root template.
 """
 import json, os, sys
 
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 
-def load_periods(subdir):
-    src = os.path.join(ROOT, subdir, 'data')
+def load_dir(subdir, codes):
     out = {}
-    for code in ('1y', '3y', '5y', '10y', 'all'):
-        with open(os.path.join(src, f'{code}.json')) as f:
+    src = os.path.join(ROOT, subdir, 'data')
+    for code in codes:
+        p = os.path.join(src, f'{code}.json')
+        if not os.path.exists(p):
+            print(f'  missing: {p}', file=sys.stderr)
+            continue
+        with open(p) as f:
             out[code] = json.loads(f.read())
     return out
 
-tx_periods    = load_periods('transactions')
-rents_periods = load_periods('rents')
+tx_periods      = load_dir('transactions', ('1y','3y','5y','10y','all'))
+rents_periods   = load_dir('rents',        ('1y','3y','5y','10y','all'))
+growth_periods  = load_dir('growth',       ('1y','3y','5y','10y'))
+payback_periods = load_dir('payback',      ('studio','1br','2br','3br','4br_plus'))
 
-TX_LINE    = 'const TX_PERIODS = ' + json.dumps(tx_periods,    ensure_ascii=False, separators=(',', ':')) + ';\n'
-RENTS_LINE = 'const RENTS_PERIODS = ' + json.dumps(rents_periods, ensure_ascii=False, separators=(',', ':')) + ';\n'
+INLINES = [
+    ('TX_PERIODS',      tx_periods),
+    ('RENTS_PERIODS',   rents_periods),
+    ('GROWTH_PERIODS',  growth_periods),
+    ('PAYBACK_PERIODS', payback_periods),
+]
+
+LINES = [
+    f'const {name} = ' + json.dumps(data, ensure_ascii=False, separators=(',', ':')) + ';\n'
+    for name, data in INLINES
+]
+NAMES = [name for name, _ in INLINES]
 
 for fname in ('index.html',):
     path = os.path.join(ROOT, fname)
@@ -33,11 +54,11 @@ for fname in ('index.html',):
     with open(path, encoding='utf-8') as f:
         lines = f.readlines()
 
-    # Drop any existing TX_PERIODS / RENTS_PERIODS lines
-    lines = [ln for ln in lines if not (
-        ln.lstrip().startswith('const TX_PERIODS')
-        or ln.lstrip().startswith('const RENTS_PERIODS')
-    )]
+    # Drop any prior copies of these consts
+    def is_ours(ln):
+        s = ln.lstrip()
+        return any(s.startswith(f'const {n} =') or s.startswith(f'const {n}=') for n in NAMES)
+    lines = [ln for ln in lines if not is_ours(ln)]
 
     # Find anchor (after RENT_AGGREGATES line)
     anchor = None
@@ -48,9 +69,10 @@ for fname in ('index.html',):
     if anchor is None:
         print(f'  {fname}: RENT_AGGREGATES not found', file=sys.stderr); continue
 
-    lines.insert(anchor + 1, TX_LINE)
-    lines.insert(anchor + 2, RENTS_LINE)
+    for off, line in enumerate(LINES, start=1):
+        lines.insert(anchor + off, line)
 
     with open(path, 'w', encoding='utf-8') as f:
         f.writelines(lines)
-    print(f'  {fname}: inlined TX_PERIODS ({len(TX_LINE):,}b) + RENTS_PERIODS ({len(RENTS_LINE):,}b)', file=sys.stderr)
+    sizes = ' + '.join(f'{n}={len(line):,}b' for n, line in zip(NAMES, LINES))
+    print(f'  {fname}: inlined {sizes}', file=sys.stderr)
