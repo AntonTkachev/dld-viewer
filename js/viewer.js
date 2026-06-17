@@ -1295,14 +1295,18 @@ function renderTable() {
     let cls = isNum ? 'num' : '';
     if (c.type === 'pct' && typeof v === 'number' && !isDubai) cls += ' ' + (v >= 0 ? 'pos' : 'neg');
     cls = cls.trim();
-    // District-name cell — make it a clickable link that opens the polygon
-    // (or Dubai-wide panel for the rollup row) in map view.
+    // District-name cell — clickable link if a polygon exists for this key
+    // (or always for the DUBAI rollup row, which opens the city-wide panel).
+    // Unmatchable rows stay as muted plain text so the user can see at a
+    // glance which districts have no polygon on the map.
     if (c.key === 'name') {
       const areaKey = isDubai ? '__dubai__' : (rec && rec._k);
-      if (areaKey) {
+      const hasPolygon = isDubai || (areaKey && _FEAT_BY_KEY.has(areaKey));
+      if (areaKey && hasPolygon) {
         const safe = areaKey.replace(/"/g, '&quot;');
         return `<td${cls ? ' class="' + cls + '"' : ''}><a class="tv-district-link" data-key="${safe}">${txt}</a></td>`;
       }
+      return `<td${cls ? ' class="' + cls + ' tv-no-polygon"' : ' class="tv-no-polygon"'} title="${t('tv_no_polygon')}">${txt}</td>`;
     }
     return `<td${cls ? ' class="' + cls + '"' : ''}>${txt}</td>`;
   };
@@ -1345,12 +1349,33 @@ function renderTable() {
 
 // Close the table view, switch to map, and zoom + open the polygon popup
 // for the given area_key. Used by district-name links in the table view.
+// Lookup table built once at boot: area_key (lowercase) → feature. Includes
+// every polygon's real_area_key plus a fallback by lowercased display name
+// so JSON aggregates that don't share the polygon's exact key still resolve.
+const _FEAT_BY_KEY = (function () {
+  const m = new Map();
+  for (const f of GEOJSON.features) {
+    const p = f.properties || {};
+    if (p.real_area_key && !m.has(p.real_area_key)) m.set(p.real_area_key, f);
+    if (p.name) {
+      const n = String(p.name).toLowerCase();
+      if (!m.has(n)) m.set(n, f);
+    }
+  }
+  return m;
+})();
+
+function _featureForAreaKey(areaKey) {
+  if (!areaKey || areaKey === '__dubai__') return null;
+  return _FEAT_BY_KEY.get(areaKey) || _FEAT_BY_KEY.get(String(areaKey).toLowerCase()) || null;
+}
+
 function _openDistrictByKey(areaKey) {
   if (areaKey === '__dubai__') {
     if (typeof window.openDubai === 'function') window.openDubai();
     return;
   }
-  const feat = GEOJSON.features.find(f => f.properties.real_area_key === areaKey);
+  const feat = _featureForAreaKey(areaKey);
   if (feat && typeof _onSearchSelect === 'function') _onSearchSelect(feat);
 }
 
