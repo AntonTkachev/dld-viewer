@@ -49,6 +49,41 @@ PAGES = {
         dataset_name_ru='Договоры аренды недвижимости в Дубае',
         dataset_name_en='Dubai real estate rental contracts',
     ),
+    'growth': dict(
+        slug='/growth/',
+        initial_mask='growth',
+        initial_period='5y',
+        title_ru='Рост цен на недвижимость в Дубае по районам — карта DLD',
+        title_en='Real estate price growth in Dubai by district — DLD map',
+        desc_ru='Интерактивная карта роста медианной цены AED/м² по районам Дубая: '
+                '1, 3, 5, 10 лет. Для районов с короткой историей используется '
+                'самый ранний доступный baseline.',
+        desc_en='Interactive map of median AED/m² growth across Dubai districts: '
+                '1, 3, 5, 10 years. Areas with shorter history fall back to their '
+                'earliest available baseline.',
+        keywords_ru='рост цен Дубай, цена за метр Дубай, инвестиции в Дубай, '
+                    'DLD статистика, рост недвижимости Дубай',
+        og_image='/og/growth.png',
+        dataset_name_ru='Рост цен на недвижимость в Дубае',
+        dataset_name_en='Dubai real estate price growth',
+    ),
+    'payback': dict(
+        slug='/payback/',
+        initial_mask='payback',
+        initial_period='1br',
+        title_ru='Окупаемость аренды в Дубае по районам — карта DLD',
+        title_en='Rental payback in Dubai by district — DLD map',
+        desc_ru='Карта показывает за сколько лет годовая аренда окупит покупку. '
+                'Разрез по размеру квартиры: студия, 1, 2, 3, 4+ спальни. Данные '
+                'последних 2 лет.',
+        desc_en='Map of how many years of annual rent recoup a purchase, by '
+                'apartment size: studio, 1, 2, 3, 4+ BR. Last 2 years of data.',
+        keywords_ru='окупаемость аренды Дубай, ROI недвижимость Дубай, '
+                    'доходность аренды Дубай, DLD статистика, инвестиции в Дубае',
+        og_image='/og/payback.png',
+        dataset_name_ru='Окупаемость аренды в Дубае',
+        dataset_name_en='Dubai rental payback period',
+    ),
 }
 
 with open(SRC, encoding='utf-8') as f:

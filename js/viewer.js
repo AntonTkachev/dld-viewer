@@ -989,7 +989,58 @@ function applyMask(maskId, period) {
   }
   if (typeof renderChoro === 'function') renderChoro();
   if (typeof updateMaskCurrentLabel === 'function') updateMaskCurrentLabel();
+  _pushMaskUrl(maskId);
 }
+
+// ===================== URL routing for SEO masks =====================
+// Each SEO mask has its own landing under /<mask>/. Switching between them
+// via the dropdown or the cross-link pills updates the URL so the user can
+// share direct links and Back/Forward works. iteration order = pill order.
+const _SEO_MASKS = ['sales', 'rents', 'growth', 'payback'];
+
+function _isSeoMask(m) { return _SEO_MASKS.indexOf(m) !== -1; }
+
+function _currentPageMask() {
+  const p = (typeof window !== 'undefined' ? window.location.pathname : '') || '';
+  for (const m of _SEO_MASKS) {
+    if (new RegExp('/' + m + '/(index\\.html)?$').test(p)) return m;
+  }
+  return null;
+}
+
+function _hrefForPage(targetMask) {
+  const current = _currentPageMask();
+  if (current === targetMask) return null;
+  // Construct relative path: from root → './<mask>/', from sibling → '../<mask>/'
+  const rel = (current === null) ? ('./' + targetMask + '/') : ('../' + targetMask + '/');
+  try { return new URL(rel, window.location.href).href; } catch (e) { return null; }
+}
+
+function _pushMaskUrl(maskId) {
+  if (!_isSeoMask(maskId)) return;
+  if (_currentPageMask() === maskId) return;
+  const href = _hrefForPage(maskId);
+  if (!href) return;
+  // Chrome/Safari block pushState across file:// origins. Fall back to a real
+  // navigation so the URL visibly updates (page reloads, but URL changes).
+  // On http(s), pushState gives a smooth in-place swap.
+  if (window.location.protocol === 'file:') {
+    window.location.href = href;
+    return;
+  }
+  try { history.pushState({ mask: maskId }, '', href); }
+  catch (e) { window.location.href = href; }
+}
+
+window.addEventListener('popstate', () => {
+  const m = _currentPageMask();
+  if (m && m !== currentMask) {
+    const mk = MASKS[m];
+    if (!mk) return;
+    applyMask(m, mk.defaultPeriod);
+    if (typeof renderMaskList === 'function') renderMaskList();
+  }
+});
 
 function _periodLabel(mask, p) {
   // payback mask uses room-class periods; everything else is years
@@ -1046,6 +1097,38 @@ function renderMaskList() {
     });
     list.appendChild(row);
   }
+  // Footer: SEO page pills — one per mask that owns a /<mask>/ landing.
+  // Current page is non-clickable; others are real <a href> so middle-click
+  // and copy-link work. Plain click is intercepted and routed through
+  // applyMask + _pushMaskUrl for the smooth in-place pushState.
+  const cur = _currentPageMask();
+  const foot = document.createElement('div');
+  foot.className = 'mp-mask-page';
+  const parts = [`<span class="mp-mask-page-k">${t('current_page')}</span>`];
+  for (const m of _SEO_MASKS) {
+    const mk = MASKS[m];
+    if (!mk) continue;
+    const label = t(mk.labelKey);
+    const path  = '/' + m + '/';
+    if (m === cur) {
+      parts.push(`<span class="mp-mask-page-cur" title="${label}">${path}</span>`);
+    } else {
+      const href = _hrefForPage(m) || '#';
+      parts.push(`<a class="mp-mask-page-go" href="${href}" data-mask="${m}" title="${label}">${path}</a>`);
+    }
+  }
+  foot.innerHTML = parts.join(' ');
+  foot.querySelectorAll('a').forEach(a => {
+    a.addEventListener('click', e => {
+      e.preventDefault();
+      const m = a.dataset.mask;
+      const mk = MASKS[m];
+      if (!mk) return;
+      applyMask(m, mk.defaultPeriod);
+      renderMaskList();
+    });
+  });
+  list.appendChild(foot);
 }
 
 // ===================== LOCATION LEVELS =====================
