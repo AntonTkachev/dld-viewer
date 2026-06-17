@@ -39,6 +39,22 @@ ZSTD-9 compressed, Parquet. Read with DuckDB / Polars / pyarrow. All columns are
 
 8. **Snapshot freshness lag:** the snapshot timestamp in the folder name (e.g. `..._2026-05-29_02-08-58_2`) is when DLD generated it. The `instance_date` inside lags by ~5–8 days from that. Plan accordingly.
 
+9. **Sub-master rollup — DLD splits some communities across multiple `master_project_en`.** Same physical community, different label per sub-project or phase. Verified: each transaction sits under exactly one master, no duplication — pure taxonomy partition, safe to sum. Survey of fragmented areas (sub-masters in same `area_name_en`):
+
+   | Parent community | Sub-master pattern | tx hidden |
+   |---|---|---:|
+   | Dubai Hills Estate | `DUBAI HILLS - MAPLE/SIDRA/GOLF/...` + generic `DUBAI HILLS` (19 variants) | +11.8K |
+   | Emirates Living | `Lakes - Maeen/Ghadeer/Hattan/Deema/Forat` (10 variants) | +4K |
+   | Jumeirah Golf Estates | `Jumeirah Golf Estates - Phase B` | +230 |
+   | International City Phase 3 | `International City Phase 2` (same Warsan Fourth area) | +142 |
+   | Liwan | `Liwan1`, `Liwan2` (no hyphen) | +11.8K |
+
+   **Current handling: hardcoded `ROLLUP_SQL` CASE** in `build_{sale,rent}_aggregates.py`. Pattern is hand-curated, not auto-detected. Surveying for new fragmentation: query areas where `master_project_en` values share first 1-2 words (DuckDB `REGEXP_REPLACE` to extract family root).
+
+   What NOT to roll up: `Arabian Ranches - 1 / II / 3` (legit separate geographies), `DAMAC Hills` vs `DAMAC Hills 2` (different `area_name_en` sectors), `Marsa Dubai` containing `Dubai Marina / JBR / Dubai Harbour` (legitimately distinct communities). Geographic separation > naming similarity.
+
+   **Better long-term:** swap the CASE-list for a community taxonomy table joined at view-time, source of truth for sub→parent mapping. Or pull community polygons from DLD's GIS shapefile (not OSM) and key by spatial join. Currently a thinking-required problem; CASE is a stopgap.
+
 ## File / data layout
 
 ```
