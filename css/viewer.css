@@ -209,8 +209,8 @@
   .tv-pager-info{color:#666;margin:0 8px;font-variant-numeric:tabular-nums}
   .tv-pager-ellipsis{color:#999;padding:0 2px}
   .tv-scroll{overflow:auto;flex:1}
-  #tv-table{width:100%;border-collapse:collapse;font-size:13px;font-family:inherit}
-  #tv-table th,#tv-table td{padding:7px 12px;border-bottom:1px solid #eef0f3;text-align:left;white-space:nowrap}
+  #tv-table{width:100%;border-collapse:collapse;font-size:13px;font-family:inherit;table-layout:fixed}
+  #tv-table th,#tv-table td{padding:7px 12px;border-bottom:1px solid #eef0f3;text-align:left;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
   #tv-table th{position:sticky;top:0;background:#f8fafc;font-weight:600;color:#0f172a;cursor:pointer;user-select:none;border-bottom:1px solid #d6dde6;z-index:1}
   #tv-table th:hover{background:#eef3fc}
   #tv-table th.sorted-asc::after{content:' ▲';opacity:0.6;font-size:10px}
