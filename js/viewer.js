@@ -859,6 +859,13 @@ const MASKS = {
     },
     pluck: r => ({ real_count: r.n || 0, real_total_aed: r.total || 0, real_med_price: r.med || 0, real_med_ppsqm: r.med_ppsqm || 0, real_metric: r.n || 0 }),
     legendKey: 'legend_sales', popupCountKey: 'pp_trans_ytd', showVolume: true,
+    tableColumns: [
+      { key: 'name',      labelKey: 'tv_col_district', type: 'str',  defaultSort: false },
+      { key: 'n',         labelKey: 'tv_col_n_sales',  type: 'int',  defaultSort: true, defaultSortDir: 'desc' },
+      { key: 'total',     labelKey: 'tv_col_volume',   type: 'aed_big' },
+      { key: 'med',       labelKey: 'tv_col_median',   type: 'aed_big' },
+      { key: 'med_ppsqm', labelKey: 'tv_col_ppsqm',    type: 'int' },
+    ],
   },
   rents: {
     labelKey: 'mask_rents', descKey: 'mask_rents_desc',
@@ -872,6 +879,12 @@ const MASKS = {
     },
     pluck: r => ({ real_count: r.n || 0, real_total_aed: 0, real_med_price: r.med_annual || r.med || 0, real_med_ppsqm: r.med_ppsqm || 0, real_metric: r.n || 0 }),
     legendKey: 'legend_rents', popupCountKey: 'rent_sc_contracts', showVolume: false,
+    tableColumns: [
+      { key: 'name',                                 labelKey: 'tv_col_district', type: 'str' },
+      { key: 'n',                                    labelKey: 'tv_col_n_rents', type: 'int', defaultSort: true, defaultSortDir: 'desc' },
+      { key: r => r.med_annual || r.med,             labelKey: 'tv_col_median_annual', type: 'aed_big' },
+      { key: 'med_ppsqm',                            labelKey: 'tv_col_ppsqm_year', type: 'int' },
+    ],
   },
   growth: {
     labelKey: 'mask_growth', descKey: 'mask_growth_desc',
@@ -907,6 +920,14 @@ const MASKS = {
       <div class="stat"><span class="k">${t('pp_trans_ytd_growth')}</span><span class="v">${p.real_count.toLocaleString('ru-RU')}</span></div>
     `;
     },
+    tableColumns: [
+      { key: 'name',         labelKey: 'tv_col_district',    type: 'str' },
+      { key: 'growth_pct',   labelKey: 'tv_col_growth_pct',  type: 'pct', defaultSort: true, defaultSortDir: 'desc' },
+      { key: 'med_now',      labelKey: 'tv_col_med_now',     type: 'int' },
+      { key: 'med_then',     labelKey: 'tv_col_med_then',    type: 'int' },
+      { key: 'fallback_yrs', labelKey: 'tv_col_history',     type: 'yrs_opt' },
+      { key: 'n',            labelKey: 'tv_col_n_last_year', type: 'int' },
+    ],
   },
   payback: {
     labelKey: 'mask_payback', descKey: 'mask_payback_desc',
@@ -940,6 +961,14 @@ const MASKS = {
       <div class="stat"><span class="k">${t('pp_n_sale')}</span><span class="v">${(p.real_n_sale||0).toLocaleString('ru-RU')}</span></div>
       <div class="stat"><span class="k">${t('pp_n_rent')}</span><span class="v">${(p.real_n_rent||0).toLocaleString('ru-RU')}</span></div>
     `,
+    tableColumns: [
+      { key: 'name',       labelKey: 'tv_col_district',    type: 'str' },
+      { key: 'years',      labelKey: 'tv_col_payback_yrs', type: 'yrs', defaultSort: true, defaultSortDir: 'asc' },
+      { key: 'sale_ppsqm', labelKey: 'tv_col_sale_ppsqm',  type: 'int' },
+      { key: 'rent_ppsqm', labelKey: 'tv_col_rent_ppsqm',  type: 'int' },
+      { key: 'n_sale',     labelKey: 'tv_col_n_sale_2y',   type: 'int' },
+      { key: 'n_rent',     labelKey: 'tv_col_n_rent_2y',   type: 'int' },
+    ],
   },
 };
 // Per-page bootstrap: SEO landing pages (/sales/, /rents/) inject these
@@ -1637,96 +1666,88 @@ for (const mo of MOSQUES) {
   m.addTo(mosqueLayer);
 }
 
-// ===================== PROJECTS (under construction, enriched) =====================
+// ===================== PROJECTS (RERA, geocoded by area centroid) =====================
+// One marker per RERA-registered real-estate development still in motion
+// (ACTIVE / NOT_STARTED / PENDING / CONDITIONAL_ACTIVATING). Source: Dubai
+// Pulse dataset 467654, refreshed via scripts/dld_projects_pull.py +
+// dld_projects_merge_into_viewer.py. No coordinates in the source —
+// we drop pins at the master_project_en / area_name_en polygon centroid
+// with deterministic jitter so co-located projects don't pile up.
 const projectLayer = L.layerGroup();
-const fmtAedP = v => v >= 1e6 ? (v/1e6).toFixed(2)+' '+t('abbr_m') : v.toLocaleString();
-
-// Parse a flexible date string: "YYYY", "YYYY-MM", "YYYY-MM-DD", or null.
-// Returns the year as float (e.g. 2025.5 ≈ Jul 2025) — good enough for a progress bar.
-function _projYear(s) {
-  if (!s) return null;
-  const m = String(s).match(/^(\d{4})(?:-(\d{1,2}))?/);
-  if (!m) return null;
-  const y = parseInt(m[1], 10);
-  const mo = m[2] ? Math.max(0, Math.min(11, parseInt(m[2], 10) - 1)) : 0;
-  return y + mo / 12;
-}
-
-function renderProjectProgress(p) {
-  const startY = _projYear(p.start_date);
-  const endY   = _projYear(p.handover_year);
-  if (p.cancelled || (!startY && !endY)) {
-    // No timeline to draw; fall back to a plain handover row if available.
-    return p.handover_year
-      ? `<div class="stat"><span class="k">${t("pj_handover")} <span class="src-tag src-fake">~</span></span><span class="v">${p.handover_year}</span></div>`
-      : '';
-  }
-  const todayY = (new Date()).getFullYear() + ((new Date()).getMonth() / 12);
-  // If we only have one end we still want to render something useful.
-  const s = startY ?? (endY ? endY - 3 : todayY);
-  const e = endY   ?? (startY ? startY + 3 : todayY + 2);
-  let pct = (todayY - s) / Math.max(0.1, (e - s));
-  let stage, stageKey, color;
-  if (todayY > e) {
-    // Past handover with no "delivered" flag → overdue
-    pct = 1;
-    stage = t('pj_overdue');
-    stageKey = 'overdue';
-    color = '#cc4040';
-  } else if (pct <= 0.33) {
-    stage = t('pj_in_progress');
-    stageKey = 'early';
-    color = '#94a3b8';
-  } else if (pct <= 0.75) {
-    stage = t('pj_in_progress');
-    stageKey = 'mid';
-    color = '#f0a020';
-  } else {
-    stage = t('pj_in_progress');
-    stageKey = 'late';
-    color = '#3aaf2f';
-  }
-  const widthPct = Math.max(2, Math.min(100, Math.round(pct * 100)));
-  const meta = stageKey === 'overdue'
-    ? `<span class="pj-stage pj-stage-overdue">${stage}</span><span>${endY ? endY.toFixed(0) : ''}</span>`
-    : `<span>${startY ? startY.toFixed(0) : '—'}</span><span class="pj-stage pj-stage-${stageKey}">${stage} · ${widthPct}%</span><span>${endY ? endY.toFixed(0) : '—'}</span>`;
-  return `
-    <div class="pj-progress">
-      <div class="pj-progress-bar"><div class="pj-progress-fill" style="width:${widthPct}%;background:${color}"></div></div>
-      <div class="pj-progress-meta">${meta}</div>
-    </div>
-  `;
-}
+const STATUS_META = {
+  ACTIVE:                  {color: '#3aaf2f', key: 'pj_status_active'},
+  NOT_STARTED:             {color: '#94a3b8', key: 'pj_status_not_started'},
+  PENDING:                 {color: '#f0a020', key: 'pj_status_pending'},
+  CONDITIONAL_ACTIVATING:  {color: '#7a4c00', key: 'pj_status_cond_activating'},
+};
 for (const p of PROJECTS) {
-  const icon = L.divIcon({className:'', html:`<div class="pin construction">🏗️</div>`, iconSize:[24,24], iconAnchor:[12,12]});
+  const icon = L.divIcon({
+    className: '',
+    html: `<div class="pin construction">🏗️</div>`,
+    iconSize: [24, 24], iconAnchor: [12, 12],
+  });
   const m = L.marker([p.lat, p.lon], {icon});
   m.bindPopup(() => {
-  const realRows = [];
-  if (p.building_type_osm) realRows.push(`<div class="stat"><span class="k">${t("pj_osm_building")}</span><span class="v">${p.building_type_osm}</span></div>`);
-  if (p.levels) realRows.push(`<div class="stat"><span class="k">${t("pj_levels")}</span><span class="v">${p.levels}</span></div>`);
-  if (p.start_date) realRows.push(`<div class="stat"><span class="k">${t("pj_start")}</span><span class="v">${p.start_date}</span></div>`);
-  if (p.operator) realRows.push(`<div class="stat"><span class="k">${t("pj_operator_osm")}</span><span class="v">${p.operator}</span></div>`);
-  if (p.website) realRows.push(`<div class="stat"><span class="k">${t("pj_dev_web")}</span><span class="v"><a href="${p.website}" target="_blank">${p.website.replace(/^https?:\/\//,'').replace(/\/$/,'').slice(0,32)}</a></span></div>`);
+    const rows = [];
+    const st = STATUS_META[p.status] || STATUS_META.PENDING;
+    rows.push(`<div class="stat"><span class="k">${t('pj_status')}</span><span class="v" style="color:${st.color}">${t(st.key)} · ${p.percent ?? '?'}%</span></div>`);
 
-  // Progress bar: start → handover, coloured by stage; red when handover slipped
-  const progressHtml = renderProjectProgress(p);
+    // Real progress bar driven by percent_completed.
+    if (Number.isFinite(p.percent)) {
+      const widthPct = Math.max(2, Math.min(100, p.percent));
+      let barColor = st.color;
+      // Past end_date but not finished → late
+      if (p.end_date && p.percent < 100) {
+        const today = new Date().toISOString().slice(0, 10);
+        if (today > p.end_date) barColor = '#cc4040';
+      }
+      rows.push(`
+        <div class="pj-progress">
+          <div class="pj-progress-bar"><div class="pj-progress-fill" style="width:${widthPct}%;background:${barColor}"></div></div>
+          <div class="pj-progress-meta">
+            <span>${p.start_date || '—'}</span>
+            <span class="pj-stage">${widthPct}%</span>
+            <span>${p.end_date || '—'}</span>
+          </div>
+        </div>`);
+    }
 
-  const cancelledBadge = p.cancelled ? '<span style="display:inline-block;padding:1px 6px;border-radius:3px;font-size:11px;background:#cc4040;color:#fff;margin-left:6px">CANCELLED</span>' : '';
-  return `
-    <h3>🏗️ ${p.name}${cancelledBadge} <span class="src-tag src-osm">OSM</span></h3>
-    ${p.name_ar ? `<div class="muted" style="color:#888;margin-bottom:4px">${p.name_ar}</div>` : ''}
-    ${realRows.join('')}
-    ${progressHtml}
-    <div style="border-top:1px solid #eee;margin:6px 0 4px"></div>
-    <div class="stat"><span class="k">${t("pj_type")} <span class="src-tag src-fake">~</span></span><span class="v">${p.ptype}</span></div>
-    <div class="stat"><span class="k">${t("pj_dev")} <span class="src-tag src-fake">~</span></span><span class="v">${p.developer}</span></div>
-    ${p.mix_label!=='—' ? `<div class="stat"><span class="k">${t("pj_mix")} <span class="src-tag src-fake">~</span></span><span class="v">${p.mix_label}</span></div>` : ''}
-    ${p.units ? `<div class="stat"><span class="k">${t("pj_units")} <span class="src-tag src-fake">~</span></span><span class="v">${p.units.toLocaleString('ru-RU')}</span></div>` : ''}
-    <div class="stat"><span class="k">${t("pj_sale_status")} <span class="src-tag src-fake">~</span></span><span class="v" style="color:${p.cancelled?'#cc4040':p.sale_status==='Sold out'?'#0a7f00':'#b8590a'}">${p.sale_status}</span></div>
-    ${p.price_from_aed ? `<div class="stat"><span class="k">${t("pj_price_from")} <span class="src-tag src-fake">~</span></span><span class="v">${fmtAedP(p.price_from_aed)} AED</span></div>` : ''}
-    <div class="muted" style="margin-top:6px;font-size:11px;color:#a30808">${t("pj_warn")}</div>
-  `;
-});
+    if (p.developer) rows.push(`<div class="stat"><span class="k">${t('pj_dev')}</span><span class="v" dir="rtl" style="text-align:right;max-width:200px;font-size:11.5px">${p.developer}</span></div>`);
+    if (p.master_developer && p.master_developer !== p.developer)
+      rows.push(`<div class="stat"><span class="k">${t('pj_master_dev')}</span><span class="v" dir="rtl" style="text-align:right;max-width:200px;font-size:11.5px">${p.master_developer}</span></div>`);
+    if (p.escrow)    rows.push(`<div class="stat"><span class="k">${t('pj_escrow')}</span><span class="v" dir="rtl" style="text-align:right;max-width:200px;font-size:11px">${p.escrow}</span></div>`);
+    if (p.master)    rows.push(`<div class="stat"><span class="k">${t('pj_master')}</span><span class="v">${p.master}</span></div>`);
+    if (p.area)      rows.push(`<div class="stat"><span class="k">${t('pj_area')}</span><span class="v">${p.area}</span></div>`);
+    if (p.zoning)    rows.push(`<div class="stat"><span class="k">${t('pj_zoning')}</span><span class="v">${p.zoning}</span></div>`);
+
+    const compositionParts = [];
+    if (p.units > 0)     compositionParts.push(`${p.units.toLocaleString('ru-RU')} ${t('pj_units_n')}`);
+    if (p.villas > 0)    compositionParts.push(`${p.villas.toLocaleString('ru-RU')} ${t('pj_villas_n')}`);
+    if (p.buildings > 0) compositionParts.push(`${p.buildings.toLocaleString('ru-RU')} ${t('pj_buildings_n')}`);
+    if (p.lands > 0)     compositionParts.push(`${p.lands.toLocaleString('ru-RU')} ${t('pj_lands_n')}`);
+    if (compositionParts.length) {
+      rows.push(`<div class="stat"><span class="k">${t('pj_composition')}</span><span class="v" style="text-align:right;max-width:200px;font-size:11.5px">${compositionParts.join(', ')}</span></div>`);
+    }
+    if (p.completion_date)
+      rows.push(`<div class="stat"><span class="k">${t('pj_completion')}</span><span class="v">${p.completion_date}</span></div>`);
+
+    // Use master_project_en as display name (English, stable); fall back to
+    // project_name (Arabic 98% of time) under it.
+    const titleEn = p.master || (p.name && !/[؀-ۿ]/.test(p.name) ? p.name : '');
+    const titleAr = p.name_ar || (p.name && /[؀-ۿ]/.test(p.name) ? p.name : '');
+    const heading = titleEn || `<span style="color:#888">${t('no_name')}</span>`;
+    const arSub = titleAr ? `<div class="muted" dir="rtl" style="color:#888;margin-bottom:4px;text-align:right">${titleAr}</div>` : '';
+    const geoNote = p.geocode_kind === 'area'
+      ? `<div class="muted" style="margin-top:6px;font-size:11px;color:#888">${t('pj_geocode_area')}</div>`
+      : '';
+
+    return `
+      <h3>🏗️ ${heading} <span class="src-tag" style="background:#e6f7e6;color:#0a7f00">RERA</span></h3>
+      ${arSub}
+      ${rows.join('')}
+      ${geoNote}
+    `;
+  });
   m.addTo(projectLayer);
 }
 
