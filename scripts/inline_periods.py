@@ -1,9 +1,8 @@
 #!/usr/bin/env python3
-"""Inline TX_PERIODS + RENTS_PERIODS into root HTML files.
+"""Inline TX_PERIODS + RENTS_PERIODS into index.html.
 
 Reads transactions/data/{period}.json and rents/data/{period}.json,
-then inserts/replaces two const lines right after `const RENT_AGGREGATES`
-in index.html and dld_viewer.html.
+then inserts/replaces two const lines right after `const RENT_AGGREGATES`.
 
 Per-mask SEO pages under /sales/ and /rents/ inherit these inlined
 constants because they're built from the root index.html template.
@@ -26,7 +25,7 @@ rents_periods = load_periods('rents')
 TX_LINE    = 'const TX_PERIODS = ' + json.dumps(tx_periods,    ensure_ascii=False, separators=(',', ':')) + ';\n'
 RENTS_LINE = 'const RENTS_PERIODS = ' + json.dumps(rents_periods, ensure_ascii=False, separators=(',', ':')) + ';\n'
 
-for fname in ('index.html', 'dld_viewer.html'):
+for fname in ('index.html',):
     path = os.path.join(ROOT, fname)
     if not os.path.exists(path):
         print(f'skip: {fname}', file=sys.stderr); continue

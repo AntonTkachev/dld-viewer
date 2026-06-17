@@ -27,7 +27,7 @@ Source pipeline:
 - `data/tx.parquet`, `data/rents.parquet` — refreshed via `./scripts/dld_refresh.sh`
 - `_data_communities.geojson` — polygons (Overpass API + DLD `carea-lookup`)
 - `_data_sale_aggregates.json`, `_data_rent_aggregates.json` — per-area aggregates built by `/tmp/build_sale_aggregates.py` and `/tmp/build_rent_aggregates.py`
-- Inlined into `dld_viewer.html` / `index.html` by the rebuild scripts
+- Inlined into `index.html` by the rebuild scripts
 
 ## Acknowledgments
 

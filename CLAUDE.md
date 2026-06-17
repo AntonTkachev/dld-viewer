@@ -75,7 +75,7 @@ scripts/
   dld_filter.py         ← optional: filter CSV.gz by date column (pre-parquet era)
   khda_scrape.py        ← fetch KHDA Education Directory → data/khda_schools.csv
   osm_schools_pull.py   ← Overpass `amenity=school` in Dubai bbox → data/osm_schools.json
-  khda_merge_into_viewer.py ← join OSM + KHDA, write SCHOOLS into dld_viewer.html
+  khda_merge_into_viewer.py ← join OSM + KHDA, write SCHOOLS into index.html
   khda_refresh.sh       ← weekly orchestrator: runs all three above in sequence
 ```
 

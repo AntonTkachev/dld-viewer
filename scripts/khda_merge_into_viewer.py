@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """
 Merge KHDA's Education Directory into the OSM-derived SCHOOLS list embedded in
-dld_viewer.html. Source files:
+index.html. Source files:
   - data/osm_schools.json   (run osm_schools_pull.py first)
   - data/khda_schools.csv   (run khda_scrape.py first)
 
@@ -16,23 +16,21 @@ Stages, in order; the first that resolves to a single KHDA wins:
   4. Proximity tiebreaker — when stage 2 reported ambiguity, prefer the KHDA
      candidate whose `area` field appears inside the OSM addr_suburb / name.
 
-Output: rewrites the `const SCHOOLS = [...]` line in dld_viewer.html and copies
-to index.html. Entries with no KHDA match keep their OSM tags and get
-`in_khda: false` so the popup template can show the difference.
+Output: rewrites the `const SCHOOLS = [...]` line in index.html. Entries with
+no KHDA match keep their OSM tags and get `in_khda: false` so the popup
+template can show the difference.
 """
 import csv
 import difflib
 import json
 import re
-import shutil
 import sys
 from pathlib import Path
 
-ROOT  = Path(__file__).resolve().parent.parent
-HTML  = ROOT / 'dld_viewer.html'
-INDEX = ROOT / 'index.html'
-KHDA  = ROOT / 'data' / 'khda_schools.csv'
-OSM   = ROOT / 'data' / 'osm_schools.json'
+ROOT = Path(__file__).resolve().parent.parent
+HTML = ROOT / 'index.html'
+KHDA = ROOT / 'data' / 'khda_schools.csv'
+OSM  = ROOT / 'data' / 'osm_schools.json'
 
 STOP = {
     'school', 'academy', 'college', 'international', 'private', 'llc',
@@ -149,7 +147,7 @@ def _feat_contains(feat, pt):
     return False
 
 def load_geojson_polygons():
-    """Pull the GEOJSON const out of dld_viewer.html for polygon lookups."""
+    """Pull the GEOJSON const out of index.html for polygon lookups."""
     with HTML.open(encoding='utf-8') as f:
         for line in f:
             if line.startswith('const GEOJSON = '):
@@ -320,13 +318,12 @@ def main():
         lines = f.readlines()
     idx = next((i for i, l in enumerate(lines) if l.startswith('const SCHOOLS = ')), None)
     if idx is None:
-        print('SCHOOLS const not found in dld_viewer.html', file=sys.stderr)
+        print('SCHOOLS const not found in index.html', file=sys.stderr)
         return 1
     lines[idx] = 'const SCHOOLS = ' + json.dumps(schools, separators=(',', ':'), ensure_ascii=False) + ';\n'
     with HTML.open('w', encoding='utf-8') as f:
         f.writelines(lines)
-    shutil.copyfile(HTML, INDEX)
-    print(f'Patched line {idx + 1} and synced index.html')
+    print(f'Patched line {idx + 1} of index.html')
     return 0
 
 if __name__ == '__main__':
