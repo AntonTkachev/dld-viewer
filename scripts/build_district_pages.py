@@ -31,7 +31,9 @@ SRC  = os.path.join(ROOT, 'index.html')
 TPL  = os.path.join(ROOT, 'templates', 'district.html')
 TPL_LIST = os.path.join(ROOT, 'templates', 'district-list.html')
 
-DISTRICTS = ('business bay',)  # pilot
+# DISTRICTS = None  → build every district present in AGGREGATES / RENT_AGGREGATES.
+# DISTRICTS = ('business bay',) for pilot work on a single district.
+DISTRICTS = None
 
 # Languages: 'ru' is the canonical / default at root paths; others under /<lang>/.
 LANGUAGES = ('ru', 'en', 'ar', 'hi')
@@ -918,8 +920,17 @@ def main():
     with open(TPL_LIST, encoding='utf-8') as f:
         template_list = f.read()
 
+    # If DISTRICTS isn't pinned, build every real district from the unioned
+    # AGGREGATES + RENT_AGGREGATES keysets. Skip `__dubai__`-style markers.
+    districts = DISTRICTS
+    if districts is None:
+        keys = (set(agg.keys()) | set(rent.keys())) - {'__dubai__'}
+        keys = [k for k in keys if not k.startswith('_')]
+        districts = sorted(keys)
+        print(f'building all {len(districts)} districts × {len(LANGUAGES)} langs', file=sys.stderr)
+
     built = 0
-    for key in DISTRICTS:
+    for key in districts:
         sale_rec = agg.get(key) or {}
         rent_rec = rent.get(key) or {}
         if not sale_rec and not rent_rec:
