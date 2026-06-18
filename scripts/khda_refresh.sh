@@ -38,4 +38,9 @@ python3 scripts/osm_medical_pull.py
 # 5. Regenerate SEO landing pages /sales/ and /rents/ from the updated root.
 python3 scripts/build_pages.py
 
+# 6. Regenerate per-POI SEO category pages (/metro/, /schools/, /universities/,
+#    /medical/, /mosques/, /construction/, /malls/) × 4 langs. Reads POI arrays
+#    out of the freshly-patched index.html.
+python3 scripts/build_poi_pages.py
+
 echo "[$(ts)] khda_refresh: done"
