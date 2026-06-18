@@ -1,0 +1,3 @@
+User-agent: *
+Allow: /
+Sitemap: https://antontkachev.github.io/dld-viewer/sitemap.xml

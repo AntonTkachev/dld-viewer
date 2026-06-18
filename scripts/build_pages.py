@@ -24,6 +24,11 @@ import os, re, sys
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 SRC  = os.path.join(ROOT, 'index.html')
 
+# Production base URL — site is hosted as a GH Pages project page, so all
+# paths live under /dld-viewer/. canonical / hreflang / OG / JSON-LD URLs
+# all need this prefix; sitemap.xml uses the full BASE_URL form.
+BASE_URL = 'https://antontkachev.github.io/dld-viewer'
+
 LANGUAGES = ('ru', 'en', 'ar', 'hi')
 VIEWS = ('map', 'table')
 
@@ -199,6 +204,9 @@ TABLE_TITLE_SWAP = {
 # Direction tag for <html>: Arabic is RTL.
 DIR_FOR_LANG = {'ru': 'ltr', 'en': 'ltr', 'ar': 'rtl', 'hi': 'ltr'}
 
+# Localized "Dubai" breadcrumb root.
+BREADCRUMB_DUBAI = {'ru': 'Дубай', 'en': 'Dubai', 'ar': 'دبي', 'hi': 'दुबई'}
+
 
 with open(SRC, encoding='utf-8') as f:
     template = f.read()
@@ -222,7 +230,8 @@ def _lang_path_prefix(lang):
 
 
 def _page_url(page_key, view, lang):
-    return _lang_path_prefix(lang) + '/' + page_key + '/' + ('table/' if view == 'table' else '')
+    """Absolute URL for canonical/hreflang/JSON-LD use (includes BASE_URL)."""
+    return BASE_URL + _lang_path_prefix(lang) + '/' + page_key + '/' + ('table/' if view == 'table' else '')
 
 
 def _hreflang_block(page_key, view):
@@ -247,12 +256,43 @@ def build(page_key, cfg, view, lang):
     keywords = cfg['keywords'][lang]
     dataset_name = cfg['dataset_name'][lang]
     dataset_name_en = cfg['dataset_name']['en']
-    ld_type = 'ItemList' if view == 'table' else 'Dataset'
 
     # Build the OG locale block: current first, others as alternates.
     og_locale_main = OG_LOCALE[lang]
     og_locale_alts = [v for k, v in OG_LOCALE.items() if k != lang]
 
+    # JSON-LD: Dataset describes the data behind the page (same dataset is
+    # rendered as map AND as table — both views are presentations of one
+    # Dataset). BreadcrumbList tells Google where this page sits in the site.
+    dataset_ld = {
+        '@context': 'https://schema.org', '@type': 'Dataset',
+        'name': dataset_name, 'alternateName': dataset_name_en,
+        'description': desc, 'inLanguage': lang, 'url': canonical,
+        'creator': {'@type': 'Organization', 'name': 'DLD Viewer'},
+        'license': 'https://www.dubaipulse.gov.ae/terms',
+        'isAccessibleForFree': True,
+        'spatialCoverage': {'@type': 'Place', 'name': 'Dubai, UAE'},
+    }
+    bc_items = [
+        {'@type': 'ListItem', 'position': 1,
+         'name': BREADCRUMB_DUBAI[lang],
+         'item': BASE_URL + _lang_path_prefix(lang) + '/'},
+        {'@type': 'ListItem', 'position': 2,
+         'name': dataset_name,
+         'item': _page_url(page_key, 'map', lang)},
+    ]
+    if view == 'table':
+        bc_items.append({'@type': 'ListItem', 'position': 3,
+                         'name': 'Table' if lang == 'en' else
+                                 'Таблица' if lang == 'ru' else
+                                 'جدول' if lang == 'ar' else 'तालिका',
+                         'item': canonical})
+    breadcrumb_ld = {
+        '@context': 'https://schema.org', '@type': 'BreadcrumbList',
+        'itemListElement': bc_items,
+    }
+
+    import json as _json
     head_block = (
         f'<title>{title}</title>\n'
         f'<meta name="description" content="{desc}">\n'
@@ -265,14 +305,12 @@ def build(page_key, cfg, view, lang):
         f'<meta property="og:locale" content="{og_locale_main}">\n'
         + ''.join(f'<meta property="og:locale:alternate" content="{a}">\n' for a in og_locale_alts) +
         _hreflang_block(page_key, view) + '\n'
-        f'<script type="application/ld+json">\n'
-        f'{{"@context":"https://schema.org","@type":"{ld_type}","name":"{dataset_name}",'
-        f'"alternateName":"{dataset_name_en}",'
-        f'"description":"{desc}",'
-        f'"creator":{{"@type":"Organization","name":"DLD Viewer"}},'
-        f'"license":"https://www.dubaipulse.gov.ae/terms","isAccessibleForFree":true,'
-        f'"spatialCoverage":{{"@type":"Place","name":"Dubai, UAE"}}}}\n'
-        f'</script>'
+        '<script type="application/ld+json">'
+        + _json.dumps(dataset_ld, ensure_ascii=False) +
+        '</script>\n'
+        '<script type="application/ld+json">'
+        + _json.dumps(breadcrumb_ld, ensure_ascii=False) +
+        '</script>'
     )
     s = re.sub(r'<link rel="canonical"[^>]*>\n?', '', s, count=1)
     s = re.sub(r'<meta name="description"[^>]*>\n?', '', s, count=1)
@@ -321,4 +359,34 @@ for key, cfg in PAGES.items():
     for v in VIEWS:
         for l in LANGUAGES:
             build(key, cfg, v, l)
+
+
+# Thin /<lang>/index.html stubs — redirect to /<lang>/sales/.
+# Reason: without these /en/, /ar/, /hi/ 404 (no dir-listing on GH Pages),
+# which breaks BreadcrumbList "Dubai" links and any direct typing /ar/.
+# RU root (/) already has the master index.html, so only non-RU need stubs.
+LANG_STUB = {
+    'en': dict(dir='ltr', title='DLD Viewer — Dubai real estate data', label='Open the Dubai map →'),
+    'ar': dict(dir='rtl', title='عارض DLD — بيانات عقارات دبي', label='افتح خريطة دبي ←'),
+    'hi': dict(dir='ltr', title='DLD Viewer — दुबई रियल एस्टेट डेटा', label='दुबई का मानचित्र खोलें →'),
+}
+for l, s in LANG_STUB.items():
+    target = f'{BASE_URL}/{l}/sales/'
+    out = os.path.join(ROOT, l, 'index.html')
+    os.makedirs(os.path.dirname(out), exist_ok=True)
+    with open(out, 'w', encoding='utf-8') as f:
+        f.write(
+            f'<!doctype html>\n<html lang="{l}" dir="{s["dir"]}">\n<head>\n'
+            f'<meta charset="utf-8">\n'
+            f'<title>{s["title"]}</title>\n'
+            f'<link rel="canonical" href="{target}">\n'
+            f'<meta http-equiv="refresh" content="0; url={target}">\n'
+            f'<meta name="robots" content="noindex,follow">\n'
+            '</head>\n<body>\n'
+            f'<p><a href="{target}">{s["label"]}</a></p>\n'
+            f'<script>location.replace("{target}");</script>\n'
+            '</body>\n</html>\n'
+        )
+    print(f'  /{l}/                          stub → {target}', file=sys.stderr)
+
 print('done', file=sys.stderr)
