@@ -519,6 +519,9 @@ window.addEventListener('popstate', () => {
   }
   if (cur.view !== currentView) setView(cur.view, { pushUrl: false });
   if (typeof renderMaskList === 'function') renderMaskList();
+  // Re-sync POI layer toggles with the new URL (covers back/forward across
+  // /sales/?layers=metro,schools ↔ /sales/, etc.).
+  if (typeof _applyLayersFromUrl === 'function') _applyLayersFromUrl();
 });
 
 // ===================== TABLE VIEW =====================
@@ -1569,26 +1572,81 @@ function poiBuiltinDefs() {
     {key:'malls',   label:t('malls'),         count:MALLS.length,          layer:mallLayer},
   ];
 }
-function renderPoiList() {
-  const el = document.getElementById('mp-poi-list');
-  if (!el) return;
+// ===================== POI URL STATE =====================
+// Active POI layers are encoded in ?layers=metro,schools,... so SEO landing
+// pages (/metro/, /schools/, ...) can deep-link back to the map with the
+// matching overlay pre-enabled, and so users can share a view.
+// Built-in keys are the same strings poiBuiltinDefs() returns. Custom POIs
+// keep their 'poi-<key>' prefix.
+let _POI_DEFS = [];
+function _allPoiDefs() {
   const defs = poiBuiltinDefs();
   for (const [key, def] of Object.entries(POI_DEFS)) {
     defs.push({key:'poi-'+key, label:`${def.emoji} ${def.label}`, count:(POIS[key]||[]).length, layer:POI_LAYERS[key]});
   }
-  el.innerHTML = defs.map((d,i) => {
+  return defs;
+}
+function _readLayersFromUrl() {
+  try {
+    const raw = new URLSearchParams(window.location.search).get('layers') || '';
+    return new Set(raw.split(',').map(s => s.trim()).filter(Boolean));
+  } catch (e) { return new Set(); }
+}
+function _writeLayersToUrl(activeKeys) {
+  if (typeof window === 'undefined' || window.location.protocol === 'file:') return;
+  try {
+    const url = new URL(window.location.href);
+    if (activeKeys && activeKeys.size) {
+      url.searchParams.set('layers', Array.from(activeKeys).join(','));
+    } else {
+      url.searchParams.delete('layers');
+    }
+    history.replaceState(history.state, '', url.pathname + url.search + url.hash);
+  } catch (e) { /* ignore */ }
+}
+function _applyLayersFromUrl() {
+  const want = _readLayersFromUrl();
+  _POI_DEFS.forEach(d => {
+    const should = want.has(d.key);
+    const has = map.hasLayer(d.layer);
+    if (should && !has) d.layer.addTo(map);
+    if (!should && has) map.removeLayer(d.layer);
+  });
+  // Re-sync checkboxes if list is mounted
+  const el = document.getElementById('mp-poi-list');
+  if (el) el.querySelectorAll('label').forEach((lab, i) => {
+    const inp = lab.querySelector('input');
+    const def = _POI_DEFS[i];
+    if (inp && def) inp.checked = want.has(def.key);
+  });
+}
+function _currentActiveLayerKeys() {
+  const out = new Set();
+  _POI_DEFS.forEach(d => { if (map.hasLayer(d.layer)) out.add(d.key); });
+  return out;
+}
+
+function renderPoiList() {
+  const el = document.getElementById('mp-poi-list');
+  if (!el) return;
+  _POI_DEFS = _allPoiDefs();
+  el.innerHTML = _POI_DEFS.map((d,i) => {
     const checked = map.hasLayer(d.layer) ? 'checked' : '';
     return `<label data-i="${i}"><input type="checkbox" ${checked}><span class="poi-label">${d.label}</span><span class="poi-count">${d.count}</span></label>`;
   }).join('');
   el.querySelectorAll('label').forEach((lab, i) => {
     const inp = lab.querySelector('input');
     inp.addEventListener('change', () => {
-      if (inp.checked) defs[i].layer.addTo(map);
-      else map.removeLayer(defs[i].layer);
+      const d = _POI_DEFS[i];
+      if (inp.checked) d.layer.addTo(map);
+      else map.removeLayer(d.layer);
+      _writeLayersToUrl(_currentActiveLayerKeys());
     });
   });
 }
 renderPoiList();
+// Activate layers requested in ?layers=...
+_applyLayersFromUrl();
 
 // First render
 map.fitBounds(L.geoJSON(GEOJSON).getBounds(), {padding:[20,20]});
