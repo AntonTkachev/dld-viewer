@@ -170,12 +170,10 @@ const I18N = {
     mo_size_big:'Большая', mo_size_mid:'Средняя', mo_size_small:'Махалля',
     mo_warn:'⚠ Поля с ~ — синтетика. Деноминация/адрес/wheelchair/фото — реальные из OSM.',
     // mall popup
-    ml_hours:'Часы работы', ml_op:'Оператор', ml_phone:'Телефон', ml_web:'Сайт',
-    ml_levels:'Этажей', ml_city:'Город', ml_access:'Доступная среда',
-    ml_size:'Размер', ml_stores:'Магазинов', ml_anchors:'Якорные арендаторы',
-    ml_brands:'Бренды', ml_staff_langs:'Языки персонала', ml_footfall:'Поток, тыс/день',
-    ml_size_mega:'Mega', ml_size_large:'Large', ml_size_medium:'Medium', ml_size_small:'Small / Specialty',
-    ml_warn:'⚠ Поля с ~ — синтетика (размер/якоря — эвристика по имени). Часы/сайт/оператор/телефон — реальные из OSM.',
+    ml_kind:'Тип', ml_kind_mall:'Молл', ml_kind_souq:'Сук / рынок',
+    ml_hours:'Часы работы', ml_op:'Оператор', ml_brand:'Бренд',
+    ml_phone:'Телефон', ml_web:'Сайт',
+    ml_levels:'Этажей', ml_addr:'Адрес', ml_access:'Доступная среда', ml_wifi:'Wi-Fi',
     // metro station popup
     metro_line:'Линия', metro_interchange:'пересадка',
 
@@ -190,8 +188,6 @@ const I18N = {
     pj_overdue:'Просрочка', pj_remaining:'осталось', pj_done:'готово',
     pj_dev_web:'Сайт девелопера',
     alert_not_found:'Данные не найдены',
-    flag_hyper:'🛒 гипермаркет', flag_food:'🍽 фуд-корт', flag_cinema:'🎬 кинотеатр',
-    flag_ice:'⛸ каток', flag_ski:'🎿 Ski Dubai', flag_parking_free:'🅿 бесплатная парковка',
 
     communities:'🗺 Communities (L2)', developments:'🏘 Developments (L3/L4)',
 
@@ -353,12 +349,10 @@ const I18N = {
     yes_t:'✓ yes', no_t:'no', view_t:'view',
     mo_size_big:'Large', mo_size_mid:'Medium', mo_size_small:'Mahalla',
     mo_warn:'⚠ Fields marked ~ are synthetic. Denomination/address/wheelchair/photo are real from OSM.',
-    ml_hours:'Opening hours', ml_op:'Operator', ml_phone:'Phone', ml_web:'Website',
-    ml_levels:'Levels', ml_city:'City', ml_access:'Accessibility',
-    ml_size:'Size', ml_stores:'Stores', ml_anchors:'Anchor tenants',
-    ml_brands:'Brands', ml_staff_langs:'Staff languages', ml_footfall:'Footfall, k/day',
-    ml_size_mega:'Mega', ml_size_large:'Large', ml_size_medium:'Medium', ml_size_small:'Small / Specialty',
-    ml_warn:'⚠ Fields marked ~ are synthetic (size/anchors are name heuristics). Hours/website/operator/phone are real from OSM.',
+    ml_kind:'Kind', ml_kind_mall:'Mall', ml_kind_souq:'Souq / market',
+    ml_hours:'Opening hours', ml_op:'Operator', ml_brand:'Brand',
+    ml_phone:'Phone', ml_web:'Website',
+    ml_levels:'Levels', ml_addr:'Address', ml_access:'Accessibility', ml_wifi:'Wi-Fi',
     metro_line:'Line', metro_interchange:'interchange',
 
     abbr_m:'M', abbr_b:'B', abbr_k:'K',
@@ -372,8 +366,6 @@ const I18N = {
     pj_overdue:'Overdue', pj_remaining:'left', pj_done:'done',
     pj_dev_web:'Developer site',
     alert_not_found:'Data not found',
-    flag_hyper:'🛒 hypermarket', flag_food:'🍽 food court', flag_cinema:'🎬 cinema',
-    flag_ice:'⛸ ice rink', flag_ski:'🎿 Ski Dubai', flag_parking_free:'🅿 free parking',
 
     communities:'🗺 Communities (L2)', developments:'🏘 Developments (L3/L4)',
 
@@ -535,12 +527,10 @@ const I18N = {
     yes_t:'✓ نعم', no_t:'لا', view_t:'عرض',
     mo_size_big:'كبيرة', mo_size_mid:'متوسطة', mo_size_small:'حي',
     mo_warn:'⚠ الحقول ~ تجريبية. المذهب/العنوان/كرسي متحرك/صورة من OSM.',
-    ml_hours:'ساعات العمل', ml_op:'المشغل', ml_phone:'الهاتف', ml_web:'الموقع',
-    ml_levels:'الطوابق', ml_city:'المدينة', ml_access:'إمكانية الوصول',
-    ml_size:'الحجم', ml_stores:'المتاجر', ml_anchors:'المستأجرون الرئيسيون',
-    ml_brands:'العلامات التجارية', ml_staff_langs:'لغات الموظفين', ml_footfall:'الحركة، ألف/يوم',
-    ml_size_mega:'ضخم', ml_size_large:'كبير', ml_size_medium:'متوسط', ml_size_small:'صغير / متخصص',
-    ml_warn:'⚠ الحقول ~ تجريبية. الساعات/الموقع/المشغل/الهاتف من OSM.',
+    ml_kind:'النوع', ml_kind_mall:'مول', ml_kind_souq:'سوق',
+    ml_hours:'ساعات العمل', ml_op:'المشغل', ml_brand:'العلامة التجارية',
+    ml_phone:'الهاتف', ml_web:'الموقع',
+    ml_levels:'الطوابق', ml_addr:'العنوان', ml_access:'إمكانية الوصول', ml_wifi:'واي فاي',
     metro_line:'الخط', metro_interchange:'تبادل',
 
     abbr_m:'مليون', abbr_b:'مليار', abbr_k:'ألف',
@@ -554,8 +544,6 @@ const I18N = {
     pj_overdue:'متأخر', pj_remaining:'متبقي', pj_done:'منجز',
     pj_dev_web:'موقع المطور',
     alert_not_found:'لم يتم العثور على البيانات',
-    flag_hyper:'🛒 هايبر ماركت', flag_food:'🍽 منطقة طعام', flag_cinema:'🎬 سينما',
-    flag_ice:'⛸ حلبة جليد', flag_ski:'🎿 Ski Dubai', flag_parking_free:'🅿 موقف مجاني',
 
     communities:'🗺 المجتمعات (L2)', developments:'🏘 التطويرات (L3/L4)',
 
@@ -717,12 +705,10 @@ const I18N = {
     yes_t:'✓ हाँ', no_t:'नहीं', view_t:'देखें',
     mo_size_big:'बड़ी', mo_size_mid:'मध्यम', mo_size_small:'मोहल्ला',
     mo_warn:'⚠ ~ फ़ील्ड सिंथेटिक हैं। सम्प्रदाय/पता/फ़ोटो OSM से।',
-    ml_hours:'खुलने का समय', ml_op:'ऑपरेटर', ml_phone:'फ़ोन', ml_web:'वेबसाइट',
-    ml_levels:'मंज़िलें', ml_city:'शहर', ml_access:'सुलभता',
-    ml_size:'आकार', ml_stores:'दुकानें', ml_anchors:'मुख्य किरायेदार',
-    ml_brands:'ब्रांड', ml_staff_langs:'स्टाफ़ भाषाएँ', ml_footfall:'फ़ुटफ़ॉल, हज़ार/दिन',
-    ml_size_mega:'मेगा', ml_size_large:'बड़ा', ml_size_medium:'मध्यम', ml_size_small:'छोटा / विशेष',
-    ml_warn:'⚠ ~ फ़ील्ड सिंथेटिक हैं। समय/वेबसाइट/ऑपरेटर/फ़ोन OSM से।',
+    ml_kind:'प्रकार', ml_kind_mall:'मॉल', ml_kind_souq:'सूक / बाज़ार',
+    ml_hours:'खुलने का समय', ml_op:'ऑपरेटर', ml_brand:'ब्रांड',
+    ml_phone:'फ़ोन', ml_web:'वेबसाइट',
+    ml_levels:'मंज़िलें', ml_addr:'पता', ml_access:'सुलभता', ml_wifi:'वाई-फ़ाई',
     metro_line:'लाइन', metro_interchange:'इंटरचेंज',
 
     abbr_m:'M', abbr_b:'B', abbr_k:'K',
@@ -736,8 +722,6 @@ const I18N = {
     pj_overdue:'विलंबित', pj_remaining:'शेष', pj_done:'पूर्ण',
     pj_dev_web:'डेवलपर साइट',
     alert_not_found:'डेटा नहीं मिला',
-    flag_hyper:'🛒 हाइपरमार्केट', flag_food:'🍽 फ़ूड कोर्ट', flag_cinema:'🎬 सिनेमा',
-    flag_ice:'⛸ आइस रिंक', flag_ski:'🎿 Ski Dubai', flag_parking_free:'🅿 मुफ़्त पार्किंग',
 
     communities:'🗺 कम्युनिटीज़ (L2)', developments:'🏘 डेवलपमेंट (L3/L4)',
 

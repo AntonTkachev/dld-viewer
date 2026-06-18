@@ -2109,52 +2109,40 @@ for (const d of PROJECTS) {
   m.addTo(projectLayer);
 }
 
-// ===================== MALLS (enriched) =====================
+// ===================== MALLS (OSM) =====================
 const mallLayer = L.layerGroup();
 for (const ml of MALLS) {
-  const icon = L.divIcon({className:'', html:`<div class="pin mall">🛍️</div>`, iconSize:[24,24], iconAnchor:[12,12]});
+  const emoji = ml.kind === 'souq' ? '🏛️' : '🛍️';
+  const cls   = ml.kind === 'souq' ? 'pin mall souq' : 'pin mall';
+  const icon = L.divIcon({className:'', html:`<div class="${cls}">${emoji}</div>`, iconSize:[24,24], iconAnchor:[12,12]});
   const m = L.marker([ml.lat, ml.lon], {icon});
   m.bindPopup(() => {
-  const realRows = [];
-  if (ml.opening_hours) realRows.push(`<div class="stat"><span class="k">${t("ml_hours")}</span><span class="v" style="font-size:11.5px">${ml.opening_hours}</span></div>`);
-  if (ml.operator) realRows.push(`<div class="stat"><span class="k">${t("ml_op")}</span><span class="v">${ml.operator}</span></div>`);
-  if (ml.phone) realRows.push(`<div class="stat"><span class="k">${t("ml_phone")}</span><span class="v"><a href="tel:${ml.phone}">${ml.phone}</a></span></div>`);
-  if (ml.website) realRows.push(`<div class="stat"><span class="k">${t("ml_web")}</span><span class="v"><a href="${ml.website}" target="_blank">${ml.website.replace(/^https?:\/\//,'').replace(/\/$/,'').slice(0,32)}</a></span></div>`);
-  if (ml.wikipedia) {
-    const wpUrl = 'https://' + ml.wikipedia.replace(':', '.wikipedia.org/wiki/').replace(/ /g,'_');
-    realRows.push(`<div class="stat"><span class="k">Wikipedia</span><span class="v"><a href="${wpUrl}" target="_blank">${ml.wikipedia}</a></span></div>`);
-  }
-  if (ml.building_levels) realRows.push(`<div class="stat"><span class="k">${t("ml_levels")}</span><span class="v">${ml.building_levels}</span></div>`);
-  if (ml.addr_city) realRows.push(`<div class="stat"><span class="k">${t("ml_city")}</span><span class="v">${ml.addr_city}</span></div>`);
-  if (ml.wheelchair === 'yes') realRows.push(`<div class="stat"><span class="k">${t("ml_access")}</span><span class="v" style="color:#0a7f00">✓ wheelchair</span></div>`);
-
-  const tierColor = ml.tier === 'A++' ? '#7a0fd4' : ml.tier === 'A' ? '#0a7f00' : ml.tier === 'B' ? '#b8590a' : '#666';
-  // flags built lazily inside popup arrow
-  const buildFlags = () => {
-    const f = [];
-    if (ml.hypermarket) f.push(t('flag_hyper'));
-    if (ml.food_court) f.push(t('flag_food'));
-    if (ml.cinema) f.push(t('flag_cinema'));
-    if (ml.ice_rink) f.push(t('flag_ice'));
-    if (ml.ski) f.push(t('flag_ski'));
-    if (ml.parking_free) f.push(t('flag_parking_free'));
-    return f;
-  };
-  return `
-    <h3>🛍️ ${ml.name} <span class="src-tag src-osm">OSM</span></h3>
-    ${ml.name_ar ? `<div class="muted" style="color:#888;margin-bottom:4px">${ml.name_ar}</div>` : ''}
-    ${realRows.join('')}
-    <div style="border-top:1px solid #eee;margin:6px 0 4px"></div>
-    <div class="stat"><span class="k">${t("ml_size")} <span class="src-tag src-fake">~</span></span><span class="v"><span style="color:${tierColor};font-weight:600">${ml.size}</span> (${ml.tier})</span></div>
-    <div class="stat"><span class="k">${t("ml_stores")} <span class="src-tag src-fake">~</span></span><span class="v">≈ ${ml.stores}</span></div>
-    <div class="stat"><span class="k">${t("ml_anchors")} <span class="src-tag src-fake">~</span></span><span class="v" style="text-align:right;max-width:200px;font-size:11px">${ml.anchors.map(a=>`<span class="lang-chip">${a}</span>`).join('')}</span></div>
-    <div class="stat"><span class="k">${t("ml_brands")} <span class="src-tag src-fake">~</span></span><span class="v" style="text-align:right;max-width:200px;font-size:11px">${ml.brands.map(b=>`<span class="lang-chip">${b}</span>`).join('')}</span></div>
-    <div class="stat"><span class="k">${t("ml_staff_langs")} <span class="src-tag src-fake">~</span></span><span class="v">${ml.languages.map(l=>`<span class="lang-chip">${l}</span>`).join('')}</span></div>
-    <div class="stat"><span class="k">${t("ml_footfall")} <span class="src-tag src-fake">~</span></span><span class="v">≈ ${ml.footfall_k}</span></div>
-    <div style="margin-top:6px;font-size:11px;line-height:1.6">${buildFlags().map(f=>`<span class="lang-chip" style="background:#fffbe6;color:#7a4c00">${f}</span>`).join(' ')}</div>
-    <div class="muted" style="margin-top:6px;font-size:11px;color:#a30808">${t("ml_warn")}</div>
-  `;
-});
+    const rows = [];
+    const kindLabel = t(ml.kind === 'souq' ? 'ml_kind_souq' : 'ml_kind_mall');
+    rows.push(`<div class="stat"><span class="k">${t('ml_kind')}</span><span class="v">${kindLabel}</span></div>`);
+    if (ml.opening_hours) rows.push(`<div class="stat"><span class="k">${t('ml_hours')}</span><span class="v" style="font-size:11.5px">${ml.opening_hours}</span></div>`);
+    if (ml.operator) rows.push(`<div class="stat"><span class="k">${t('ml_op')}</span><span class="v">${ml.operator}</span></div>`);
+    if (ml.brand) rows.push(`<div class="stat"><span class="k">${t('ml_brand')}</span><span class="v">${ml.brand}</span></div>`);
+    if (ml.phone) rows.push(`<div class="stat"><span class="k">${t('ml_phone')}</span><span class="v"><a href="tel:${ml.phone}">${ml.phone}</a></span></div>`);
+    if (ml.website) rows.push(`<div class="stat"><span class="k">${t('ml_web')}</span><span class="v"><a href="${ml.website}" target="_blank">${ml.website.replace(/^https?:\/\//,'').replace(/\/$/,'').slice(0,32)}</a></span></div>`);
+    if (ml.wikipedia) {
+      const wpUrl = 'https://' + ml.wikipedia.replace(':', '.wikipedia.org/wiki/').replace(/ /g,'_');
+      rows.push(`<div class="stat"><span class="k">Wikipedia</span><span class="v"><a href="${wpUrl}" target="_blank">${ml.wikipedia}</a></span></div>`);
+    } else if (ml.wikidata) {
+      rows.push(`<div class="stat"><span class="k">Wikidata</span><span class="v"><a href="https://www.wikidata.org/wiki/${ml.wikidata}" target="_blank">${ml.wikidata}</a></span></div>`);
+    }
+    if (ml.building_levels) rows.push(`<div class="stat"><span class="k">${t('ml_levels')}</span><span class="v">${ml.building_levels}</span></div>`);
+    const addr = [ml.addr_street, ml.addr_suburb, ml.addr_city].filter(Boolean).join(', ');
+    if (addr) rows.push(`<div class="stat"><span class="k">${t('ml_addr')}</span><span class="v" style="font-size:11.5px;max-width:200px;text-align:right">${addr}</span></div>`);
+    if (ml.wheelchair === 'yes') rows.push(`<div class="stat"><span class="k">${t('ml_access')}</span><span class="v" style="color:#0a7f00">✓ wheelchair</span></div>`);
+    if (ml.internet_access === 'yes' || ml.internet_access === 'wlan') rows.push(`<div class="stat"><span class="k">${t('ml_wifi')}</span><span class="v" style="color:#0a7f00">✓</span></div>`);
+    if (ml.description) rows.push(`<div class="muted" style="margin-top:6px;font-size:11px;color:#555">${ml.description}</div>`);
+    return `
+      <h3>${emoji} ${ml.name || '—'} <span class="src-tag src-osm">OSM</span></h3>
+      ${ml.name_ar ? `<div class="muted" style="color:#888;margin-bottom:4px" dir="rtl">${ml.name_ar}</div>` : ''}
+      ${rows.join('')}
+    `;
+  });
   m.addTo(mallLayer);
 }
 
