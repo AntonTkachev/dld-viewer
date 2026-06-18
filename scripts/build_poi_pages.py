@@ -654,7 +654,8 @@ def build_page(cat, rows_with_district, lang):
     lede = lede_tmpl.format(n=fmt_int(n, lang), suf=c['count_suffix'])
     # Plain text variants (no emoji) for title/meta — Google snippets work
     # better without leading emoji.
-    h1_plain = re.sub(r'^[^A-Za-zА-Яа-я؀-ۿऀ-ॿ]+', '', h1).strip()
+    # Keep Latin / Cyrillic / Arabic / Devanagari / CJK Unified — strip leading emoji + symbols.
+    h1_plain = re.sub(r'^[^A-Za-zА-Яа-я؀-ۿऀ-ॿ一-鿿]+', '', h1).strip()
 
     canonical = page_url(lang, slug)
     map_url = map_deep_url(lang, cat['layer_key'])
