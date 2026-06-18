@@ -2,6 +2,7 @@
 <html lang="ru" dir="ltr">
 <head>
 <meta charset="utf-8">
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net https://unpkg.com https://antontkachev.github.io; style-src 'self' 'unsafe-inline' https://unpkg.com https://antontkachev.github.io; img-src 'self' data: https://*.tile.openstreetmap.org https://antontkachev.github.io; connect-src 'self' https://antontkachev.github.io; font-src 'self' data:; frame-ancestors 'none'; base-uri 'self'; form-action 'self'">
 <title>Рост цен на недвижимость в Дубае по районам — таблица DLD</title>
 <meta name="description" content="Сортируемая таблица всех районов Дубая с фильтрацией. Интерактивная карта роста медианной цены AED/м² по районам Дубая: 1, 3, 5, 10 лет. Для районов с короткой историей используется самый ранний доступный baseline.">
 <meta name="keywords" content="рост цен Дубай, цена за метр Дубай, инвестиции в Дубай, DLD статистика, рост недвижимости Дубай">
@@ -101,7 +102,7 @@
 <div class="legend" id="legend"></div>
 
 <script>window.__INITIAL_MASK__="growth";window.__INITIAL_PERIOD__="5y";window.__INITIAL_VIEW__="table";window.__INITIAL_LANG__="ru";</script>
-<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js" integrity="sha384-e6nUZLBkQ86NJ6TVVKAeSaK8jWa3NhkYWZFomE39AvDbQWeie9PlQqM3pmYW5d1g" crossorigin="anonymous"></script>
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
 <script>
 // ===================== DATA =====================
