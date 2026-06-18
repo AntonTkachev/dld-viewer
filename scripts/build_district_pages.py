@@ -31,8 +31,9 @@ SRC  = os.path.join(ROOT, 'index.html')
 TPL  = os.path.join(ROOT, 'templates', 'district.html')
 TPL_LIST = os.path.join(ROOT, 'templates', 'district-list.html')
 
-# Production base URL — see comment in build_pages.py.
-BASE_URL = 'https://antontkachev.github.io/dld-viewer'
+# Single source of truth for BASE_URL (env-overridable for dev builds).
+sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+from _seo_config import BASE_URL
 
 # DISTRICTS = None  → build every district present in AGGREGATES / RENT_AGGREGATES.
 # DISTRICTS = ('business bay',) for pilot work on a single district.
@@ -941,6 +942,7 @@ def build_list_page(template, name, slug, mode, prefix, list_type, rec, about_ht
     html = template
     html = html.replace('<html lang="ru">', f'<html lang="{html_lang}" dir="{html_dir}">')
     html = html.replace('<!--__SEO_HEAD__-->', seo_head)
+    html = html.replace('__ASSET_BASE__', BASE_URL)
     html = html.replace('__BREADCRUMB_DUBAI__', html_escape(bread_district))
     html = html.replace('__MODE_INDEX_URL__', f'{BASE_URL}{lang_prefix(lang)}/{prefix}/')
     html = html.replace('__DUBAI_HOME_URL__', f'{BASE_URL}{lang_prefix(lang)}/sales/')
@@ -1057,6 +1059,7 @@ def main():
                                         f'<html lang="{html_lang}" dir="{html_dir}">')
                     html = html.replace('<!--__SEO_HEAD__-->',
                                         build_seo_head(mode, name, slug, copy_now['n'], period_code, lang))
+                    html = html.replace('__ASSET_BASE__', BASE_URL)
                     html = html.replace('__BREADCRUMB_DUBAI__', html_escape(c['breadcrumb_dubai']))
                     html = html.replace('__MODE_INDEX_URL__', f'{BASE_URL}{lang_prefix(lang)}/{prefix}/')
                     html = html.replace('__DUBAI_HOME_URL__', f'{BASE_URL}{lang_prefix(lang)}/sales/')
