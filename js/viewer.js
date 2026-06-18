@@ -126,21 +126,6 @@ setTimeout(() => {
       if (panel && panel.classList.contains('open')) _closePanel();
     }
   });
-  // Delegated: clicks on any element carrying data-open-panel="<key>" open
-  // the left slide-out for that district. Used by the polygon popup's
-  // "▸ Open details" button (which keeps its href so middle-click still
-  // opens the full SEO page in a new tab).
-  document.addEventListener('click', e => {
-    // Ignore middle-click / Ctrl-click / Shift-click — let the browser do
-    // its native "open in new tab" / "open in new window".
-    if (e.button !== 0 || e.ctrlKey || e.metaKey || e.shiftKey) return;
-    const a = e.target.closest('[data-open-panel]');
-    if (a && a.dataset.openPanel) {
-      e.preventDefault();
-      if (typeof map !== 'undefined' && map.closePopup) map.closePopup();
-      window.openDistrictByKey(a.dataset.openPanel);
-    }
-  });
 }, 0);
 
 
@@ -1306,44 +1291,18 @@ function renderChoro(){
     },
     onEachFeature: (f, layer) => {
       const p = f.properties;
-      layer.bindPopup(() => {
-        const m = MASKS[currentMask] || MASKS.sales;
-        const sourceLabel = ({'osm-admin':'OSM admin_level=10','osm-place':'OSM place='+_h(p.kind||''),'osm-residential':'OSM landuse=residential'})[p.source] || 'OSM';
-        const newDev = p._new_dev_count || 0;
-        const newDevRow = newDev ? `<div class="stat"><span class="k">${t("new_buildings")} <span class="src-tag src-osm">OSM</span></span><span class="v">${newDev|0}</span></div>` : '';
-        // Button stays an <a href> so middle-click / Ctrl-click still opens
-        // the full SEO page in a new tab. Left-click is intercepted by the
-        // delegated handler below and slides the left panel in instead.
-        const detailsBtn = p.real_area_key
-          ? `<div style="margin-top:8px"><a href="${_h(_safeUrl(_districtHrefForKey(p.real_area_key, p.name)))}" data-open-panel="${_h(p.real_area_key)}" style="background:#0366d6;color:#fff;text-decoration:none;padding:6px 12px;border-radius:4px;font-size:12px;font-weight:600;display:inline-block">${t("pp_open")}</a></div>`
-          : '';
-        let bodyRows;
-        if (typeof m.popupRows === 'function') {
-          const rendered = m.popupRows(p, t);
-          bodyRows = rendered
-            ? `${rendered}${newDevRow}${detailsBtn}`
-            : `${newDevRow}<div class="muted" style="font-size:11px;color:#888;padding:4px 0">${t("no_dld_data")}</div>`;
-        } else {
-          const volumeRow = m.showVolume ? `<div class="stat"><span class="k">${t("pp_volume")}</span><span class="v">${(p.real_total_aed||0)>=1e9?((p.real_total_aed/1e9).toFixed(2)+' '+t('abbr_b')):((p.real_total_aed/1e6).toFixed(1)+' '+t('abbr_m'))}</span></div>` : '';
-          bodyRows = p.real_count ? `
-            <div class="stat"><span class="k">${t(m.popupCountKey || "pp_trans_ytd")} <span class="src-tag" style="background:#e6f7e6;color:#0a7f00">DLD</span>${p.real_match_kind==='parent'?' <span class="src-tag" style="background:#fff5e6;color:#7a4c00">parent: '+_h(p.real_parent_name||'')+'</span>':''}</span><span class="v">${p.real_count.toLocaleString('ru-RU')}</span></div>
-            ${volumeRow}
-            <div class="stat"><span class="k">${t("pp_median")}</span><span class="v">${((p.real_med_price||0)/1e6).toFixed(2)} ${t('abbr_m')}</span></div>
-            <div class="stat"><span class="k">${t("pp_median_psqm")}</span><span class="v">${(p.real_med_ppsqm||0).toLocaleString('ru-RU')}</span></div>
-            ${newDevRow}
-            ${detailsBtn}
-          ` : `
-            ${newDevRow}
-            <div class="muted" style="font-size:11px;color:#888;padding:4px 0">${t("no_dld_data")}</div>
-          `;
-        }
-        return `
-          <h3>${p.name ? _h(p.name) : '—'} <span class="src-tag src-osm">${sourceLabel}</span></h3>
-          <div class="muted" style="margin-bottom:6px;color:#888">${_h(p.name_ar||'')}</div>
-          ${bodyRows}
-        `;
-      });
+      // Click polygon → slide the left detail panel in directly. The popup
+      // intermediate ("▸ Open details" button) was an extra click for no
+      // gain now that DetailPanel mounts inline. Districts without a
+      // real_area_key (no DLD match) silently no-op — the polygon is still
+      // hover-highlighted so a curious user can read the tooltip name.
+      if (p && p.name) {
+        layer.bindTooltip(_h(p.name), { sticky: true, direction: 'auto' });
+      }
       layer.on({
+        click: () => {
+          if (p && p.real_area_key) window.openDistrictByKey(p.real_area_key);
+        },
         mouseover:e=>e.target.setStyle({weight:2,color:'#000'}),
         mouseout:e=>choro.resetStyle(e.target),
       });
