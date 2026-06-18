@@ -631,6 +631,22 @@ def data_url(mode, slug):
     return f'{BASE_URL}/{"sales" if mode == "sale" else "rents"}/{slug}/data.json'
 
 
+# Free vs paid tier split — see docs/data_tiers.md.
+# Free fields stay visible forever for SEO. Premium fields are emitted into a
+# parallel `*_premium` block under the same data.json so a future auth gate
+# can drop them with one line (no rebuild of 20K pages).
+PREMIUM_FIELDS = ('top_deals', 'recent', 'top_projects', 'timeline_by_rooms')
+
+
+def split_tiers(rec):
+    """Return (free_subset, premium_subset). Both are plain dicts."""
+    if not rec:
+        return rec, {}
+    free = {k: v for k, v in rec.items() if k not in PREMIUM_FIELDS}
+    premium = {k: rec[k] for k in PREMIUM_FIELDS if k in rec and rec[k]}
+    return free, premium
+
+
 def out_root(lang):
     """Filesystem root for a language's pages."""
     return ROOT if lang == 'ru' else os.path.join(ROOT, lang)
@@ -1124,7 +1140,15 @@ def main():
                 if lang == 'ru':
                     mode_dir_ru = os.path.join(ROOT, prefix, slug)
                     os.makedirs(mode_dir_ru, exist_ok=True)
-                    bundle = {'sales': base_rec} if mode == 'sale' else {'rent': base_rec}
+                    # Two-tier shape: `<mode>` = free fields (forever-public,
+                    # for SEO), `<mode>_premium` = paid-tier fields. Future
+                    # auth gate strips the `_premium` block server-side for
+                    # un-paid users; the renderer treats it as optional.
+                    free_rec, premium_rec = split_tiers(base_rec)
+                    mode_key = 'sales' if mode == 'sale' else 'rent'
+                    bundle = {mode_key: free_rec}
+                    if premium_rec:
+                        bundle[mode_key + '_premium'] = premium_rec
                     json_path = os.path.join(mode_dir_ru, 'data.json')
                     with open(json_path, 'w', encoding='utf-8') as f:
                         json.dump(bundle, f, ensure_ascii=False, separators=(',', ':'))

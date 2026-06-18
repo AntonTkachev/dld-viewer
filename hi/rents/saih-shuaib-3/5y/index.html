@@ -157,9 +157,14 @@ function render(d) {
   document.getElementById('bc-name').textContent = DISTRICT_NAME;
   applyPeriodCopy(PAGE_PERIOD);
 
+  // Free + premium merge. data.json ships {sales, sales_premium}. Today
+  // everyone sees both; when the paywall lands, the auth gate strips the
+  // *_premium block server-side so this spread yields just the free fields
+  // and the renderer naturally hides empty sections.
+  // See docs/data_tiers.md for the field list.
   let sale = null, rent = null;
-  if (PAGE_MODE === 'sale') sale = d.sales || {};
-  else                      rent = d.rent  || {};
+  if (PAGE_MODE === 'sale') sale = Object.assign({}, d.sales || {}, d.sales_premium || {});
+  else                      rent = Object.assign({}, d.rent  || {}, d.rent_premium  || {});
 
   const listLinks = (PAGE_MODE === 'sale')
     ? { top_projects: BASE_URL + 'projects/',
