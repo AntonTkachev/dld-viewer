@@ -1,0 +1,29 @@
+# Jekyll config for GitHub Pages.
+#
+# Purpose: exclude build-time files from the deployed _site/.
+# Without this, GH Pages serves the entire repo — including build scripts,
+# operational notes, raw POI source data, and tier-split design docs. Those
+# are consumed by build steps only; the runtime never fetches them. Excluding
+# here makes them 404 on the CDN (file physically absent), not just hidden
+# from robots.
+
+exclude:
+  # Operational / internal docs — never needed by the deployed site.
+  - CLAUDE.md
+  - README.md
+  - docs/
+
+  # Build pipeline — page generators, merge scripts, downloaders. Reveal
+  # architecture, internal constants (PREMIUM_FIELDS, MANUAL_COORDS), API
+  # endpoints, cron schedule.
+  - scripts/
+  - templates/
+
+  # Raw source data inlined into index.html at build time. The runtime never
+  # fetches these directly — they exist for the build step only.
+  - data/
+
+  # Working files and tooling.
+  - .gitignore
+  - "*.py"
+  - "*.sh"
