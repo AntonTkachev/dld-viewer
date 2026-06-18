@@ -23,6 +23,7 @@ template can show the difference.
 import csv
 import difflib
 import json
+import math
 import re
 import sys
 from pathlib import Path
@@ -31,6 +32,21 @@ ROOT = Path(__file__).resolve().parent.parent
 HTML = ROOT / 'index.html'
 KHDA = ROOT / 'data' / 'khda_schools.csv'
 OSM  = ROOT / 'data' / 'osm_schools.json'
+
+# Geo-sanity threshold: a name-match is rejected if the OSM coords sit more
+# than this far from the centroid of the polygon corresponding to KHDA `area`.
+# Catches false-positives like "GEMS Wellington Primary" (Al Bada) eating
+# the KHDA record for "GEMS Wellington International" (Al Sufouh, ~16 km away).
+GEO_SANITY_KM = 8.0
+
+# KHDA-only schools that have no OSM `amenity=school` node but are well-known
+# enough to place manually. Keys are KHDA school_id, values are (lat, lon).
+# Only used when the KHDA record didn't land via any OSM-based match.
+MANUAL_COORDS = {
+    # GEMS Wellington International School (Al Sufouh 1) — missing from OSM.
+    # Coords via Nominatim 2026-06; verified inside polygon Al Sufouh 1.
+    '272': (25.112147, 55.183383),
+}
 
 STOP = {
     'school', 'academy', 'college', 'international', 'private', 'llc',
@@ -126,6 +142,85 @@ def match_proximity(osm, scored_candidates):
             hits.append(k)
     return hits[0] if len(hits) == 1 else None
 
+_ORDINAL = {'first':'1', 'second':'2', 'third':'3', 'fourth':'4', 'fifth':'5', 'sixth':'6'}
+
+def _area_norm(s):
+    """Normalize an area/polygon name for fuzzy matching: lowercase, strip
+    leading 'al ', map English ordinals to digits, alphanumerics only."""
+    s = (s or '').lower().strip()
+    s = re.sub(r'^al\s+', '', s)
+    parts = []
+    for w in re.split(r'[^a-z0-9]+', s):
+        if not w:
+            continue
+        parts.append(_ORDINAL.get(w, w))
+    return ''.join(parts)
+
+def polygon_centroid(geom):
+    if geom['type'] == 'Polygon':
+        ring = geom['coordinates'][0]
+    elif geom['type'] == 'MultiPolygon':
+        rings = [p[0] for p in geom['coordinates']]
+        ring = max(rings, key=len)
+    else:
+        return None
+    n = len(ring) - 1
+    if n <= 0:
+        return None
+    return (sum(p[1] for p in ring[:n]) / n, sum(p[0] for p in ring[:n]) / n)
+
+def build_polygon_lookup(features):
+    """{normalized_name: feature} for fuzzy area→polygon lookup."""
+    out = {}
+    for f in features:
+        if 'geometry' not in f:
+            continue
+        name = f['properties'].get('name') or ''
+        k = _area_norm(name)
+        if k:
+            out.setdefault(k, f)
+    return out
+
+def km_between(lat1, lon1, lat2, lon2):
+    return math.hypot((lat1 - lat2) * 111.0, (lon1 - lon2) * 100.0)
+
+def area_polygon(area, polygon_lookup):
+    """Best-effort lookup of KHDA `area` to a polygon feature:
+    exact normalized → SequenceMatcher.ratio() >= 0.85."""
+    k = _area_norm(area)
+    if not k:
+        return None
+    if k in polygon_lookup:
+        return polygon_lookup[k]
+    m = difflib.SequenceMatcher(autojunk=False)
+    m.set_seq2(k)
+    best = (0.0, None)
+    for name, f in polygon_lookup.items():
+        m.set_seq1(name)
+        r = m.ratio()
+        if r > best[0]:
+            best = (r, f)
+    return best[1] if best[0] >= 0.85 else None
+
+def geo_consistent(osm, winner, polygon_lookup, threshold_km=GEO_SANITY_KM):
+    """True iff OSM coords plausibly belong to the same area as KHDA says.
+
+    Resolves KHDA `area` to a polygon (fuzzy by name). Accepts if OSM is
+    inside that polygon, otherwise tolerates centroid distance up to
+    threshold_km. If the area can't be mapped to a polygon at all, trusts
+    the name match.
+    """
+    poly = area_polygon(winner.get('area', ''), polygon_lookup)
+    if not poly:
+        return True  # can't verify, trust the name match
+    pt = [osm['lon'], osm['lat']]
+    if _feat_contains(poly, pt):
+        return True
+    c = polygon_centroid(poly['geometry'])
+    if not c:
+        return True
+    return km_between(osm['lat'], osm['lon'], c[0], c[1]) <= threshold_km
+
 def _pip(pt, ring):
     x, y = pt
     inside = False
@@ -217,6 +312,7 @@ def main():
             khda.append(r)
     khda_by_norm = {norm_key(k['name']): k for k in khda}
     polygons = load_geojson_polygons()
+    polygon_lookup = build_polygon_lookup(polygons)
 
     with OSM.open(encoding='utf-8') as f:
         osm_schools = json.load(f)
@@ -245,8 +341,22 @@ def main():
                 s[k] = o[k]
         schools.append(s)
 
-    stats = {'exact': 0, 'jaccard': 0, 'seqratio': 0, 'proximity': 0, 'polygon': 0, 'none': 0, 'unnamed': 0}
-    used = set()
+    stats = {'exact': 0, 'jaccard': 0, 'seqratio': 0, 'proximity': 0, 'polygon': 0,
+             'none': 0, 'unnamed': 0, 'geo_rejected': 0, 'manual': 0}
+    # Pre-claim every MANUAL_COORDS id so the OSM loop can't steal one of these
+    # via a near-by but wrong marker. The manual record below is authoritative.
+    used = {kid for kid in MANUAL_COORDS}
+
+    def _accept(k):
+        """Geo-sanity wrapper: returns the winner if it passes the distance
+        check against KHDA `area` centroid, else None and bumps the counter."""
+        if not k or k['school_id'] in used:
+            return None
+        if not geo_consistent(s, k, polygon_lookup):
+            stats['geo_rejected'] += 1
+            return None
+        return k
+
     for s in schools:
         if s['name'] == '(unnamed school)':
             s['in_khda'] = False
@@ -256,27 +366,27 @@ def main():
         winner = None
         stage = None
 
-        k = khda_by_norm.get(norm_key(s['name']))
-        if k and k['school_id'] not in used:
+        k = _accept(khda_by_norm.get(norm_key(s['name'])))
+        if k:
             winner, stage = k, 'exact'
 
         if not winner:
             k, scored = match_jaccard(s['name'], khda)
-            if k and k['school_id'] not in used:
+            k = _accept(k)
+            if k:
                 winner, stage = k, 'jaccard'
             elif scored:
-                k2 = match_proximity(s, scored)
-                if k2 and k2['school_id'] not in used:
+                k2 = _accept(match_proximity(s, scored))
+                if k2:
                     winner, stage = k2, 'proximity'
 
         if not winner:
-            k = match_seqratio(s['name'], khda)
-            if k and k['school_id'] not in used:
+            k = _accept(match_seqratio(s['name'], khda))
+            if k:
                 winner, stage = k, 'seqratio'
 
-        # Final stage: polygon-based proximity. Fires when the school's coords
-        # sit inside a known district AND exactly one weakly-similar KHDA
-        # candidate is tagged with that district.
+        # Final stage: polygon-based proximity. Already location-aware, so no
+        # extra geo guard needed (it's defined as the matched district).
         if not winner and polygons:
             district = find_district(polygons, s['lat'], s['lon'])
             k = match_polygon(s, district, khda)
@@ -303,16 +413,44 @@ def main():
             'in_khda':     True,
         })
 
+    # MANUAL_COORDS — handcrafted location for KHDA-only schools missing from
+    # OSM but known to exist. Pre-claimed at the top so no OSM marker could
+    # have stolen the id.
+    for khda_id, (lat, lon) in MANUAL_COORDS.items():
+        k = next((x for x in khda if x['school_id'] == khda_id), None)
+        if not k:
+            print(f'  manual: KHDA id={khda_id} not in CSV — skipping', file=sys.stderr)
+            continue
+        schools.append({
+            'name': k['name'],
+            'lat': lat, 'lon': lon,
+            'khda_id':     k['school_id'],
+            'center_id':   k['center_id'],
+            'curriculum':  k['curriculum'],
+            'rating':      k['overall_rating'],
+            'wellbeing':   k['wellbeing_rating'],
+            'inclusion':   k['inclusion_rating'],
+            'area':        k['area'],
+            'phone':       k['phone'],
+            'grade_range': k['grade_range'],
+            'in_khda':     True,
+            'manual_coords': True,
+        })
+        used.add(khda_id)
+        stats['manual'] += 1
+
     named = sum(1 for s in schools if s['name'] != '(unnamed school)')
-    matched = stats['exact'] + stats['jaccard'] + stats['seqratio'] + stats['proximity'] + stats['polygon']
-    print(f'OSM schools: {len(schools)} (named={named}, unnamed_with_context={stats["unnamed"]})')
+    matched = stats['exact'] + stats['jaccard'] + stats['seqratio'] + stats['proximity'] + stats['polygon'] + stats['manual']
+    print(f'OSM schools: {len(schools) - stats["manual"]} (named={named - stats["manual"]}, unnamed_with_context={stats["unnamed"]})')
     print(f'KHDA matched: {matched}/{named}')
-    print(f'  exact     {stats["exact"]:4d}   (normalized name == KHDA name)')
-    print(f'  jaccard   {stats["jaccard"]:4d}   (token-set Jaccard >= 0.6)')
-    print(f'  seqratio  {stats["seqratio"]:4d}   (SequenceMatcher >= 0.74)')
-    print(f'  proximity {stats["proximity"]:4d}   (ambiguous tokens; broken by KHDA area substring)')
-    print(f'  polygon   {stats["polygon"]:4d}   (containing polygon == KHDA area + weak name match)')
-    print(f'  unmatched {stats["none"]:4d}   (KHDA-only without OSM coord: {len(khda) - matched})')
+    print(f'  exact      {stats["exact"]:4d}   (normalized name == KHDA name)')
+    print(f'  jaccard    {stats["jaccard"]:4d}   (token-set Jaccard >= 0.6)')
+    print(f'  seqratio   {stats["seqratio"]:4d}   (SequenceMatcher >= 0.74)')
+    print(f'  proximity  {stats["proximity"]:4d}   (ambiguous tokens; broken by KHDA area substring)')
+    print(f'  polygon    {stats["polygon"]:4d}   (containing polygon == KHDA area + weak name match)')
+    print(f'  manual     {stats["manual"]:4d}   (KHDA-only, coords from MANUAL_COORDS)')
+    print(f'  geo-rejected {stats["geo_rejected"]:4d}   (name match overruled by >{GEO_SANITY_KM} km from KHDA area)')
+    print(f'  unmatched  {stats["none"]:4d}   (KHDA-only without OSM coord: {len(khda) - matched})')
 
     with HTML.open(encoding='utf-8') as f:
         lines = f.readlines()
