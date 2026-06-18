@@ -60,692 +60,59 @@ setTimeout(() => {
       }
     });
   }
-  // Apply current lang to populate all panel labels on first paint
-  applyLang(currentLang);
+  // Respect ?lang=<code> in the URL so /sales/?lang=en boots in English
+  // (and so the "Open details" links built later land on the matching
+  // /<lang>/sales/<slug>/ page). Falls through to the default 'ru' otherwise.
+  let _bootLang = currentLang;
+  try {
+    const qp = new URLSearchParams(window.location.search).get('lang');
+    if (qp && typeof I18N !== 'undefined' && I18N[qp]) _bootLang = qp;
+  } catch (e) { /* sandbox / file:// edge — ignore */ }
+  applyLang(_bootLang);
 }, 0);
 
 
-// ===================== DRILL-DOWN PANEL =====================
-var activeCharts = [];
-var timelineCharts = [];
-var currentRoomFilter = 'all';
-var currentPeriod = 'all';   // '1y' | '3y' | '5y' | '10y' | 'all'
-var modalChart = null;
-const PERIODS = [
-  { k: '1y',  months: 12  },
-  { k: '3y',  months: 36  },
-  { k: '5y',  months: 60  },
-  { k: '10y', months: 120 },
-  { k: 'all', months: null },
-];
-const ROOM_ORDER = ['all','studio','1br','2br','3br','4br+','villa','other'];
-const ROOM_COLORS = { all:'#1d4ed8', studio:'#9ca3af', '1br':'#60a5fa', '2br':'#3b82f6', '3br':'#1d4ed8', '4br+':'#1e3a8a', villa:'#d97706', other:'#a78bfa' };
-function roomLabel(k){
-  if (k==='all')    return t('room_chip_all');
-  if (k==='villa')  return t('ru_villa');
-  if (k==='other')  return t('ru_other');
-  return {studio:'Studio','1br':'1BR','2br':'2BR','3br':'3BR','4br+':'4BR+'}[k];
+// ===================== DETAIL NAVIGATION =====================
+// The slide-out detail panel was removed in favour of dedicated district pages
+// (see scripts/build_district_pages.py output under /<lang>/sales|rents/<slug>/).
+// What stays here is just the routing: clicking a polygon / popup button /
+// table row resolves the district's slug + current language and navigates.
+function _slugify(s) {
+  return (s || '').normalize('NFKD').replace(/[\u0300-\u036f]/g, '')
+    .toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '');
 }
-function destroyCharts() { for (const c of activeCharts) c.destroy(); activeCharts = []; timelineCharts = []; }
-function destroyTimelineCharts() {
-  for (const c of timelineCharts) {
-    c.destroy();
-    const i = activeCharts.indexOf(c);
-    if (i>=0) activeCharts.splice(i,1);
-  }
-  timelineCharts = [];
+function _langUrlPrefix() {
+  return (typeof currentLang === 'string' && currentLang !== 'ru') ? '/' + currentLang : '';
 }
-
-function fmtAedDP(v) {
-  if (!v) return '—';
-  if (v >= 1e9) return (v/1e9).toFixed(2) + ' ' + t('abbr_b');
-  if (v >= 1e6) return (v/1e6).toFixed(2) + ' ' + t('abbr_m');
-  if (v >= 1e3) return (v/1e3).toFixed(0) + t('abbr_k');
-  return v.toLocaleString();
+function _districtModePrefix(mask) {
+  // Per-district pages exist only for sales + rents. growth/payback land on /sales/.
+  return (mask === 'rents') ? 'rents' : 'sales';
 }
-function fmtInt(v) { return (v||0).toLocaleString('ru-RU'); }
-
-function closePanel() {
-  const panel = document.getElementById('detail-panel');
-  panel.classList.remove('open');
-  panel.classList.remove('fullscreen');
-  document.getElementById('dp-fs-toggle').textContent = '◀';
-  document.getElementById('map').classList.remove('with-panel-open');
-  document.getElementById('map').classList.add('with-panel-closed');
-  setTimeout(() => map.invalidateSize(), 260);
-  destroyCharts();
-}
-document.getElementById('dp-close').addEventListener('click', closePanel);
-
-document.getElementById('dp-fs-toggle').addEventListener('click', () => {
-  const panel = document.getElementById('detail-panel');
-  if (!panel.classList.contains('open')) {
-    // Panel closed — open Dubai-wide overview
-    openDubai();
-    return;
-  }
-  const mapEl = document.getElementById('map');
-  const goingFs = !panel.classList.contains('fullscreen');
-  panel.classList.toggle('fullscreen', goingFs);
-  document.getElementById('dp-fs-toggle').textContent = goingFs ? '▶' : '◀';
-  if (goingFs) {
-    mapEl.classList.remove('with-panel-open');
+function _districtHrefForKey(key, name) {
+  if (!key || key === '__dubai__') return _langUrlPrefix() + '/';
+  // Slug MUST match the build script (scripts/build_district_pages.py), which
+  // slugifies the DLD record's `name`. OSM polygon labels often differ —
+  // "Jabal Ali Industrial 2" (OSM) vs "Jabal Ali Industrial Second" (DLD) —
+  // so always prefer the AGGREGATES/RENT_AGGREGATES name when it exists.
+  let display = null;
+  if (typeof AGGREGATES !== 'undefined' && AGGREGATES[key] && AGGREGATES[key].name) {
+    display = AGGREGATES[key].name;
+  } else if (typeof RENT_AGGREGATES !== 'undefined' && RENT_AGGREGATES[key] && RENT_AGGREGATES[key].name) {
+    display = RENT_AGGREGATES[key].name;
   } else {
-    mapEl.classList.add('with-panel-open');
+    display = name || key;
   }
-  setTimeout(() => map.invalidateSize(), 260);
-});
-
-// Tab switch (sale / rent) — delegated on #dp-body
-document.getElementById('dp-body').addEventListener('click', e => {
-  const btn = e.target.closest('.dp-tab');
-  if (!btn) return;
-  const which = btn.dataset.dpTab;
-  document.querySelectorAll('#dp-body .dp-tab').forEach(b => b.classList.toggle('active', b === btn));
-  document.querySelectorAll('#dp-body .dp-tab-pane').forEach(p => {
-    p.classList.toggle('active', p.id === 'dp-pane-' + which);
-  });
-  if (which === 'rent') {
-    const titleEl = document.getElementById('dp-title');
-    const key = titleEl && titleEl.dataset.key;
-    if (key) {
-      const r = RENT_AGGREGATES[key];
-      if (r) {
-        destroyRentCharts();
-        renderRentCharts(r);
-      }
-    }
-  }
-});
-
-window.openDistrictByKey = function(key, fullscreen) {
-  const feat = GEOJSON.features.find(f => f.properties.real_area_key === key);
-  if (feat) openDistrict(feat.properties, {fullscreen: !!fullscreen});
-  else alert('No feature for key: ' + key);
+  const slug = _slugify(display);
+  const mode = _districtModePrefix(typeof currentMask !== 'undefined' ? currentMask : 'sales');
+  return _langUrlPrefix() + '/' + mode + '/' + slug + '/';
+}
+window.openDistrictByKey = function(key) {
+  window.location.href = _districtHrefForKey(key);
 };
-
-window.openDubai = function(opts) {
-  const fullscreen = !!(opts && opts.fullscreen);
-  const a = AGGREGATES['__dubai__'];
-  if (!a) { alert(t('alert_not_found')); return; }
-  destroyCharts();
-  const panel = document.getElementById('detail-panel');
-  const mapEl = document.getElementById('map');
-  const titleEl = document.getElementById('dp-title');
-  titleEl.textContent = t('dp_dubai_title');
-  titleEl.dataset.key = '__dubai__';
-  document.getElementById('dp-body').innerHTML = renderBody(a, {__dubai__: true});
-  panel.classList.add('open');
-  panel.classList.toggle('fullscreen', fullscreen);
-  document.getElementById('dp-fs-toggle').textContent = fullscreen ? '▶' : '◀';
-  mapEl.classList.remove('with-panel-closed');
-  if (fullscreen) mapEl.classList.remove('with-panel-open');
-  else mapEl.classList.add('with-panel-open');
-  setTimeout(() => map.invalidateSize(), 260);
-  setTimeout(() => renderCharts(a), 50);
-};
-
-function openDistrict(props, opts) {
-  const fullscreen = !!(opts && opts.fullscreen);
-  const key = props.real_area_key;
-  if (!key) {
-    // No data for this district — silently ignore the click instead of alerting
-    return;
-  }
-  const a = AGGREGATES[key];
-  if (!a) { alert(t('alert_not_found')); return; }
-
-  destroyCharts();
-  const panel = document.getElementById('detail-panel');
-  const mapEl = document.getElementById('map');
-  const titleEl = document.getElementById('dp-title'); titleEl.textContent = a.name; titleEl.dataset.key = key;
-  document.getElementById('dp-body').innerHTML = renderBody(a, props);
-  panel.classList.add('open');
-  panel.classList.toggle('fullscreen', fullscreen);
-  document.getElementById('dp-fs-toggle').textContent = fullscreen ? '▶' : '◀';
-  mapEl.classList.remove('with-panel-closed');
-  if (fullscreen) {
-    mapEl.classList.remove('with-panel-open');
-  } else {
-    mapEl.classList.add('with-panel-open');
-  }
-  setTimeout(() => map.invalidateSize(), 260);
-
-  // Render charts after DOM injection
-  setTimeout(() => renderCharts(a), 50);
+window.openDubai = function() { /* Dubai-wide overview moved off the slide-out panel; no-op for now. */ };
+function openDistrict(props) {
+  if (props && props.real_area_key) window.openDistrictByKey(props.real_area_key);
 }
-
-function renderBody(a, props) {
-  const rentKey = props.__dubai__ ? '__dubai__' : props.real_area_key;
-  const rentA = rentKey ? RENT_AGGREGATES[rentKey] : null;
-  const rentCount = rentA ? rentA.n : 0;
-  return `
-    <div class="dp-tabs">
-      <button class="dp-tab active" data-dp-tab="sale" type="button">${t('tab_sale')}<span class="tab-n">${fmtInt(a.n)}</span></button>
-      <button class="dp-tab" data-dp-tab="rent" type="button">${t('tab_rent')}<span class="tab-n">${fmtInt(rentCount)}</span></button>
-    </div>
-    <div class="dp-tab-pane active" id="dp-pane-sale">${renderBodySale(a, props)}</div>
-    <div class="dp-tab-pane" id="dp-pane-rent">${renderBodyRent(rentA, props)}</div>
-  `;
-}
-
-function projName(p) { return p || t('not_specified'); }
-
-// Row in the room-median breakdown.
-// 'all' is excluded — it duplicates the headline 4-card stats.
-const ROOM_BREAKDOWN = ['studio','1br','2br','3br','4br+','villa','other'];
-function roomBreakdownIcon(k) {
-  return (k === 'villa') ? '🏡' : (k === 'other') ? '·' : '🏢';
-}
-
-function renderRoomBreakdown(a) {
-  const bu = a.by_rooms_unit || {};
-  const rows = ROOM_BREAKDOWN
-    .filter(k => bu[k] && bu[k].n > 0)
-    .map(k => {
-      const r = bu[k];
-      return `<tr>
-        <td>${roomBreakdownIcon(k)} ${roomLabel(k)}</td>
-        <td class="num">${fmtInt(r.n)}</td>
-        <td class="num">${r.med ? fmtAedDP(r.med) : '—'}</td>
-        <td class="num">${r.ppsqm ? fmtInt(r.ppsqm) : '—'}</td>
-      </tr>`;
-    }).join('');
-  if (!rows) return '';
-  return `
-    <div class="dp-section">
-      <h3>${t('rooms_breakdown_title')}</h3>
-      <table class="dp-table">
-        <thead><tr>
-          <th>${t('th_rooms_type')}</th>
-          <th class="num">${t('th_count')}</th>
-          <th class="num">${t('th_med_aed')}</th>
-          <th class="num">${t('th_aed_psqm')}</th>
-        </tr></thead>
-        <tbody>${rows}</tbody>
-      </table>
-    </div>
-  `;
-}
-
-function renderBodySale(a, props) {
-  const isDubai = !!props.__dubai__;
-  const proj_rows = a.top_projects.map(p => {
-    const areaCell = isDubai ? `<td>${p.area || '—'}</td>` : '';
-    return `<tr><td>${projName(p.proj)}</td>${areaCell}<td class="num">${fmtInt(p.n)}</td><td class="num">${fmtAedDP(p.med)}</td><td class="num">${fmtAedDP(p.total)}</td></tr>`;
-  }).join('');
-  const deal_rows = a.top_deals.map(d => `<tr><td>${d.d}</td><td>${projName(d.proj)}</td><td>${d.room}</td><td class="num">${d.area ? fmtInt(d.area) : '—'}</td><td class="num">${fmtAedDP(d.val)}</td><td><span class="dp-tag-op dp-tag-op-${d.op}">${d.op}</span></td></tr>`).join('');
-  const recent_rows = a.recent.map(d => `<tr><td>${d.d}</td><td>${projName(d.proj)}</td><td>${d.room}</td><td class="num">${fmtAedDP(d.val)}</td><td><span class="dp-tag-g dp-tag-g-${d.g}">${d.g}</span></td></tr>`).join('');
-
-  const proj_th_area = isDubai ? `<th>${t('th_district')}</th>` : '';
-
-  return `
-    <div class="period-chips" id="dp-period-chips">${renderPeriodChips()}</div>
-    <div class="dp-stats" id="dp-stats-sale">${renderStatsSale(a)}</div>
-
-    <div class="dp-section">
-      <h3>${t("sp_section_timeline")}</h3>
-      <div class="room-chips" id="dp-room-chips">${renderRoomChips(a)}</div>
-      <div style="display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px">
-        <div>
-          <div style="font-size:11px;color:#666;margin-bottom:2px">${t("sp_subsection_count")}</div>
-          <div class="dp-chart" style="height:180px"><button class="chart-expand-btn" title="${t('chart_expand')}" onclick="expandChart('ch-timeline-count', '${t('sp_subsection_count')}')">⛶</button><canvas id="ch-timeline-count"></canvas></div>
-        </div>
-        <div>
-          <div style="font-size:11px;color:#666;margin-bottom:2px">${t("sp_subsection_volume")}</div>
-          <div class="dp-chart" style="height:180px"><button class="chart-expand-btn" title="${t('chart_expand')}" onclick="expandChart('ch-timeline-volume', '${t('sp_subsection_volume')}')">⛶</button><canvas id="ch-timeline-volume"></canvas></div>
-        </div>
-        <div>
-          <div style="font-size:11px;color:#666;margin-bottom:2px">${t("sp_subsection_avg")}</div>
-          <div class="dp-chart" style="height:180px"><button class="chart-expand-btn" title="${t('chart_expand')}" onclick="expandChart('ch-timeline-avg', '${t('sp_subsection_avg')}')">⛶</button><canvas id="ch-timeline-avg"></canvas></div>
-        </div>
-      </div>
-    </div>
-
-    ${renderRoomBreakdown(a)}
-
-    <div class="dp-section">
-      <h3>${t("sp_section_offplan")}</h3>
-      <div class="dp-chart" style="height:160px"><button class="chart-expand-btn" title="${t('chart_expand')}" onclick="expandChart('ch-offplan', '${t('sp_section_offplan')}')">⛶</button><canvas id="ch-offplan"></canvas></div>
-    </div>
-
-    <details class="dp-collapsible">
-      <summary>${t("sp_section_top_projects")}</summary>
-      <table class="dp-table"><thead><tr><th>${t("th_project")}</th>${proj_th_area}<th class="num">${t("th_n")}</th><th class="num">${t("th_median")}</th><th class="num">${t("th_volume")}</th></tr></thead><tbody>${proj_rows}</tbody></table>
-    </details>
-
-    <details class="dp-collapsible">
-      <summary>${t("sp_section_top_deals")}</summary>
-      <table class="dp-table"><thead><tr><th>${t("th_date")}</th><th>${t("th_project")}</th><th>${t("th_br")}</th><th class="num">${t("th_sqm")}</th><th class="num">${t("th_aed")}</th><th></th></tr></thead><tbody>${deal_rows}</tbody></table>
-    </details>
-
-    <details class="dp-collapsible">
-      <summary>${t("sp_section_recent")}</summary>
-      <table class="dp-table"><thead><tr><th>${t("th_date")}</th><th>${t("th_project")}</th><th>${t("th_br")}</th><th class="num">${t("th_aed")}</th><th>${t("th_type")}</th></tr></thead><tbody>${recent_rows}</tbody></table>
-    </details>
-  `;
-}
-
-function renderBodyRent(r, props) {
-  if (!r || !r.n) {
-    return `<div class="dp-empty">${t('rent_no_data')}</div>`;
-  }
-
-  const subOrder = ['Flat','Villa','Studio','Office','Shop','Warehouse','Hotel','Showroom','Complex Villas','Labor Camps','Other'];
-  const sub = r.by_subtype || {};
-  const subKeys = subOrder.filter(k => sub[k]);
-  const sub_rows = subKeys.map(k => {
-    const v = sub[k];
-    return `<tr><td>${k}</td><td class="num">${fmtInt(v.n)}</td><td class="num">${fmtAedDP(v.med)}</td><td class="num">${fmtInt(v.med_ppsqm)}</td></tr>`;
-  }).join('');
-
-  const usage = r.by_usage || {};
-  const usageTotal = Object.values(usage).reduce((s,v)=>s+v,0) || 1;
-  const usage_rows = Object.entries(usage).sort((a,b)=>b[1]-a[1]).map(([k,v]) => {
-    const pct = (v/usageTotal*100).toFixed(1);
-    return `<tr><td>${k}</td><td class="num">${fmtInt(v)}</td><td class="num">${pct}%</td></tr>`;
-  }).join('');
-
-  const proj_rows = (r.top_projects||[]).map(p => `<tr><td>${projName(p.proj)}</td><td class="num">${fmtInt(p.n)}</td><td class="num">${fmtAedDP(p.med)}</td></tr>`).join('');
-
-  const recent_rows = (r.recent||[]).map(d => {
-    const vTag = d.v === 'N' ? t('rent_v_new') : t('rent_v_renew');
-    return `<tr><td>${d.d}</td><td>${projName(d.proj)}</td><td>${d.sub}</td><td class="num">${d.sqm ? fmtInt(d.sqm) : '—'}</td><td class="num">${fmtAedDP(d.val)}</td><td><span class="dp-tag-g dp-tag-g-${d.v==='N'?'O':'R'}">${vTag}</span></td></tr>`;
-  }).join('');
-
-  return `
-    <div class="period-chips" id="dp-period-chips-rent">${renderPeriodChipsRent()}</div>
-    <div class="dp-stats" id="dp-stats-rent">${renderStatsRent(r)}</div>
-
-    <div class="dp-section">
-      <h3>${t("rent_section_timeline")}</h3>
-      <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
-        <div>
-          <div style="font-size:11px;color:#666;margin-bottom:2px">${t("sp_subsection_count")}</div>
-          <div class="dp-chart" style="height:180px"><button class="chart-expand-btn" title="${t('chart_expand')}" onclick="expandChart('ch-rent-count', '${t('sp_subsection_count')}')">⛶</button><canvas id="ch-rent-count"></canvas></div>
-        </div>
-        <div>
-          <div style="font-size:11px;color:#666;margin-bottom:2px">${t("rent_th_med")}</div>
-          <div class="dp-chart" style="height:180px"><button class="chart-expand-btn" title="${t('chart_expand')}" onclick="expandChart('ch-rent-med', '${t('rent_th_med')}')">⛶</button><canvas id="ch-rent-med"></canvas></div>
-        </div>
-      </div>
-    </div>
-
-    ${sub_rows ? `<div class="dp-section">
-      <h3>${t("rent_section_subtype")}</h3>
-      <table class="dp-table"><thead><tr><th>${t("rent_th_subtype")}</th><th class="num">${t("th_n")}</th><th class="num">${t("rent_th_med")}</th><th class="num">${t("rent_th_ppsqm")}</th></tr></thead><tbody>${sub_rows}</tbody></table>
-    </div>` : ''}
-
-    ${usage_rows ? `<div class="dp-section">
-      <h3>${t("rent_section_usage")}</h3>
-      <table class="dp-table"><thead><tr><th>${t("rent_section_usage")}</th><th class="num">${t("th_n")}</th><th class="num">%</th></tr></thead><tbody>${usage_rows}</tbody></table>
-    </div>` : ''}
-
-    ${proj_rows ? `<details class="dp-collapsible">
-      <summary>${t("rent_section_top_projects")}</summary>
-      <table class="dp-table"><thead><tr><th>${t("th_project")}</th><th class="num">${t("th_n")}</th><th class="num">${t("rent_th_med")}</th></tr></thead><tbody>${proj_rows}</tbody></table>
-    </details>` : ''}
-
-    ${recent_rows ? `<details class="dp-collapsible">
-      <summary>${t("rent_section_recent")}</summary>
-      <table class="dp-table"><thead><tr><th>${t("th_date")}</th><th>${t("th_project")}</th><th>${t("rent_th_subtype")}</th><th class="num">${t("th_sqm")}</th><th class="num">${t("th_aed")}</th><th>${t("rent_th_version")}</th></tr></thead><tbody>${recent_rows}</tbody></table>
-    </details>` : ''}
-  `;
-}
-
-function fmtAxisAed(v) {
-  if (v >= 1e9) return (v/1e9).toFixed(1) + 'B';
-  if (v >= 1e6) return (v/1e6).toFixed(1) + 'M';
-  if (v >= 1e3) return (v/1e3).toFixed(0) + 'K';
-  return v;
-}
-
-// ─── Period helpers ─────────────────────────────────────────────
-function renderPeriodChips() {
-  return `<span class="pc-lbl">${t('sp_period_label')}:</span>` + PERIODS.map(p => {
-    const cls = p.k === currentPeriod ? ' active' : '';
-    return `<button class="period-chip${cls}" type="button" onclick="setPeriod('${p.k}')">${t('period_'+p.k)}</button>`;
-  }).join('');
-}
-
-// Slice a monthly timeline ({d:"YYYY-MM", ...}) to the active period.
-// Finite periods anchor at *today* and ignore forward-dated months.
-function periodSlice(series) {
-  if (!series.length) return series;
-  if (currentPeriod === 'all') return series;
-  const today = new Date();
-  const todayMonth = `${today.getFullYear()}-${String(today.getMonth()+1).padStart(2,'0')}`;
-  const upto = series.filter(p => p.d <= todayMonth);
-  if (!upto.length) return [];
-  const months = PERIODS.find(p => p.k === currentPeriod).months;
-  return upto.slice(-months);
-}
-
-// Pick base timeline by room filter (returns full series — period applied separately).
-function roomTimelineFor(a) {
-  if (currentRoomFilter === 'all') return a.timeline || [];
-  return (a.timeline_by_rooms && a.timeline_by_rooms[currentRoomFilter]) || [];
-}
-
-// Median of a list of numbers (ignores zero / falsy).
-function medOf(arr) {
-  const v = arr.filter(x => x).sort((a,b) => a-b);
-  if (!v.length) return 0;
-  return v[Math.floor(v.length/2)];
-}
-
-// Roll up stats from monthly timeline rows in [from, to] window.
-function computeStatsSale(a) {
-  const base = roomTimelineFor(a);
-  const slice = periodSlice(base);
-  let n = 0, total = 0;
-  const meds = [], ppsqms = [];
-  for (const p of slice) {
-    n     += (p.n || 0);
-    total += (p.vol || 0);
-    if (p.med)   meds.push(p.med);
-    if (p.ppsqm) ppsqms.push(p.ppsqm);
-  }
-  return { n, total, med: medOf(meds), med_ppsqm: medOf(ppsqms) };
-}
-
-function renderStatsSale(a) {
-  const s = computeStatsSale(a);
-  return `
-      <div class="dp-stat"><div class="k">${t("sc_trans")}</div><div class="v">${fmtInt(s.n)}</div></div>
-      <div class="dp-stat"><div class="k">${t("sc_volume")}</div><div class="v">${fmtAedDP(s.total)}</div></div>
-      <div class="dp-stat"><div class="k">${t("sc_median_price")}</div><div class="v">${s.med ? fmtAedDP(s.med) : '—'}</div></div>
-      <div class="dp-stat"><div class="k">${t("sc_price_psqm")}</div><div class="v">${s.med_ppsqm ? fmtInt(s.med_ppsqm)+' AED' : '—'}</div></div>
-  `;
-}
-
-window.setPeriod = function(p) {
-  if (currentPeriod === p) return;
-  currentPeriod = p;
-  const titleEl = document.getElementById('dp-title');
-  const key = titleEl && titleEl.dataset.key;
-  if (!key) return;
-  // Sale tab refresh
-  const a = AGGREGATES[key];
-  if (a) {
-    const pcEl = document.getElementById('dp-period-chips');
-    if (pcEl) pcEl.innerHTML = renderPeriodChips();
-    const statsEl = document.getElementById('dp-stats-sale');
-    if (statsEl) statsEl.innerHTML = renderStatsSale(a);
-    destroyTimelineCharts();
-    renderTimelineCharts(a);
-  }
-  // Rent tab refresh (mirrors period)
-  const r = RENT_AGGREGATES[key];
-  if (r) {
-    const pcRentEl = document.getElementById('dp-period-chips-rent');
-    if (pcRentEl) pcRentEl.innerHTML = renderPeriodChipsRent();
-    const statsRentEl = document.getElementById('dp-stats-rent');
-    if (statsRentEl) statsRentEl.innerHTML = renderStatsRent(r);
-    // Re-render rent charts only if the rent tab is currently visible (canvases exist + in DOM)
-    if (document.getElementById('ch-rent-count')) {
-      destroyRentCharts();
-      renderRentCharts(r);
-    }
-  }
-};
-
-// ─── Chart expand modal ────────────────────────────────────────
-window.expandChart = function(canvasId, title) {
-  const src = activeCharts.find(c => c.canvas && c.canvas.id === canvasId);
-  if (!src) return;
-  const modal = document.getElementById('chart-modal');
-  document.getElementById('chart-modal-title').textContent = title || '';
-  const canvas = document.getElementById('chart-modal-canvas');
-  if (modalChart) { modalChart.destroy(); modalChart = null; }
-  modal.classList.add('open');
-  // Clone config (deep) so updates don't fight the source chart
-  const cfg = JSON.parse(JSON.stringify({
-    type: src.config.type,
-    data: src.config.data,
-    options: src.config.options || {},
-  }));
-  // Restore callbacks lost via JSON serialization
-  cfg.options.responsive = true;
-  cfg.options.maintainAspectRatio = false;
-  cfg.options.plugins = cfg.options.plugins || {};
-  cfg.options.plugins.legend = { display: false };
-  if (cfg.options.scales && cfg.options.scales.y && cfg.options.scales.y.ticks) {
-    cfg.options.scales.y.ticks.callback = fmtAxisAed;
-  }
-  modalChart = new Chart(canvas, cfg);
-};
-
-window.closeChartModal = function() {
-  const modal = document.getElementById('chart-modal');
-  modal.classList.remove('open');
-  if (modalChart) { modalChart.destroy(); modalChart = null; }
-};
-
-document.addEventListener('keydown', (e) => {
-  if (e.key === 'Escape') closeChartModal();
-});
-
-// ─── Rent panel helpers ────────────────────────────────────────
-var rentTimelineCharts = [];
-
-function destroyRentCharts() {
-  for (const c of rentTimelineCharts) {
-    c.destroy();
-    const i = activeCharts.indexOf(c);
-    if (i >= 0) activeCharts.splice(i, 1);
-  }
-  rentTimelineCharts = [];
-}
-
-function renderPeriodChipsRent() {
-  return `<span class="pc-lbl">${t('sp_period_label')}:</span>` + PERIODS.map(p => {
-    const cls = p.k === currentPeriod ? ' active' : '';
-    return `<button class="period-chip${cls}" type="button" onclick="setPeriod('${p.k}')">${t('period_'+p.k)}</button>`;
-  }).join('');
-}
-
-function computeStatsRent(r) {
-  const slice = periodSlice(r.timeline || []);
-  let n = 0;
-  const meds = [], ppsqms = [];
-  for (const p of slice) {
-    n += (p.n || 0);
-    if (p.med)   meds.push(p.med);
-    if (p.ppsqm) ppsqms.push(p.ppsqm);
-  }
-  return { n, med_annual: medOf(meds), med_ppsqm: medOf(ppsqms) };
-}
-
-function renderStatsRent(r) {
-  const s = computeStatsRent(r);
-  const newRatio = r.n ? Math.round(r.new / r.n * 100) : 0;
-  const renRatio = 100 - newRatio;
-  return `
-      <div class="dp-stat"><div class="k">${t("rent_sc_contracts")}</div><div class="v">${fmtInt(s.n)}</div></div>
-      <div class="dp-stat"><div class="k">${t("rent_sc_med_annual")}</div><div class="v">${s.med_annual ? fmtAedDP(s.med_annual) : '—'}</div></div>
-      <div class="dp-stat"><div class="k">${t("rent_sc_ppsqm")}</div><div class="v">${s.med_ppsqm ? fmtInt(s.med_ppsqm)+' AED' : '—'}</div></div>
-      <div class="dp-stat"><div class="k">New / Renew</div><div class="v" style="font-size:13px">${newRatio}% / ${renRatio}%</div></div>
-  `;
-}
-
-function renderRentCharts(r) {
-  const series = periodSlice(r.timeline || []);
-  const labels = series.map(p => p.d);
-  const color = '#0ea5e9';
-  const bg = 'rgba(14,165,233,.14)';
-
-  const mkChart = (id, data, fmtY, tooltipFmt) => {
-    const ctx = document.getElementById(id);
-    if (!ctx) return;
-    const ch = new Chart(ctx, {
-      type:'line',
-      data:{ labels, datasets:[{ data, borderColor:color, backgroundColor:bg, tension:.3, pointRadius:1.2, fill:true }]},
-      options:{
-        responsive:true, maintainAspectRatio:false,
-        interaction:{intersect:false, mode:'index'},
-        plugins:{legend:{display:false}, tooltip:{callbacks:{label: c => ' ' + tooltipFmt(c.parsed.y)}}},
-        scales:{
-          y:{ticks:{font:{size:10}, callback: fmtY}, beginAtZero:true},
-          x:{ticks:{font:{size:10}, maxRotation:0, autoSkip:true, maxTicksLimit:6}},
-        }
-      }
-    });
-    activeCharts.push(ch);
-    rentTimelineCharts.push(ch);
-  };
-
-  mkChart('ch-rent-count', series.map(p => p.n), v => v,   v => v + ' ' + t('ch_count').toLowerCase());
-  mkChart('ch-rent-med',   series.map(p => p.med || 0), fmtAxisAed, fmtAedDP);
-}
-
-function renderRoomChips(a) {
-  const tbr = a.timeline_by_rooms || {};
-  const bu  = a.by_rooms_unit || {};
-  return ROOM_ORDER.map(k => {
-    const n = k === 'all' ? a.n : (bu[k] ? bu[k].n : 0);
-    const disabled = k !== 'all' && (!tbr[k] || !tbr[k].length);
-    if (disabled) return '';
-    const active = (k === currentRoomFilter) ? ' active' : '';
-    const color  = ROOM_COLORS[k];
-    const style  = (k === currentRoomFilter) ? ` style="background:${color};border-color:${color};color:#fff"` : '';
-    return `<button class="room-chip${active}" data-room="${k}" onclick="setRoomFilter('${k}')"${style}>${roomLabel(k)}<span class="chip-n">${fmtInt(n)}</span></button>`;
-  }).join('');
-}
-
-window.setRoomFilter = function(room) {
-  if (currentRoomFilter === room) return;
-  currentRoomFilter = room;
-  const titleEl = document.getElementById('dp-title');
-  const key = titleEl && titleEl.dataset.key;
-  if (!key) return;
-  const a = AGGREGATES[key];
-  if (!a) return;
-  document.getElementById('dp-room-chips').innerHTML = renderRoomChips(a);
-  const statsEl = document.getElementById('dp-stats-sale');
-  if (statsEl) statsEl.innerHTML = renderStatsSale(a);
-  destroyTimelineCharts();
-  renderTimelineCharts(a);
-};
-
-function pickTimelineSeries(a) {
-  return periodSlice(roomTimelineFor(a));
-}
-
-function renderTimelineCharts(a) {
-  const series = pickTimelineSeries(a);
-  // Daily ("YYYY-MM-DD" → "MM-DD") or monthly ("YYYY-MM" → as-is)
-  const labels = series.map(p => p.d.length === 10 ? p.d.slice(5) : p.d);
-  const color  = ROOM_COLORS[currentRoomFilter] || '#1d4ed8';
-  // hex → rgba(_,_,_,.14)
-  const rgba = (hex, alpha) => {
-    const m = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(hex);
-    if (!m) return 'rgba(29,78,216,.12)';
-    return `rgba(${parseInt(m[1],16)},${parseInt(m[2],16)},${parseInt(m[3],16)},${alpha})`;
-  };
-  const bg = rgba(color, .14);
-
-  const mkChart = (id, data, fmtY, tooltipFmt) => {
-    const ctx = document.getElementById(id);
-    if (!ctx) return;
-    const ch = new Chart(ctx, {
-      type:'line',
-      data:{ labels, datasets:[{ data, borderColor:color, backgroundColor:bg, tension:.3, pointRadius:1.5, fill:true }]},
-      options:{
-        responsive:true, maintainAspectRatio:false,
-        interaction:{intersect:false, mode:'index'},
-        plugins:{legend:{display:false}, tooltip:{callbacks:{label: c => ' ' + tooltipFmt(c.parsed.y)}}},
-        scales:{
-          y:{ticks:{font:{size:10}, callback: fmtY}, beginAtZero:true},
-          x:{ticks:{font:{size:10}, maxRotation:0, autoSkip:true, maxTicksLimit:6}},
-        }
-      }
-    });
-    activeCharts.push(ch);
-    timelineCharts.push(ch);
-  };
-
-  mkChart('ch-timeline-count',  series.map(p => p.n),                   v => v, v => v + ' ' + t('ch_count').toLowerCase());
-  mkChart('ch-timeline-volume', series.map(p => p.vol||0),              fmtAxisAed, fmtAedDP);
-  mkChart('ch-timeline-avg',    series.map(p => p.n ? Math.round(p.vol/p.n) : 0), fmtAxisAed, fmtAedDP);
-}
-
-function renderCharts(a) {
-  currentRoomFilter = 'all';
-  currentPeriod = 'all';
-  const chipsEl = document.getElementById('dp-room-chips');
-  if (chipsEl) chipsEl.innerHTML = renderRoomChips(a);
-  const periodEl = document.getElementById('dp-period-chips');
-  if (periodEl) periodEl.innerHTML = renderPeriodChips();
-  const statsEl = document.getElementById('dp-stats-sale');
-  if (statsEl) statsEl.innerHTML = renderStatsSale(a);
-  renderTimelineCharts(a);
-  // Rooms breakdown — count + volume
-  try {
-    const bu = a.by_rooms_unit || {};
-    const order = ['studio','1br','2br','3br','4br+','villa','other'];
-    const labelFor = k => ({
-      studio:'Studio', '1br':'1BR', '2br':'2BR', '3br':'3BR',
-      '4br+':'4BR+', villa:t('ru_villa'), other:t('ru_other')
-    })[k];
-    const colorFor = k => ({
-      studio:'#9ca3af', '1br':'#60a5fa', '2br':'#3b82f6', '3br':'#1d4ed8',
-      '4br+':'#1e3a8a', villa:'#d97706', other:'#a78bfa'
-    })[k];
-    const keys = order.filter(k => bu[k] && (bu[k].n > 0));
-    const labels = keys.map(labelFor);
-    const colors = keys.map(colorFor);
-
-    const ctxRC = document.getElementById('ch-rooms-count');
-    if (ctxRC && keys.length) {
-      activeCharts.push(new Chart(ctxRC, {
-        type:'bar',
-        data:{ labels, datasets:[{ data: keys.map(k => bu[k].n), backgroundColor: colors }]},
-        options:{
-          indexAxis:'y', responsive:true, maintainAspectRatio:false,
-          plugins:{legend:{display:false}, tooltip:{callbacks:{label:c=>` ${c.parsed.x} ${t('ch_count').toLowerCase()}`}}},
-          scales:{
-            x:{ticks:{font:{size:10}}, beginAtZero:true},
-            y:{ticks:{font:{size:11}}}
-          }
-        }
-      }));
-    }
-    const ctxRV = document.getElementById('ch-rooms-volume');
-    if (ctxRV && keys.length) {
-      activeCharts.push(new Chart(ctxRV, {
-        type:'bar',
-        data:{ labels, datasets:[{ data: keys.map(k => bu[k].vol), backgroundColor: colors }]},
-        options:{
-          indexAxis:'y', responsive:true, maintainAspectRatio:false,
-          plugins:{legend:{display:false}, tooltip:{callbacks:{label:c=>` ${fmtAedDP(c.parsed.x)}`}}},
-          scales:{
-            x:{ticks:{font:{size:10}, callback:fmtAxisAed}, beginAtZero:true},
-            y:{ticks:{font:{size:11}}}
-          }
-        }
-      }));
-    }
-  } catch(e) { console.error('rooms charts:', e); }
-
-  // Off-plan donut
-  try {
-    const ctxO = document.getElementById('ch-offplan');
-    if (ctxO && a.offplan) {
-      const labels = Object.keys(a.offplan);
-      const data = labels.map(k => a.offplan[k]);
-      const colors = labels.map(k => k==='Off-Plan' ? '#f0a020' : '#21918c');
-      if (labels.length) {
-        activeCharts.push(new Chart(ctxO, {
-          type:'doughnut',
-          data:{ labels, datasets:[{ data, backgroundColor:colors }]},
-          options:{ responsive:true, maintainAspectRatio:false, plugins:{legend:{position:'bottom', labels:{boxWidth:10, font:{size:11}}}} }
-        }));
-      }
-    }
-  } catch(e) { console.error('offplan chart:', e); }
-}
-
 
 // ===================== MAP =====================
 // SVG pattern defs for "no DLD data" hatched fill. Injected into the document
@@ -1421,34 +788,13 @@ function _featureForAreaKey(areaKey) {
 }
 
 function _openDistrictByKey(areaKey) {
-  if (areaKey === '__dubai__') {
-    if (typeof window.openDubai === 'function') window.openDubai();
-    return;
-  }
-  const feat = _featureForAreaKey(areaKey);
-  if (feat && typeof _onSearchSelect === 'function') _onSearchSelect(feat);
+  // Single-key entry point: navigate straight to the per-district page.
+  window.openDistrictByKey(areaKey);
 }
 
 function _openDistrictFromTable(areaKey) {
   if (!areaKey) return;
-  // On file://, setView('map') falls through to a real page navigation
-  // because pushState is blocked. Stash the district in the URL hash so the
-  // destination page can finish the open after it boots.
-  if (typeof window !== 'undefined' && window.location.protocol === 'file:') {
-    const href = _hrefForPage(currentMask, 'map');
-    if (href) {
-      window.location.href = href + '#district=' + encodeURIComponent(areaKey);
-      return;
-    }
-  }
-  // http(s): in-place. Flip view, force a layout tick, then fly + popup.
-  // Two rAFs — first lets the browser paint after display:none is removed,
-  // second runs after Leaflet sees the restored dimensions.
-  setView('map');
-  requestAnimationFrame(() => requestAnimationFrame(() => {
-    if (typeof map !== 'undefined' && map.invalidateSize) map.invalidateSize();
-    _openDistrictByKey(areaKey);
-  }));
+  window.openDistrictByKey(areaKey);
 }
 
 function _periodLabel(mask, p) {
@@ -1783,7 +1129,9 @@ function renderChoro(){
         const sourceLabel = ({'osm-admin':'OSM admin_level=10','osm-place':'OSM place='+(p.kind||''),'osm-residential':'OSM landuse=residential'})[p.source] || 'OSM';
         const newDev = p._new_dev_count || 0;
         const newDevRow = newDev ? `<div class="stat"><span class="k">${t("new_buildings")} <span class="src-tag src-osm">OSM</span></span><span class="v">${newDev}</span></div>` : '';
-        const detailsBtn = p.real_area_key ? `<div style="margin-top:8px"><button onclick='openDistrictByKey(${JSON.stringify(p.real_area_key)})' style="background:#0366d6;color:#fff;border:none;padding:6px 12px;border-radius:4px;cursor:pointer;font-size:12px;font-weight:600">${t("pp_open")}</button></div>` : '';
+        const detailsBtn = p.real_area_key
+          ? `<div style="margin-top:8px"><a href="${_districtHrefForKey(p.real_area_key, p.name)}" style="background:#0366d6;color:#fff;text-decoration:none;padding:6px 12px;border-radius:4px;font-size:12px;font-weight:600;display:inline-block">${t("pp_open")}</a></div>`
+          : '';
         let bodyRows;
         if (typeof m.popupRows === 'function') {
           const rendered = m.popupRows(p, t);
@@ -2209,18 +1557,6 @@ for (const ml of MALLS) {
 applyMask(currentMask, currentMaskPeriod, { pushUrl: false });
 if (currentView === 'table') setView('table', { pushUrl: false, force: true });
 
-// If landing with #district=… in the URL (e.g. after a file:// table click),
-// open the polygon once the choropleth + map are ready, then strip the hash.
-(function _bootOpenDistrictFromHash() {
-  const m = window.location.hash && window.location.hash.match(/^#district=(.+)$/);
-  if (!m) return;
-  const areaKey = decodeURIComponent(m[1]);
-  setTimeout(() => {
-    _openDistrictByKey(areaKey);
-    try { history.replaceState({}, '', window.location.pathname + window.location.search); }
-    catch (e) { /* file:// may reject — leave the hash, it's harmless */ }
-  }, 400);
-})();
 // Built-in named layers
 function poiBuiltinDefs() {
   return [
