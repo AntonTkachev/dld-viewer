@@ -111,21 +111,19 @@ function _slugify(s) {
 }
 // Auto-detected project subpath. Empty when served at the host root (custom
 // domain, local http.server from the repo); '/dld-viewer' when served as a
-// GH Pages project page. Probes the first URL segment against the set of
-// known content roots \u2014 anything else is assumed to be the project subpath.
+// GH Pages project page.
+//
+// Inverted whitelist on purpose \u2014 we trust host root by default and ONLY
+// promote known project-subpath names into _BASE_PATH. The previous design
+// listed every content root and treated anything else as a project subpath,
+// which silently broke every URL in the app the moment someone added a new
+// top-level dir (/blog/, a new POI category, \u2026). With the inversion you
+// have to opt a subpath in, so growth doesn't yield surprises.
+const _PROJECT_SUBPATHS = new Set(['dld-viewer']);
 const _BASE_PATH = (() => {
   if (typeof window === 'undefined') return '';
-  const ROOT_SEGS = new Set([
-    '', 'index.html',
-    'en', 'ar', 'hi',
-    'sales', 'rents', 'growth', 'payback',
-    'metro', 'schools', 'universities', 'medical',
-    'mosques', 'construction', 'malls',
-    'sitemap.xml', 'robots.txt',
-    'css', 'js', 'data', 'og', 'templates',
-  ]);
   const first = ((window.location.pathname || '').split('/').filter(Boolean)[0] || '');
-  return ROOT_SEGS.has(first) ? '' : '/' + first;
+  return _PROJECT_SUBPATHS.has(first) ? '/' + first : '';
 })();
 function _langUrlPrefix() {
   return _BASE_PATH + ((typeof currentLang === 'string' && currentLang !== 'ru') ? '/' + currentLang : '');

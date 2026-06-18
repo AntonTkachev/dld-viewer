@@ -19,15 +19,15 @@ Per page, swaps:
   - Bootstrap script: window.__INITIAL_MASK__ / _PERIOD__ / _VIEW__ / _LANG__
   - Hreflang block listing all 4 language variants
 """
+import json
 import os, re, sys
+
+# Local sibling module — single source of truth for BASE_URL.
+sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+from _seo_config import BASE_URL
 
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 SRC  = os.path.join(ROOT, 'index.html')
-
-# Production base URL — site is hosted as a GH Pages project page, so all
-# paths live under /dld-viewer/. canonical / hreflang / OG / JSON-LD URLs
-# all need this prefix; sitemap.xml uses the full BASE_URL form.
-BASE_URL = 'https://antontkachev.github.io/dld-viewer'
 
 LANGUAGES = ('ru', 'en', 'ar', 'hi')
 VIEWS = ('map', 'table')
@@ -292,7 +292,6 @@ def build(page_key, cfg, view, lang):
         'itemListElement': bc_items,
     }
 
-    import json as _json
     head_block = (
         f'<title>{title}</title>\n'
         f'<meta name="description" content="{desc}">\n'
@@ -306,10 +305,10 @@ def build(page_key, cfg, view, lang):
         + ''.join(f'<meta property="og:locale:alternate" content="{a}">\n' for a in og_locale_alts) +
         _hreflang_block(page_key, view) + '\n'
         '<script type="application/ld+json">'
-        + _json.dumps(dataset_ld, ensure_ascii=False) +
+        + json.dumps(dataset_ld, ensure_ascii=False) +
         '</script>\n'
         '<script type="application/ld+json">'
-        + _json.dumps(breadcrumb_ld, ensure_ascii=False) +
+        + json.dumps(breadcrumb_ld, ensure_ascii=False) +
         '</script>'
     )
     s = re.sub(r'<link rel="canonical"[^>]*>\n?', '', s, count=1)

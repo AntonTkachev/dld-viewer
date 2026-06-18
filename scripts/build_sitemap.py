@@ -6,6 +6,12 @@ canonical URL from its filesystem path, and emits:
   sitemap.xml — flat URL list with <lastmod> per the sitemap spec
   robots.txt  — points crawlers at the sitemap
 
+lastmod policy: ONE global value derived from data/tx.parquet's mtime
+(the DLD snapshot date — the freshness signal that matters). Per-file
+mtimes from a build run are all "today", which would tell crawlers that
+every URL just changed even though the data is the same — wastes their
+crawl budget and ours.
+
 Skipped:
   - Root / (master dev-preview index — its canonical points to /sales/)
   - /<lang>/index.html (noindex redirect stubs from build_pages.py)
@@ -22,8 +28,9 @@ from xml.sax.saxutils import escape
 
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 
-# Production base URL — every <loc> in sitemap.xml MUST be absolute per spec.
-BASE_URL = 'https://antontkachev.github.io/dld-viewer'
+# Single source of truth for BASE_URL (env-overridable for dev builds).
+sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+from _seo_config import BASE_URL  # noqa: E402  (path manipulation above)
 
 # Top-level dirs that carry indexable index.html files.
 TOP_DIRS = (
@@ -42,13 +49,12 @@ def is_noindex_stub(rel_path):
 
 
 def iter_index_files():
-    """Yield (rel_dirpath, mtime) for every indexable index.html."""
+    """Yield rel_dirpath for every indexable index.html."""
     def walk(start):
         for dirpath, _dirnames, filenames in os.walk(start):
             if 'index.html' not in filenames:
                 continue
-            rel = os.path.relpath(dirpath, ROOT)
-            yield rel, os.path.getmtime(os.path.join(dirpath, 'index.html'))
+            yield os.path.relpath(dirpath, ROOT)
 
     for top in TOP_DIRS:
         sub = os.path.join(ROOT, top)
@@ -61,6 +67,19 @@ def iter_index_files():
                 yield from walk(sub)
 
 
+def snapshot_lastmod():
+    """Single global lastmod derived from the DLD snapshot freshness.
+    Falls back to today if tx.parquet isn't on disk yet."""
+    candidates = [
+        os.path.join(ROOT, 'data', 'tx.parquet'),
+        os.path.join(ROOT, 'data', 'rents.parquet'),
+    ]
+    mtimes = [os.path.getmtime(p) for p in candidates if os.path.exists(p)]
+    if mtimes:
+        return datetime.fromtimestamp(max(mtimes), tz=timezone.utc).strftime('%Y-%m-%d')
+    return datetime.now(timezone.utc).strftime('%Y-%m-%d')
+
+
 def url_for(rel):
     """`/path/to/index.html` parent dir → absolute URL with trailing slash."""
     if rel == '.':
@@ -70,22 +89,22 @@ def url_for(rel):
 
 def main():
     seen = set()
-    rows = []
-    for rel, mtime in iter_index_files():
+    urls = []
+    for rel in iter_index_files():
         if is_noindex_stub(rel):
             continue
         url = url_for(rel)
         if url in seen:
             continue
         seen.add(url)
-        rows.append((url, mtime))
+        urls.append(url)
 
-    rows.sort(key=lambda r: r[0])
+    urls.sort()
+    lastmod = snapshot_lastmod()
 
     lines = ['<?xml version="1.0" encoding="UTF-8"?>',
              '<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">']
-    for url, mtime in rows:
-        lastmod = datetime.fromtimestamp(mtime, tz=timezone.utc).strftime('%Y-%m-%d')
+    for url in urls:
         lines.append(
             '  <url>'
             f'<loc>{escape(url)}</loc>'
@@ -97,10 +116,11 @@ def main():
     out = os.path.join(ROOT, 'sitemap.xml')
     with open(out, 'w', encoding='utf-8') as f:
         f.write('\n'.join(lines) + '\n')
-    print(f'sitemap.xml: {len(rows)} URLs  ({os.path.getsize(out) // 1024} KB)', file=sys.stderr)
+    print(f'sitemap.xml: {len(urls)} URLs  ({os.path.getsize(out) // 1024} KB)  lastmod={lastmod}',
+          file=sys.stderr)
 
-    if len(rows) > 50000:
-        print(f'WARNING: {len(rows)} URLs exceeds sitemap 50K cap — '
+    if len(urls) > 50000:
+        print(f'WARNING: {len(urls)} URLs exceeds sitemap 50K cap — '
               'split into sitemapindex.xml.', file=sys.stderr)
 
     # robots.txt — point crawlers at the sitemap.

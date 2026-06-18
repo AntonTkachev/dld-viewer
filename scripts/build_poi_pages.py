@@ -29,8 +29,9 @@ ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 SRC = os.path.join(ROOT, 'index.html')
 GEO = os.path.join(ROOT, '_data_communities.geojson')
 
-# Production base URL — see comment in build_pages.py.
-BASE_URL = 'https://antontkachev.github.io/dld-viewer'
+# Single source of truth for BASE_URL (env-overridable for dev builds).
+sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+from _seo_config import BASE_URL
 
 LANGUAGES = ('ru', 'en', 'ar', 'hi')
 
@@ -487,7 +488,7 @@ def build_seo_ld(cat, n, lang, h1_plain, lede_plain):
         'inLanguage': lang,
         'url': canonical,
         'about': {'@type': 'Place', 'name': 'Dubai, UAE'},
-        'isPartOf': {'@type': 'WebSite', 'name': 'DLD Viewer', 'url': '/'},
+        'isPartOf': {'@type': 'WebSite', 'name': 'DLD Viewer', 'url': f'{BASE_URL}/'},
         'mainEntity': {
             '@type': 'ItemList',
             'name': h1_plain,
