@@ -1,0 +1,1037 @@
+#!/usr/bin/env python3
+"""Pilot: build per-district SEO pages, split by mode (sale|rent) and period.
+
+URL space per district:
+  /sales/<slug>/            — sales, all-time (canonical)
+  /sales/<slug>/1y/         — sales, last 12 months
+  /sales/<slug>/{3y,5y,10y}/
+  /rents/<slug>/{,1y,3y,5y,10y}/
+
+Each (district, mode) shares ONE data.json (lives at /<mode>/<slug>/data.json);
+the period is applied client-side via DetailPanel. HTML differs in:
+  - <title>, <meta description> (period-specific keywords + counts)
+  - <link rel="canonical">
+  - H1, intro lede paragraph (period-specific counts + AED/m²)
+  - JS PERIOD_COPY map for fast in-page H1/lede update on chip click
+
+Plus each page carries a small <About this district> block (the SAME on
+every period URL for that district) — gives Google unique copy beyond the
+title/lede so the page doesn't look like thin/duplicate content.
+
+Currently runs only for `business bay` — flip DISTRICTS to expand.
+"""
+import json
+import os
+import re
+import sys
+import unicodedata
+
+ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+SRC  = os.path.join(ROOT, 'index.html')
+TPL  = os.path.join(ROOT, 'templates', 'district.html')
+TPL_LIST = os.path.join(ROOT, 'templates', 'district-list.html')
+
+DISTRICTS = ('business bay',)  # pilot
+
+# Languages: 'ru' is the canonical / default at root paths; others under /<lang>/.
+LANGUAGES = ('ru', 'en', 'ar', 'hi')
+
+MODES = (
+    # mode key, url-prefix
+    ('sale', 'sales'),
+    ('rent', 'rents'),
+)
+
+# Period URL fragments (language-independent).
+PERIOD_CODES = ('all', '1y', '3y', '5y', '10y')
+PERIOD_FRAGS = {'all': '', '1y': '1y', '3y': '3y', '5y': '5y', '10y': '10y'}
+
+# Language-specific period suffixes used in <title> + <h1>.
+PERIOD_SUFFIX = {
+    'ru': {
+        'all': {'title': '',             'h1': 'за всё время'},
+        '1y':  {'title': ' за 1 год',    'h1': 'за 1 год'},
+        '3y':  {'title': ' за 3 года',   'h1': 'за 3 года'},
+        '5y':  {'title': ' за 5 лет',    'h1': 'за 5 лет'},
+        '10y': {'title': ' за 10 лет',   'h1': 'за 10 лет'},
+    },
+    'en': {
+        'all': {'title': '',                  'h1': 'all-time'},
+        '1y':  {'title': ' over 12 months',   'h1': 'over 12 months'},
+        '3y':  {'title': ' over 3 years',     'h1': 'over 3 years'},
+        '5y':  {'title': ' over 5 years',     'h1': 'over 5 years'},
+        '10y': {'title': ' over 10 years',    'h1': 'over 10 years'},
+    },
+    'ar': {
+        'all': {'title': '',                       'h1': 'لكل الوقت'},
+        '1y':  {'title': ' خلال 12 شهرًا',         'h1': 'خلال 12 شهرًا'},
+        '3y':  {'title': ' خلال 3 سنوات',          'h1': 'خلال 3 سنوات'},
+        '5y':  {'title': ' خلال 5 سنوات',          'h1': 'خلال 5 سنوات'},
+        '10y': {'title': ' خلال 10 سنوات',         'h1': 'خلال 10 سنوات'},
+    },
+    'hi': {
+        'all': {'title': '',                     'h1': 'सर्व समय'},
+        '1y':  {'title': ' पिछले 12 महीनों में',   'h1': 'पिछले 12 महीनों में'},
+        '3y':  {'title': ' पिछले 3 वर्षों में',     'h1': 'पिछले 3 वर्षों में'},
+        '5y':  {'title': ' पिछले 5 वर्षों में',     'h1': 'पिछले 5 वर्षों में'},
+        '10y': {'title': ' पिछले 10 वर्षों में',    'h1': 'पिछले 10 वर्षों में'},
+    },
+}
+
+# Strings used in pre-rendered HTML (title, h1, lede, about, nav).
+COPY = {
+    'ru': {
+        'html_lang': 'ru',
+        'breadcrumb_dubai': 'Дубай',
+        'mode_sales': 'Продажи', 'mode_rents': 'Аренда',
+        'nav_back_map': '← Все районы (карта)',
+        'nav_table': 'Таблица всех районов',
+        'subpages_title': 'Подробнее по разделам',
+        'subpages_top_projects': 'Топ проекты',
+        'subpages_top_deals': 'Крупнейшие сделки',
+        'subpages_recent_sale': 'Последние сделки',
+        'subpages_recent_rent': 'Последние аренды',
+        'loading': 'Загрузка статистики…',
+        'load_err': 'Не удалось загрузить данные',
+        'about_title': 'О районе {name}',
+        'about_intro': '{name} — один из районов Дубая. ',
+        'about_unknown': '{name} — один из районов Дубая по данным Dubai Land Department.',
+        'about_all_flat':  'Все сделки — квартиры; виллы и таунхаусы в этом районе не строятся.',
+        'about_all_villa': 'Все сделки — виллы и таунхаусы.',
+        'about_mostly_flat':  'Преобладают квартиры — {pct}% сделок.',
+        'about_mostly_villa': 'Преобладают виллы/таунхаусы — {pct}% сделок.',
+        'about_mixed': 'Доля квартир — {pct}%, остальное виллы/таунхаусы.',
+        'about_offplan': 'Около {pct}% сделок — off-plan покупки в строящихся проектах.',
+        'about_top_room': 'Самый частый тип — {label} ({n} сделок).',
+        'about_top_project': 'Один из наиболее активных проектов — {proj}.',
+        'about_rent_hint': 'Также зарегистрировано {n} договоров аренды — район интересен как для покупки, так и для долгосрочного проживания.',
+        'about_stat_total_sales': 'Всего сделок',
+        'about_stat_med_price':   'Медианная цена',
+        'about_stat_ppsqm':       'Цена за м²',
+        'about_stat_rent_n':      'Договоров аренды',
+        'about_stat_rent_med':    'Медианная аренда',
+        'about_room_studio':  'студии',
+        'about_room_1br':     '1-комнатные',
+        'about_room_2br':     '2-комнатные',
+        'about_room_3br':     '3-комнатные',
+        'about_room_4br':     '4+',
+        'about_room_villa':   'виллы',
+        'about_room_other':   'прочее',
+        'h1_sales': 'Сделки с недвижимостью в {name} {period_h1}',
+        'h1_rent':  'Аренда недвижимости в {name} {period_h1}',
+        'lede_sales_intro':    'В районе {name} {period_h1} совершено {n} сделок с недвижимостью по данным Dubai Land Department.',
+        'lede_sales_median':   'Медианная цена объекта — {v} AED.',
+        'lede_sales_ppsqm':    'Цена за квадратный метр — {v} AED.',
+        'lede_sales_sqm':      'Медианная площадь — {v} м².',
+        'lede_rent_intro':     'В районе {name} {period_h1} зарегистрировано {n} договоров аренды по данным Dubai Land Department.',
+        'lede_rent_median':    'Медианная годовая аренда — {v} AED.',
+        'lede_rent_ppsqm':     'Стоимость аренды — {v} AED/м²/год.',
+        'title_sales': 'Сделки в {name}{period_title}: {n} транзакций — DLD',
+        'title_rent':  'Аренда в {name}{period_title}: {n} контрактов — DLD',
+        'desc_sales':  'Купля-продажа недвижимости в {name}{period_title}: {n} сделок DLD, медиана, цена за м², топ-проекты, динамика цен по месяцам.',
+        'desc_rent':   'Договоры аренды в {name}{period_title}: {n} контрактов DLD, медианная годовая аренда, AED/м²/год, типы недвижимости.',
+        'list_h1_top_projects_sale': 'Топ-проекты в {name} по продажам',
+        'list_h1_top_deals':         'Крупнейшие сделки в {name}',
+        'list_h1_recent_sale':       'Последние сделки в {name}',
+        'list_h1_top_projects_rent': 'Топ-проекты по аренде в {name}',
+        'list_h1_recent_rent':       'Последние договоры аренды в {name}',
+        'list_lede_top_projects_sale': 'Самые активные проекты {name} по объёму сделок в Dubai Land Department. Сортировка по количеству зарегистрированных транзакций.',
+        'list_lede_top_deals':         'Самые крупные по сумме контракта сделки {name} в Dubai Land Department. Сортировка по сумме сделки.',
+        'list_lede_recent_sale':       'Самые свежие транзакции с недвижимостью {name} по данным Dubai Land Department. Сортировка по дате регистрации.',
+        'list_lede_top_projects_rent': 'Самые активные проекты {name} по количеству зарегистрированных договоров аренды.',
+        'list_lede_recent_rent':       'Самые свежие договоры аренды {name} по данным Dubai Land Department.',
+        'list_title_suffix': '{n} записей — DLD',
+        'list_breadcrumb_top_projects': 'Топ проекты',
+        'list_breadcrumb_top_deals':    'Крупнейшие сделки',
+        'list_breadcrumb_recent':       'Последние',
+        'list_back':                    '← Назад в {name}',
+        'list_main_link':               'Главная района',
+        'list_no_data':                 'Нет данных для отображения.',
+        'col_proj':   'Проект',
+        'col_n':      'Сделок',
+        'col_med':    'Медиана',
+        'col_total':  'Объём',
+        'col_date':   'Дата',
+        'col_rooms':  'Комнат',
+        'col_area':   'Площадь, м²',
+        'col_amount': 'Сумма, AED',
+        'col_op':     'Тип',
+        'col_cat':    'Категория',
+        'col_n_rent': 'Контрактов',
+        'col_med_rent':'Медиана, AED/год',
+        'col_subtype':'Тип',
+        'col_aed_yr': 'AED/год',
+        'col_version':'Версия',
+        'rent_v_new':    'Новый',
+        'rent_v_renew':  'Продление',
+        'no_data_dash':  '—',
+        'crumb_period_1y': 'за 1 год',
+        'crumb_period_3y': 'за 3 года',
+        'crumb_period_5y': 'за 5 лет',
+        'crumb_period_10y':'за 10 лет',
+        'lang_switch_to': 'EN',
+    },
+    'en': {
+        'html_lang': 'en',
+        'breadcrumb_dubai': 'Dubai',
+        'mode_sales': 'Sales', 'mode_rents': 'Rentals',
+        'nav_back_map': '← All districts (map)',
+        'nav_table': 'Table of all districts',
+        'subpages_title': 'Explore further',
+        'subpages_top_projects': 'Top projects',
+        'subpages_top_deals': 'Top deals',
+        'subpages_recent_sale': 'Recent transactions',
+        'subpages_recent_rent': 'Recent rentals',
+        'loading': 'Loading statistics…',
+        'load_err': 'Could not load data',
+        'about_title': 'About {name}',
+        'about_intro': '{name} is a Dubai district. ',
+        'about_unknown': '{name} is one of the Dubai districts in Dubai Land Department records.',
+        'about_all_flat':  'All transactions are apartments; villas and townhouses are not built here.',
+        'about_all_villa': 'All transactions are villas and townhouses.',
+        'about_mostly_flat':  'Mostly apartments — {pct}% of transactions.',
+        'about_mostly_villa': 'Mostly villas/townhouses — {pct}% of transactions.',
+        'about_mixed': 'Apartments account for {pct}%, the rest are villas/townhouses.',
+        'about_offplan': 'About {pct}% are off-plan purchases in under-construction projects.',
+        'about_top_room': 'Most common type — {label} ({n} transactions).',
+        'about_top_project': 'One of the most active projects — {proj}.',
+        'about_rent_hint': '{n} rental contracts have also been recorded — the district is attractive for both purchase and long-term living.',
+        'about_stat_total_sales': 'Total transactions',
+        'about_stat_med_price':   'Median price',
+        'about_stat_ppsqm':       'Price per m²',
+        'about_stat_rent_n':      'Rental contracts',
+        'about_stat_rent_med':    'Median rent',
+        'about_room_studio':  'studios',
+        'about_room_1br':     '1-bedroom',
+        'about_room_2br':     '2-bedroom',
+        'about_room_3br':     '3-bedroom',
+        'about_room_4br':     '4+',
+        'about_room_villa':   'villas',
+        'about_room_other':   'other',
+        'h1_sales': 'Real estate transactions in {name} {period_h1}',
+        'h1_rent':  'Real estate rentals in {name} {period_h1}',
+        'lede_sales_intro':    'In {name} {period_h1}, {n} property transactions have been recorded according to the Dubai Land Department.',
+        'lede_sales_median':   'Median property price — {v} AED.',
+        'lede_sales_ppsqm':    'Price per square meter — {v} AED.',
+        'lede_sales_sqm':      'Median area — {v} m².',
+        'lede_rent_intro':     'In {name} {period_h1}, {n} rental contracts have been registered according to the Dubai Land Department.',
+        'lede_rent_median':    'Median annual rent — {v} AED.',
+        'lede_rent_ppsqm':     'Rent per area — {v} AED/m²/year.',
+        'title_sales': 'Property transactions in {name}{period_title}: {n} deals — DLD',
+        'title_rent':  'Rentals in {name}{period_title}: {n} contracts — DLD',
+        'desc_sales':  'Property sales in {name}{period_title}: {n} DLD transactions, median, price per m², top projects, monthly price dynamics.',
+        'desc_rent':   'Rental contracts in {name}{period_title}: {n} DLD contracts, median annual rent, AED/m²/year, property types.',
+        'list_h1_top_projects_sale': 'Top projects in {name} by sales',
+        'list_h1_top_deals':         'Largest transactions in {name}',
+        'list_h1_recent_sale':       'Recent transactions in {name}',
+        'list_h1_top_projects_rent': 'Top projects by rentals in {name}',
+        'list_h1_recent_rent':       'Recent rental contracts in {name}',
+        'list_lede_top_projects_sale': 'Most active projects in {name} by transaction volume in Dubai Land Department records. Sorted by number of registered transactions.',
+        'list_lede_top_deals':         'Largest transactions in {name} by contract value in Dubai Land Department records. Sorted by deal size.',
+        'list_lede_recent_sale':       'Latest property transactions in {name} according to Dubai Land Department. Sorted by registration date.',
+        'list_lede_top_projects_rent': 'Most active projects in {name} by number of registered rental contracts.',
+        'list_lede_recent_rent':       'Latest rental contracts in {name} according to Dubai Land Department.',
+        'list_title_suffix': '{n} entries — DLD',
+        'list_breadcrumb_top_projects': 'Top projects',
+        'list_breadcrumb_top_deals':    'Top deals',
+        'list_breadcrumb_recent':       'Recent',
+        'list_back':                    '← Back to {name}',
+        'list_main_link':               'District home',
+        'list_no_data':                 'No data to display.',
+        'col_proj':   'Project',
+        'col_n':      'Transactions',
+        'col_med':    'Median',
+        'col_total':  'Volume',
+        'col_date':   'Date',
+        'col_rooms':  'Beds',
+        'col_area':   'Area, m²',
+        'col_amount': 'Amount, AED',
+        'col_op':     'Type',
+        'col_cat':    'Category',
+        'col_n_rent': 'Contracts',
+        'col_med_rent':'Median, AED/yr',
+        'col_subtype':'Type',
+        'col_aed_yr': 'AED/yr',
+        'col_version':'Version',
+        'rent_v_new':    'New',
+        'rent_v_renew':  'Renewal',
+        'no_data_dash':  '—',
+        'crumb_period_1y': 'over 12 months',
+        'crumb_period_3y': 'over 3 years',
+        'crumb_period_5y': 'over 5 years',
+        'crumb_period_10y':'over 10 years',
+        'lang_switch_to': 'RU',
+    },
+    'ar': {
+        'html_lang': 'ar', 'html_dir': 'rtl',
+        'breadcrumb_dubai': 'دبي',
+        'mode_sales': 'المبيعات', 'mode_rents': 'الإيجارات',
+        'nav_back_map': '← جميع الأحياء (الخريطة)',
+        'nav_table': 'جدول جميع الأحياء',
+        'subpages_title': 'مزيد من التفاصيل',
+        'subpages_top_projects': 'أهم المشاريع',
+        'subpages_top_deals': 'أكبر الصفقات',
+        'subpages_recent_sale': 'آخر الصفقات',
+        'subpages_recent_rent': 'آخر عقود الإيجار',
+        'loading': 'جاري تحميل الإحصاءات…',
+        'load_err': 'تعذر تحميل البيانات',
+        'about_title': 'عن منطقة {name}',
+        'about_intro': '{name} — حي من أحياء دبي. ',
+        'about_unknown': '{name} — أحد أحياء دبي وفقًا لبيانات دائرة الأراضي والأملاك.',
+        'about_all_flat':  'جميع الصفقات شقق سكنية؛ لا يوجد فلل ولا تاون هاوس في هذه المنطقة.',
+        'about_all_villa': 'جميع الصفقات فلل وتاون هاوس.',
+        'about_mostly_flat':  'الأغلب شقق — {pct}% من الصفقات.',
+        'about_mostly_villa': 'الأغلب فلل/تاون هاوس — {pct}% من الصفقات.',
+        'about_mixed': 'نسبة الشقق {pct}%، والباقي فلل/تاون هاوس.',
+        'about_offplan': 'نحو {pct}% من الصفقات قبل التسليم (Off-Plan) في مشاريع قيد الإنشاء.',
+        'about_top_room': 'أكثر الأنواع شيوعًا — {label} ({n} صفقة).',
+        'about_top_project': 'أحد أكثر المشاريع نشاطًا — {proj}.',
+        'about_rent_hint': 'تم تسجيل {n} عقد إيجار أيضًا — المنطقة مناسبة للشراء والإقامة طويلة الأمد.',
+        'about_stat_total_sales': 'إجمالي الصفقات',
+        'about_stat_med_price':   'السعر الوسيط',
+        'about_stat_ppsqm':       'السعر للمتر',
+        'about_stat_rent_n':      'عقود الإيجار',
+        'about_stat_rent_med':    'الإيجار الوسيط',
+        'about_room_studio':  'استوديوهات',
+        'about_room_1br':     'غرفة واحدة',
+        'about_room_2br':     'غرفتان',
+        'about_room_3br':     'ثلاث غرف',
+        'about_room_4br':     '+4',
+        'about_room_villa':   'فلل',
+        'about_room_other':   'أخرى',
+        'h1_sales': 'صفقات العقارات في {name} {period_h1}',
+        'h1_rent':  'إيجار العقارات في {name} {period_h1}',
+        'lede_sales_intro':    'في حي {name} {period_h1} تم تسجيل {n} صفقة عقارية وفقًا لبيانات دائرة الأراضي والأملاك بدبي.',
+        'lede_sales_median':   'السعر الوسيط للعقار — {v} درهم.',
+        'lede_sales_ppsqm':    'السعر للمتر المربع — {v} درهم.',
+        'lede_sales_sqm':      'المساحة الوسيطة — {v} م².',
+        'lede_rent_intro':     'في حي {name} {period_h1} تم تسجيل {n} عقد إيجار وفقًا لبيانات دائرة الأراضي والأملاك بدبي.',
+        'lede_rent_median':    'الإيجار السنوي الوسيط — {v} درهم.',
+        'lede_rent_ppsqm':     'الإيجار للمتر — {v} درهم/م²/سنة.',
+        'title_sales': 'صفقات في {name}{period_title}: {n} معاملة — DLD',
+        'title_rent':  'إيجارات في {name}{period_title}: {n} عقدًا — DLD',
+        'desc_sales':  'بيع وشراء العقارات في {name}{period_title}: {n} صفقة DLD، الوسيط، السعر للمتر، أهم المشاريع، ديناميكية الأسعار شهريًا.',
+        'desc_rent':   'عقود الإيجار في {name}{period_title}: {n} عقد DLD، الإيجار السنوي الوسيط، درهم/م²/سنة، أنواع العقارات.',
+        'list_h1_top_projects_sale': 'أهم المشاريع في {name} حسب المبيعات',
+        'list_h1_top_deals':         'أكبر الصفقات في {name}',
+        'list_h1_recent_sale':       'آخر الصفقات في {name}',
+        'list_h1_top_projects_rent': 'أهم المشاريع للإيجار في {name}',
+        'list_h1_recent_rent':       'آخر عقود الإيجار في {name}',
+        'list_lede_top_projects_sale': 'أكثر المشاريع نشاطًا في {name} حسب حجم الصفقات وفقًا لـ DLD. مرتبة حسب عدد المعاملات المسجلة.',
+        'list_lede_top_deals':         'أكبر الصفقات في {name} حسب قيمة العقد وفقًا لـ DLD. مرتبة حسب حجم الصفقة.',
+        'list_lede_recent_sale':       'أحدث المعاملات العقارية في {name} وفقًا لبيانات DLD. مرتبة حسب تاريخ التسجيل.',
+        'list_lede_top_projects_rent': 'أكثر المشاريع نشاطًا في {name} حسب عدد عقود الإيجار المسجلة.',
+        'list_lede_recent_rent':       'أحدث عقود الإيجار في {name} وفقًا لبيانات DLD.',
+        'list_title_suffix': '{n} سجل — DLD',
+        'list_breadcrumb_top_projects': 'أهم المشاريع',
+        'list_breadcrumb_top_deals':    'أكبر الصفقات',
+        'list_breadcrumb_recent':       'الأحدث',
+        'list_back':                    '← العودة إلى {name}',
+        'list_main_link':               'الصفحة الرئيسية للحي',
+        'list_no_data':                 'لا توجد بيانات للعرض.',
+        'col_proj':   'المشروع',
+        'col_n':      'الصفقات',
+        'col_med':    'الوسيط',
+        'col_total':  'الحجم',
+        'col_date':   'التاريخ',
+        'col_rooms':  'الغرف',
+        'col_area':   'المساحة، م²',
+        'col_amount': 'المبلغ، درهم',
+        'col_op':     'النوع',
+        'col_cat':    'الفئة',
+        'col_n_rent': 'العقود',
+        'col_med_rent':'الوسيط، درهم/سنة',
+        'col_subtype':'النوع',
+        'col_aed_yr': 'درهم/سنة',
+        'col_version':'النسخة',
+        'rent_v_new':    'جديد',
+        'rent_v_renew':  'تجديد',
+        'no_data_dash':  '—',
+        'crumb_period_1y': 'خلال 12 شهرًا',
+        'crumb_period_3y': 'خلال 3 سنوات',
+        'crumb_period_5y': 'خلال 5 سنوات',
+        'crumb_period_10y':'خلال 10 سنوات',
+        'lang_switch_to': 'RU',
+    },
+    'hi': {
+        'html_lang': 'hi',
+        'breadcrumb_dubai': 'दुबई',
+        'mode_sales': 'बिक्री', 'mode_rents': 'किराया',
+        'nav_back_map': '← सभी कम्युनिटी (मानचित्र)',
+        'nav_table': 'सभी कम्युनिटी की तालिका',
+        'subpages_title': 'और जानकारी',
+        'subpages_top_projects': 'शीर्ष परियोजनाएं',
+        'subpages_top_deals': 'सबसे बड़े सौदे',
+        'subpages_recent_sale': 'हाल के सौदे',
+        'subpages_recent_rent': 'हाल के किराया अनुबंध',
+        'loading': 'आँकड़े लोड हो रहे हैं…',
+        'load_err': 'डेटा लोड नहीं हो सका',
+        'about_title': '{name} के बारे में',
+        'about_intro': '{name} — दुबई का एक क्षेत्र है। ',
+        'about_unknown': 'Dubai Land Department के अनुसार {name} दुबई के क्षेत्रों में से एक है।',
+        'about_all_flat':  'सभी सौदे अपार्टमेंट हैं; इस क्षेत्र में विला और टाउनहाउस नहीं हैं।',
+        'about_all_villa': 'सभी सौदे विला और टाउनहाउस हैं।',
+        'about_mostly_flat':  'अधिकतर अपार्टमेंट — {pct}% सौदे।',
+        'about_mostly_villa': 'अधिकतर विला/टाउनहाउस — {pct}% सौदे।',
+        'about_mixed': 'अपार्टमेंट का हिस्सा {pct}%, बाकी विला/टाउनहाउस।',
+        'about_offplan': 'लगभग {pct}% सौदे — निर्माणाधीन परियोजनाओं में ऑफ-प्लान खरीदारी।',
+        'about_top_room': 'सबसे लोकप्रिय प्रकार — {label} ({n} सौदे)।',
+        'about_top_project': 'सबसे सक्रिय परियोजनाओं में से एक — {proj}।',
+        'about_rent_hint': 'इसके अलावा {n} किराया अनुबंध दर्ज हुए — क्षेत्र खरीदारी और दीर्घकालिक रहने दोनों के लिए उपयुक्त है।',
+        'about_stat_total_sales': 'कुल सौदे',
+        'about_stat_med_price':   'औसत कीमत',
+        'about_stat_ppsqm':       'प्रति m² कीमत',
+        'about_stat_rent_n':      'किराया अनुबंध',
+        'about_stat_rent_med':    'औसत किराया',
+        'about_room_studio':  'स्टूडियो',
+        'about_room_1br':     '1-बेडरूम',
+        'about_room_2br':     '2-बेडरूम',
+        'about_room_3br':     '3-बेडरूम',
+        'about_room_4br':     '4+',
+        'about_room_villa':   'विला',
+        'about_room_other':   'अन्य',
+        'h1_sales': '{name} में रियल एस्टेट सौदे {period_h1}',
+        'h1_rent':  '{name} में रियल एस्टेट किराया {period_h1}',
+        'lede_sales_intro':    '{name} में {period_h1} {n} रियल एस्टेट सौदे Dubai Land Department के अनुसार दर्ज हुए हैं।',
+        'lede_sales_median':   'औसत संपत्ति मूल्य — {v} AED।',
+        'lede_sales_ppsqm':    'प्रति वर्ग मीटर कीमत — {v} AED।',
+        'lede_sales_sqm':      'औसत क्षेत्रफल — {v} m²।',
+        'lede_rent_intro':     '{name} में {period_h1} {n} किराया अनुबंध Dubai Land Department के अनुसार दर्ज हुए।',
+        'lede_rent_median':    'औसत वार्षिक किराया — {v} AED।',
+        'lede_rent_ppsqm':     'किराया प्रति m² — {v} AED/m²/वर्ष।',
+        'title_sales': '{name} में सौदे{period_title}: {n} लेनदेन — DLD',
+        'title_rent':  '{name} में किराया{period_title}: {n} अनुबंध — DLD',
+        'desc_sales':  '{name} में संपत्ति की खरीद-बिक्री{period_title}: {n} DLD सौदे, औसत, प्रति m² कीमत, शीर्ष परियोजनाएं, मासिक मूल्य गतिशीलता।',
+        'desc_rent':   '{name} में किराया अनुबंध{period_title}: {n} DLD अनुबंध, औसत वार्षिक किराया, AED/m²/वर्ष, संपत्ति प्रकार।',
+        'list_h1_top_projects_sale': 'बिक्री के अनुसार {name} में शीर्ष परियोजनाएं',
+        'list_h1_top_deals':         '{name} में सबसे बड़े सौदे',
+        'list_h1_recent_sale':       '{name} में हाल के सौदे',
+        'list_h1_top_projects_rent': 'किराया के अनुसार {name} में शीर्ष परियोजनाएं',
+        'list_h1_recent_rent':       '{name} में हाल के किराया अनुबंध',
+        'list_lede_top_projects_sale': 'Dubai Land Department के अनुसार सौदा मात्रा से {name} की सबसे सक्रिय परियोजनाएं। दर्ज लेनदेन की संख्या के अनुसार क्रमबद्ध।',
+        'list_lede_top_deals':         'Dubai Land Department के अनुसार अनुबंध मूल्य से {name} में सबसे बड़े सौदे। सौदा आकार के अनुसार क्रमबद्ध।',
+        'list_lede_recent_sale':       'Dubai Land Department के अनुसार {name} में नवीनतम रियल एस्टेट लेनदेन। पंजीकरण तिथि के अनुसार क्रमबद्ध।',
+        'list_lede_top_projects_rent': 'दर्ज किराया अनुबंधों की संख्या के अनुसार {name} की सबसे सक्रिय परियोजनाएं।',
+        'list_lede_recent_rent':       'Dubai Land Department के अनुसार {name} में नवीनतम किराया अनुबंध।',
+        'list_title_suffix': '{n} प्रविष्टियां — DLD',
+        'list_breadcrumb_top_projects': 'शीर्ष परियोजनाएं',
+        'list_breadcrumb_top_deals':    'सबसे बड़े सौदे',
+        'list_breadcrumb_recent':       'हाल',
+        'list_back':                    '← वापस {name}',
+        'list_main_link':               'क्षेत्र मुख्य पृष्ठ',
+        'list_no_data':                 'दिखाने के लिए कोई डेटा नहीं।',
+        'col_proj':   'परियोजना',
+        'col_n':      'सौदे',
+        'col_med':    'औसत',
+        'col_total':  'मात्रा',
+        'col_date':   'तिथि',
+        'col_rooms':  'बेडरूम',
+        'col_area':   'क्षेत्र, m²',
+        'col_amount': 'राशि, AED',
+        'col_op':     'प्रकार',
+        'col_cat':    'श्रेणी',
+        'col_n_rent': 'अनुबंध',
+        'col_med_rent':'औसत, AED/वर्ष',
+        'col_subtype':'प्रकार',
+        'col_aed_yr': 'AED/वर्ष',
+        'col_version':'संस्करण',
+        'rent_v_new':    'नया',
+        'rent_v_renew':  'नवीनीकरण',
+        'no_data_dash':  '—',
+        'crumb_period_1y': 'पिछले 12 महीनों में',
+        'crumb_period_3y': 'पिछले 3 वर्षों में',
+        'crumb_period_5y': 'पिछले 5 वर्षों में',
+        'crumb_period_10y':'पिछले 10 वर्षों में',
+        'lang_switch_to': 'RU',
+    },
+}
+
+# Sub-page list types — all label/text references go through COPY[lang][key].
+# Format per row: (mode, url-fragment, data-field, breadcrumb-key, h1-key,
+#                  lede-key, [(label-key, data-key, kind), ...])
+LIST_TYPES = (
+    ('sale', 'projects', 'top_projects',
+     'list_breadcrumb_top_projects',
+     'list_h1_top_projects_sale',
+     'list_lede_top_projects_sale',
+     [('col_proj',  'proj',  'proj'),
+      ('col_n',     'n',     'int'),
+      ('col_med',   'med',   'aed'),
+      ('col_total', 'total', 'aed')]),
+
+    ('sale', 'deals', 'top_deals',
+     'list_breadcrumb_top_deals',
+     'list_h1_top_deals',
+     'list_lede_top_deals',
+     [('col_date',   'd',    'date'),
+      ('col_proj',   'proj', 'proj'),
+      ('col_rooms',  'room', 'str'),
+      ('col_area',   'area', 'int'),
+      ('col_amount', 'val',  'aed'),
+      ('col_op',     'op',   'str')]),
+
+    ('sale', 'recent', 'recent',
+     'list_breadcrumb_recent',
+     'list_h1_recent_sale',
+     'list_lede_recent_sale',
+     [('col_date',   'd',    'date'),
+      ('col_proj',   'proj', 'proj'),
+      ('col_rooms',  'room', 'str'),
+      ('col_amount', 'val',  'aed'),
+      ('col_cat',    'g',    'str')]),
+
+    ('rent', 'projects', 'top_projects',
+     'list_breadcrumb_top_projects',
+     'list_h1_top_projects_rent',
+     'list_lede_top_projects_rent',
+     [('col_proj',     'proj', 'proj'),
+      ('col_n_rent',   'n',    'int'),
+      ('col_med_rent', 'med',  'aed')]),
+
+    ('rent', 'recent', 'recent',
+     'list_breadcrumb_recent',
+     'list_h1_recent_rent',
+     'list_lede_recent_rent',
+     [('col_date',    'd',    'date'),
+      ('col_proj',    'proj', 'proj'),
+      ('col_subtype', 'sub',  'str'),
+      ('col_area',    'sqm',  'int'),
+      ('col_aed_yr',  'val',  'aed'),
+      ('col_version', 'v',    'rentver')]),
+)
+
+
+def slugify(s):
+    s = unicodedata.normalize('NFKD', s).encode('ascii', 'ignore').decode()
+    s = re.sub(r'[^a-z0-9]+', '-', s.lower()).strip('-')
+    return s
+
+
+def lang_prefix(lang):
+    """URL prefix for a language: '' for the default ('ru'), '/en' / '/ar' / '/hi' for others."""
+    return '' if lang == 'ru' else '/' + lang
+
+
+def base_url(mode, slug, lang):
+    return f'{lang_prefix(lang)}/{"sales" if mode == "sale" else "rents"}/{slug}/'
+
+
+def data_url(mode, slug):
+    """Data JSON is language-independent — one file shared across langs.
+    Lives under the RU canonical path."""
+    return f'/{"sales" if mode == "sale" else "rents"}/{slug}/data.json'
+
+
+def out_root(lang):
+    """Filesystem root for a language's pages."""
+    return ROOT if lang == 'ru' else os.path.join(ROOT, lang)
+
+
+def html_escape(s):
+    if s is None: return ''
+    return (str(s)
+            .replace('&', '&amp;').replace('<', '&lt;').replace('>', '&gt;')
+            .replace('"', '&quot;'))
+
+
+def format_cell(v, kind, lang='ru'):
+    """Format one table cell value by its declared column kind."""
+    if v is None or v == '':
+        return COPY[lang]['no_data_dash']
+    if kind == 'int':
+        try: return fmt_int(v, lang)
+        except: return COPY[lang]['no_data_dash']
+    if kind == 'aed':
+        try: return fmt_aed(v, lang)
+        except: return COPY[lang]['no_data_dash']
+    if kind == 'proj':
+        return html_escape(str(v)) if v else COPY[lang]['no_data_dash']
+    if kind == 'date':
+        return html_escape(str(v))
+    if kind == 'rentver':
+        return COPY[lang]['rent_v_new'] if v == 'N' else COPY[lang]['rent_v_renew']
+    return html_escape(str(v))
+
+
+def render_list_table(rows, columns, lang='ru'):
+    """Server-render the list table as HTML. Columns are tuples of
+    (label-key-in-COPY, data-key-in-row, kind)."""
+    heads = []
+    for (label_key, _, kind) in columns:
+        cls = ' class="num"' if kind in ('int', 'aed') else ''
+        heads.append(f'<th{cls}>{html_escape(COPY[lang][label_key])}</th>')
+    body_rows = []
+    for r in rows:
+        cells = []
+        for (_, key, kind) in columns:
+            v = r.get(key) if isinstance(r, dict) else None
+            cls = ' class="num"' if kind in ('int', 'aed') else ''
+            cells.append(f'<td{cls}>{format_cell(v, kind, lang)}</td>')
+        body_rows.append('<tr>' + ''.join(cells) + '</tr>')
+    return f'<table><thead><tr>{"".join(heads)}</tr></thead><tbody>{"".join(body_rows)}</tbody></table>'
+
+
+def build_itemlist_ld(name, rows, columns):
+    """Schema.org ItemList — helps the page surface as a list rich result."""
+    items = []
+    name_key = columns[0][1]
+    for i, r in enumerate(rows, start=1):
+        v = r.get(name_key) if isinstance(r, dict) else None
+        items.append({'@type': 'ListItem', 'position': i, 'name': str(v) if v else f'Запись {i}'})
+    ld = {
+        '@context': 'https://schema.org',
+        '@type': 'ItemList',
+        'name': name,
+        'numberOfItems': len(items),
+        'itemListElement': items,
+    }
+    return f'<script type="application/ld+json">{json.dumps(ld, ensure_ascii=False)}</script>'
+
+
+def hreflang_block(make_url):
+    """Render the full hreflang alternate set + x-default. make_url(lang) → url string."""
+    lines = []
+    for l in LANGUAGES:
+        lines.append(f'<link rel="alternate" hreflang="{l}" href="{make_url(l)}">')
+    lines.append(f'<link rel="alternate" hreflang="x-default" href="{make_url("ru")}">')
+    return '\n'.join(lines)
+
+
+def build_list_seo_head(mode, name, slug, list_slug, list_h1, list_lede, n_items, lang):
+    canon = f'{base_url(mode, slug, lang)}{list_slug}/'
+    title_suffix = COPY[lang]['list_title_suffix'].format(n=fmt_int(n_items, lang))
+    title = f'{list_h1}: {title_suffix}'
+    desc = list_lede
+    hreflang = hreflang_block(lambda l: f'{base_url(mode, slug, l)}{list_slug}/')
+    return f'''<title>{title}</title>
+<meta name="description" content="{html_escape(desc)}">
+<link rel="canonical" href="{canon}">
+{hreflang}
+<meta property="og:type" content="article">
+<meta property="og:title" content="{html_escape(title)}">
+<meta property="og:description" content="{html_escape(desc)}">'''
+
+
+def build_list_crosslinks(slug, mode, current_list_slug, lang):
+    """Crosslinks between sub-pages of one (district, mode) so a visitor can
+    flip Top projects → Top deals → Recent without going back to the main page.
+    Also gives Google an internal-linking pattern across all sub-pages."""
+    out = []
+    main = base_url(mode, slug, lang)
+    out.append(f'<a href="{main}">{html_escape(COPY[lang]["list_main_link"])}</a>')
+    for (m, frag, _, breadcrumb_key, _, _, _) in LIST_TYPES:
+        if m != mode: continue
+        url = f'{main}{frag}/'
+        cls = ' class="active"' if frag == current_list_slug else ''
+        out.append(f'<a href="{url}"{cls}>{html_escape(COPY[lang][breadcrumb_key])}</a>')
+    return ''.join(out)
+
+
+def extract_const(text, name):
+    m = re.search(rf'^const {name} = (\{{.*?\}});\s*$', text, re.MULTILINE)
+    if not m:
+        raise SystemExit(f'{name} not found in index.html')
+    return json.loads(m.group(1))
+
+
+def load_period_aggregates():
+    """Pulls TX_PERIODS / RENTS_PERIODS from on-disk JSON (more reliable than
+    grepping the 14MB inline HTML)."""
+    tx, rt = {}, {}
+    for code in ('1y','3y','5y','10y','all'):
+        p = os.path.join(ROOT, 'transactions', 'data', f'{code}.json')
+        if os.path.exists(p):
+            with open(p) as f: tx[code] = json.load(f)
+        p = os.path.join(ROOT, 'rents', 'data', f'{code}.json')
+        if os.path.exists(p):
+            with open(p) as f: rt[code] = json.load(f)
+    return tx, rt
+
+
+# Locale-aware number / currency formatters.
+# RU uses a non-breaking space as thousands separator; EN uses comma; AR/HI use comma.
+_INT_SEP = {'ru': ' ', 'en': ',', 'ar': ',', 'hi': ','}
+_BIG_AED = {
+    'ru': {'B': 'млрд', 'M': 'млн'},
+    'en': {'B': 'B',    'M': 'M'},
+    'ar': {'B': 'مليار', 'M': 'مليون'},
+    'hi': {'B': 'अरब',   'M': 'मिलियन'},
+}
+
+
+def fmt_int(n, lang='ru'):
+    return f'{int(n):,}'.replace(',', _INT_SEP.get(lang, ' '))
+
+
+def fmt_aed(n, lang='ru'):
+    if not n: return '—'
+    if n >= 1e9: return f'{n/1e9:.2f} {_BIG_AED[lang]["B"]}'
+    if n >= 1e6: return f'{n/1e6:.2f} {_BIG_AED[lang]["M"]}'
+    return fmt_int(round(n), lang)
+
+
+# Back-compat shim — some helpers still call fmt_int_ru directly.
+def fmt_int_ru(n): return fmt_int(n, 'ru')
+
+
+def period_n_for(rec, period_aggs, key, period):
+    """Get period-specific transaction/contract count for a district."""
+    d = period_aggs.get(period, {})
+    r = d.get(key)
+    if r and r.get('n'): return r['n']
+    return rec.get('n', 0)
+
+
+def period_record_for(period_aggs, key, period):
+    return (period_aggs.get(period, {}) or {}).get(key) or {}
+
+
+def build_headline(mode, name, period_h1, n, lang):
+    c = COPY[lang]
+    tmpl = c['h1_sales'] if mode == 'sale' else c['h1_rent']
+    text = tmpl.format(name=name, period_h1=period_h1).strip()
+    return text, fmt_int(n, lang)
+
+
+def build_lede(mode, name, period_h1, rec, lang):
+    c = COPY[lang]
+    n   = rec.get('n', 0)
+    med = rec.get('med', 0)
+    ppsqm = rec.get('med_ppsqm', 0)
+    sqm = rec.get('med_sqm', 0)
+    if mode == 'sale':
+        pieces = [c['lede_sales_intro'].format(name=name, period_h1=period_h1, n=fmt_int(n, lang))]
+        if med:    pieces.append(c['lede_sales_median'].format(v=fmt_aed(med, lang)))
+        if ppsqm:  pieces.append(c['lede_sales_ppsqm'].format(v=fmt_int(ppsqm, lang)))
+        if sqm:    pieces.append(c['lede_sales_sqm'].format(v=f'{sqm:.0f}'))
+        return ' '.join(pieces)
+    pieces = [c['lede_rent_intro'].format(name=name, period_h1=period_h1, n=fmt_int(n, lang))]
+    if med:    pieces.append(c['lede_rent_median'].format(v=fmt_aed(med, lang)))
+    if ppsqm:  pieces.append(c['lede_rent_ppsqm'].format(v=fmt_int(ppsqm, lang)))
+    return ' '.join(pieces)
+
+
+def build_about(name, sale_rec, rent_rec, lang):
+    """Period-independent paragraph + a stat-pill row — unique facts per
+    district that Google can use as descriptive context. Localized via COPY[lang]."""
+    c = COPY[lang]
+    facts = []
+    n_total = sale_rec.get('n', 0)
+    flat = sale_rec.get('flat', {}) or {}
+    villa = sale_rec.get('villa', {}) or {}
+    offplan = sale_rec.get('offplan', {}) or {}
+    bru = sale_rec.get('by_rooms_unit', {}) or {}
+
+    if flat.get('n') and (flat.get('n') + villa.get('n', 0)) > 0:
+        share_flat = round(flat['n'] / (flat['n'] + villa.get('n', 0)) * 100)
+        if share_flat == 100:
+            facts.append(c['about_all_flat'])
+        elif share_flat == 0:
+            facts.append(c['about_all_villa'])
+        elif share_flat >= 70:
+            facts.append(c['about_mostly_flat'].format(pct=share_flat))
+        elif share_flat <= 30:
+            facts.append(c['about_mostly_villa'].format(pct=100-share_flat))
+        else:
+            facts.append(c['about_mixed'].format(pct=share_flat))
+
+    ready = offplan.get('Ready', 0)
+    op    = offplan.get('Off-Plan', 0)
+    if ready + op > 0:
+        op_share = round(op / (op + ready) * 100)
+        facts.append(c['about_offplan'].format(pct=op_share))
+
+    if bru:
+        room_order = ['1br','2br','3br','studio','4br+','villa','other']
+        room_label_key = {'studio':'about_room_studio','1br':'about_room_1br','2br':'about_room_2br',
+                          '3br':'about_room_3br','4br+':'about_room_4br','villa':'about_room_villa',
+                          'other':'about_room_other'}
+        sorted_rooms = sorted([(k, bru.get(k, {}).get('n', 0)) for k in room_order if bru.get(k)], key=lambda x: -x[1])
+        if sorted_rooms and sorted_rooms[0][1]:
+            top_k, top_n = sorted_rooms[0]
+            facts.append(c['about_top_room'].format(label=c[room_label_key[top_k]], n=fmt_int(top_n, lang)))
+
+    tp = (sale_rec.get('top_projects') or [])
+    named = [p for p in tp if p.get('proj')]
+    if named:
+        facts.append(c['about_top_project'].format(proj=named[0]['proj'].title()))
+
+    if rent_rec.get('n'):
+        facts.append(c['about_rent_hint'].format(n=fmt_int(rent_rec['n'], lang)))
+
+    if not facts:
+        facts.append(c['about_unknown'].format(name=name))
+
+    intro = f'<p>{c["about_intro"].format(name=name)}' + ' '.join(facts) + '</p>'
+
+    grid_items = []
+    if n_total:
+        grid_items.append((c['about_stat_total_sales'], fmt_int(n_total, lang)))
+    if sale_rec.get('med'):
+        grid_items.append((c['about_stat_med_price'], f'{fmt_aed(sale_rec["med"], lang)} AED'))
+    if sale_rec.get('med_ppsqm'):
+        grid_items.append((c['about_stat_ppsqm'], f'{fmt_int(sale_rec["med_ppsqm"], lang)} AED'))
+    if rent_rec.get('n'):
+        grid_items.append((c['about_stat_rent_n'], fmt_int(rent_rec['n'], lang)))
+    if rent_rec.get('med'):
+        grid_items.append((c['about_stat_rent_med'], f'{fmt_aed(rent_rec["med"], lang)} AED'))
+
+    grid_html = ''
+    if grid_items:
+        cells = ''.join(
+            f'<div class="about-stat"><div class="k">{html_escape(k)}</div><div class="v">{html_escape(v)}</div></div>'
+            for k, v in grid_items
+        )
+        grid_html = f'<div class="about-grid">{cells}</div>'
+
+    title_text = c['about_title'].format(name=name)
+    return f'<section class="about"><h2>{html_escape(title_text)}</h2>{intro}{grid_html}</section>'
+
+
+def build_seo_head(mode, name, slug, n, period_code, lang):
+    c = COPY[lang]
+    n_s = fmt_int(n, lang)
+    period_title_suffix = PERIOD_SUFFIX[lang][period_code]['title']
+    base_canon = base_url(mode, slug, lang)
+    canon = base_canon if period_code == 'all' else base_canon + period_code + '/'
+    title_key = 'title_sales' if mode == 'sale' else 'title_rent'
+    desc_key  = 'desc_sales'  if mode == 'sale' else 'desc_rent'
+    title = c[title_key].format(name=name, period_title=period_title_suffix, n=n_s)
+    desc  = c[desc_key].format(name=name, period_title=period_title_suffix, n=n_s)
+
+    def period_url(l):
+        u = base_url(mode, slug, l)
+        return u if period_code == 'all' else u + period_code + '/'
+    hreflang = hreflang_block(period_url)
+
+    return f'''<title>{html_escape(title)}</title>
+<meta name="description" content="{html_escape(desc)}">
+<link rel="canonical" href="{canon}">
+{hreflang}
+<meta property="og:type" content="article">
+<meta property="og:title" content="{html_escape(title)}">
+<meta property="og:description" content="{html_escape(desc)}">
+<script type="application/ld+json">
+{{"@context":"https://schema.org","@type":"Place","name":"{name}, Dubai",
+ "containedInPlace":{{"@type":"Place","name":"Dubai, UAE"}}}}
+</script>'''
+
+
+def build_main_subpages_block(slug, mode, lang):
+    """Block placed BELOW the detail panel — one set of links to the full-list
+    sub-pages. Stays in static HTML so SEO crawlers see it without running JS;
+    inline 'open full list →' links inside each <details> body (rendered by
+    detail-panel.js) cover in-context UX for users."""
+    c = COPY[lang]
+    items = []
+    main = base_url(mode, slug, lang)
+    for (m, frag, _, breadcrumb_key, _, _, _) in LIST_TYPES:
+        if m != mode: continue
+        items.append(f'<a href="{main}{frag}/">{html_escape(c[breadcrumb_key])} →</a>')
+    if not items:
+        return ''
+    return ('<nav class="subpages">'
+            f'<h2>{html_escape(c["subpages_title"])}</h2>'
+            '<div class="subpages-list">' + ''.join(items) + '</div>'
+            '</nav>')
+
+
+def build_lang_switcher(make_url_for, current_lang):
+    """Tiny dropdown-like row at the top of every page. make_url_for(lang) → URL."""
+    items = []
+    for l in LANGUAGES:
+        cls = ' class="active"' if l == current_lang else ''
+        items.append(f'<a href="{make_url_for(l)}" lang="{l}"{cls}>{l.upper()}</a>')
+    return '<div class="langswitch">' + ''.join(items) + '</div>'
+
+
+def build_mode_switcher(slug, mode, lang):
+    c = COPY[lang]
+    sales_url = base_url('sale', slug, lang)
+    rents_url = base_url('rent', slug, lang)
+    sales_cls = ' class="active"' if mode == 'sale' else ''
+    rents_cls = ' class="active"' if mode == 'rent' else ''
+    return (f'<a href="{sales_url}"{sales_cls}>{html_escape(c["mode_sales"])}</a>'
+            f'<a href="{rents_url}"{rents_cls}>{html_escape(c["mode_rents"])}</a>')
+
+
+def build_list_page(template, name, slug, mode, prefix, list_type, rec, about_html, lang):
+    """Render and write one list sub-page. Returns (html_path, html_size_kb)."""
+    c = COPY[lang]
+    (lt_mode, frag, field, breadcrumb_key, h1_key, lede_key, columns) = list_type
+    rows = rec.get(field) or []
+    h1 = c[h1_key].format(name=name)
+    lede = c[lede_key].format(name=name)
+    bread_mode = c['mode_sales'] if mode == 'sale' else c['mode_rents']
+
+    table_html = render_list_table(rows, columns, lang) if rows \
+        else f'<p style="color:#94a3b8;padding:20px 0">{html_escape(c["list_no_data"])}</p>'
+    itemlist_ld = build_itemlist_ld(h1, rows, columns) if rows else ''
+    crosslinks = build_list_crosslinks(slug, mode, frag, lang)
+    mode_switcher = build_mode_switcher(slug, mode, lang)
+    lang_switcher = build_lang_switcher(lambda l: f'{base_url(mode, slug, l)}{frag}/', lang)
+    back_label = c['list_back'].format(name=name)
+    bread_district = c['breadcrumb_dubai']
+    nav_back_label = c['list_main_link']
+
+    seo_head = build_list_seo_head(mode, name, slug, frag, h1, lede, len(rows), lang)
+    html_lang = c['html_lang']
+    html_dir = c.get('html_dir', 'ltr')
+
+    html = template
+    html = html.replace('<html lang="ru">', f'<html lang="{html_lang}" dir="{html_dir}">')
+    html = html.replace('<!--__SEO_HEAD__-->', seo_head)
+    html = html.replace('__BREADCRUMB_DUBAI__', html_escape(bread_district))
+    html = html.replace('__MODE_INDEX_URL__', f'{lang_prefix(lang)}/{prefix}/')
+    html = html.replace('__MODE_BREADCRUMB__', html_escape(bread_mode))
+    html = html.replace('__DISTRICT_URL__', base_url(mode, slug, lang))
+    html = html.replace('__DISTRICT_NAME__', html_escape(name))
+    html = html.replace('__LIST_BREADCRUMB__', html_escape(c[breadcrumb_key]))
+    html = html.replace('__H1__', html_escape(h1))
+    html = html.replace('__LEDE__', html_escape(lede))
+    html = html.replace('<!--__MODE_SWITCHER__-->', mode_switcher)
+    html = html.replace('<!--__LANG_SWITCHER__-->', lang_switcher)
+    html = html.replace('<!--__CROSSLINKS__-->', crosslinks)
+    html = html.replace('<!--__TABLE__-->', table_html)
+    html = html.replace('<!--__ABOUT__-->', about_html)
+    html = html.replace('<!--__ITEMLIST_LD__-->', itemlist_ld)
+    html = html.replace('__NAV_BACK_LABEL__', html_escape(back_label))
+    html = html.replace('__NAV_MAP_LABEL__', html_escape(c['nav_back_map']))
+    html = html.replace('__NAV_TABLE_LABEL__', html_escape(c['nav_table']))
+
+    out_dir = os.path.join(out_root(lang), prefix, slug, frag)
+    os.makedirs(out_dir, exist_ok=True)
+    html_path = os.path.join(out_dir, 'index.html')
+    with open(html_path, 'w', encoding='utf-8') as f:
+        f.write(html)
+    return html_path, os.path.getsize(html_path) // 1024
+
+
+def main():
+    with open(SRC, encoding='utf-8') as f:
+        text = f.read()
+    agg  = extract_const(text, 'AGGREGATES')
+    rent = extract_const(text, 'RENT_AGGREGATES')
+    tx_periods, rents_periods = load_period_aggregates()
+    with open(TPL, encoding='utf-8') as f:
+        template = f.read()
+    with open(TPL_LIST, encoding='utf-8') as f:
+        template_list = f.read()
+
+    built = 0
+    for key in DISTRICTS:
+        sale_rec = agg.get(key) or {}
+        rent_rec = rent.get(key) or {}
+        if not sale_rec and not rent_rec:
+            print(f'  {key}: skipping (not in aggregates)', file=sys.stderr)
+            continue
+        name = (sale_rec.get('name') or rent_rec.get('name')) or key.title()
+        slug = slugify(name)
+
+        for lang in LANGUAGES:
+            c = COPY[lang]
+            html_lang = c['html_lang']
+            html_dir = c.get('html_dir', 'ltr')
+            about_html = build_about(name, sale_rec, rent_rec, lang)
+
+            for mode, prefix in MODES:
+                base_rec = sale_rec if mode == 'sale' else rent_rec
+                if not base_rec:
+                    continue
+                period_aggs = tx_periods if mode == 'sale' else rents_periods
+
+                # data.json is shared across languages, lives under the RU
+                # canonical path. Only the RU pass writes it.
+                if lang == 'ru':
+                    mode_dir_ru = os.path.join(ROOT, prefix, slug)
+                    os.makedirs(mode_dir_ru, exist_ok=True)
+                    bundle = {'sales': base_rec} if mode == 'sale' else {'rent': base_rec}
+                    json_path = os.path.join(mode_dir_ru, 'data.json')
+                    with open(json_path, 'w', encoding='utf-8') as f:
+                        json.dump(bundle, f, ensure_ascii=False, separators=(',', ':'))
+
+                bu = base_url(mode, slug, lang)
+                data_u = data_url(mode, slug)
+                mode_dir = os.path.join(out_root(lang), prefix, slug)
+                os.makedirs(mode_dir, exist_ok=True)
+
+                # Pre-compute period-specific copy in the current language.
+                period_copy = {}
+                for period_code in PERIOD_CODES:
+                    period_h1 = PERIOD_SUFFIX[lang][period_code]['h1']
+                    rec_for_period = period_record_for(period_aggs, key, period_code) if period_code != 'all' else base_rec
+                    if not rec_for_period.get('n') and period_code != 'all':
+                        rec_for_period = base_rec
+                    n_p = rec_for_period.get('n', 0)
+                    headline, _ = build_headline(mode, name, period_h1, n_p, lang)
+                    lede = build_lede(mode, name, period_h1, rec_for_period, lang)
+                    period_copy[period_code] = {'h1': headline, 'lede': lede, 'n': n_p}
+
+                bread_mode = c['mode_sales'] if mode == 'sale' else c['mode_rents']
+
+                for period_code in PERIOD_CODES:
+                    period_frag = PERIOD_FRAGS[period_code]
+                    out_dir = mode_dir if period_code == 'all' else os.path.join(mode_dir, period_frag)
+                    os.makedirs(out_dir, exist_ok=True)
+
+                    copy_now = period_copy[period_code]
+                    mode_switcher = build_mode_switcher(slug, mode, lang)
+
+                    def period_url_for_lang(l, pc=period_code):
+                        u = base_url(mode, slug, l)
+                        return u if pc == 'all' else u + pc + '/'
+                    lang_switcher = build_lang_switcher(period_url_for_lang, lang)
+
+                    html = template
+                    html = html.replace('<html lang="ru">',
+                                        f'<html lang="{html_lang}" dir="{html_dir}">')
+                    html = html.replace('<!--__SEO_HEAD__-->',
+                                        build_seo_head(mode, name, slug, copy_now['n'], period_code, lang))
+                    html = html.replace('__BREADCRUMB_DUBAI__', html_escape(c['breadcrumb_dubai']))
+                    html = html.replace('__MODE_INDEX_URL__', f'{lang_prefix(lang)}/{prefix}/')
+                    html = html.replace('__MODE_BREADCRUMB__', html_escape(bread_mode))
+                    html = html.replace('__DISTRICT_URL__', bu)
+                    html = html.replace('<!--__MODE_SWITCHER__-->', mode_switcher)
+                    html = html.replace('<!--__LANG_SWITCHER__-->', lang_switcher)
+                    html = html.replace('<!--__ABOUT__-->', about_html)
+                    html = html.replace('__INITIAL_H1__', html_escape(copy_now['h1']))
+                    html = html.replace('__INITIAL_LEDE__', html_escape(copy_now['lede']))
+                    html = html.replace('__LOADING_TEXT__', html_escape(c['loading']))
+                    html = html.replace("/*__LOAD_ERR_LABEL__*/'Не удалось загрузить данные'",
+                                        json.dumps(c['load_err']))
+                    html = html.replace('__NAV_MAP_LABEL__', html_escape(c['nav_back_map']))
+                    html = html.replace('__NAV_TABLE_LABEL__', html_escape(c['nav_table']))
+                    html = html.replace("/*__DISTRICT_KEY__*/''",  json.dumps(key))
+                    html = html.replace("/*__DISTRICT_NAME__*/''", json.dumps(name))
+                    html = html.replace("/*__PAGE_MODE__*/'sale'", json.dumps(mode))
+                    html = html.replace("/*__PAGE_PERIOD__*/'all'", json.dumps(period_code))
+                    html = html.replace("/*__PAGE_LANG__*/'ru'", json.dumps(lang))
+                    html = html.replace("/*__BASE_URL__*/'/sales/business-bay/'", json.dumps(bu))
+                    html = html.replace("/*__DATA_URL__*/'data.json'", json.dumps(data_u))
+                    html = html.replace("/*__PERIOD_COPY__*/null",
+                                        json.dumps(period_copy, ensure_ascii=False))
+                    html = html.replace('<!--__SUBPAGES__-->', build_main_subpages_block(slug, mode, lang))
+
+                    html_path = os.path.join(out_dir, 'index.html')
+                    with open(html_path, 'w', encoding='utf-8') as f:
+                        f.write(html)
+                    built += 1
+
+                # ───── List sub-pages (top projects / deals / recent) ─────
+                list_count = 0
+                for lt in LIST_TYPES:
+                    if lt[0] != mode:
+                        continue
+                    build_list_page(template_list, name, slug, mode, prefix,
+                                    lt, base_rec, about_html, lang)
+                    list_count += 1
+                    built += 1
+
+                print(f'  [{lang}] /{prefix}/{slug}/  +{len(PERIOD_CODES)} periods  +{list_count} lists',
+                      file=sys.stderr)
+
+    print(f'done — {built} page(s) across {len(LANGUAGES)} language(s)', file=sys.stderr)
+
+
+if __name__ == '__main__':
+    main()
