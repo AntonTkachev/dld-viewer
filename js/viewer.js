@@ -234,6 +234,55 @@ function _districtHrefForKey(key, name) {
 // DetailPanel into it. Panel header carries an ↗ link to the full SEO
 // page at /<lang>/<mode>/<slug>/ — Google keeps indexing those, the user
 // gets a no-reload preview from the map.
+// Build the popup body HTML — same content as the old Leaflet bindPopup
+// (mask-aware stats + "▸ Open details" → SEO page link). Rendered into the
+// left slide-out instead of an on-polygon popup.
+function _buildDistrictPopupHtml(p) {
+  const m = MASKS[currentMask] || MASKS.sales;
+  const sourceLabel = ({
+    'osm-admin': 'OSM admin_level=10',
+    'osm-place': 'OSM place=' + _h(p.kind || ''),
+    'osm-residential': 'OSM landuse=residential',
+  })[p.source] || 'OSM';
+  const newDev = p._new_dev_count || 0;
+  const newDevRow = newDev
+    ? `<div class="stat"><span class="k">${t("new_buildings")} <span class="src-tag src-osm">OSM</span></span><span class="v">${newDev|0}</span></div>`
+    : '';
+  const detailsBtn = p.real_area_key
+    ? `<div style="margin-top:8px"><a href="${_h(_safeUrl(_districtHrefForKey(p.real_area_key, p.name)))}" style="background:#0366d6;color:#fff;text-decoration:none;padding:6px 12px;border-radius:4px;font-size:12px;font-weight:600;display:inline-block">${t("pp_open")}</a></div>`
+    : '';
+  let bodyRows;
+  if (typeof m.popupRows === 'function') {
+    const rendered = m.popupRows(p, t);
+    bodyRows = rendered
+      ? `${rendered}${newDevRow}${detailsBtn}`
+      : `${newDevRow}<div class="muted" style="font-size:11px;color:#888;padding:4px 0">${t("no_dld_data")}</div>`;
+  } else {
+    const volumeRow = m.showVolume
+      ? `<div class="stat"><span class="k">${t("pp_volume")}</span><span class="v">${(p.real_total_aed||0)>=1e9?((p.real_total_aed/1e9).toFixed(2)+' '+t('abbr_b')):((p.real_total_aed/1e6).toFixed(1)+' '+t('abbr_m'))}</span></div>`
+      : '';
+    bodyRows = p.real_count ? `
+      <div class="stat"><span class="k">${t(m.popupCountKey || "pp_trans_ytd")} <span class="src-tag" style="background:#e6f7e6;color:#0a7f00">DLD</span>${p.real_match_kind==='parent'?' <span class="src-tag" style="background:#fff5e6;color:#7a4c00">parent: '+_h(p.real_parent_name||'')+'</span>':''}</span><span class="v">${p.real_count.toLocaleString('ru-RU')}</span></div>
+      ${volumeRow}
+      <div class="stat"><span class="k">${t("pp_median")}</span><span class="v">${((p.real_med_price||0)/1e6).toFixed(2)} ${t('abbr_m')}</span></div>
+      <div class="stat"><span class="k">${t("pp_median_psqm")}</span><span class="v">${(p.real_med_ppsqm||0).toLocaleString('ru-RU')}</span></div>
+      ${newDevRow}
+      ${detailsBtn}
+    ` : `
+      ${newDevRow}
+      <div class="muted" style="font-size:11px;color:#888;padding:4px 0">${t("no_dld_data")}</div>
+    `;
+  }
+  return `
+    <h3 style="margin:0 0 6px;font-size:15px;font-weight:600">${p.name ? _h(p.name) : '—'} <span class="src-tag src-osm">${sourceLabel}</span></h3>
+    <div class="muted" style="margin-bottom:10px;color:#888">${_h(p.name_ar || '')}</div>
+    ${bodyRows}
+  `;
+}
+
+// Open the left slide-out for a district, populated with the same content
+// the on-polygon Leaflet popup used to show. "▸ Open details" inside still
+// goes to the full /<lang>/sales/<slug>/ SEO page.
 window.openDistrictByKey = function(key) {
   if (!key) return;
   const panel = document.getElementById('detail-panel');
@@ -242,10 +291,16 @@ window.openDistrictByKey = function(key) {
     window.location.href = _districtHrefForKey(key);
     return;
   }
-  const sale = (typeof AGGREGATES !== 'undefined' && AGGREGATES[key]) || null;
-  const rent = (typeof RENT_AGGREGATES !== 'undefined' && RENT_AGGREGATES[key]) || null;
-  const name = (sale && sale.name) || (rent && rent.name) || key;
-  const mode = (typeof currentMask !== 'undefined' && currentMask === 'rents') ? 'rent' : 'sale';
+  // Find the geojson feature by real_area_key so we have the SAME `p` the
+  // old popup did (mask-aware stats live on the feature's properties).
+  let feature = null;
+  if (typeof GEOJSON !== 'undefined' && GEOJSON.features) {
+    feature = GEOJSON.features.find(f =>
+      f.properties && f.properties.real_area_key === key);
+  }
+  if (!feature) return;
+  const p = feature.properties;
+  const name = p.name || key;
 
   panel.classList.add('open');
   panel.setAttribute('aria-hidden', 'false');
@@ -258,18 +313,11 @@ window.openDistrictByKey = function(key) {
   if (titleEl) { titleEl.textContent = name; titleEl.dataset.key = key; }
   const fullLink = document.getElementById('dp-open-full');
   if (fullLink) {
-    fullLink.href = _districtHrefForKey(key);
+    fullLink.href = _districtHrefForKey(key, name);
     fullLink.title = (typeof t === 'function') ? t('dp_open_full') : 'Open full page';
   }
-
-  if (window.DetailPanel && DetailPanel.mount) {
-    DetailPanel.mount({
-      container: document.getElementById('dp-body'),
-      sale: sale, rent: rent,
-      title: name,
-      mode: mode, initialPeriod: 'all',
-    });
-  }
+  const body = document.getElementById('dp-body');
+  if (body) body.innerHTML = _buildDistrictPopupHtml(p);
 };
 window.openDubai = function() { /* Dubai-wide overview moved off the slide-out panel; no-op for now. */ };
 function openDistrict(props) {
