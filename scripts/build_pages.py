@@ -29,11 +29,11 @@ from _seo_config import BASE_URL
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 SRC  = os.path.join(ROOT, 'index.html')
 
-LANGUAGES = ('ru', 'en', 'ar', 'hi')
+LANGUAGES = ('ru', 'en', 'ar', 'hi', 'zh')
 VIEWS = ('map', 'table')
 
 # OG locale codes for each language.
-OG_LOCALE = {'ru': 'ru_RU', 'en': 'en_US', 'ar': 'ar_AE', 'hi': 'hi_IN'}
+OG_LOCALE = {'ru': 'ru_RU', 'en': 'en_US', 'ar': 'ar_AE', 'hi': 'hi_IN', 'zh': 'zh_CN'}
 
 # Page chrome — title / desc / keywords / dataset_name per language.
 PAGES = {
@@ -46,6 +46,7 @@ PAGES = {
             en='Real estate transactions in Dubai by district — DLD map',
             ar='صفقات العقارات في دبي حسب الحي — خريطة DLD',
             hi='जिले के अनुसार दुबई में रियल एस्टेट लेन-देन — DLD मानचित्र',
+            zh='迪拜各社区房产交易 — DLD 地图',
         ),
         desc=dict(
             ru='Интерактивная карта сделок Dubai Land Department: количество сделок, '
@@ -56,6 +57,8 @@ PAGES = {
                'والسعر للمتر المربع. الفترات: 1 و3 و5 و10 سنوات وكل الوقت.',
             hi='दुबई लैंड डिपार्टमेंट के लेन-देन का इंटरैक्टिव मानचित्र: संख्या, '
                'मध्यिका मूल्य, AED/m²। अवधि: 1, 3, 5, 10 वर्ष और सर्व समय।',
+            zh='迪拜土地局交易数据交互地图：按社区显示交易数量、中位价格、每平方米价格。'
+               '时间段：1、3、5、10 年及全部时间。',
         ),
         keywords=dict(
             ru='сделки в Дубае, недвижимость Дубай, DLD статистика, '
@@ -66,12 +69,15 @@ PAGES = {
                'خريطة أحياء دبي',
             hi='दुबई संपत्ति लेन-देन, दुबई रियल एस्टेट, DLD आँकड़े, दुबई जिला मानचित्र, '
                'दुबई मध्यिका मूल्य',
+            zh='迪拜房产交易, 迪拜房地产, DLD 数据, 每平方米价格 迪拜, '
+               '迪拜社区地图, 迪拜中位价',
         ),
         dataset_name=dict(
             ru='Сделки с недвижимостью в Дубае',
             en='Dubai real estate sales transactions',
             ar='صفقات العقارات في دبي',
             hi='दुबई में रियल एस्टेट लेन-देन',
+            zh='迪拜房产交易',
         ),
     ),
     'rents': dict(
@@ -83,6 +89,7 @@ PAGES = {
             en='Rental contracts in Dubai by district — DLD map',
             ar='عقود إيجار العقارات في دبي حسب الحي — خريطة DLD',
             hi='जिले के अनुसार दुबई में किराये के अनुबंध — DLD मानचित्र',
+            zh='迪拜各社区房产租赁合同 — DLD 地图',
         ),
         desc=dict(
             ru='Интерактивная карта договоров аренды Dubai Land Department: количество '
@@ -93,6 +100,8 @@ PAGES = {
                'والإيجار السنوي الوسيط والسعر للمتر المربع في السنة. الفترات: 1 و3 و5 و10 سنوات.',
             hi='दुबई लैंड डिपार्टमेंट के किराये के अनुबंधों का इंटरैक्टिव मानचित्र: संख्या, '
                'मध्यिका वार्षिक किराया, AED/m²/वर्ष। अवधि: 1, 3, 5, 10 वर्ष।',
+            zh='迪拜土地局租赁合同交互地图：合同数量、年租金中位数、每平方米/年价格。'
+               '时间段：1、3、5、10 年及全部时间。',
         ),
         keywords=dict(
             ru='аренда в Дубае, цена аренды Дубай, годовая аренда Дубай, '
@@ -102,12 +111,14 @@ PAGES = {
             ar='إيجار في دبي، سعر الإيجار دبي، الإيجار السنوي، عقود إيجار DLD، خريطة إيجار دبي',
             hi='दुबई किराया, दुबई किराये का मूल्य, दुबई वार्षिक किराया, DLD किराये के अनुबंध, '
                'दुबई किराये का मानचित्र',
+            zh='迪拜租赁, 迪拜租金, 迪拜年租, DLD 租赁合同, 迪拜租赁地图',
         ),
         dataset_name=dict(
             ru='Договоры аренды недвижимости в Дубае',
             en='Dubai real estate rental contracts',
             ar='عقود إيجار العقارات في دبي',
             hi='दुबई रियल एस्टेट किराये के अनुबंध',
+            zh='迪拜房产租赁合同',
         ),
     ),
     'growth': dict(
@@ -119,6 +130,7 @@ PAGES = {
             en='Real estate price growth in Dubai by district — DLD map',
             ar='نمو أسعار العقارات في دبي حسب الحي — خريطة DLD',
             hi='जिले के अनुसार दुबई में रियल एस्टेट मूल्य वृद्धि — DLD मानचित्र',
+            zh='迪拜各社区房产价格涨幅 — DLD 地图',
         ),
         desc=dict(
             ru='Интерактивная карта роста медианной цены AED/м² по районам Дубая: '
@@ -131,6 +143,8 @@ PAGES = {
                'سنوات. تعود الأحياء ذات التاريخ الأقصر إلى أقدم خط أساس متاح.',
             hi='दुबई जिलों में मध्यिका AED/m² वृद्धि का इंटरैक्टिव मानचित्र: 1, 3, 5, 10 वर्ष। '
                'छोटे इतिहास वाले जिले अपनी सबसे प्रारंभिक उपलब्ध बेसलाइन पर वापस आते हैं।',
+            zh='迪拜各社区每平方米中位价格涨幅交互地图：1、3、5、10 年。'
+               '历史较短的社区采用最早可用的基准。',
         ),
         keywords=dict(
             ru='рост цен Дубай, цена за метр Дубай, инвестиции в Дубай, '
@@ -139,12 +153,14 @@ PAGES = {
                'DLD statistics, Dubai real estate growth',
             ar='نمو الأسعار في دبي، السعر للمتر المربع، الاستثمار في دبي، إحصائيات DLD',
             hi='दुबई मूल्य वृद्धि, दुबई AED प्रति sqm, दुबई निवेश, DLD आँकड़े',
+            zh='迪拜房价涨幅, 迪拜每平方米价格, 迪拜投资, DLD 数据, 迪拜房产涨幅',
         ),
         dataset_name=dict(
             ru='Рост цен на недвижимость в Дубае',
             en='Dubai real estate price growth',
             ar='نمو أسعار العقارات في دبي',
             hi='दुबई रियल एस्टेट मूल्य वृद्धि',
+            zh='迪拜房产价格涨幅',
         ),
     ),
     'payback': dict(
@@ -156,6 +172,7 @@ PAGES = {
             en='Rental payback in Dubai by district — DLD map',
             ar='استرداد الإيجار في دبي حسب الحي — خريطة DLD',
             hi='जिले के अनुसार दुबई में किराये की पेबैक — DLD मानचित्र',
+            zh='迪拜各社区租金回本年限 — DLD 地图',
         ),
         desc=dict(
             ru='Карта показывает за сколько лет годовая аренда окупит покупку. '
@@ -167,6 +184,8 @@ PAGES = {
                'حسب حجم الشقة: استوديو و1 و2 و3 و+4 غرف نوم. بيانات آخر سنتين.',
             hi='मानचित्र दिखाता है कि कितने वर्षों में वार्षिक किराया खरीद की लागत वसूल कर लेगा, '
                'अपार्टमेंट के आकार के अनुसार: स्टूडियो, 1, 2, 3, 4+ BR। पिछले 2 वर्षों का डेटा।',
+            zh='地图显示按公寓户型（开间、1、2、3、4+ 卧室）多少年的年租金可收回购房成本。'
+               '数据为最近 2 年。',
         ),
         keywords=dict(
             ru='окупаемость аренды Дубай, ROI недвижимость Дубай, доходность аренды Дубай, '
@@ -175,12 +194,14 @@ PAGES = {
                'DLD statistics, Dubai investment',
             ar='استرداد الإيجار في دبي، عائد العقارات في دبي، عائد الإيجار في دبي، إحصائيات DLD',
             hi='दुबई किराये की पेबैक, दुबई रियल एस्टेट ROI, दुबई किराये की उपज, DLD आँकड़े',
+            zh='迪拜租金回本, 迪拜房产 ROI, 迪拜租金收益率, DLD 数据, 迪拜投资',
         ),
         dataset_name=dict(
             ru='Окупаемость аренды в Дубае',
             en='Dubai rental payback period',
             ar='استرداد الإيجار في دبي',
             hi='दुबई किराये की पेबैक अवधि',
+            zh='迪拜租金回本年限',
         ),
     ),
 }
@@ -191,6 +212,7 @@ TABLE_DESC_PREFIX = {
     'en': 'Sortable, filterable table of all Dubai districts. ',
     'ar': 'جدول قابل للفرز والتصفية يضم جميع أحياء دبي. ',
     'hi': 'सभी दुबई जिलों की क्रमबद्ध, फ़िल्टर करने योग्य तालिका. ',
+    'zh': '可排序、可筛选的迪拜所有社区表。',
 }
 
 # Per-language "map → table" title suffix swap. Keys are (pattern_in_title, replacement).
@@ -199,13 +221,14 @@ TABLE_TITLE_SWAP = {
     'en': ('DLD map',      'DLD table'),
     'ar': ('خريطة DLD',    'جدول DLD'),
     'hi': ('DLD मानचित्र', 'DLD तालिका'),
+    'zh': ('DLD 地图',     'DLD 表格'),
 }
 
 # Direction tag for <html>: Arabic is RTL.
-DIR_FOR_LANG = {'ru': 'ltr', 'en': 'ltr', 'ar': 'rtl', 'hi': 'ltr'}
+DIR_FOR_LANG = {'ru': 'ltr', 'en': 'ltr', 'ar': 'rtl', 'hi': 'ltr', 'zh': 'ltr'}
 
 # Localized "Dubai" breadcrumb root.
-BREADCRUMB_DUBAI = {'ru': 'Дубай', 'en': 'Dubai', 'ar': 'دبي', 'hi': 'दुबई'}
+BREADCRUMB_DUBAI = {'ru': 'Дубай', 'en': 'Dubai', 'ar': 'دبي', 'hi': 'दुबई', 'zh': '迪拜'}
 
 
 with open(SRC, encoding='utf-8') as f:
@@ -368,6 +391,7 @@ LANG_STUB = {
     'en': dict(dir='ltr', title='DLD Viewer — Dubai real estate data', label='Open the Dubai map →'),
     'ar': dict(dir='rtl', title='عارض DLD — بيانات عقارات دبي', label='افتح خريطة دبي ←'),
     'hi': dict(dir='ltr', title='DLD Viewer — दुबई रियल एस्टेट डेटा', label='दुबई का मानचित्र खोलें →'),
+    'zh': dict(dir='ltr', title='DLD Viewer — 迪拜房产数据', label='打开迪拜地图 →'),
 }
 for l, s in LANG_STUB.items():
     target = f'{BASE_URL}/{l}/sales/'

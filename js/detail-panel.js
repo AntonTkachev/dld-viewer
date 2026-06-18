@@ -50,6 +50,16 @@
   // Use the real t() if i18n.js is loaded, otherwise fall back to the key.
   function t(k) { return (typeof window.t === 'function') ? window.t(k) : k; }
 
+  // ─── XSS guard ────────────────────────────────────────────────
+  // All string-typed values from AGGREGATES / RENT_AGGREGATES (project names,
+  // area names, room labels, tx types) are interpolated raw into innerHTML.
+  // Sources are DLD/RERA — lower-risk than OSM but still untrusted. Escape.
+  function _h(s) {
+    return String(s == null ? '' : s).replace(/[&<>"'`]/g, c => ({
+      '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;','`':'&#96;',
+    })[c]);
+  }
+
   // ─── Formatters ────────────────────────────────────────────────
   function fmtInt(v) { return (v||0).toLocaleString('ru-RU'); }
   function fmtAedDP(v) {
@@ -65,7 +75,7 @@
     if (v >= 1e3) return (v/1e3).toFixed(0) + 'K';
     return v;
   }
-  function projName(p) { return p || t('not_specified'); }
+  function projName(p) { return _h(p || t('not_specified')); }
   function roomLabel(k){
     if (k==='all')    return t('room_chip_all');
     if (k==='villa')  return t('ru_villa');
@@ -134,9 +144,9 @@
       const cls = p.k === S.period ? ' active' : '';
       const label = t('period_'+p.k);
       if (S.periodHref) {
-        return `<a class="period-chip${cls}" href="${S.periodHref(p.k)}" data-dp-set-period="${p.k}">${label}</a>`;
+        return `<a class="period-chip${cls}" href="${_h(S.periodHref(p.k))}" data-dp-set-period="${_h(p.k)}">${_h(label)}</a>`;
       }
-      return `<button class="period-chip${cls}" type="button" data-dp-set-period="${p.k}">${label}</button>`;
+      return `<button class="period-chip${cls}" type="button" data-dp-set-period="${_h(p.k)}">${_h(label)}</button>`;
     }).join('');
   }
   function renderPeriodChipsRent() { return renderPeriodChips(); }
@@ -235,11 +245,11 @@
   function renderBodySale(a) {
     const isDubai = S.isDubai;
     const proj_rows = (a.top_projects || []).map(p => {
-      const areaCell = isDubai ? `<td>${p.area || '—'}</td>` : '';
+      const areaCell = isDubai ? `<td>${_h(p.area || '—')}</td>` : '';
       return `<tr><td>${projName(p.proj)}</td>${areaCell}<td class="num">${fmtInt(p.n)}</td><td class="num">${fmtAedDP(p.med)}</td><td class="num">${fmtAedDP(p.total)}</td></tr>`;
     }).join('');
-    const deal_rows = (a.top_deals || []).map(d => `<tr><td>${d.d}</td><td>${projName(d.proj)}</td><td>${d.room}</td><td class="num">${d.area ? fmtInt(d.area) : '—'}</td><td class="num">${fmtAedDP(d.val)}</td><td><span class="dp-tag-op dp-tag-op-${d.op}">${d.op}</span></td></tr>`).join('');
-    const recent_rows = (a.recent || []).map(d => `<tr><td>${d.d}</td><td>${projName(d.proj)}</td><td>${d.room}</td><td class="num">${fmtAedDP(d.val)}</td><td><span class="dp-tag-g dp-tag-g-${d.g}">${d.g}</span></td></tr>`).join('');
+    const deal_rows = (a.top_deals || []).map(d => `<tr><td>${_h(d.d)}</td><td>${projName(d.proj)}</td><td>${_h(d.room)}</td><td class="num">${d.area ? fmtInt(d.area) : '—'}</td><td class="num">${fmtAedDP(d.val)}</td><td><span class="dp-tag-op dp-tag-op-${_h(d.op)}">${_h(d.op)}</span></td></tr>`).join('');
+    const recent_rows = (a.recent || []).map(d => `<tr><td>${_h(d.d)}</td><td>${projName(d.proj)}</td><td>${_h(d.room)}</td><td class="num">${fmtAedDP(d.val)}</td><td><span class="dp-tag-g dp-tag-g-${_h(d.g)}">${_h(d.g)}</span></td></tr>`).join('');
     const proj_th_area = isDubai ? `<th>${t('th_district')}</th>` : '';
 
     return `
@@ -316,7 +326,7 @@
     const proj_rows = (r.top_projects||[]).map(p => `<tr><td>${projName(p.proj)}</td><td class="num">${fmtInt(p.n)}</td><td class="num">${fmtAedDP(p.med)}</td></tr>`).join('');
     const recent_rows = (r.recent||[]).map(d => {
       const vTag = d.v === 'N' ? t('rent_v_new') : t('rent_v_renew');
-      return `<tr><td>${d.d}</td><td>${projName(d.proj)}</td><td>${d.sub}</td><td class="num">${d.sqm ? fmtInt(d.sqm) : '—'}</td><td class="num">${fmtAedDP(d.val)}</td><td><span class="dp-tag-g dp-tag-g-${d.v==='N'?'O':'R'}">${vTag}</span></td></tr>`;
+      return `<tr><td>${_h(d.d)}</td><td>${projName(d.proj)}</td><td>${_h(d.sub)}</td><td class="num">${d.sqm ? fmtInt(d.sqm) : '—'}</td><td class="num">${fmtAedDP(d.val)}</td><td><span class="dp-tag-g dp-tag-g-${d.v==='N'?'O':'R'}">${_h(vTag)}</span></td></tr>`;
     }).join('');
 
     return `

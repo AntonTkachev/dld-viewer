@@ -70,10 +70,10 @@ setTimeout(() => {
       _bootLang = window.__INITIAL_LANG__;
     } else {
       // Strip the project subpath (_BASE_PATH, e.g. /dld-viewer) before
-      // matching the /(en|ar|hi)/ language prefix — on GH Pages project
+      // matching the /(en|ar|hi|zh)/ language prefix — on GH Pages project
       // sites the path is /dld-viewer/en/sales/, not /en/sales/.
       const _pPath = ((window.location.pathname || '').slice(_BASE_PATH.length)) || '/';
-      const pm = _pPath.match(/^\/(en|ar|hi)(?:\/|$)/);
+      const pm = _pPath.match(/^\/(en|ar|hi|zh)(?:\/|$)/);
       if (pm && typeof I18N !== 'undefined' && I18N[pm[1]]) {
         _bootLang = pm[1];
       } else {
@@ -109,6 +109,29 @@ function _slugify(s) {
   return (s || '').normalize('NFKD').replace(/[\u0300-\u036f]/g, '')
     .toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '');
 }
+// XSS guards. Every popup / table cell that interpolates external data
+// (OSM tags, KHDA/DLD/RERA strings, OSM-author free-form `website` URLs)
+// is built with template literals into innerHTML strings \u2014 so any unescaped
+// `<` or `"` becomes live markup. `_h` is the standard HTML-entity escape
+// for both text content and quoted attribute values. `_safeUrl` is for
+// href/src attribute values specifically \u2014 escaping wouldn't stop the
+// `javascript:` scheme, so we whitelist http(s)/tel/mailto and replace
+// anything else with the empty fragment so the link still renders but
+// goes nowhere.
+function _h(s) {
+  return String(s == null ? '' : s).replace(/[&<>"'`]/g, c => ({
+    '&':'&amp;', '<':'&lt;', '>':'&gt;', '"':'&quot;', "'":'&#39;', '`':'&#96;',
+  })[c]);
+}
+function _safeUrl(u) {
+  const s = String(u == null ? '' : u).trim();
+  // /^scheme:/ is intentionally case-insensitive; "JaVaScRiPt:" is a known
+  // bypass on filters that only check lowercase.
+  if (/^(https?|tel|mailto):/i.test(s)) return s;
+  // Protocol-relative (//evil.com/x) is denied \u2014 looks like a path but the
+  // browser would resolve it against the current scheme + evil host.
+  return '#';
+}
 // Auto-detected project subpath. Empty when served at the host root (custom
 // domain, local http.server from the repo); '/dld-viewer' when served as a
 // GH Pages project page.
@@ -136,12 +159,12 @@ function _langUrlPrefixOf(lang) {
 // under /<lang>/<mask>/[table/] (see scripts/build_pages.py).
 function _navigateToLang(targetLang) {
   if (!targetLang || typeof window === 'undefined') return;
-  // Strip an existing /(en|ar|hi)/ prefix from the current path to expose
+  // Strip an existing /(en|ar|hi|zh)/ prefix from the current path to expose
   // the bare path (/sales/, /rents/table/, /metro/, …) — then prepend the
   // new language prefix. Also strip _BASE_PATH first (e.g. /dld-viewer)
-  // so the regex against /en/, /ar/, /hi/ matches on GH Pages.
+  // so the regex against /en/, /ar/, /hi/, /zh/ matches on GH Pages.
   const p = (window.location.pathname || '/').slice(_BASE_PATH.length) || '/';
-  let stripped = p.replace(/^\/(en|ar|hi)(?=\/|$)/, '') || '/';
+  let stripped = p.replace(/^\/(en|ar|hi|zh)(?=\/|$)/, '') || '/';
   // No /<lang>/index.html exists — only /<lang>/<mask>/ landings. The root
   // viewer (/, /index.html, /<lang>/) is effectively the sales landing in
   // RU; route the lang switch there so we don't land on a directory listing.
@@ -791,16 +814,18 @@ function renderTable() {
     // (or always for the DUBAI rollup row, which opens the city-wide panel).
     // Unmatchable rows stay as muted plain text so the user can see at a
     // glance which districts have no polygon on the map.
+    // txt comes from _tableFmt; for non-numeric ('str') columns it's raw
+    // polygon `name` / `name_ar` which originate from OSM/GEOJSON, so escape.
+    const cellHtml = (c.type === 'str') ? _h(txt) : txt;
     if (c.key === 'name') {
       const areaKey = isDubai ? '__dubai__' : (rec && rec._k);
       const hasPolygon = isDubai || (areaKey && _FEAT_BY_KEY.has(areaKey));
       if (areaKey && hasPolygon) {
-        const safe = areaKey.replace(/"/g, '&quot;');
-        return `<td${cls ? ' class="' + cls + '"' : ''}><a class="tv-district-link" data-key="${safe}">${txt}</a></td>`;
+        return `<td${cls ? ' class="' + cls + '"' : ''}><a class="tv-district-link" data-key="${_h(areaKey)}">${cellHtml}</a></td>`;
       }
-      return `<td${cls ? ' class="' + cls + ' tv-no-polygon"' : ' class="tv-no-polygon"'} title="${t('tv_no_polygon')}">${txt}</td>`;
+      return `<td${cls ? ' class="' + cls + ' tv-no-polygon"' : ' class="tv-no-polygon"'} title="${_h(t('tv_no_polygon'))}">${cellHtml}</td>`;
     }
-    return `<td${cls ? ' class="' + cls + '"' : ''}>${txt}</td>`;
+    return `<td${cls ? ' class="' + cls + '"' : ''}>${cellHtml}</td>`;
   };
 
   // Dubai rollup pinned at the top of page 1 (and ONLY there) so the
@@ -1116,7 +1141,7 @@ function _renderSearchResults(query){
     return;
   }
   el.innerHTML = items.map((x, i) =>
-    `<div class="sr-item" data-i="${i}"><span class="sr-name">${x.name}</span><span class="sr-meta">L${x.level}${x.rc?(' · '+x.rc.toLocaleString('ru-RU')):''}</span></div>`
+    `<div class="sr-item" data-i="${i}"><span class="sr-name">${_h(x.name)}</span><span class="sr-meta">L${x.level|0}${x.rc?(' · '+x.rc.toLocaleString('ru-RU')):''}</span></div>`
   ).join('');
   el.querySelectorAll('.sr-item').forEach((it, i) => {
     it.addEventListener('click', () => _onSearchSelect(items[i].feat));
@@ -1201,11 +1226,11 @@ function renderChoro(){
       const p = f.properties;
       layer.bindPopup(() => {
         const m = MASKS[currentMask] || MASKS.sales;
-        const sourceLabel = ({'osm-admin':'OSM admin_level=10','osm-place':'OSM place='+(p.kind||''),'osm-residential':'OSM landuse=residential'})[p.source] || 'OSM';
+        const sourceLabel = ({'osm-admin':'OSM admin_level=10','osm-place':'OSM place='+_h(p.kind||''),'osm-residential':'OSM landuse=residential'})[p.source] || 'OSM';
         const newDev = p._new_dev_count || 0;
-        const newDevRow = newDev ? `<div class="stat"><span class="k">${t("new_buildings")} <span class="src-tag src-osm">OSM</span></span><span class="v">${newDev}</span></div>` : '';
+        const newDevRow = newDev ? `<div class="stat"><span class="k">${t("new_buildings")} <span class="src-tag src-osm">OSM</span></span><span class="v">${newDev|0}</span></div>` : '';
         const detailsBtn = p.real_area_key
-          ? `<div style="margin-top:8px"><a href="${_districtHrefForKey(p.real_area_key, p.name)}" style="background:#0366d6;color:#fff;text-decoration:none;padding:6px 12px;border-radius:4px;font-size:12px;font-weight:600;display:inline-block">${t("pp_open")}</a></div>`
+          ? `<div style="margin-top:8px"><a href="${_h(_safeUrl(_districtHrefForKey(p.real_area_key, p.name)))}" style="background:#0366d6;color:#fff;text-decoration:none;padding:6px 12px;border-radius:4px;font-size:12px;font-weight:600;display:inline-block">${t("pp_open")}</a></div>`
           : '';
         let bodyRows;
         if (typeof m.popupRows === 'function') {
@@ -1216,7 +1241,7 @@ function renderChoro(){
         } else {
           const volumeRow = m.showVolume ? `<div class="stat"><span class="k">${t("pp_volume")}</span><span class="v">${(p.real_total_aed||0)>=1e9?((p.real_total_aed/1e9).toFixed(2)+' '+t('abbr_b')):((p.real_total_aed/1e6).toFixed(1)+' '+t('abbr_m'))}</span></div>` : '';
           bodyRows = p.real_count ? `
-            <div class="stat"><span class="k">${t(m.popupCountKey || "pp_trans_ytd")} <span class="src-tag" style="background:#e6f7e6;color:#0a7f00">DLD</span>${p.real_match_kind==='parent'?' <span class="src-tag" style="background:#fff5e6;color:#7a4c00">parent: '+p.real_parent_name+'</span>':''}</span><span class="v">${p.real_count.toLocaleString('ru-RU')}</span></div>
+            <div class="stat"><span class="k">${t(m.popupCountKey || "pp_trans_ytd")} <span class="src-tag" style="background:#e6f7e6;color:#0a7f00">DLD</span>${p.real_match_kind==='parent'?' <span class="src-tag" style="background:#fff5e6;color:#7a4c00">parent: '+_h(p.real_parent_name||'')+'</span>':''}</span><span class="v">${p.real_count.toLocaleString('ru-RU')}</span></div>
             ${volumeRow}
             <div class="stat"><span class="k">${t("pp_median")}</span><span class="v">${((p.real_med_price||0)/1e6).toFixed(2)} ${t('abbr_m')}</span></div>
             <div class="stat"><span class="k">${t("pp_median_psqm")}</span><span class="v">${(p.real_med_ppsqm||0).toLocaleString('ru-RU')}</span></div>
@@ -1228,8 +1253,8 @@ function renderChoro(){
           `;
         }
         return `
-          <h3>${p.name||'—'} <span class="src-tag src-osm">${sourceLabel}</span></h3>
-          <div class="muted" style="margin-bottom:6px;color:#888">${p.name_ar||''}</div>
+          <h3>${p.name ? _h(p.name) : '—'} <span class="src-tag src-osm">${sourceLabel}</span></h3>
+          <div class="muted" style="margin-bottom:6px;color:#888">${_h(p.name_ar||'')}</div>
           ${bodyRows}
         `;
       });
@@ -1284,9 +1309,9 @@ for (const s of METRO_STATIONS) {
   const icon = L.divIcon({className:'', html:`<div class="pin ${GROUP_PIN[primary]}">${pinLetter}</div>`, iconSize:[24,24], iconAnchor:[12,12]});
   const m = L.marker([s.lat, s.lon], {icon});
   m.bindPopup(() => `
-    <h3>🚇 ${s.name || t('station_default')} <span class="src-tag src-osm">OSM</span></h3>
-    <div class="muted" style="color:#888;margin-bottom:4px">${labelLines}${isInterchange?(' · '+t('metro_interchange')):''}</div>
-    ${s.line ? `<div class="stat"><span class="k">${t("metro_line")}</span><span class="v">${s.line}</span></div>` : ''}
+    <h3>🚇 ${_h(s.name || t('station_default'))} <span class="src-tag src-osm">OSM</span></h3>
+    <div class="muted" style="color:#888;margin-bottom:4px">${_h(labelLines)}${isInterchange?(' · '+t('metro_interchange')):''}</div>
+    ${s.line ? `<div class="stat"><span class="k">${t("metro_line")}</span><span class="v">${_h(s.line)}</span></div>` : ''}
   `);
   m.addTo(metroLayer);
 }
@@ -1304,19 +1329,19 @@ for (const s of SCHOOLS) {
     const nameIsArabic = hasName && /[؀-ۿ]/.test(s.name);
     const titleAttr = nameIsArabic ? ' dir="rtl" style="text-align:right"' : '';
     const displayName = hasName
-      ? `<span${titleAttr}>${s.name}</span>`
-      : ('<span style="color:#888">' + t('no_name') + '</span>');
+      ? `<span${titleAttr}>${_h(s.name)}</span>`
+      : ('<span style="color:#888">' + _h(t('no_name')) + '</span>');
     const arSubtitle = (s.name_ar && s.name_ar !== s.name)
-      ? `<div class="muted" dir="rtl" style="color:#888;margin-bottom:4px;text-align:right">${s.name_ar}</div>`
+      ? `<div class="muted" dir="rtl" style="color:#888;margin-bottom:4px;text-align:right">${_h(s.name_ar)}</div>`
       : '';
     if (!s.in_khda) {
       const osmRows = [];
-      if (s.operator)       osmRows.push(`<div class="stat"><span class="k">${t('h_op')}</span><span class="v">${s.operator}</span></div>`);
-      if (s.school_type)    osmRows.push(`<div class="stat"><span class="k">${t('sch_curr')}</span><span class="v">${s.school_type}</span></div>`);
-      if (s.school_gender)  osmRows.push(`<div class="stat"><span class="k">${t('sch_gender')}</span><span class="v">${s.school_gender}</span></div>`);
-      if (s.addr_suburb)    osmRows.push(`<div class="stat"><span class="k">${t('sch_area')}</span><span class="v">${s.addr_suburb}</span></div>`);
-      if (s.website)        osmRows.push(`<div class="stat"><span class="k">${t('h_web')}</span><span class="v"><a href="${s.website}" target="_blank">${s.website.replace(/^https?:\/\//,'').replace(/\/$/,'').slice(0,32)}</a></span></div>`);
-      if (s.wikidata)       osmRows.push(`<div class="stat"><span class="k">Wikidata</span><span class="v"><a href="https://www.wikidata.org/wiki/${s.wikidata}" target="_blank">${s.wikidata}</a></span></div>`);
+      if (s.operator)       osmRows.push(`<div class="stat"><span class="k">${t('h_op')}</span><span class="v">${_h(s.operator)}</span></div>`);
+      if (s.school_type)    osmRows.push(`<div class="stat"><span class="k">${t('sch_curr')}</span><span class="v">${_h(s.school_type)}</span></div>`);
+      if (s.school_gender)  osmRows.push(`<div class="stat"><span class="k">${t('sch_gender')}</span><span class="v">${_h(s.school_gender)}</span></div>`);
+      if (s.addr_suburb)    osmRows.push(`<div class="stat"><span class="k">${t('sch_area')}</span><span class="v">${_h(s.addr_suburb)}</span></div>`);
+      if (s.website)        osmRows.push(`<div class="stat"><span class="k">${t('h_web')}</span><span class="v"><a href="${_h(_safeUrl(s.website))}" target="_blank" rel="noopener noreferrer">${_h(s.website.replace(/^https?:\/\//,'').replace(/\/$/,'').slice(0,32))}</a></span></div>`);
+      if (s.wikidata)       osmRows.push(`<div class="stat"><span class="k">Wikidata</span><span class="v"><a href="https://www.wikidata.org/wiki/${encodeURIComponent(s.wikidata)}" target="_blank" rel="noopener noreferrer">${_h(s.wikidata)}</a></span></div>`);
       return `
         <h3>🏫 ${displayName} <span class="src-tag src-osm">OSM</span></h3>
         ${arSubtitle}
@@ -1329,19 +1354,19 @@ for (const s of SCHOOLS) {
       ? ' <span class="src-tag" style="background:#fff5e0;color:#b35900" title="Coordinates set manually — school missing from OSM">~coords</span>'
       : '';
     const rows = [];
-    if (s.curriculum)  rows.push(`<div class="stat"><span class="k">${t('sch_curr')}</span><span class="v">${s.curriculum}</span></div>`);
-    if (s.grade_range) rows.push(`<div class="stat"><span class="k">${t('sch_grade_range')}</span><span class="v">${s.grade_range}</span></div>`);
-    if (s.area)        rows.push(`<div class="stat"><span class="k">${t('sch_area')}</span><span class="v">${s.area}</span></div>`);
-    if (s.phone)       rows.push(`<div class="stat"><span class="k">${t('sch_phone')}</span><span class="v"><a href="tel:${s.phone}">${s.phone}</a></span></div>`);
-    if (s.rating)      rows.push(`<div class="stat"><span class="k">${t('sch_rating')}</span><span class="v"><span class="rating ${_rcls(s.rating)}">${s.rating}</span></span></div>`);
-    if (s.wellbeing)   rows.push(`<div class="stat"><span class="k">${t('sch_wellbeing')}</span><span class="v"><span class="rating ${_rcls(s.wellbeing)}">${s.wellbeing}</span></span></div>`);
-    if (s.inclusion)   rows.push(`<div class="stat"><span class="k">${t('sch_inclusion')}</span><span class="v"><span class="rating ${_rcls(s.inclusion)}">${s.inclusion}</span></span></div>`);
-    const detailsUrl = `https://web.khda.gov.ae/en/Education-Directory/Schools/School-Details?Id=${s.khda_id}&CenterID=${s.center_id}`;
+    if (s.curriculum)  rows.push(`<div class="stat"><span class="k">${t('sch_curr')}</span><span class="v">${_h(s.curriculum)}</span></div>`);
+    if (s.grade_range) rows.push(`<div class="stat"><span class="k">${t('sch_grade_range')}</span><span class="v">${_h(s.grade_range)}</span></div>`);
+    if (s.area)        rows.push(`<div class="stat"><span class="k">${t('sch_area')}</span><span class="v">${_h(s.area)}</span></div>`);
+    if (s.phone)       rows.push(`<div class="stat"><span class="k">${t('sch_phone')}</span><span class="v"><a href="tel:${encodeURIComponent(s.phone)}">${_h(s.phone)}</a></span></div>`);
+    if (s.rating)      rows.push(`<div class="stat"><span class="k">${t('sch_rating')}</span><span class="v"><span class="rating ${_h(_rcls(s.rating))}">${_h(s.rating)}</span></span></div>`);
+    if (s.wellbeing)   rows.push(`<div class="stat"><span class="k">${t('sch_wellbeing')}</span><span class="v"><span class="rating ${_h(_rcls(s.wellbeing))}">${_h(s.wellbeing)}</span></span></div>`);
+    if (s.inclusion)   rows.push(`<div class="stat"><span class="k">${t('sch_inclusion')}</span><span class="v"><span class="rating ${_h(_rcls(s.inclusion))}">${_h(s.inclusion)}</span></span></div>`);
+    const detailsUrl = `https://web.khda.gov.ae/en/Education-Directory/Schools/School-Details?Id=${encodeURIComponent(s.khda_id)}&CenterID=${encodeURIComponent(s.center_id)}`;
     return `
       <h3>🏫 ${displayName} ${srcTag}${manualTag}</h3>
       ${arSubtitle}
       ${rows.join('')}
-      <div style="margin-top:6px"><a href="${detailsUrl}" target="_blank" style="font-size:11px">KHDA School Details ↗</a></div>
+      <div style="margin-top:6px"><a href="${detailsUrl}" target="_blank" rel="noopener noreferrer" style="font-size:11px">KHDA School Details ↗</a></div>
     `;
   });
   m.addTo(schoolLayer);
@@ -1354,13 +1379,13 @@ const POI_LAYERS = {};
 for (const [key, def] of Object.entries(POI_DEFS)) {
   const grp = L.layerGroup();
   for (const p of (POIS[key] || [])) {
-    const icon = L.divIcon({className:'', html:`<div class="pin ${key}">${def.emoji}</div>`, iconSize:[24,24], iconAnchor:[12,12]});
+    const icon = L.divIcon({className:'', html:`<div class="pin ${_h(key)}">${def.emoji}</div>`, iconSize:[24,24], iconAnchor:[12,12]});
     const m = L.marker([p.lat, p.lon], {icon});
-    const lines = [`<h3>${def.emoji} ${p.name || ('<span style="color:#888">' + t('no_name') + '</span>')} <span class="src-tag src-osm">OSM</span></h3>`];
-    lines.push(`<div class="muted" style="color:#888;margin-bottom:4px">${def.label}</div>`);
-    if (p.op) lines.push(`<div class="stat"><span class="k">${t('uni_op')}</span><span class="v">${p.op}</span></div>`);
-    if (p.kind) lines.push(`<div class="stat"><span class="k">${t('uni_op_type')}</span><span class="v">${p.kind}</span></div>`);
-    if (p.start_date) lines.push(`<div class="stat"><span class="k">${t("pj_start")}</span><span class="v">${p.start_date}</span></div>`);
+    const lines = [`<h3>${def.emoji} ${p.name ? _h(p.name) : ('<span style="color:#888">' + t('no_name') + '</span>')} <span class="src-tag src-osm">OSM</span></h3>`];
+    lines.push(`<div class="muted" style="color:#888;margin-bottom:4px">${_h(def.label)}</div>`);
+    if (p.op) lines.push(`<div class="stat"><span class="k">${t('uni_op')}</span><span class="v">${_h(p.op)}</span></div>`);
+    if (p.kind) lines.push(`<div class="stat"><span class="k">${t('uni_op_type')}</span><span class="v">${_h(p.kind)}</span></div>`);
+    if (p.start_date) lines.push(`<div class="stat"><span class="k">${t("pj_start")}</span><span class="v">${_h(p.start_date)}</span></div>`);
     m.bindPopup(lines.join(''));
     m.addTo(grp);
   }
@@ -1377,28 +1402,28 @@ for (const u of UNIVERSITIES) {
     const hasName = u.name && u.name !== '(unnamed)';
     const isAr = hasName && /[؀-ۿ]/.test(u.name);
     const titleAttr = isAr ? ' dir="rtl" style="text-align:right"' : '';
-    const displayName = hasName ? `<span${titleAttr}>${u.name}</span>` : `<span style="color:#888">${t('no_name')}</span>`;
+    const displayName = hasName ? `<span${titleAttr}>${_h(u.name)}</span>` : `<span style="color:#888">${t('no_name')}</span>`;
     const arSub = (u.name_ar && u.name_ar !== u.name)
-      ? `<div class="muted" dir="rtl" style="color:#888;margin-bottom:4px;text-align:right">${u.name_ar}</div>`
+      ? `<div class="muted" dir="rtl" style="color:#888;margin-bottom:4px;text-align:right">${_h(u.name_ar)}</div>`
       : '';
     const srcTag = u.in_khda
       ? '<span class="src-tag" style="background:#e6f7e6;color:#0a7f00">KHDA</span>'
       : '<span class="src-tag src-osm">OSM</span>';
     const rows = [];
     if (u.in_khda) {
-      if (u.khda_area)        rows.push(`<div class="stat"><span class="k">${t('uni_city')}</span><span class="v">${u.khda_area}</span></div>`);
-      if (u.khda_established) rows.push(`<div class="stat"><span class="k">${t('uni_established')}</span><span class="v">${u.khda_established}</span></div>`);
-      if (u.khda_stars)       rows.push(`<div class="stat"><span class="k">${t('uni_khda_stars')}</span><span class="v"><span class="rating Verygood">${'★'.repeat(parseInt(u.khda_stars,10)||0)}${'☆'.repeat(5-(parseInt(u.khda_stars,10)||0))}</span> ${u.khda_rating_year ? `<span style="color:#888;font-size:11px">${u.khda_rating_year}</span>` : ''}</span></div>`);
+      if (u.khda_area)        rows.push(`<div class="stat"><span class="k">${t('uni_city')}</span><span class="v">${_h(u.khda_area)}</span></div>`);
+      if (u.khda_established) rows.push(`<div class="stat"><span class="k">${t('uni_established')}</span><span class="v">${_h(u.khda_established)}</span></div>`);
+      if (u.khda_stars)       rows.push(`<div class="stat"><span class="k">${t('uni_khda_stars')}</span><span class="v"><span class="rating Verygood">${'★'.repeat(parseInt(u.khda_stars,10)||0)}${'☆'.repeat(5-(parseInt(u.khda_stars,10)||0))}</span> ${u.khda_rating_year ? `<span style="color:#888;font-size:11px">${_h(u.khda_rating_year)}</span>` : ''}</span></div>`);
     }
-    if (u.operator)      rows.push(`<div class="stat"><span class="k">${t('uni_op')}</span><span class="v">${u.operator}</span></div>`);
-    if (u.website)       rows.push(`<div class="stat"><span class="k">${t('uni_web')}</span><span class="v"><a href="${u.website}" target="_blank">${u.website.replace(/^https?:\/\//,'').replace(/\/$/,'').slice(0,32)}</a></span></div>`);
+    if (u.operator)      rows.push(`<div class="stat"><span class="k">${t('uni_op')}</span><span class="v">${_h(u.operator)}</span></div>`);
+    if (u.website)       rows.push(`<div class="stat"><span class="k">${t('uni_web')}</span><span class="v"><a href="${_h(_safeUrl(u.website))}" target="_blank" rel="noopener noreferrer">${_h(u.website.replace(/^https?:\/\//,'').replace(/\/$/,'').slice(0,32))}</a></span></div>`);
     if (u.wikipedia) {
       const wpUrl = 'https://' + u.wikipedia.replace(':', '.wikipedia.org/wiki/').replace(/ /g,'_');
-      rows.push(`<div class="stat"><span class="k">Wikipedia</span><span class="v"><a href="${wpUrl}" target="_blank">${u.wikipedia}</a></span></div>`);
+      rows.push(`<div class="stat"><span class="k">Wikipedia</span><span class="v"><a href="${_h(_safeUrl(wpUrl))}" target="_blank" rel="noopener noreferrer">${_h(u.wikipedia)}</a></span></div>`);
     }
-    if (u.wikidata && !u.wikipedia) rows.push(`<div class="stat"><span class="k">Wikidata</span><span class="v"><a href="https://www.wikidata.org/wiki/${u.wikidata}" target="_blank">${u.wikidata}</a></span></div>`);
+    if (u.wikidata && !u.wikipedia) rows.push(`<div class="stat"><span class="k">Wikidata</span><span class="v"><a href="https://www.wikidata.org/wiki/${encodeURIComponent(u.wikidata)}" target="_blank" rel="noopener noreferrer">${_h(u.wikidata)}</a></span></div>`);
     const detailsLink = u.khda_uni_id
-      ? `<div style="margin-top:6px"><a href="https://web.khda.gov.ae/en/Education-Directory/Higher-Education/Higher-Education-Details?CenterID=${u.khda_uni_id}" target="_blank" style="font-size:11px">KHDA Details ↗</a></div>`
+      ? `<div style="margin-top:6px"><a href="https://web.khda.gov.ae/en/Education-Directory/Higher-Education/Higher-Education-Details?CenterID=${encodeURIComponent(u.khda_uni_id)}" target="_blank" rel="noopener noreferrer" style="font-size:11px">KHDA Details ↗</a></div>`
       : '';
     const notInKhdaNote = (!u.in_khda)
       ? `<div class="muted" style="font-size:11px;color:#888;margin-top:6px">${t('uni_not_in_khda')}</div>`
@@ -1446,20 +1471,20 @@ for (const m of MEDICAL) {
     }
     if (m.healthcare_speciality) {
       const specs = String(m.healthcare_speciality).split(';').map(s => s.trim()).filter(Boolean);
-      rows.push(`<div class="stat"><span class="k">${t('h_specs_real')}</span><span class="v" style="text-align:right;max-width:200px;white-space:normal;font-size:11px">${specs.map(s => `<span class="lang-chip">${s}</span>`).join('')}</span></div>`);
+      rows.push(`<div class="stat"><span class="k">${t('h_specs_real')}</span><span class="v" style="text-align:right;max-width:200px;white-space:normal;font-size:11px">${specs.map(s => `<span class="lang-chip">${_h(s)}</span>`).join('')}</span></div>`);
     }
-    if (m.operator) rows.push(`<div class="stat"><span class="k">${t('h_op')}</span><span class="v">${m.operator}</span></div>`);
-    if (m.phone)    rows.push(`<div class="stat"><span class="k">${t('h_phone')}</span><span class="v"><a href="tel:${m.phone}">${m.phone}</a></span></div>`);
-    if (m.website)  rows.push(`<div class="stat"><span class="k">${t('h_web')}</span><span class="v"><a href="${m.website}" target="_blank">${m.website.replace(/^https?:\/\//, '').replace(/\/$/, '').slice(0, 32)}</a></span></div>`);
+    if (m.operator) rows.push(`<div class="stat"><span class="k">${t('h_op')}</span><span class="v">${_h(m.operator)}</span></div>`);
+    if (m.phone)    rows.push(`<div class="stat"><span class="k">${t('h_phone')}</span><span class="v"><a href="tel:${encodeURIComponent(m.phone)}">${_h(m.phone)}</a></span></div>`);
+    if (m.website)  rows.push(`<div class="stat"><span class="k">${t('h_web')}</span><span class="v"><a href="${_h(_safeUrl(m.website))}" target="_blank" rel="noopener noreferrer">${_h(m.website.replace(/^https?:\/\//, '').replace(/\/$/, '').slice(0, 32))}</a></span></div>`);
     if (m.wikipedia) {
       const wpUrl = 'https://' + m.wikipedia.replace(':', '.wikipedia.org/wiki/').replace(/ /g, '_');
-      rows.push(`<div class="stat"><span class="k">Wikipedia</span><span class="v"><a href="${wpUrl}" target="_blank">${m.wikipedia}</a></span></div>`);
+      rows.push(`<div class="stat"><span class="k">Wikipedia</span><span class="v"><a href="${_h(_safeUrl(wpUrl))}" target="_blank" rel="noopener noreferrer">${_h(m.wikipedia)}</a></span></div>`);
     }
-    if (m.opening_hours) rows.push(`<div class="stat"><span class="k">${t('ml_hours')}</span><span class="v" style="font-size:11.5px">${m.opening_hours}</span></div>`);
-    if (m.addr_city)     rows.push(`<div class="stat"><span class="k">${t('h_city')}</span><span class="v">${m.addr_city}</span></div>`);
+    if (m.opening_hours) rows.push(`<div class="stat"><span class="k">${t('ml_hours')}</span><span class="v" style="font-size:11.5px">${_h(m.opening_hours)}</span></div>`);
+    if (m.addr_city)     rows.push(`<div class="stat"><span class="k">${t('h_city')}</span><span class="v">${_h(m.addr_city)}</span></div>`);
     return `
-      <h3>${meta.emoji} ${m.name || ('<span style="color:#888">' + t('no_name') + '</span>')} <span class="src-tag src-osm">OSM</span></h3>
-      ${m.name_ar ? `<div class="muted" dir="rtl" style="color:#888;margin-bottom:4px;text-align:right">${m.name_ar}</div>` : ''}
+      <h3>${meta.emoji} ${m.name ? _h(m.name) : ('<span style="color:#888">' + t('no_name') + '</span>')} <span class="src-tag src-osm">OSM</span></h3>
+      ${m.name_ar ? `<div class="muted" dir="rtl" style="color:#888;margin-bottom:4px;text-align:right">${_h(m.name_ar)}</div>` : ''}
       ${rows.join('')}
     `;
   });
@@ -1475,25 +1500,25 @@ for (const mo of MOSQUES) {
   const realRows = [];
   // Hide low-signal "denomination: sunni" (default for 99% of UAE mosques)
   if (mo.denomination && String(mo.denomination).toLowerCase() !== 'sunni') {
-    realRows.push(`<div class="stat"><span class="k">${t("mo_denom")}</span><span class="v">${mo.denomination}</span></div>`);
+    realRows.push(`<div class="stat"><span class="k">${t("mo_denom")}</span><span class="v">${_h(mo.denomination)}</span></div>`);
   }
-  if (mo.addr_street) realRows.push(`<div class="stat"><span class="k">${t("mo_street")}</span><span class="v">${mo.addr_street}</span></div>`);
-  if (mo.addr_city) realRows.push(`<div class="stat"><span class="k">${t("mo_city")}</span><span class="v">${mo.addr_city}</span></div>`);
-  if (mo.wheelchair) realRows.push(`<div class="stat"><span class="k">${t("mo_wheel")}</span><span class="v">${mo.wheelchair==='yes'?'✓ да':mo.wheelchair}</span></div>`);
-  if (mo.image) realRows.push(`<div class="stat"><span class="k">${t("mo_image")}</span><span class="v"><a href="${mo.image}" target="_blank">${t("view_t")}</a></span></div>`);
+  if (mo.addr_street) realRows.push(`<div class="stat"><span class="k">${t("mo_street")}</span><span class="v">${_h(mo.addr_street)}</span></div>`);
+  if (mo.addr_city) realRows.push(`<div class="stat"><span class="k">${t("mo_city")}</span><span class="v">${_h(mo.addr_city)}</span></div>`);
+  if (mo.wheelchair) realRows.push(`<div class="stat"><span class="k">${t("mo_wheel")}</span><span class="v">${mo.wheelchair==='yes'?'✓ да':_h(mo.wheelchair)}</span></div>`);
+  if (mo.image) realRows.push(`<div class="stat"><span class="k">${t("mo_image")}</span><span class="v"><a href="${_h(_safeUrl(mo.image))}" target="_blank" rel="noopener noreferrer">${t("view_t")}</a></span></div>`);
 
   // Drop the synthetic "size" row — it duplicates capacity and "Mahalla" is untranslated.
   const synth = `
     <div class="stat"><span class="k">${t("mo_cap")} <span class="src-tag src-fake">~</span></span><span class="v">${mo.capacity.toLocaleString('ru-RU')}</span></div>
-    <div class="stat"><span class="k">${t("mo_khutbah")} <span class="src-tag src-fake">~</span></span><span class="v">${mo.khutbah_langs.map(l=>`<span class="lang-chip">${l}</span>`).join('')}</span></div>
+    <div class="stat"><span class="k">${t("mo_khutbah")} <span class="src-tag src-fake">~</span></span><span class="v">${mo.khutbah_langs.map(l=>`<span class="lang-chip">${_h(l)}</span>`).join('')}</span></div>
     <div class="stat"><span class="k">${t("mo_women")} <span class="src-tag src-fake">~</span></span><span class="v">${mo.women_section?t('yes_t'):t('no_t')}</span></div>
     <div class="stat"><span class="k">${t("mo_park")} <span class="src-tag src-fake">~</span></span><span class="v">${mo.parking?t('yes_t'):t('no_t')}</span></div>
     <div class="stat"><span class="k">${t("mo_classes")} <span class="src-tag src-fake">~</span></span><span class="v">${mo.classes?t('yes_t'):t('no_t')}</span></div>
     <div class="stat"><span class="k">${t("mo_iftar")} <span class="src-tag src-fake">~</span></span><span class="v">${mo.iftar?t('yes_t'):t('no_t')}</span></div>
   `;
   return `
-    <h3>🕌 ${mo.name || ('<span style="color:#888">' + t('no_name') + '</span>')} <span class="src-tag src-osm">OSM</span></h3>
-    ${mo.name_ar ? `<div class="muted" style="color:#888;margin-bottom:4px">${mo.name_ar}</div>` : ''}
+    <h3>🕌 ${mo.name ? _h(mo.name) : ('<span style="color:#888">' + t('no_name') + '</span>')} <span class="src-tag src-osm">OSM</span></h3>
+    ${mo.name_ar ? `<div class="muted" style="color:#888;margin-bottom:4px">${_h(mo.name_ar)}</div>` : ''}
     ${realRows.join('')}
     <div style="border-top:1px solid #eee;margin:6px 0 4px"></div>
     ${synth}
@@ -1564,7 +1589,7 @@ for (const d of PROJECTS) {
     // Top developers — name is Arabic, render RTL.
     if (d.top_developers && d.top_developers.length) {
       const devLines = d.top_developers.slice(0, 5).map(([name, count]) =>
-        `<div style="display:flex;justify-content:space-between;gap:8px;font-size:11.5px"><span dir="rtl" style="flex:1;text-align:right">${name}</span><span style="color:#888">${count}</span></div>`
+        `<div style="display:flex;justify-content:space-between;gap:8px;font-size:11.5px"><span dir="rtl" style="flex:1;text-align:right">${_h(name)}</span><span style="color:#888">${count|0}</span></div>`
       ).join('');
       rows.push(`<div class="stat"><span class="k">${t('pj_top_devs')}</span><span class="v" style="text-align:right;max-width:220px">${devLines}</span></div>`);
     }
@@ -1572,11 +1597,11 @@ for (const d of PROJECTS) {
     const geoNote = d.geocode_kind === 'area'
       ? `<div class="muted" style="margin-top:6px;font-size:11px;color:#888">${t('pj_geocode_area')}</div>`
       : '';
-    const openAll = `<div style="margin-top:8px"><button class="pj-open-all" disabled title="${t('pj_open_all_soon')}">${t('pj_open_all')} (${d.total}) →</button></div>`;
+    const openAll = `<div style="margin-top:8px"><button class="pj-open-all" disabled title="${_h(t('pj_open_all_soon'))}">${t('pj_open_all')} (${d.total|0}) →</button></div>`;
 
     return `
-      <h3>🏗️ ${d.name} <span class="src-tag" style="background:#e6f7e6;color:#0a7f00">RERA</span></h3>
-      <div class="muted" style="color:#888;margin-bottom:4px;font-size:11.5px">${d.in_flight} ${t('pj_in_flight_label')} / ${d.total} ${t('pj_total_label')}</div>
+      <h3>🏗️ ${_h(d.name)} <span class="src-tag" style="background:#e6f7e6;color:#0a7f00">RERA</span></h3>
+      <div class="muted" style="color:#888;margin-bottom:4px;font-size:11.5px">${d.in_flight|0} ${t('pj_in_flight_label')} / ${d.total|0} ${t('pj_total_label')}</div>
       ${rows.join('')}
       ${geoNote}
       ${openAll}
@@ -1596,29 +1621,29 @@ for (const ml of MALLS) {
     const rows = [];
     const kindLabel = t(ml.kind === 'souq' ? 'ml_kind_souq' : 'ml_kind_mall');
     rows.push(`<div class="stat"><span class="k">${t('ml_kind')}</span><span class="v">${kindLabel}</span></div>`);
-    if (ml.opening_hours) rows.push(`<div class="stat"><span class="k">${t('ml_hours')}</span><span class="v" style="font-size:11.5px">${ml.opening_hours}</span></div>`);
-    if (ml.operator) rows.push(`<div class="stat"><span class="k">${t('ml_op')}</span><span class="v">${ml.operator}</span></div>`);
-    if (ml.brand) rows.push(`<div class="stat"><span class="k">${t('ml_brand')}</span><span class="v">${ml.brand}</span></div>`);
-    if (ml.phone) rows.push(`<div class="stat"><span class="k">${t('ml_phone')}</span><span class="v"><a href="tel:${ml.phone}">${ml.phone}</a></span></div>`);
-    if (ml.website) rows.push(`<div class="stat"><span class="k">${t('ml_web')}</span><span class="v"><a href="${ml.website}" target="_blank">${ml.website.replace(/^https?:\/\//,'').replace(/\/$/,'').slice(0,32)}</a></span></div>`);
+    if (ml.opening_hours) rows.push(`<div class="stat"><span class="k">${t('ml_hours')}</span><span class="v" style="font-size:11.5px">${_h(ml.opening_hours)}</span></div>`);
+    if (ml.operator) rows.push(`<div class="stat"><span class="k">${t('ml_op')}</span><span class="v">${_h(ml.operator)}</span></div>`);
+    if (ml.brand) rows.push(`<div class="stat"><span class="k">${t('ml_brand')}</span><span class="v">${_h(ml.brand)}</span></div>`);
+    if (ml.phone) rows.push(`<div class="stat"><span class="k">${t('ml_phone')}</span><span class="v"><a href="tel:${encodeURIComponent(ml.phone)}">${_h(ml.phone)}</a></span></div>`);
+    if (ml.website) rows.push(`<div class="stat"><span class="k">${t('ml_web')}</span><span class="v"><a href="${_h(_safeUrl(ml.website))}" target="_blank" rel="noopener noreferrer">${_h(ml.website.replace(/^https?:\/\//,'').replace(/\/$/,'').slice(0,32))}</a></span></div>`);
     if (ml.wikipedia) {
       const wpUrl = 'https://' + ml.wikipedia.replace(':', '.wikipedia.org/wiki/').replace(/ /g,'_');
-      rows.push(`<div class="stat"><span class="k">Wikipedia</span><span class="v"><a href="${wpUrl}" target="_blank">${ml.wikipedia}</a></span></div>`);
+      rows.push(`<div class="stat"><span class="k">Wikipedia</span><span class="v"><a href="${_h(_safeUrl(wpUrl))}" target="_blank" rel="noopener noreferrer">${_h(ml.wikipedia)}</a></span></div>`);
     } else if (ml.wikidata) {
-      rows.push(`<div class="stat"><span class="k">Wikidata</span><span class="v"><a href="https://www.wikidata.org/wiki/${ml.wikidata}" target="_blank">${ml.wikidata}</a></span></div>`);
+      rows.push(`<div class="stat"><span class="k">Wikidata</span><span class="v"><a href="https://www.wikidata.org/wiki/${encodeURIComponent(ml.wikidata)}" target="_blank" rel="noopener noreferrer">${_h(ml.wikidata)}</a></span></div>`);
     }
-    if (ml.building_levels) rows.push(`<div class="stat"><span class="k">${t('ml_levels')}</span><span class="v">${ml.building_levels}</span></div>`);
+    if (ml.building_levels) rows.push(`<div class="stat"><span class="k">${t('ml_levels')}</span><span class="v">${_h(ml.building_levels)}</span></div>`);
     const addr = [ml.addr_street, ml.addr_suburb, ml.addr_city].filter(Boolean).join(', ');
-    if (addr) rows.push(`<div class="stat"><span class="k">${t('ml_addr')}</span><span class="v" style="font-size:11.5px;max-width:200px;text-align:right">${addr}</span></div>`);
+    if (addr) rows.push(`<div class="stat"><span class="k">${t('ml_addr')}</span><span class="v" style="font-size:11.5px;max-width:200px;text-align:right">${_h(addr)}</span></div>`);
     if (ml.wheelchair === 'yes') rows.push(`<div class="stat"><span class="k">${t('ml_access')}</span><span class="v" style="color:#0a7f00">✓ wheelchair</span></div>`);
     if (ml.internet_access === 'yes' || ml.internet_access === 'wlan') rows.push(`<div class="stat"><span class="k">${t('ml_wifi')}</span><span class="v" style="color:#0a7f00">✓</span></div>`);
-    if (ml.description) rows.push(`<div class="muted" style="margin-top:6px;font-size:11px;color:#555">${ml.description}</div>`);
+    if (ml.description) rows.push(`<div class="muted" style="margin-top:6px;font-size:11px;color:#555">${_h(ml.description)}</div>`);
     const srcTag = ml.manual
       ? '<span class="src-tag" style="background:#fff5e0;color:#b35900" title="Hand-added; tagged building=retail / landuse=retail in OSM, not shop=mall">~coords</span>'
       : '<span class="src-tag src-osm">OSM</span>';
     return `
-      <h3>${emoji} ${ml.name || '—'} ${srcTag}</h3>
-      ${ml.name_ar ? `<div class="muted" style="color:#888;margin-bottom:4px" dir="rtl">${ml.name_ar}</div>` : ''}
+      <h3>${emoji} ${ml.name ? _h(ml.name) : '—'} ${srcTag}</h3>
+      ${ml.name_ar ? `<div class="muted" style="color:#888;margin-bottom:4px" dir="rtl">${_h(ml.name_ar)}</div>` : ''}
       ${rows.join('')}
     `;
   });
