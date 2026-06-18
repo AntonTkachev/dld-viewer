@@ -2,8 +2,12 @@
 """
 Inject data/osm_subcommunities.json polygons into index.html's GEOJSON literal.
 
-Idempotent: if a feature with the same `real_area_key` already exists, replace
-its geometry; otherwise append. Run after `osm_subcommunities_pull.py`.
+Multiple polygons can share the same `real_area_key` (e.g. Meadows 3 + 7 + 8
+all key to "meadows" so they pull the same shared aggregate). To stay
+idempotent we drop ALL existing features tagged source='osm-subcommunity'
+first, then append everything fresh from the JSON.
+
+Run after `osm_subcommunities_pull.py`.
 """
 import json
 import re
@@ -17,27 +21,21 @@ SRC  = ROOT / 'data' / 'osm_subcommunities.json'
 with HTML.open(encoding='utf-8') as f:
     text = f.read()
 
-# Find the single-line `const GEOJSON = {...};` literal.
 m = re.search(r'^const GEOJSON = (\{.*?\});\s*$', text, re.MULTILINE)
 if not m:
     print('GEOJSON literal not found', file=sys.stderr)
     sys.exit(1)
 
 geo = json.loads(m.group(1))
-have = {f['properties'].get('real_area_key'): i
-        for i, f in enumerate(geo['features'])
-        if f['properties'].get('real_area_key')}
+before = len(geo['features'])
+geo['features'] = [f for f in geo['features']
+                   if f['properties'].get('source') != 'osm-subcommunity']
+dropped = before - len(geo['features'])
 
 new = json.load(SRC.open())
-added = updated = 0
 for f in new['features']:
-    rak = f['properties']['real_area_key']
-    if rak in have:
-        geo['features'][have[rak]] = f
-        updated += 1
-    else:
-        geo['features'].append(f)
-        added += 1
+    geo['features'].append(f)
+added = len(new['features'])
 
 new_literal = 'const GEOJSON = ' + json.dumps(geo, ensure_ascii=False, separators=(', ', ': ')) + ';'
 text = text[:m.start()] + new_literal + text[m.end():]
@@ -45,4 +43,4 @@ text = text[:m.start()] + new_literal + text[m.end():]
 with HTML.open('w', encoding='utf-8') as f:
     f.write(text)
 
-print(f'features added={added} updated={updated}; total={len(geo["features"])}', file=sys.stderr)
+print(f'features dropped={dropped} added={added}; total={len(geo["features"])}', file=sys.stderr)
