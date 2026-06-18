@@ -27,6 +27,7 @@
   .pin.university{border-color:#17becf;color:#17becf}
   .pin.hospital{border-color:#e377c2;color:#e377c2}
   .pin.mall{border-color:#ff7f0e;color:#ff7f0e}
+  .pin.mall.souq{border-color:#b8590a;color:#b8590a}
   .pin.mosque{border-color:#8c564b;color:#8c564b;width:18px;height:18px;font-size:11px}
   .pin.construction{border-color:#9467bd;color:#9467bd}
   /* District-aggregate cluster pin: round badge with big count + tiny emoji */
