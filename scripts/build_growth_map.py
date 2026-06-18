@@ -37,7 +37,17 @@ CASE
   ELSE master_project_en
 END
 """
-NAME_EXPR = f"COALESCE(NULLIF(({ROLLUP_SQL}), ''), area_name_en)"
+# Split sub-communities OUT of their master before the rollup —
+# DLD records Springs under master "Emirates Living" and Jumeirah Heights
+# under master "Jumeirah Islands"; locally they're own communities.
+SPLIT_SQL = """
+CASE
+  WHEN project_name_en LIKE 'Emirates Living - Springs%' THEN 'Springs'
+  WHEN project_name_en LIKE 'JUMEIRAH HEIGHTS%'          THEN 'Jumeirah Heights'
+  WHEN master_project_en LIKE 'Meadows%'                 THEN 'Meadows'
+END
+"""
+NAME_EXPR = f"COALESCE(NULLIF(({SPLIT_SQL}), ''), NULLIF(({ROLLUP_SQL}), ''), area_name_en)"
 KEY_EXPR  = f"lower({NAME_EXPR})"
 
 con = duckdb.connect()

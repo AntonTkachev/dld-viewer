@@ -1852,6 +1852,9 @@ for (const s of SCHOOLS) {
       `;
     }
     const srcTag = '<span class="src-tag" style="background:#e6f7e6;color:#0a7f00">KHDA</span>';
+    const manualTag = s.manual_coords
+      ? ' <span class="src-tag" style="background:#fff5e0;color:#b35900" title="Coordinates set manually — school missing from OSM">~coords</span>'
+      : '';
     const rows = [];
     if (s.curriculum)  rows.push(`<div class="stat"><span class="k">${t('sch_curr')}</span><span class="v">${s.curriculum}</span></div>`);
     if (s.grade_range) rows.push(`<div class="stat"><span class="k">${t('sch_grade_range')}</span><span class="v">${s.grade_range}</span></div>`);
@@ -1862,7 +1865,7 @@ for (const s of SCHOOLS) {
     if (s.inclusion)   rows.push(`<div class="stat"><span class="k">${t('sch_inclusion')}</span><span class="v"><span class="rating ${_rcls(s.inclusion)}">${s.inclusion}</span></span></div>`);
     const detailsUrl = `https://web.khda.gov.ae/en/Education-Directory/Schools/School-Details?Id=${s.khda_id}&CenterID=${s.center_id}`;
     return `
-      <h3>🏫 ${displayName} ${srcTag}</h3>
+      <h3>🏫 ${displayName} ${srcTag}${manualTag}</h3>
       ${arSubtitle}
       ${rows.join('')}
       <div style="margin-top:6px"><a href="${detailsUrl}" target="_blank" style="font-size:11px">KHDA School Details ↗</a></div>
