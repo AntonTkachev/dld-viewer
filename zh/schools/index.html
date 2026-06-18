@@ -1,0 +1,370 @@
+<!DOCTYPE html>
+<html lang="zh" dir="ltr">
+<head>
+<meta charset="UTF-8">
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net https://unpkg.com https://antontkachev.github.io; style-src 'self' 'unsafe-inline' https://unpkg.com https://antontkachev.github.io; img-src 'self' data: https://*.tile.openstreetmap.org https://antontkachev.github.io; connect-src 'self' https://antontkachev.github.io; font-src 'self' data:; frame-ancestors 'none'; base-uri 'self'; form-action 'self'">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>KHDA 评级地图</title>
+<meta name="description" content="迪拜共 278 所学校，附 KHDA 评级与课程体系（若提供）。点击「在地图上显示」可在 DLD 交易地图上叠加所有学校。">
+<meta name="robots" content="index,follow">
+<link rel="canonical" href="https://antontkachev.github.io/dld-viewer/zh/schools/">
+<meta property="og:type" content="website">
+<meta property="og:title" content="KHDA 评级地图">
+<meta property="og:description" content="迪拜共 278 所学校，附 KHDA 评级与课程体系（若提供）。点击「在地图上显示」可在 DLD 交易地图上叠加所有学校。">
+<link rel="alternate" hreflang="ru" href="https://antontkachev.github.io/dld-viewer/schools/">
+<link rel="alternate" hreflang="en" href="https://antontkachev.github.io/dld-viewer/en/schools/">
+<link rel="alternate" hreflang="ar" href="https://antontkachev.github.io/dld-viewer/ar/schools/">
+<link rel="alternate" hreflang="hi" href="https://antontkachev.github.io/dld-viewer/hi/schools/">
+<link rel="alternate" hreflang="zh" href="https://antontkachev.github.io/dld-viewer/zh/schools/">
+<link rel="alternate" hreflang="x-default" href="https://antontkachev.github.io/dld-viewer/schools/">
+<script type="application/ld+json">{"@context": "https://schema.org", "@type": "CollectionPage", "name": "KHDA 评级地图", "description": "迪拜共 278 所学校，附 KHDA 评级与课程体系（若提供）。点击「在地图上显示」可在 DLD 交易地图上叠加所有学校。", "inLanguage": "zh", "url": "https://antontkachev.github.io/dld-viewer/zh/schools/", "about": {"@type": "Place", "name": "Dubai, UAE"}, "isPartOf": {"@type": "WebSite", "name": "DLD Viewer", "url": "https://antontkachev.github.io/dld-viewer/"}, "mainEntity": {"@type": "ItemList", "name": "KHDA 评级地图", "numberOfItems": 278}}</script>
+<script type="application/ld+json">{"@context": "https://schema.org", "@type": "BreadcrumbList", "itemListElement": [{"@type": "ListItem", "position": 1, "name": "迪拜", "item": "https://antontkachev.github.io/dld-viewer/zh/"}, {"@type": "ListItem", "position": 2, "name": "KHDA 评级地图", "item": "https://antontkachev.github.io/dld-viewer/zh/schools/"}]}</script>
+<link rel="stylesheet" href="https://antontkachev.github.io/dld-viewer/css/viewer.css">
+<style>
+  html, body { background:#f8fafc; min-height:100%; }
+  .wrap { max-width:1080px; margin:0 auto; padding:18px 20px 64px; }
+  .breadcrumb { font-size:13px; color:#6b7280; margin-bottom:10px; }
+  .breadcrumb a { color:#1d4ed8; text-decoration:none; }
+  .breadcrumb a:hover { text-decoration:underline; }
+  .topbar { display:flex; align-items:baseline; justify-content:space-between; gap:16px; margin-bottom:14px; flex-wrap:wrap; }
+  h1 { font-size:24px; margin:0; line-height:1.25; }
+  .topbar-controls { display:flex; gap:10px; align-items:center; flex-wrap:wrap; }
+  .langswitch-dd { position:relative; }
+  .langswitch-dd > summary { list-style:none; cursor:pointer; display:inline-flex; align-items:center; gap:6px; padding:6px 10px; background:#f1f5f9; border-radius:8px; font-size:12px; font-weight:600; color:#6b7280; user-select:none; }
+  .langswitch-dd > summary::-webkit-details-marker { display:none; }
+  .langswitch-dd > summary::marker { content:""; }
+  .langswitch-dd > summary .globe { font-size:14px; }
+  .langswitch-dd > summary .lang-current { color:#1d4ed8; }
+  .langswitch-dd > summary .caret { font-size:10px; opacity:.6; }
+  .langswitch-dd[open] > summary { background:#e2e8f0; }
+  .langswitch-dd .lang-menu { position:absolute; top:calc(100% + 4px); inset-inline-end:0; background:#fff; border:1px solid #e5e7eb; border-radius:8px; padding:4px; min-width:140px; box-shadow:0 6px 16px rgba(15,23,42,0.08); display:flex; flex-direction:column; z-index:10; }
+  .langswitch-dd .lang-menu a { padding:7px 10px; border-radius:6px; font-size:13px; text-decoration:none; color:#374151; }
+  .langswitch-dd .lang-menu a:hover { background:#f3f4f6; }
+  .langswitch-dd .lang-menu a.active { background:#1d4ed8; color:#fff; font-weight:600; }
+  html[dir="rtl"] .langswitch-dd .lang-menu { inset-inline-end:auto; inset-inline-start:0; }
+  .lede { font-size:15px; color:#374151; margin:6px 0 16px; max-width:760px; line-height:1.55; }
+  .cta { margin-bottom:20px; }
+  .cta a { display:inline-block; padding:9px 16px; background:#1d4ed8; color:#fff; border-radius:8px; text-decoration:none; font-size:14px; font-weight:600; }
+  .panel { background:#fff; border:1px solid #e5e7eb; border-radius:12px; padding:6px 20px 18px; }
+  table { width:100%; border-collapse:collapse; font-size:13px; }
+  th, td { padding:8px 12px; text-align:start; border-bottom:1px solid #f3f4f6; }
+  th { font-weight:600; color:#6b7280; font-size:11px; text-transform:uppercase; letter-spacing:0.04em; background:#f8fafc; position:sticky; top:0; }
+  td a { color:#1d4ed8; text-decoration:none; }
+  td a:hover { text-decoration:underline; }
+  td.num, th.num { text-align:end; font-variant-numeric:tabular-nums; }
+  .nav { margin-top:24px; padding-top:18px; border-top:1px solid #e5e7eb; font-size:14px; }
+  .nav a { color:#1d4ed8; text-decoration:none; margin-inline-end:18px; }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div class="breadcrumb">
+    <a href="https://antontkachev.github.io/dld-viewer/zh/">迪拜</a> ›
+    <span>KHDA 评级地图</span>
+  </div>
+
+  <div class="topbar">
+    <h1>🏫 迪拜学校 — KHDA 评级地图</h1>
+    <div class="topbar-controls">
+      <details class="langswitch-dd"><summary><span class="globe" aria-hidden="true">🌐</span><span class="lang-current">ZH</span><span class="caret" aria-hidden="true">▾</span></summary><div class="lang-menu"><a href="https://antontkachev.github.io/dld-viewer/schools/" lang="ru">RU</a><a href="https://antontkachev.github.io/dld-viewer/en/schools/" lang="en">EN</a><a href="https://antontkachev.github.io/dld-viewer/ar/schools/" lang="ar">AR</a><a href="https://antontkachev.github.io/dld-viewer/hi/schools/" lang="hi">HI</a><a class="active" href="https://antontkachev.github.io/dld-viewer/zh/schools/" lang="zh">ZH</a></div></details>
+    </div>
+  </div>
+
+  <p class="lede">迪拜共 278 所学校，附 KHDA 评级与课程体系（若提供）。点击「在地图上显示」可在 DLD 交易地图上叠加所有学校。</p>
+
+  <div class="cta">
+    <a href="https://antontkachev.github.io/dld-viewer/zh/sales/?layers=schools">在地图上显示 →</a>
+  </div>
+
+  <div class="panel">
+    <table>
+<thead><tr><th>名称</th><th>KHDA 评级</th><th>课程体系</th><th>社区</th></tr></thead>
+<tbody>
+<tr><td>Lycee Francais International Georges Pampidou</td><td></td><td></td><td><a href="https://antontkachev.github.io/dld-viewer/zh/sales/academic-city/">Academic City</a></td></tr>
+<tr><td>Lycée Francais International Georges Pampidou</td><td></td><td></td><td><a href="https://antontkachev.github.io/dld-viewer/zh/sales/academic-city/">Academic City</a></td></tr>
+<tr><td>Al Arqam Private School</td><td>Acceptable</td><td>Ministry of Education</td><td><a href="https://antontkachev.github.io/dld-viewer/zh/sales/al-barsha-1/">Al Barsha 1</a></td></tr>
+<tr><td>American School of Dubai</td><td></td><td></td><td><a href="https://antontkachev.github.io/dld-viewer/zh/sales/al-barsha-1/">Al Barsha 1</a></td></tr>
+<tr><td>American School of Dubai ELC - Gate 4</td><td>Good</td><td>American</td><td><a href="https://antontkachev.github.io/dld-viewer/zh/sales/al-barsha-1/">Al Barsha 1</a></td></tr>
+<tr><td>Dubai American Academy</td><td></td><td></td><td><a href="https://antontkachev.github.io/dld-viewer/zh/sales/al-barsha-1/">Al Barsha 1</a></td></tr>
+<tr><td>Dubai International Academy - Al Barsha</td><td></td><td></td><td><a href="https://antontkachev.github.io/dld-viewer/zh/sales/al-barsha-1/">Al Barsha 1</a></td></tr>
+<tr><td>Dubai National School (Al Barsha Branch)</td><td></td><td></td><td><a href="https://antontkachev.github.io/dld-viewer/zh/sales/al-barsha-1/">Al Barsha 1</a></td></tr>
+<tr><td>Al Salam School for Elementary and Secondary Education</td><td></td><td></td><td><a href="https://antontkachev.github.io/dld-viewer/zh/sales/al-barsha-3/">Al Barsha 3</a></td></tr>
+<tr><td>Al Bashra Kindergarten</td><td></td><td></td><td><a href="https://antontkachev.github.io/dld-viewer/zh/sales/al-barsha-south-1/">Al Barsha South 1</a></td></tr>
+<tr><td>GEMS World Academy</td><td>Very good</td><td>International Baccalaureate</td><td><a href="https://antontkachev.github.io/dld-viewer/zh/sales/al-barsha-south-1/">Al Barsha South 1</a></td></tr>
+<tr><td>JSS International School</td><td>Very good</td><td>Indian</td><td><a href="https://antontkachev.github.io/dld-viewer/zh/sales/al-barsha-south-1/">Al Barsha South 1</a></td></tr>
+<tr><td>Dubai Heights Academy</td><td>Very good</td><td>IB (13 Y),UK (13 Y),UK/IB (13 Y)</td><td><a href="https://antontkachev.github.io/dld-viewer/zh/sales/al-barsha-south-2/">Al Barsha South 2</a></td></tr>
+<tr><td>Foremarke</td><td></td><td></td><td><a href="https://antontkachev.github.io/dld-viewer/zh/sales/al-barsha-south-2/">Al Barsha South 2</a></td></tr>
+<tr><td>GEMS Founders school</td><td>Very good</td><td>UK (13 Y)</td><td><a href="https://antontkachev.github.io/dld-viewer/zh/sales/al-barsha-south-2/">Al Barsha South 2</a></td></tr>
+<tr><td>GEMS National school for Boys</td><td></td><td></td><td><a href="https://antontkachev.github.io/dld-viewer/zh/sales/al-barsha-south-2/">Al Barsha South 2</a></td></tr>
+<tr><td>GEMS National school for Girls</td><td>Acceptable</td><td>UK (13 Y)</td><td><a href="https://antontkachev.github.io/dld-viewer/zh/sales/al-barsha-south-2/">Al Barsha South 2</a></td></tr>
+<tr><td>Al Mawakeb School</td><td>Good</td><td>American</td><td><a href="https://antontkachev.github.io/dld-viewer/zh/sales/al-garhoud/">Al Garhoud</a></td></tr>
+<tr><td>Cambridge International School</td><td></td><td></td><td><a href="https://antontkachev.github.io/dld-viewer/zh/sales/al-garhoud/">Al Garhoud</a></td></tr>
+<tr><td>Dubai International School</td><td></td><td></td><td><a href="https://antontkachev.github.io/dld-viewer/zh/sales/al-garhoud/">Al Garhoud</a></td></tr>
+<tr><td>GEMS Legacy School Primary Campus</td><td>Good</td><td>Indian</td><td><a href="https://antontkachev.github.io/dld-viewer/zh/sales/al-garhoud/">Al Garhoud</a></td></tr>
+<tr><td>Gems Legacy Schoo Secondary Campus</td><td></td><td></td><td><a href="https://antontkachev.github.io/dld-viewer/zh/sales/al-garhoud/">Al Garhoud</a></td></tr>
+<tr><td>New Indian Model School</td><td>Good</td><td>Indian</td><td><a href="https://antontkachev.github.io/dld-viewer/zh/sales/al-garhoud/">Al Garhoud</a></td></tr>
+<tr><td>The Indian High School</td><td>Very good</td><td>Indian</td><td><a href="https://antontkachev.github.io/dld-viewer/zh/sales/al-garhoud/">Al Garhoud</a></td></tr>
+<tr><td>The National Charity School</td><td>Acceptable</td><td>Ministry of Education</td><td><a href="https://antontkachev.github.io/dld-viewer/zh/sales/al-garhoud/">Al Garhoud</a></td></tr>
+<tr><td>Jebel Ali School</td><td></td><td></td><td><a href="https://antontkachev.github.io/dld-viewer/zh/sales/al-hebiah-3/">Al Hebiah 3</a></td></tr>
+<tr><td>Dwight School Dubai</td><td>Good</td><td>International Baccalaureate</td><td><a href="https://antontkachev.github.io/dld-viewer/zh/sales/al-hebiah-4/">Al Hebiah 4</a></td></tr>
+<tr><td>South View School</td><td></td><td></td><td><a href="https://antontkachev.github.io/dld-viewer/zh/sales/al-hebiah-5/">Al Hebiah 5</a></td></tr>
+<tr><td>Wonder Years Nursery</td><td></td><td></td><td><a href="https://antontkachev.github.io/dld-viewer/zh/sales/al-hebiah-5/">Al Hebiah 5</a></td></tr>
+<tr><td>Swiss International Scientific School in Dubai</td><td>Very good</td><td>International Baccalaureate</td><td><a href="https://antontkachev.github.io/dld-viewer/zh/sales/al-jaddaf/">Al Jaddaf</a></td></tr>
+<tr><td>3 Fold Education Center</td><td></td><td></td><td><a href="https://antontkachev.github.io/dld-viewer/zh/sales/al-karama/">Al Karama</a></td></tr>
+<tr><td>Al Saeediya Center For Adult Education</td><td></td><td></td><td><a href="https://antontkachev.github.io/dld-viewer/zh/sales/al-karama/">Al Karama</a></td></tr>
+<tr><td>Arabic School</td><td></td><td></td><td><a href="https://antontkachev.github.io/dld-viewer/zh/sales/al-karama/">Al Karama</a></td></tr>
+<tr><td>Za'abeel Secondary School For Girls</td><td></td><td></td><td><a href="https://antontkachev.github.io/dld-viewer/zh/sales/al-karama/">Al Karama</a></td></tr>
+<tr><td>Hamdan Bin Rashed High School</td><td></td><td></td><td><a href="https://antontkachev.github.io/dld-viewer/zh/sales/al-khawaneej/">Al Khawaneej</a></td></tr>
+<tr><td>Ahmed Bin Sulyem School for Basic Education</td><td></td><td></td><td><a href="https://antontkachev.github.io/dld-viewer/zh/sales/al-mamzar/">Al Mamzar</a></td></tr>
+<tr><td>Dubai School for Secondary Education for Boys</td><td>Acceptable</td><td>Ministry of Education</td><td><a href="https://antontkachev.github.io/dld-viewer/zh/sales/al-mamzar/">Al Mamzar</a></td></tr>
+<tr><td>Victoria International School</td><td></td><td></td><td><a href="https://antontkachev.github.io/dld-viewer/zh/sales/al-mamzar/">Al Mamzar</a></td></tr>
+<tr><td>Ambassador Kindergarten</td><td>Not inspected yet</td><td>International Baccalaureate</td><td><a href="https://antontkachev.github.io/dld-viewer/zh/sales/al-mankhool/">Al Mankhool</a></td></tr>
+<tr><td>Ambassador school (manhol)</td><td>Very good</td><td>Indian</td><td><a href="https://antontkachev.github.io/dld-viewer/zh/sales/al-mankhool/">Al Mankhool</a></td></tr>
+<tr><td>(unnamed school)</td><td></td><td></td><td><a href="https://antontkachev.github.io/dld-viewer/zh/sales/al-mizhar/">Al Mizhar</a></td></tr>
+<tr><td>(unnamed school)</td><td></td><td></td><td><a href="https://antontkachev.github.io/dld-viewer/zh/sales/al-mizhar/">Al Mizhar</a></td></tr>
+<tr><td>Al Mawakeb Al Khawaneej</td><td>Good</td><td>American</td><td><a href="https://antontkachev.github.io/dld-viewer/zh/sales/al-mizhar/">Al Mizhar</a></td></tr>
+<tr><td>Dubai Modern Education School</td><td>Acceptable</td><td>American,Ministry of Education</td><td><a href="https://antontkachev.github.io/dld-viewer/zh/sales/al-mizhar/">Al Mizhar</a></td></tr>
+<tr><td>GEMS Royal School</td><td>Very good</td><td>UK (13 Y)</td><td><a href="https://antontkachev.github.io/dld-viewer/zh/sales/al-mizhar/">Al Mizhar</a></td></tr>
+<tr><td>Mirdif Private School</td><td>Good</td><td>American</td><td><a href="https://antontkachev.github.io/dld-viewer/zh/sales/al-mizhar/">Al Mizhar</a></td></tr>
+<tr><td>Al Salam Private School</td><td></td><td></td><td><a href="https://antontkachev.github.io/dld-viewer/zh/sales/al-nahda/">Al Nahda</a></td></tr>
+<tr><td>Diyafah High School</td><td>Good</td><td>UK (13 Y)</td><td><a href="https://antontkachev.github.io/dld-viewer/zh/sales/al-nahda/">Al Nahda</a></td></tr>
+<tr><td>Dubai Carmel School</td><td>Acceptable</td><td>UK (13 Y)</td><td><a href="https://antontkachev.github.io/dld-viewer/zh/sales/al-nahda/">Al Nahda</a></td></tr>
+<tr><td>MSB Private School - Primary Block</td><td></td><td></td><td><a href="https://antontkachev.github.io/dld-viewer/zh/sales/al-nahda/">Al Nahda</a></td></tr>
+<tr><td>MSB Private School - Primary Block</td><td></td><td></td><td><a href="https://antontkachev.github.io/dld-viewer/zh/sales/al-nahda/">Al Nahda</a></td></tr>
+<tr><td>MSB Private School - Secondary Block</td><td></td><td></td><td><a href="https://antontkachev.github.io/dld-viewer/zh/sales/al-nahda/">Al Nahda</a></td></tr>
+<tr><td>Pristine Private School</td><td>Good</td><td>UK (13 Y)</td><td><a href="https://antontkachev.github.io/dld-viewer/zh/sales/al-nahda/">Al Nahda</a></td></tr>
+<tr><td>The Central School</td><td>Acceptable</td><td>Indian</td><td><a href="https://antontkachev.github.io/dld-viewer/zh/sales/al-nahda/">Al Nahda</a></td></tr>
+<tr><td>The Sheffield Private School</td><td>Good</td><td>UK (13 Y)</td><td><a href="https://antontkachev.github.io/dld-viewer/zh/sales/al-nahda/">Al Nahda</a></td></tr>
+<tr><td>Abu Hanifa School for Basic Education</td><td></td><td></td><td><a href="https://antontkachev.github.io/dld-viewer/zh/sales/al-qouz-1/">Al Qouz 1</a></td></tr>
+<tr><td>Al Manar Quran Study Centre</td><td></td><td></td><td><a href="https://antontkachev.github.io/dld-viewer/zh/sales/al-qouz-1/">Al Qouz 1</a></td></tr>
+<tr><td>Dubai International School</td><td></td><td></td><td><a href="https://antontkachev.github.io/dld-viewer/zh/sales/al-qouz-1/">Al Qouz 1</a></td></tr>
+<tr><td>Safa Private School</td><td></td><td></td><td><a href="https://antontkachev.github.io/dld-viewer/zh/sales/al-qouz-1/">Al Qouz 1</a></td></tr>
+<tr><td>Amled School Dubai</td><td></td><td></td><td><a href="https://antontkachev.github.io/dld-viewer/zh/sales/al-qouz-4/">Al Qouz 4</a></td></tr>
+<tr><td>Oaktree Primary School</td><td></td><td></td><td><a href="https://antontkachev.github.io/dld-viewer/zh/sales/al-qouz-4/">Al Qouz 4</a></td></tr>
+<tr><td>Springdales Indian School Dubai</td><td>Good</td><td>Indian,UK (13 Y)</td><td><a href="https://antontkachev.github.io/dld-viewer/zh/sales/al-qouz-4/">Al Qouz 4</a></td></tr>
+<tr><td>Al Adab Iranian Private School For Boys</td><td></td><td></td><td><a href="https://antontkachev.github.io/dld-viewer/zh/sales/al-qusais/">Al Qusais</a></td></tr>
+<tr><td>Al Mareef Pvt. Schoo</td><td>Acceptable</td><td>American</td><td><a href="https://antontkachev.github.io/dld-viewer/zh/sales/al-qusais/">Al Qusais</a></td></tr>
+<tr><td>Al Mareef Pvt. School</td><td></td><td></td><td><a href="https://antontkachev.github.io/dld-viewer/zh/sales/al-qusais/">Al Qusais</a></td></tr>
+<tr><td>Al Sadiq Islamic English School</td><td>Acceptable</td><td>UK (13 Y)</td><td><a href="https://antontkachev.github.io/dld-viewer/zh/sales/al-qusais/">Al Qusais</a></td></tr>
+<tr><td>American International School</td><td>Good</td><td>American</td><td><a href="https://antontkachev.github.io/dld-viewer/zh/sales/al-qusais/">Al Qusais</a></td></tr>
+<tr><td>Amity English School</td><td>Not inspected yet</td><td>UK (13 Y)</td><td><a href="https://antontkachev.github.io/dld-viewer/zh/sales/al-qusais/">Al Qusais</a></td></tr>
+<tr><td>Amity School Dubai</td><td>Good</td><td>Indian</td><td><a href="https://antontkachev.github.io/dld-viewer/zh/sales/al-qusais/">Al Qusais</a></td></tr>
+<tr><td>Apple International School</td><td>Good</td><td>UK (13 Y)</td><td><a href="https://antontkachev.github.io/dld-viewer/zh/sales/al-qusais/">Al Qusais</a></td></tr>
+<tr><td>Capital School</td><td>Good</td><td>UK (13 Y)</td><td><a href="https://antontkachev.github.io/dld-viewer/zh/sales/al-qusais/">Al Qusais</a></td></tr>
+<tr><td>Crescent English School</td><td>Acceptable</td><td>Indian</td><td><a href="https://antontkachev.github.io/dld-viewer/zh/sales/al-qusais/">Al Qusais</a></td></tr>
+<tr><td>Dubai National School</td><td></td><td></td><td><a href="https://antontkachev.github.io/dld-viewer/zh/sales/al-qusais/">Al Qusais</a></td></tr>
+<tr><td>Dubai Scholars School</td><td></td><td></td><td><a href="https://antontkachev.github.io/dld-viewer/zh/sales/al-qusais/">Al Qusais</a></td></tr>
+<tr><td>Pakistan School</td><td>Acceptable</td><td>Pakistani</td><td><a href="https://antontkachev.github.io/dld-viewer/zh/sales/al-qusais/">Al Qusais</a></td></tr>
+<tr><td>Salman Farsi Iranian Boys School</td><td></td><td></td><td><a href="https://antontkachev.github.io/dld-viewer/zh/sales/al-qusais/">Al Qusais</a></td></tr>
+<tr><td>The Alpha School</td><td></td><td></td><td><a href="https://antontkachev.github.io/dld-viewer/zh/sales/al-qusais/">Al Qusais</a></td></tr>
+<tr><td>The Apple International School</td><td></td><td></td><td><a href="https://antontkachev.github.io/dld-viewer/zh/sales/al-qusais/">Al Qusais</a></td></tr>
+<tr><td>The Millenium School</td><td>Very good</td><td>Indian</td><td><a href="https://antontkachev.github.io/dld-viewer/zh/sales/al-qusais/">Al Qusais</a></td></tr>
+<tr><td>The Westminster School</td><td>Good</td><td>UK (13 Y)</td><td><a href="https://antontkachev.github.io/dld-viewer/zh/sales/al-qusais/">Al Qusais</a></td></tr>
+<tr><td>Woodlem Park School</td><td>Acceptable</td><td>Indian</td><td><a href="https://antontkachev.github.io/dld-viewer/zh/sales/al-qusais/">Al Qusais</a></td></tr>
+<tr><td>New academy school</td><td>Good</td><td>American</td><td><a href="https://antontkachev.github.io/dld-viewer/zh/sales/al-raffa/">Al Raffa</a></td></tr>
+<tr><td>Al Aqsa School for Basic Education C/1 Boys</td><td></td><td></td><td><a href="https://antontkachev.github.io/dld-viewer/zh/sales/al-rashidiya/">Al Rashidiya</a></td></tr>
+<tr><td>Al Eman Private School</td><td>Acceptable</td><td>Ministry of Education</td><td><a href="https://antontkachev.github.io/dld-viewer/zh/sales/al-rashidiya/">Al Rashidiya</a></td></tr>
+<tr><td>Al-Jahiah Boys School for Basic Education</td><td></td><td></td><td><a href="https://antontkachev.github.io/dld-viewer/zh/sales/al-rashidiya/">Al Rashidiya</a></td></tr>
+<tr><td>Philippines School</td><td></td><td></td><td><a href="https://antontkachev.github.io/dld-viewer/zh/sales/al-rashidiya/">Al Rashidiya</a></td></tr>
+<tr><td>Al Ittihad Private School</td><td></td><td></td><td><a href="https://antontkachev.github.io/dld-viewer/zh/sales/al-safa-1/">Al Safa 1</a></td></tr>
+<tr><td>Jumeirah College</td><td></td><td></td><td><a href="https://antontkachev.github.io/dld-viewer/zh/sales/al-safa-1/">Al Safa 1</a></td></tr>
+<tr><td>Jumeirah English Speaking School</td><td>Outstanding</td><td>UK (13 Y)</td><td><a href="https://antontkachev.github.io/dld-viewer/zh/sales/al-safa-1/">Al Safa 1</a></td></tr>
+<tr><td>Jumeirah Primary School</td><td></td><td></td><td><a href="https://antontkachev.github.io/dld-viewer/zh/sales/al-safa-1/">Al Safa 1</a></td></tr>
+<tr><td>Modern Alternative Education</td><td></td><td></td><td><a href="https://antontkachev.github.io/dld-viewer/zh/sales/al-safa-1/">Al Safa 1</a></td></tr>
+<tr><td>Safa British School</td><td>Very good</td><td>UK (13 Y)</td><td><a href="https://antontkachev.github.io/dld-viewer/zh/sales/al-safa-1/">Al Safa 1</a></td></tr>
+<tr><td>The English College</td><td>Very good</td><td>UK (13 Y)</td><td><a href="https://antontkachev.github.io/dld-viewer/zh/sales/al-safa-1/">Al Safa 1</a></td></tr>
+<tr><td>(unnamed school)</td><td></td><td></td><td><a href="https://antontkachev.github.io/dld-viewer/zh/sales/al-safa-2/">Al Safa 2</a></td></tr>
+<tr><td>Al Shhaab Schol for Basic Edication</td><td></td><td></td><td><a href="https://antontkachev.github.io/dld-viewer/zh/sales/al-satwa/">Al Satwa</a></td></tr>
+<tr><td>GEMS Wellington Primary School</td><td></td><td></td><td><a href="https://antontkachev.github.io/dld-viewer/zh/sales/al-satwa/">Al Satwa</a></td></tr>
+<tr><td>Salma al Ansaria School</td><td></td><td></td><td><a href="https://antontkachev.github.io/dld-viewer/zh/sales/al-satwa/">Al Satwa</a></td></tr>
+<tr><td>GEMS Wellington International School - Dubai Branch</td><td>Outstanding</td><td>IB (13 Y),UK (13 Y),UK/IB (13 Y)</td><td><a href="https://antontkachev.github.io/dld-viewer/zh/sales/al-sufouh-1/">Al Sufouh 1</a></td></tr>
+<tr><td>Choueifat School</td><td>Acceptable</td><td>SABIS (UK/US)</td><td><a href="https://antontkachev.github.io/dld-viewer/zh/sales/al-sufouh-2/">Al Sufouh 2</a></td></tr>
+<tr><td>Dubai College</td><td></td><td></td><td><a href="https://antontkachev.github.io/dld-viewer/zh/sales/al-sufouh-2/">Al Sufouh 2</a></td></tr>
+<tr><td>ICCA Dubai</td><td></td><td></td><td><a href="https://antontkachev.github.io/dld-viewer/zh/sales/al-sufouh-2/">Al Sufouh 2</a></td></tr>
+<tr><td>Premier Genie</td><td></td><td></td><td><a href="https://antontkachev.github.io/dld-viewer/zh/sales/al-sufouh-2/">Al Sufouh 2</a></td></tr>
+<tr><td>Al Kuweit Middle School for Girls</td><td></td><td></td><td><a href="https://antontkachev.github.io/dld-viewer/zh/sales/al-twar/">Al Twar</a></td></tr>
+<tr><td>Asmaa Bint Al Noman Model School</td><td></td><td></td><td><a href="https://antontkachev.github.io/dld-viewer/zh/sales/al-twar/">Al Twar</a></td></tr>
+<tr><td>Deira Private School</td><td>Acceptable</td><td>UK (13 Y)</td><td><a href="https://antontkachev.github.io/dld-viewer/zh/sales/al-twar/">Al Twar</a></td></tr>
+<tr><td>GEMS Cambridge International School</td><td>Good</td><td>UK (13 Y)</td><td><a href="https://antontkachev.github.io/dld-viewer/zh/sales/al-twar/">Al Twar</a></td></tr>
+<tr><td>Indigo Valley Nursery</td><td></td><td></td><td><a href="https://antontkachev.github.io/dld-viewer/zh/sales/al-twar/">Al Twar</a></td></tr>
+<tr><td>Mareya AlQibtiya High School for Girls</td><td></td><td></td><td><a href="https://antontkachev.github.io/dld-viewer/zh/sales/al-twar/">Al Twar</a></td></tr>
+<tr><td>Second of December Primary School for Girls</td><td></td><td></td><td><a href="https://antontkachev.github.io/dld-viewer/zh/sales/al-twar/">Al Twar</a></td></tr>
+<tr><td>مدرسة الحديبية للتعليم الأساسي</td><td>Acceptable</td><td>American</td><td><a href="https://antontkachev.github.io/dld-viewer/zh/sales/al-twar/">Al Twar</a></td></tr>
+<tr><td>Canadian Montessori Center</td><td></td><td></td><td><a href="https://antontkachev.github.io/dld-viewer/zh/sales/al-waheda/">Al Waheda</a></td></tr>
+<tr><td>Cedar School</td><td>Acceptable</td><td>UK (13 Y)</td><td><a href="https://antontkachev.github.io/dld-viewer/zh/sales/al-warqa/">Al Warqa</a></td></tr>
+<tr><td>GEMS Al Khaleej International School</td><td>Good</td><td>American,International Baccalaureate</td><td><a href="https://antontkachev.github.io/dld-viewer/zh/sales/al-warqa/">Al Warqa</a></td></tr>
+<tr><td>Gems Our Own English High School</td><td></td><td></td><td><a href="https://antontkachev.github.io/dld-viewer/zh/sales/al-warqa/">Al Warqa</a></td></tr>
+<tr><td>Gems our own English high school</td><td>Very good</td><td>Indian</td><td><a href="https://antontkachev.github.io/dld-viewer/zh/sales/al-warqa/">Al Warqa</a></td></tr>
+<tr><td>Ignite School</td><td>Acceptable</td><td>American</td><td><a href="https://antontkachev.github.io/dld-viewer/zh/sales/al-warqa/">Al Warqa</a></td></tr>
+<tr><td>International Academic School</td><td>Acceptable</td><td>American</td><td><a href="https://antontkachev.github.io/dld-viewer/zh/sales/al-warqa/">Al Warqa</a></td></tr>
+<tr><td>International School of Arts and Sciences</td><td>Not inspected yet</td><td>American</td><td><a href="https://antontkachev.github.io/dld-viewer/zh/sales/al-warqa/">Al Warqa</a></td></tr>
+<tr><td>Newlands School</td><td>Good</td><td>UK (13 Y)</td><td><a href="https://antontkachev.github.io/dld-viewer/zh/sales/al-warqa/">Al Warqa</a></td></tr>
+<tr><td>Our Own High School</td><td>Good</td><td>Indian</td><td><a href="https://antontkachev.github.io/dld-viewer/zh/sales/al-warqa/">Al Warqa</a></td></tr>
+<tr><td>Primus Private School</td><td>Good</td><td>Indian</td><td><a href="https://antontkachev.github.io/dld-viewer/zh/sales/al-warqa/">Al Warqa</a></td></tr>
+<tr><td>School of Research Science</td><td>Good</td><td>UK (13 Y),UK*</td><td><a href="https://antontkachev.github.io/dld-viewer/zh/sales/al-warqa/">Al Warqa</a></td></tr>
+<tr><td>Sharjah American International School Dubai</td><td>Good</td><td>American</td><td><a href="https://antontkachev.github.io/dld-viewer/zh/sales/al-warqa/">Al Warqa</a></td></tr>
+<tr><td>Al Raya Girl's School</td><td></td><td></td><td><a href="https://antontkachev.github.io/dld-viewer/zh/sales/al-wasl/">Al Wasl</a></td></tr>
+<tr><td>Al Safa High School</td><td></td><td></td><td><a href="https://antontkachev.github.io/dld-viewer/zh/sales/al-wasl/">Al Wasl</a></td></tr>
+<tr><td>Child Learning &amp; Enrichment Medical Centre</td><td></td><td></td><td><a href="https://antontkachev.github.io/dld-viewer/zh/sales/al-wasl/">Al Wasl</a></td></tr>
+<tr><td>Horizon English School</td><td>Outstanding</td><td>UK (13 Y)</td><td><a href="https://antontkachev.github.io/dld-viewer/zh/sales/al-wasl/">Al Wasl</a></td></tr>
+<tr><td>JSS School</td><td>Very good</td><td>Indian</td><td><a href="https://antontkachev.github.io/dld-viewer/zh/sales/al-wasl/">Al Wasl</a></td></tr>
+<tr><td>(unnamed school)</td><td></td><td></td><td><a href="https://antontkachev.github.io/dld-viewer/zh/sales/arabian-ranches/">Arabian Ranches</a></td></tr>
+<tr><td>Jumeirah Engllish Speaking School</td><td>Outstanding</td><td>International Baccalaureate,UK (13 Y)</td><td><a href="https://antontkachev.github.io/dld-viewer/zh/sales/arabian-ranches/">Arabian Ranches</a></td></tr>
+<tr><td>Australian International School Dubai (AIS Dubai)</td><td>Good</td><td>Australian</td><td><a href="https://antontkachev.github.io/dld-viewer/zh/sales/arjan/">Arjan</a></td></tr>
+<tr><td>Nord Anglia International School</td><td>Outstanding</td><td>UK (13 Y),UK/IB (13 Y)</td><td><a href="https://antontkachev.github.io/dld-viewer/zh/sales/arjan/">Arjan</a></td></tr>
+<tr><td>Safa Community School</td><td>Outstanding</td><td>UK (13 Y),UK/IB (13 Y)</td><td><a href="https://antontkachev.github.io/dld-viewer/zh/sales/arjan/">Arjan</a></td></tr>
+<tr><td>Maharat Learning Center</td><td></td><td></td><td><a href="https://antontkachev.github.io/dld-viewer/zh/sales/dubai-festival-city/">Dubai Festival City</a></td></tr>
+<tr><td>Universal American School</td><td>Very good</td><td>US/IB</td><td><a href="https://antontkachev.github.io/dld-viewer/zh/sales/dubai-festival-city/">Dubai Festival City</a></td></tr>
+<tr><td>Greenfield International School</td><td>Very good</td><td>International Baccalaureate</td><td><a href="https://antontkachev.github.io/dld-viewer/zh/sales/dubai-investment-park-1/">Dubai Investment Park 1</a></td></tr>
+<tr><td>GEMS Wellington Academy</td><td>Very good</td><td>UK (13 Y),UK/IB (13 Y)</td><td><a href="https://antontkachev.github.io/dld-viewer/zh/sales/dubai-silicon-oasis/">Dubai Silicon Oasis</a></td></tr>
+<tr><td>GEMS Wellington Academy Silicon Oasis</td><td>Very good</td><td>UK (13 Y)</td><td><a href="https://antontkachev.github.io/dld-viewer/zh/sales/dubai-silicon-oasis/">Dubai Silicon Oasis</a></td></tr>
+<tr><td>宿舍</td><td></td><td></td><td><a href="https://antontkachev.github.io/dld-viewer/zh/sales/dubai-silicon-oasis/">Dubai Silicon Oasis</a></td></tr>
+<tr><td>Dubai International Academy</td><td></td><td></td><td><a href="https://antontkachev.github.io/dld-viewer/zh/sales/emirates-hills/">Emirates Hills</a></td></tr>
+<tr><td>GEMS International School, Al Khail</td><td>Good</td><td>International Baccalaureate</td><td><a href="https://antontkachev.github.io/dld-viewer/zh/sales/hadaeq-sheikh-mohammed-bin-rashid/">Hadaeq Sheikh Mohammed Bin Rashid</a></td></tr>
+<tr><td>GEMS New Millenium School</td><td>Very good</td><td>Indian,UK (13 Y)</td><td><a href="https://antontkachev.github.io/dld-viewer/zh/sales/hadaeq-sheikh-mohammed-bin-rashid/">Hadaeq Sheikh Mohammed Bin Rashid</a></td></tr>
+<tr><td>GEMS Wellington Academy</td><td></td><td></td><td><a href="https://antontkachev.github.io/dld-viewer/zh/sales/hadaeq-sheikh-mohammed-bin-rashid/">Hadaeq Sheikh Mohammed Bin Rashid</a></td></tr>
+<tr><td>Al Ahmadiya School</td><td></td><td></td><td><a href="https://antontkachev.github.io/dld-viewer/zh/sales/hor-al-anz/">Hor Al Anz</a></td></tr>
+<tr><td>Omar Bin Khattab School</td><td></td><td></td><td><a href="https://antontkachev.github.io/dld-viewer/zh/sales/hor-al-anz/">Hor Al Anz</a></td></tr>
+<tr><td>Pearl Wisdom School</td><td>Good</td><td>Indian</td><td><a href="https://antontkachev.github.io/dld-viewer/zh/sales/hor-al-anz/">Hor Al Anz</a></td></tr>
+<tr><td>Queen international school</td><td>Acceptable</td><td>UK (13 Y),UK*</td><td><a href="https://antontkachev.github.io/dld-viewer/zh/sales/hor-al-anz/">Hor Al Anz</a></td></tr>
+<tr><td>little flower school</td><td>Acceptable</td><td>Indian</td><td><a href="https://antontkachev.github.io/dld-viewer/zh/sales/hor-al-anz/">Hor Al Anz</a></td></tr>
+<tr><td>Jebel Ali Primary School</td><td>Very good</td><td>UK (13 Y)</td><td><a href="https://antontkachev.github.io/dld-viewer/zh/sales/jebel-ali-village/">Jebel Ali Village</a></td></tr>
+<tr><td>Al Shoroq Private School</td><td>Good</td><td>Ministry of Education</td><td><a href="https://antontkachev.github.io/dld-viewer/zh/sales/jumeirah/">Jumeirah</a></td></tr>
+<tr><td>Jumeirah Baccalaureate School</td><td>Outstanding</td><td>UK (13 Y)</td><td><a href="https://antontkachev.github.io/dld-viewer/zh/sales/jumeirah/">Jumeirah</a></td></tr>
+<tr><td>Simon Residence</td><td></td><td></td><td><a href="https://antontkachev.github.io/dld-viewer/zh/sales/jumeirah/">Jumeirah</a></td></tr>
+<tr><td>Dubai British School Emirates Hills - Islands Campus</td><td>Outstanding</td><td>UK (13 Y)</td><td><a href="https://antontkachev.github.io/dld-viewer/zh/sales/jumeirah-islands/">Jumeirah Islands</a></td></tr>
+<tr><td>Kinderopvang smallsteps leidsche rijn</td><td></td><td></td><td><a href="https://antontkachev.github.io/dld-viewer/zh/sales/jumeirah-village-circle/">Jumeirah Village Circle</a></td></tr>
+<tr><td>Dar Al Marefa School</td><td>Good</td><td>International Baccalaureate</td><td><a href="https://antontkachev.github.io/dld-viewer/zh/sales/mirdif/">Mirdif</a></td></tr>
+<tr><td>Ontario International Canadian School</td><td></td><td></td><td><a href="https://antontkachev.github.io/dld-viewer/zh/sales/mirdif/">Mirdif</a></td></tr>
+<tr><td>Uptown School</td><td></td><td></td><td><a href="https://antontkachev.github.io/dld-viewer/zh/sales/mirdif/">Mirdif</a></td></tr>
+<tr><td>Building Blocks Nursery</td><td></td><td></td><td><a href="https://antontkachev.github.io/dld-viewer/zh/sales/motor-city/">Motor City</a></td></tr>
+<tr><td>GEMS Metropole School Motor City</td><td>Good</td><td>UK (13 Y)</td><td><a href="https://antontkachev.github.io/dld-viewer/zh/sales/motor-city/">Motor City</a></td></tr>
+<tr><td>Greenwood International School</td><td>Good</td><td>American</td><td><a href="https://antontkachev.github.io/dld-viewer/zh/sales/muhaisnah-1/">Muhaisnah 1</a></td></tr>
+<tr><td>Islamic School For Education Training</td><td>Acceptable</td><td>Ministry of Education</td><td><a href="https://antontkachev.github.io/dld-viewer/zh/sales/muhaisnah-1/">Muhaisnah 1</a></td></tr>
+<tr><td>School of Modern Skills</td><td>Acceptable</td><td>American</td><td><a href="https://antontkachev.github.io/dld-viewer/zh/sales/muhaisnah-1/">Muhaisnah 1</a></td></tr>
+<tr><td>المدرسة العربية الأمريكية الخاصة</td><td></td><td></td><td><a href="https://antontkachev.github.io/dld-viewer/zh/sales/muhaisnah-1/">Muhaisnah 1</a></td></tr>
+<tr><td>The Philippine School - Dubai</td><td>Acceptable</td><td>Philippine</td><td><a href="https://antontkachev.github.io/dld-viewer/zh/sales/muhaisnah-2/">Muhaisnah 2</a></td></tr>
+<tr><td>Brainpower Talent</td><td></td><td></td><td><a href="https://antontkachev.github.io/dld-viewer/zh/sales/muhaisnah-4/">Muhaisnah 4</a></td></tr>
+<tr><td>Philadelphia Private School</td><td>Good</td><td>American,International Baccalaureate</td><td><a href="https://antontkachev.github.io/dld-viewer/zh/sales/muhaisnah-4/">Muhaisnah 4</a></td></tr>
+<tr><td>Russian International School</td><td>Good</td><td>Russian</td><td><a href="https://antontkachev.github.io/dld-viewer/zh/sales/muhaisnah-4/">Muhaisnah 4</a></td></tr>
+<tr><td>St. Mary's Catholic High School</td><td></td><td></td><td><a href="https://antontkachev.github.io/dld-viewer/zh/sales/muhaisnah-4/">Muhaisnah 4</a></td></tr>
+<tr><td>St. Mary's Catholic High School, Muhaizinah</td><td></td><td></td><td><a href="https://antontkachev.github.io/dld-viewer/zh/sales/muhaisnah-4/">Muhaisnah 4</a></td></tr>
+<tr><td>The Indian Academy</td><td></td><td></td><td><a href="https://antontkachev.github.io/dld-viewer/zh/sales/muhaisnah-4/">Muhaisnah 4</a></td></tr>
+<tr><td>The Oxford School</td><td>Good</td><td>UK (13 Y)</td><td><a href="https://antontkachev.github.io/dld-viewer/zh/sales/muhaisnah-4/">Muhaisnah 4</a></td></tr>
+<tr><td>UIPS</td><td></td><td></td><td><a href="https://antontkachev.github.io/dld-viewer/zh/sales/muhaisnah-4/">Muhaisnah 4</a></td></tr>
+<tr><td>Nadd Al Hamar Primary School</td><td>Not inspected yet</td><td>UK (13 Y)</td><td><a href="https://antontkachev.github.io/dld-viewer/zh/sales/nadd-al-hamar/">Nadd Al Hamar</a></td></tr>
+<tr><td>Sukainah High School</td><td></td><td></td><td><a href="https://antontkachev.github.io/dld-viewer/zh/sales/nadd-al-hamar/">Nadd Al Hamar</a></td></tr>
+<tr><td>The City School International</td><td>Good</td><td>UK (13 Y)</td><td><a href="https://antontkachev.github.io/dld-viewer/zh/sales/nadd-al-hamar/">Nadd Al Hamar</a></td></tr>
+<tr><td>International School of Creative Science</td><td>Good</td><td>American</td><td><a href="https://antontkachev.github.io/dld-viewer/zh/sales/nadd-al-sheba-3/">Nadd Al Sheba 3</a></td></tr>
+<tr><td>International School of Creative Science Nad Al Sheba</td><td>Good</td><td>UK (13 Y)</td><td><a href="https://antontkachev.github.io/dld-viewer/zh/sales/nadd-al-sheba-3/">Nadd Al Sheba 3</a></td></tr>
+<tr><td>Repton School Dubai</td><td>Outstanding</td><td>UK/IB (13 Y)</td><td><a href="https://antontkachev.github.io/dld-viewer/zh/sales/nadd-al-sheba-3/">Nadd Al Sheba 3</a></td></tr>
+<tr><td>GEMS Winchester School</td><td></td><td></td><td><a href="https://antontkachev.github.io/dld-viewer/zh/sales/oud-metha/">Oud Metha</a></td></tr>
+<tr><td>The Indian High School</td><td>Good</td><td>Indian</td><td><a href="https://antontkachev.github.io/dld-viewer/zh/sales/oud-metha/">Oud Metha</a></td></tr>
+<tr><td>Regent International School</td><td>Very good</td><td>UK (13 Y)</td><td><a href="https://antontkachev.github.io/dld-viewer/zh/sales/the-greens/">The Greens</a></td></tr>
+<tr><td>Emirates International School</td><td>Very good</td><td>IB (13 Y),UK (13 Y),UK/IB (13 Y)</td><td><a href="https://antontkachev.github.io/dld-viewer/zh/sales/umm-al-sheif/">Umm Al Sheif</a></td></tr>
+<tr><td>Collegiate American School</td><td></td><td></td><td><a href="https://antontkachev.github.io/dld-viewer/zh/sales/umm-suqeim-2/">Umm Suqeim 2</a></td></tr>
+<tr><td>The Developing Child Centre</td><td></td><td></td><td><a href="https://antontkachev.github.io/dld-viewer/zh/sales/umm-suqeim-2/">Umm Suqeim 2</a></td></tr>
+<tr><td>Kings' Dubai</td><td>Outstanding</td><td>UK (13 Y)</td><td><a href="https://antontkachev.github.io/dld-viewer/zh/sales/umm-suqeim-3/">Umm Suqeim 3</a></td></tr>
+<tr><td>Raffles International School</td><td>Very good</td><td>International Baccalaureate</td><td><a href="https://antontkachev.github.io/dld-viewer/zh/sales/umm-suqeim-3/">Umm Suqeim 3</a></td></tr>
+<tr><td>Raffles World Academy</td><td></td><td></td><td><a href="https://antontkachev.github.io/dld-viewer/zh/sales/umm-suqeim-3/">Umm Suqeim 3</a></td></tr>
+<tr><td>The Emirates Academy Of Hospitality Management</td><td></td><td></td><td><a href="https://antontkachev.github.io/dld-viewer/zh/sales/umm-suqeim-3/">Umm Suqeim 3</a></td></tr>
+<tr><td>Gems First Point School (The Villa)</td><td>Very good</td><td>UK (13 Y)</td><td><a href="https://antontkachev.github.io/dld-viewer/zh/sales/wadi-al-safa-5/">Wadi Al Safa 5</a></td></tr>
+<tr><td>Ranches Primary School</td><td>Very good</td><td>UK (13 Y)</td><td><a href="https://antontkachev.github.io/dld-viewer/zh/sales/wadi-al-safa-7/">Wadi Al Safa 7</a></td></tr>
+<tr><td>Abu Dhar School</td><td></td><td></td><td>—</td></tr>
+<tr><td>Abu Obaida Bin Al Jarah Private School</td><td></td><td></td><td>—</td></tr>
+<tr><td>Ahali private school</td><td></td><td></td><td>—</td></tr>
+<tr><td>Aisha Bint Abdullah</td><td></td><td></td><td>—</td></tr>
+<tr><td>Ajman Al Khama School</td><td></td><td></td><td>—</td></tr>
+<tr><td>Ajman Modern School</td><td></td><td></td><td>—</td></tr>
+<tr><td>Al Amaal English High School (PVT)</td><td></td><td></td><td>—</td></tr>
+<tr><td>Al Ameer English School</td><td></td><td></td><td>—</td></tr>
+<tr><td>Al Aqsa Private School</td><td></td><td></td><td>—</td></tr>
+<tr><td>Al Bassaer private school</td><td></td><td></td><td>—</td></tr>
+<tr><td>Al Durrah International School</td><td></td><td></td><td>—</td></tr>
+<tr><td>Al Hamriyah Elementary School For Boys</td><td></td><td></td><td>—</td></tr>
+<tr><td>Al Hikmah Private School</td><td>Acceptable</td><td>UK (13 Y)</td><td>—</td></tr>
+<tr><td>Al Hikmah School</td><td></td><td></td><td>—</td></tr>
+<tr><td>Al Maarifa International School</td><td></td><td></td><td>—</td></tr>
+<tr><td>Al Mawakeb School</td><td>Good</td><td>American</td><td>—</td></tr>
+<tr><td>Al Mustaqbal Private School</td><td>Good</td><td>UK (13 Y)</td><td>—</td></tr>
+<tr><td>Al Nakhailat School fro Basic education C/1 Girls</td><td></td><td></td><td>—</td></tr>
+<tr><td>Al Rasheed School</td><td></td><td></td><td>—</td></tr>
+<tr><td>Al Rashidyah School for Secondary Education</td><td></td><td></td><td>—</td></tr>
+<tr><td>Al Resaleh Int'l School of Science</td><td></td><td></td><td>—</td></tr>
+<tr><td>Al Ula Private School</td><td></td><td></td><td>—</td></tr>
+<tr><td>Al Watany traffic safety Institute</td><td></td><td></td><td>—</td></tr>
+<tr><td>Al Zahrar High School</td><td></td><td></td><td>—</td></tr>
+<tr><td>Albert Children School</td><td></td><td></td><td>—</td></tr>
+<tr><td>Alitqan American School</td><td></td><td></td><td>—</td></tr>
+<tr><td>American School of Creative Science</td><td></td><td></td><td>—</td></tr>
+<tr><td>American School of Creative Sciences</td><td></td><td></td><td>—</td></tr>
+<tr><td>Australian International School</td><td></td><td></td><td>—</td></tr>
+<tr><td>Beaconhouse Al Khaleej International School</td><td></td><td></td><td>—</td></tr>
+<tr><td>British International School</td><td></td><td></td><td>—</td></tr>
+<tr><td>Deans International Privat School</td><td></td><td></td><td>—</td></tr>
+<tr><td>Delhi Private School</td><td>Very good</td><td>Indian</td><td>—</td></tr>
+<tr><td>Delta English School</td><td></td><td></td><td>—</td></tr>
+<tr><td>Dubai British School Emirates Hills</td><td></td><td></td><td>—</td></tr>
+<tr><td>Emirates International School - Meadows</td><td>Very good</td><td>IB (13 Y),International Baccalaureate</td><td>—</td></tr>
+<tr><td>Emirates Private School</td><td></td><td></td><td>—</td></tr>
+<tr><td>Esheliah Primary Girls School</td><td></td><td></td><td>—</td></tr>
+<tr><td>Esheliah Primary Girls School</td><td></td><td></td><td>—</td></tr>
+<tr><td>Far Eastern Private School</td><td></td><td></td><td>—</td></tr>
+<tr><td>Far eastern pvt school</td><td></td><td></td><td>—</td></tr>
+<tr><td>First Academy School</td><td></td><td></td><td>—</td></tr>
+<tr><td>Gulf Asian English School</td><td>Acceptable</td><td>Indian</td><td>—</td></tr>
+<tr><td>Habitat School</td><td></td><td></td><td>—</td></tr>
+<tr><td>Hampton Heights British International School</td><td></td><td></td><td>—</td></tr>
+<tr><td>Ibn Seena English High School</td><td></td><td></td><td>—</td></tr>
+<tr><td>Indian International School</td><td>Good</td><td>Indian</td><td>—</td></tr>
+<tr><td>Indian School Ajman</td><td></td><td></td><td>—</td></tr>
+<tr><td>International Indian School</td><td></td><td></td><td>—</td></tr>
+<tr><td>International Language Centre</td><td></td><td></td><td>—</td></tr>
+<tr><td>International School of Chouiefat</td><td></td><td></td><td>—</td></tr>
+<tr><td>International School of Creative Sciences</td><td></td><td></td><td>—</td></tr>
+<tr><td>Leaders Private School</td><td></td><td></td><td>—</td></tr>
+<tr><td>Muweilah</td><td></td><td></td><td>—</td></tr>
+<tr><td>National Charity Private School / Sharjah - Girls</td><td></td><td></td><td>—</td></tr>
+<tr><td>Our Own English High School</td><td></td><td></td><td>—</td></tr>
+<tr><td>Our Own English High School Shj(Boys)</td><td></td><td></td><td>—</td></tr>
+<tr><td>Pakistan Islama Migreh Secondary School - Sharjah</td><td></td><td></td><td>—</td></tr>
+<tr><td>Pakistan Islamia School</td><td></td><td></td><td>—</td></tr>
+<tr><td>Progressive English School</td><td></td><td></td><td>—</td></tr>
+<tr><td>Radiant School</td><td></td><td></td><td>—</td></tr>
+<tr><td>Rosary School</td><td></td><td></td><td>—</td></tr>
+<tr><td>Royal Academy Private School</td><td></td><td></td><td>—</td></tr>
+<tr><td>Scholars International School</td><td>Good</td><td>UK (13 Y)</td><td>—</td></tr>
+<tr><td>Shaikha Bint Saeed Girls High School</td><td></td><td></td><td>—</td></tr>
+<tr><td>Shaikha Bint Saeed Model School</td><td></td><td></td><td>—</td></tr>
+<tr><td>Sharjah British School</td><td></td><td></td><td>—</td></tr>
+<tr><td>Sharjah Indian School</td><td>Good</td><td>Indian</td><td>—</td></tr>
+<tr><td>Special Education Support Center</td><td></td><td></td><td>—</td></tr>
+<tr><td>Special Education Support Center</td><td></td><td></td><td>—</td></tr>
+<tr><td>Star international School</td><td>Good</td><td>UK (13 Y)</td><td>—</td></tr>
+<tr><td>That Al Netaqain School</td><td></td><td></td><td>—</td></tr>
+<tr><td>The Arbor School</td><td>Good</td><td>UK (13 Y)</td><td>—</td></tr>
+<tr><td>The Emirates National School</td><td></td><td></td><td>—</td></tr>
+<tr><td>The Islamic Scientific Institute</td><td></td><td></td><td>—</td></tr>
+<tr><td>The National Charity School</td><td></td><td></td><td>—</td></tr>
+<tr><td>Umm Amar Girls School for Basic Education</td><td></td><td></td><td>—</td></tr>
+<tr><td>Wesgreen Internationaal School</td><td></td><td></td><td>—</td></tr>
+<tr><td>Wilson center for children</td><td></td><td></td><td>—</td></tr>
+<tr><td>Wise Indian Academy</td><td></td><td></td><td>—</td></tr>
+<tr><td>al ansar international school</td><td></td><td></td><td>—</td></tr>
+<tr><td>al esitqlal private school</td><td></td><td></td><td>—</td></tr>
+<tr><td>freezone</td><td></td><td></td><td>—</td></tr>
+<tr><td>gems Westminster school</td><td></td><td></td><td>—</td></tr>
+<tr><td>secondary model scy</td><td></td><td></td><td>—</td></tr>
+<tr><td>sharjah american international school</td><td></td><td></td><td>—</td></tr>
+<tr><td>sharjah women's college</td><td></td><td></td><td>—</td></tr>
+<tr><td>المدرسة الاهلية</td><td></td><td></td><td>—</td></tr>
+</tbody>
+</table>
+  </div>
+
+  <div class="nav">
+    <a href="https://antontkachev.github.io/dld-viewer/zh/sales/?layers=schools">← 返回地图</a>
+  </div>
+</div>
+</body>
+</html>

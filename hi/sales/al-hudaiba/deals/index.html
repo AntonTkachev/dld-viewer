@@ -12,6 +12,7 @@
 <link rel="alternate" hreflang="en" href="https://antontkachev.github.io/dld-viewer/en/sales/al-hudaiba/deals/">
 <link rel="alternate" hreflang="ar" href="https://antontkachev.github.io/dld-viewer/ar/sales/al-hudaiba/deals/">
 <link rel="alternate" hreflang="hi" href="https://antontkachev.github.io/dld-viewer/hi/sales/al-hudaiba/deals/">
+<link rel="alternate" hreflang="zh" href="https://antontkachev.github.io/dld-viewer/zh/sales/al-hudaiba/deals/">
 <link rel="alternate" hreflang="x-default" href="https://antontkachev.github.io/dld-viewer/sales/al-hudaiba/deals/">
 <meta property="og:type" content="article">
 <meta property="og:title" content="Al Hudaiba में सबसे बड़े सौदे: 10 प्रविष्टियां — DLD">
@@ -31,9 +32,19 @@
   .modeswitch { display:flex; gap:8px; }
   .modeswitch a { padding:6px 12px; border:1px solid #e5e7eb; border-radius:8px; font-size:13px; text-decoration:none; color:#374151; background:#fff; }
   .modeswitch a.active { background:#1d4ed8; color:#fff; border-color:#1d4ed8; }
-  .langswitch { display:flex; gap:4px; padding:3px; background:#f1f5f9; border-radius:8px; }
-  .langswitch a { padding:5px 9px; border-radius:6px; font-size:12px; font-weight:600; text-decoration:none; color:#6b7280; }
-  .langswitch a.active { background:#fff; color:#1d4ed8; box-shadow:0 1px 2px rgba(0,0,0,0.05); }
+  .langswitch-dd { position:relative; }
+  .langswitch-dd > summary { list-style:none; cursor:pointer; display:inline-flex; align-items:center; gap:6px; padding:6px 10px; background:#f1f5f9; border-radius:8px; font-size:12px; font-weight:600; color:#6b7280; user-select:none; }
+  .langswitch-dd > summary::-webkit-details-marker { display:none; }
+  .langswitch-dd > summary::marker { content:""; }
+  .langswitch-dd > summary .globe { font-size:14px; }
+  .langswitch-dd > summary .lang-current { color:#1d4ed8; }
+  .langswitch-dd > summary .caret { font-size:10px; opacity:.6; }
+  .langswitch-dd[open] > summary { background:#e2e8f0; }
+  .langswitch-dd .lang-menu { position:absolute; top:calc(100% + 4px); inset-inline-end:0; background:#fff; border:1px solid #e5e7eb; border-radius:8px; padding:4px; min-width:140px; box-shadow:0 6px 16px rgba(15,23,42,0.08); display:flex; flex-direction:column; z-index:10; }
+  .langswitch-dd .lang-menu a { padding:7px 10px; border-radius:6px; font-size:13px; text-decoration:none; color:#374151; }
+  .langswitch-dd .lang-menu a:hover { background:#f3f4f6; }
+  .langswitch-dd .lang-menu a.active { background:#1d4ed8; color:#fff; font-weight:600; }
+  html[dir="rtl"] .langswitch-dd .lang-menu { inset-inline-end:auto; inset-inline-start:0; }
   .lede { font-size:15px; color:#374151; margin:6px 0 20px; max-width:760px; line-height:1.55; }
 
   .crosslinks { display:flex; gap:8px; flex-wrap:wrap; margin-bottom:18px; }
@@ -74,7 +85,7 @@
     <h1>Al Hudaiba में सबसे बड़े सौदे</h1>
     <div class="topbar-controls">
       <div class="modeswitch"><a href="https://antontkachev.github.io/dld-viewer/hi/sales/al-hudaiba/" class="active">बिक्री</a><a href="https://antontkachev.github.io/dld-viewer/hi/rents/al-hudaiba/">किराया</a></div>
-      <div class="langswitch"><a href="https://antontkachev.github.io/dld-viewer/sales/al-hudaiba/deals/" lang="ru">RU</a><a href="https://antontkachev.github.io/dld-viewer/en/sales/al-hudaiba/deals/" lang="en">EN</a><a href="https://antontkachev.github.io/dld-viewer/ar/sales/al-hudaiba/deals/" lang="ar">AR</a><a href="https://antontkachev.github.io/dld-viewer/hi/sales/al-hudaiba/deals/" lang="hi" class="active">HI</a></div>
+      <details class="langswitch-dd"><summary><span class="globe" aria-hidden="true">🌐</span><span class="lang-current">HI</span><span class="caret" aria-hidden="true">▾</span></summary><div class="lang-menu"><a href="https://antontkachev.github.io/dld-viewer/sales/al-hudaiba/deals/" lang="ru">RU</a><a href="https://antontkachev.github.io/dld-viewer/en/sales/al-hudaiba/deals/" lang="en">EN</a><a href="https://antontkachev.github.io/dld-viewer/ar/sales/al-hudaiba/deals/" lang="ar">AR</a><a href="https://antontkachev.github.io/dld-viewer/hi/sales/al-hudaiba/deals/" lang="hi" class="active">HI</a><a href="https://antontkachev.github.io/dld-viewer/zh/sales/al-hudaiba/deals/" lang="zh">ZH</a></div></details>
     </div>
   </div>
   <p class="lede">Dubai Land Department के अनुसार अनुबंध मूल्य से Al Hudaiba में सबसे बड़े सौदे। सौदा आकार के अनुसार क्रमबद्ध।</p>

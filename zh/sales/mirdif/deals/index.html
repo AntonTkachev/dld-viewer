@@ -1,0 +1,111 @@
+<!DOCTYPE html>
+<html lang="zh" dir="ltr">
+<head>
+<meta charset="UTF-8">
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net https://unpkg.com https://antontkachev.github.io; style-src 'self' 'unsafe-inline' https://unpkg.com https://antontkachev.github.io; img-src 'self' data: https://*.tile.openstreetmap.org https://antontkachev.github.io; connect-src 'self' https://antontkachev.github.io; font-src 'self' data:; frame-ancestors 'none'; base-uri 'self'; form-action 'self'">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+
+<title>Mirdif 最大交易: 10 条记录 — DLD</title>
+<meta name="description" content="根据迪拜土地局数据,按合同金额排序的 Mirdif 最大交易。">
+<link rel="canonical" href="https://antontkachev.github.io/dld-viewer/zh/sales/mirdif/deals/">
+<link rel="alternate" hreflang="ru" href="https://antontkachev.github.io/dld-viewer/sales/mirdif/deals/">
+<link rel="alternate" hreflang="en" href="https://antontkachev.github.io/dld-viewer/en/sales/mirdif/deals/">
+<link rel="alternate" hreflang="ar" href="https://antontkachev.github.io/dld-viewer/ar/sales/mirdif/deals/">
+<link rel="alternate" hreflang="hi" href="https://antontkachev.github.io/dld-viewer/hi/sales/mirdif/deals/">
+<link rel="alternate" hreflang="zh" href="https://antontkachev.github.io/dld-viewer/zh/sales/mirdif/deals/">
+<link rel="alternate" hreflang="x-default" href="https://antontkachev.github.io/dld-viewer/sales/mirdif/deals/">
+<meta property="og:type" content="article">
+<meta property="og:title" content="Mirdif 最大交易: 10 条记录 — DLD">
+<meta property="og:description" content="根据迪拜土地局数据,按合同金额排序的 Mirdif 最大交易。">
+<script type="application/ld+json">{"@context": "https://schema.org", "@type": "BreadcrumbList", "itemListElement": [{"@type": "ListItem", "position": 1, "name": "迪拜", "item": "https://antontkachev.github.io/dld-viewer/zh/"}, {"@type": "ListItem", "position": 2, "name": "销售", "item": "https://antontkachev.github.io/dld-viewer/zh/sales/"}, {"@type": "ListItem", "position": 3, "name": "Mirdif", "item": "https://antontkachev.github.io/dld-viewer/zh/sales/mirdif/"}, {"@type": "ListItem", "position": 4, "name": "最大交易", "item": "https://antontkachev.github.io/dld-viewer/zh/sales/mirdif/deals/"}]}</script>
+
+<link rel="stylesheet" href="https://antontkachev.github.io/dld-viewer/css/viewer.css">
+<style>
+  html, body { background:#f8fafc; min-height:100%; }
+  .wrap { max-width:1080px; margin:0 auto; padding:18px 20px 64px; }
+  .breadcrumb { font-size:13px; color:#6b7280; margin-bottom:10px; }
+  .breadcrumb a { color:#1d4ed8; text-decoration:none; }
+  .breadcrumb a:hover { text-decoration:underline; }
+  .topbar { display:flex; align-items:baseline; justify-content:space-between; gap:16px; margin-bottom:14px; flex-wrap:wrap; }
+  h1 { font-size:25px; margin:0; line-height:1.25; }
+  .topbar-controls { display:flex; gap:10px; align-items:center; flex-wrap:wrap; }
+  .modeswitch { display:flex; gap:8px; }
+  .modeswitch a { padding:6px 12px; border:1px solid #e5e7eb; border-radius:8px; font-size:13px; text-decoration:none; color:#374151; background:#fff; }
+  .modeswitch a.active { background:#1d4ed8; color:#fff; border-color:#1d4ed8; }
+  .langswitch-dd { position:relative; }
+  .langswitch-dd > summary { list-style:none; cursor:pointer; display:inline-flex; align-items:center; gap:6px; padding:6px 10px; background:#f1f5f9; border-radius:8px; font-size:12px; font-weight:600; color:#6b7280; user-select:none; }
+  .langswitch-dd > summary::-webkit-details-marker { display:none; }
+  .langswitch-dd > summary::marker { content:""; }
+  .langswitch-dd > summary .globe { font-size:14px; }
+  .langswitch-dd > summary .lang-current { color:#1d4ed8; }
+  .langswitch-dd > summary .caret { font-size:10px; opacity:.6; }
+  .langswitch-dd[open] > summary { background:#e2e8f0; }
+  .langswitch-dd .lang-menu { position:absolute; top:calc(100% + 4px); inset-inline-end:0; background:#fff; border:1px solid #e5e7eb; border-radius:8px; padding:4px; min-width:140px; box-shadow:0 6px 16px rgba(15,23,42,0.08); display:flex; flex-direction:column; z-index:10; }
+  .langswitch-dd .lang-menu a { padding:7px 10px; border-radius:6px; font-size:13px; text-decoration:none; color:#374151; }
+  .langswitch-dd .lang-menu a:hover { background:#f3f4f6; }
+  .langswitch-dd .lang-menu a.active { background:#1d4ed8; color:#fff; font-weight:600; }
+  html[dir="rtl"] .langswitch-dd .lang-menu { inset-inline-end:auto; inset-inline-start:0; }
+  .lede { font-size:15px; color:#374151; margin:6px 0 20px; max-width:760px; line-height:1.55; }
+
+  .crosslinks { display:flex; gap:8px; flex-wrap:wrap; margin-bottom:18px; }
+  .crosslinks a { padding:6px 10px; border:1px solid #e5e7eb; border-radius:8px; font-size:13px; text-decoration:none; color:#1d4ed8; background:#fff; }
+  .crosslinks a.active { background:#1d4ed8; color:#fff; border-color:#1d4ed8; }
+
+  .panel { background:#fff; border:1px solid #e5e7eb; border-radius:12px; padding:18px 20px; margin-bottom:18px; }
+  .panel table { width:100%; border-collapse:collapse; font-size:13px; }
+  .panel th, .panel td { padding:8px 12px; text-align:left; border-bottom:1px solid #f3f4f6; }
+  .panel th { font-weight:600; color:#6b7280; font-size:11px; text-transform:uppercase; letter-spacing:0.04em; background:#f8fafc; position:sticky; top:0; }
+  .panel td.num, .panel th.num { text-align:right; font-variant-numeric:tabular-nums; }
+  .nav { margin-top:24px; padding-top:18px; border-top:1px solid #e5e7eb; font-size:14px; }
+  .nav a { color:#1d4ed8; text-decoration:none; margin-right:18px; }
+  .tag { display:inline-block; padding:2px 8px; border-radius:4px; font-size:11px; font-weight:600; }
+
+  .about { background:#fff; border:1px solid #e5e7eb; border-radius:12px; padding:18px 20px; margin-bottom:18px; }
+  .about h2 { font-size:17px; margin:0 0 10px; }
+  .about p { margin:0 0 12px; color:#374151; line-height:1.6; font-size:14px; }
+  .about-grid { display:grid; grid-template-columns:repeat(auto-fit,minmax(150px,1fr)); gap:10px; margin-top:8px; }
+  .about-stat { padding:10px 12px; background:#f8fafc; border:1px solid #e2e8f0; border-radius:8px; }
+  .about-stat .k { font-size:11px; color:#6b7280; text-transform:uppercase; letter-spacing:0.04em; margin-bottom:4px; }
+  .about-stat .v { font-size:16px; font-weight:600; color:#0f172a; }
+
+  html[dir="rtl"] .panel th, html[dir="rtl"] .panel td { text-align:right; }
+  html[dir="rtl"] .panel td.num, html[dir="rtl"] .panel th.num { text-align:left; }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div class="breadcrumb">
+    <a href="https://antontkachev.github.io/dld-viewer/zh/sales/">迪拜</a> ›
+    <a href="https://antontkachev.github.io/dld-viewer/zh/sales/">销售</a> ›
+    <a href="https://antontkachev.github.io/dld-viewer/zh/sales/mirdif/">Mirdif</a> ›
+    <span>最大交易</span>
+  </div>
+
+  <div class="topbar">
+    <h1>Mirdif 最大交易</h1>
+    <div class="topbar-controls">
+      <div class="modeswitch"><a href="https://antontkachev.github.io/dld-viewer/zh/sales/mirdif/" class="active">销售</a><a href="https://antontkachev.github.io/dld-viewer/zh/rents/mirdif/">租赁</a></div>
+      <details class="langswitch-dd"><summary><span class="globe" aria-hidden="true">🌐</span><span class="lang-current">ZH</span><span class="caret" aria-hidden="true">▾</span></summary><div class="lang-menu"><a href="https://antontkachev.github.io/dld-viewer/sales/mirdif/deals/" lang="ru">RU</a><a href="https://antontkachev.github.io/dld-viewer/en/sales/mirdif/deals/" lang="en">EN</a><a href="https://antontkachev.github.io/dld-viewer/ar/sales/mirdif/deals/" lang="ar">AR</a><a href="https://antontkachev.github.io/dld-viewer/hi/sales/mirdif/deals/" lang="hi">HI</a><a href="https://antontkachev.github.io/dld-viewer/zh/sales/mirdif/deals/" lang="zh" class="active">ZH</a></div></details>
+    </div>
+  </div>
+  <p class="lede">根据迪拜土地局数据,按合同金额排序的 Mirdif 最大交易。</p>
+
+  <div class="crosslinks">
+    <a href="https://antontkachev.github.io/dld-viewer/zh/sales/mirdif/">社区主页</a><a href="https://antontkachev.github.io/dld-viewer/zh/sales/mirdif/projects/">热门项目</a><a href="https://antontkachev.github.io/dld-viewer/zh/sales/mirdif/deals/" class="active">最大交易</a><a href="https://antontkachev.github.io/dld-viewer/zh/sales/mirdif/recent/">最新</a>
+  </div>
+
+  <div class="panel">
+    <table><thead><tr><th>日期</th><th>项目</th><th>卧室</th><th class="num">面积,m²</th><th class="num">金额,AED</th><th>类型</th></tr></thead><tbody><tr><td>2009-11-05</td><td>—</td><td>Other</td><td class="num">310,515</td><td class="num">3.67 十亿</td><td>Ready</td></tr><tr><td>2016-06-08</td><td>—</td><td>Other</td><td class="num">310,515</td><td class="num">3.67 十亿</td><td>Ready</td></tr><tr><td>2012-10-03</td><td>—</td><td>Other</td><td class="num">310,515</td><td class="num">3.67 十亿</td><td>Ready</td></tr><tr><td>2008-04-30</td><td>—</td><td>Other</td><td class="num">273,378</td><td class="num">2.20 十亿</td><td>Ready</td></tr><tr><td>2023-04-13</td><td>MIRDIF HILLS- NASAYEM AVENUE</td><td>Other</td><td class="num">302</td><td class="num">479.34 百万</td><td>Ready</td></tr><tr><td>2023-04-13</td><td>MIRDIF HILLS- JANAYEN AVENUE </td><td>Other</td><td class="num">165</td><td class="num">381.59 百万</td><td>Ready</td></tr><tr><td>2023-04-13</td><td>MIRDIF HILLS- AL MULTAQA AVENUE</td><td>Other</td><td class="num">1,127</td><td class="num">312.04 百万</td><td>Ready</td></tr><tr><td>2025-07-23</td><td>—</td><td>Other</td><td class="num">18,580</td><td class="num">287.30 百万</td><td>Ready</td></tr><tr><td>2019-04-01</td><td>—</td><td>Other</td><td class="num">18,580</td><td class="num">273.20 百万</td><td>Ready</td></tr><tr><td>2020-07-23</td><td>—</td><td>Other</td><td class="num">18,580</td><td class="num">273.20 百万</td><td>Ready</td></tr></tbody></table>
+  </div>
+
+  <section class="about"><h2>关于 Mirdif</h2><p>Mirdif 是迪拜的一个社区。以公寓为主 — 78% 的交易。 约 3% 的交易为在建项目的期房 (Off-Plan)。 最常见的户型 — 其他(6,993 笔交易)。 最活跃的项目之一 — Mirdif Hills- Nasayem Avenue。 另登记 167,192 份租赁合同 — 该社区既适合购置也适合长期居住。</p><div class="about-grid"><div class="about-stat"><div class="k">总交易数</div><div class="v">8,554</div></div><div class="about-stat"><div class="k">中位价格</div><div class="v">2.10 百万 AED</div></div><div class="about-stat"><div class="k">每平方米价格</div><div class="v">3,444 AED</div></div><div class="about-stat"><div class="k">租赁合同</div><div class="v">167,192</div></div></div></section>
+
+  <script type="application/ld+json">{"@context": "https://schema.org", "@type": "ItemList", "name": "Mirdif 最大交易", "numberOfItems": 10, "itemListElement": [{"@type": "ListItem", "position": 1, "name": "2009-11-05"}, {"@type": "ListItem", "position": 2, "name": "2016-06-08"}, {"@type": "ListItem", "position": 3, "name": "2012-10-03"}, {"@type": "ListItem", "position": 4, "name": "2008-04-30"}, {"@type": "ListItem", "position": 5, "name": "2023-04-13"}, {"@type": "ListItem", "position": 6, "name": "2023-04-13"}, {"@type": "ListItem", "position": 7, "name": "2023-04-13"}, {"@type": "ListItem", "position": 8, "name": "2025-07-23"}, {"@type": "ListItem", "position": 9, "name": "2019-04-01"}, {"@type": "ListItem", "position": 10, "name": "2020-07-23"}]}</script>
+
+  <div class="nav">
+    <a href="https://antontkachev.github.io/dld-viewer/zh/sales/mirdif/">← 返回 Mirdif</a>
+    <a href="https://antontkachev.github.io/dld-viewer/zh/sales/">← 所有社区（地图）</a>
+  </div>
+</div>
+</body>
+</html>

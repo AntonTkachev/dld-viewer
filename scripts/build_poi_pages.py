@@ -33,7 +33,7 @@ GEO = os.path.join(ROOT, '_data_communities.geojson')
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 from _seo_config import BASE_URL
 
-LANGUAGES = ('ru', 'en', 'ar', 'hi')
+LANGUAGES = ('ru', 'en', 'ar', 'hi', 'zh')
 
 # Category configuration.
 #   slug      — URL path component (/metro/, /schools/, …)
@@ -126,7 +126,7 @@ COPY = {
         'kind_doctors': 'Кабинет врача',
         'kind_mall': 'Молл', 'kind_souq': 'Сук',
         'lang_label': 'Язык',
-        'lang_ru': 'RU', 'lang_en': 'EN', 'lang_ar': 'AR', 'lang_hi': 'HI',
+        'lang_ru': 'RU', 'lang_en': 'EN', 'lang_ar': 'AR', 'lang_hi': 'HI', 'lang_zh': 'ZH',
         'count_suffix': 'позиций',
         'cats': {
             'metro': ('🚇 Метро Дубая — все станции на карте',
@@ -160,7 +160,7 @@ COPY = {
         'kind_doctors': "Doctor's office",
         'kind_mall': 'Mall', 'kind_souq': 'Souq',
         'lang_label': 'Language',
-        'lang_ru': 'RU', 'lang_en': 'EN', 'lang_ar': 'AR', 'lang_hi': 'HI',
+        'lang_ru': 'RU', 'lang_en': 'EN', 'lang_ar': 'AR', 'lang_hi': 'HI', 'lang_zh': 'ZH',
         'count_suffix': 'entries',
         'cats': {
             'metro': ('🚇 Dubai Metro — all stations on the map',
@@ -194,7 +194,7 @@ COPY = {
         'kind_doctors': 'عيادة طبيب',
         'kind_mall': 'مول', 'kind_souq': 'سوق',
         'lang_label': 'اللغة',
-        'lang_ru': 'RU', 'lang_en': 'EN', 'lang_ar': 'AR', 'lang_hi': 'HI',
+        'lang_ru': 'RU', 'lang_en': 'EN', 'lang_ar': 'AR', 'lang_hi': 'HI', 'lang_zh': 'ZH',
         'count_suffix': 'مدخلات',
         'cats': {
             'metro': ('🚇 مترو دبي — كل المحطات على الخريطة',
@@ -228,7 +228,7 @@ COPY = {
         'kind_doctors': 'डॉक्टर का क्लीनिक',
         'kind_mall': 'मॉल', 'kind_souq': 'सूक',
         'lang_label': 'भाषा',
-        'lang_ru': 'RU', 'lang_en': 'EN', 'lang_ar': 'AR', 'lang_hi': 'HI',
+        'lang_ru': 'RU', 'lang_en': 'EN', 'lang_ar': 'AR', 'lang_hi': 'HI', 'lang_zh': 'ZH',
         'count_suffix': 'प्रविष्टियाँ',
         'cats': {
             'metro': ('🚇 दुबई मेट्रो — सभी स्टेशन मानचित्र पर',
@@ -245,6 +245,40 @@ COPY = {
                              'RERA के अनुसार दुबई में {n} सक्रिय या लंबित आवासीय परियोजनाएँ। प्रत्येक पंक्ति इलाका, यूनिट्स की संख्या और सक्रिय निर्माण दिखाती है.'),
             'malls': ('🛍️ दुबई के मॉल और सूक',
                       'दुबई में {n} मॉल और सूक। प्रत्येक पंक्ति इलाका और सुविधा का प्रकार दिखाती है.'),
+        },
+    },
+    'zh': {
+        'html_lang': 'zh', 'dir': 'ltr',
+        'breadcrumb_dubai': '迪拜',
+        'col_name': '名称', 'col_district': '社区',
+        'col_line': '线路', 'col_rating': 'KHDA 评级',
+        'col_curriculum': '课程体系', 'col_kind': '类型',
+        'col_addr': '街道', 'col_in_flight': '在建',
+        'col_total_units': '单元数',
+        'no_district': '—',
+        'show_on_map': '在地图上显示 →',
+        'nav_map': '← 返回地图',
+        'kind_hospital': '医院', 'kind_clinic': '诊所',
+        'kind_doctors': '医生诊室',
+        'kind_mall': '购物中心', 'kind_souq': '集市',
+        'lang_label': '语言',
+        'lang_ru': 'RU', 'lang_en': 'EN', 'lang_ar': 'AR', 'lang_hi': 'HI', 'lang_zh': 'ZH',
+        'count_suffix': '条目',
+        'cats': {
+            'metro': ('🚇 迪拜地铁 — 地图上的所有站点',
+                      '迪拜地铁红线与绿线的所有站点。{n} {suf}。每行显示所在社区，并提供启用「地铁」图层的地图链接。'),
+            'schools': ('🏫 迪拜学校 — KHDA 评级地图',
+                        '迪拜共 {n} 所学校，附 KHDA 评级与课程体系（若提供）。点击「在地图上显示」可在 DLD 交易地图上叠加所有学校。'),
+            'universities': ('🎓 迪拜的大学',
+                             '迪拜共 {n} 所大学及高等教育校区。每行显示社区，并提供启用「大学」图层的地图链接。'),
+            'medical': ('🏥 迪拜的医院与诊所',
+                        '迪拜全部医疗设施：{n} 个条目（医院、诊所、医生诊室）。显示所在社区及设施类型。'),
+            'mosques': ('🕌 迪拜的清真寺',
+                        '迪拜的 {n} 座清真寺，附社区、街道地址，以及（若有）礼拜语言与容量。来源：OpenStreetMap。'),
+            'construction': ('🏗️ 迪拜的在建项目',
+                             '根据 RERA，迪拜共 {n} 个处于活跃或待建状态的住宅项目。每行显示社区、单元数和在建项目数。'),
+            'malls': ('🛍️ 迪拜的购物中心与集市',
+                      '迪拜的 {n} 家购物中心与集市。每行显示所在社区及类型。'),
         },
     },
 }
@@ -421,11 +455,24 @@ def hreflang_block(slug):
 
 
 def lang_switcher_html(slug, lang):
-    parts = ['<div class="langswitch">']
+    """Globe + dropdown. Native <details> — no JS, accessible, RTL-friendly."""
+    current_label = COPY[lang].get(f'lang_{lang}', lang.upper())
+    parts = [
+        '<details class="langswitch-dd">',
+        '<summary>',
+        '<span class="globe" aria-hidden="true">🌐</span>',
+        f'<span class="lang-current">{current_label}</span>',
+        '<span class="caret" aria-hidden="true">▾</span>',
+        '</summary>',
+        '<div class="lang-menu">',
+    ]
     for l in LANGUAGES:
         active = ' class="active"' if l == lang else ''
-        parts.append(f'<a{active} href="{page_url(l, slug)}">{COPY[lang]["lang_" + l]}</a>')
-    parts.append('</div>')
+        parts.append(
+            f'<a{active} href="{page_url(l, slug)}" lang="{l}">'
+            f'{COPY[lang]["lang_" + l]}</a>'
+        )
+    parts.append('</div></details>')
     return ''.join(parts)
 
 
@@ -539,9 +586,19 @@ PAGE_TEMPLATE = '''<!DOCTYPE html>
   .topbar {{ display:flex; align-items:baseline; justify-content:space-between; gap:16px; margin-bottom:14px; flex-wrap:wrap; }}
   h1 {{ font-size:24px; margin:0; line-height:1.25; }}
   .topbar-controls {{ display:flex; gap:10px; align-items:center; flex-wrap:wrap; }}
-  .langswitch {{ display:flex; gap:4px; padding:3px; background:#f1f5f9; border-radius:8px; }}
-  .langswitch a {{ padding:5px 9px; border-radius:6px; font-size:12px; font-weight:600; text-decoration:none; color:#6b7280; }}
-  .langswitch a.active {{ background:#fff; color:#1d4ed8; box-shadow:0 1px 2px rgba(0,0,0,0.05); }}
+  .langswitch-dd {{ position:relative; }}
+  .langswitch-dd > summary {{ list-style:none; cursor:pointer; display:inline-flex; align-items:center; gap:6px; padding:6px 10px; background:#f1f5f9; border-radius:8px; font-size:12px; font-weight:600; color:#6b7280; user-select:none; }}
+  .langswitch-dd > summary::-webkit-details-marker {{ display:none; }}
+  .langswitch-dd > summary::marker {{ content:""; }}
+  .langswitch-dd > summary .globe {{ font-size:14px; }}
+  .langswitch-dd > summary .lang-current {{ color:#1d4ed8; }}
+  .langswitch-dd > summary .caret {{ font-size:10px; opacity:.6; }}
+  .langswitch-dd[open] > summary {{ background:#e2e8f0; }}
+  .langswitch-dd .lang-menu {{ position:absolute; top:calc(100% + 4px); inset-inline-end:0; background:#fff; border:1px solid #e5e7eb; border-radius:8px; padding:4px; min-width:140px; box-shadow:0 6px 16px rgba(15,23,42,0.08); display:flex; flex-direction:column; z-index:10; }}
+  .langswitch-dd .lang-menu a {{ padding:7px 10px; border-radius:6px; font-size:13px; text-decoration:none; color:#374151; }}
+  .langswitch-dd .lang-menu a:hover {{ background:#f3f4f6; }}
+  .langswitch-dd .lang-menu a.active {{ background:#1d4ed8; color:#fff; font-weight:600; }}
+  html[dir="rtl"] .langswitch-dd .lang-menu {{ inset-inline-end:auto; inset-inline-start:0; }}
   .lede {{ font-size:15px; color:#374151; margin:6px 0 16px; max-width:760px; line-height:1.55; }}
   .cta {{ margin-bottom:20px; }}
   .cta a {{ display:inline-block; padding:9px 16px; background:#1d4ed8; color:#fff; border-radius:8px; text-decoration:none; font-size:14px; font-weight:600; }}

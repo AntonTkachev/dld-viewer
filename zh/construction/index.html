@@ -1,0 +1,185 @@
+<!DOCTYPE html>
+<html lang="zh" dir="ltr">
+<head>
+<meta charset="UTF-8">
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net https://unpkg.com https://antontkachev.github.io; style-src 'self' 'unsafe-inline' https://unpkg.com https://antontkachev.github.io; img-src 'self' data: https://*.tile.openstreetmap.org https://antontkachev.github.io; connect-src 'self' https://antontkachev.github.io; font-src 'self' data:; frame-ancestors 'none'; base-uri 'self'; form-action 'self'">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title></title>
+<meta name="description" content="根据 RERA，迪拜共 93 个处于活跃或待建状态的住宅项目。每行显示社区、单元数和在建项目数。">
+<meta name="robots" content="index,follow">
+<link rel="canonical" href="https://antontkachev.github.io/dld-viewer/zh/construction/">
+<meta property="og:type" content="website">
+<meta property="og:title" content="">
+<meta property="og:description" content="根据 RERA，迪拜共 93 个处于活跃或待建状态的住宅项目。每行显示社区、单元数和在建项目数。">
+<link rel="alternate" hreflang="ru" href="https://antontkachev.github.io/dld-viewer/construction/">
+<link rel="alternate" hreflang="en" href="https://antontkachev.github.io/dld-viewer/en/construction/">
+<link rel="alternate" hreflang="ar" href="https://antontkachev.github.io/dld-viewer/ar/construction/">
+<link rel="alternate" hreflang="hi" href="https://antontkachev.github.io/dld-viewer/hi/construction/">
+<link rel="alternate" hreflang="zh" href="https://antontkachev.github.io/dld-viewer/zh/construction/">
+<link rel="alternate" hreflang="x-default" href="https://antontkachev.github.io/dld-viewer/construction/">
+<script type="application/ld+json">{"@context": "https://schema.org", "@type": "CollectionPage", "name": "", "description": "根据 RERA，迪拜共 93 个处于活跃或待建状态的住宅项目。每行显示社区、单元数和在建项目数。", "inLanguage": "zh", "url": "https://antontkachev.github.io/dld-viewer/zh/construction/", "about": {"@type": "Place", "name": "Dubai, UAE"}, "isPartOf": {"@type": "WebSite", "name": "DLD Viewer", "url": "https://antontkachev.github.io/dld-viewer/"}, "mainEntity": {"@type": "ItemList", "name": "", "numberOfItems": 93}}</script>
+<script type="application/ld+json">{"@context": "https://schema.org", "@type": "BreadcrumbList", "itemListElement": [{"@type": "ListItem", "position": 1, "name": "迪拜", "item": "https://antontkachev.github.io/dld-viewer/zh/"}, {"@type": "ListItem", "position": 2, "name": "", "item": "https://antontkachev.github.io/dld-viewer/zh/construction/"}]}</script>
+<link rel="stylesheet" href="https://antontkachev.github.io/dld-viewer/css/viewer.css">
+<style>
+  html, body { background:#f8fafc; min-height:100%; }
+  .wrap { max-width:1080px; margin:0 auto; padding:18px 20px 64px; }
+  .breadcrumb { font-size:13px; color:#6b7280; margin-bottom:10px; }
+  .breadcrumb a { color:#1d4ed8; text-decoration:none; }
+  .breadcrumb a:hover { text-decoration:underline; }
+  .topbar { display:flex; align-items:baseline; justify-content:space-between; gap:16px; margin-bottom:14px; flex-wrap:wrap; }
+  h1 { font-size:24px; margin:0; line-height:1.25; }
+  .topbar-controls { display:flex; gap:10px; align-items:center; flex-wrap:wrap; }
+  .langswitch-dd { position:relative; }
+  .langswitch-dd > summary { list-style:none; cursor:pointer; display:inline-flex; align-items:center; gap:6px; padding:6px 10px; background:#f1f5f9; border-radius:8px; font-size:12px; font-weight:600; color:#6b7280; user-select:none; }
+  .langswitch-dd > summary::-webkit-details-marker { display:none; }
+  .langswitch-dd > summary::marker { content:""; }
+  .langswitch-dd > summary .globe { font-size:14px; }
+  .langswitch-dd > summary .lang-current { color:#1d4ed8; }
+  .langswitch-dd > summary .caret { font-size:10px; opacity:.6; }
+  .langswitch-dd[open] > summary { background:#e2e8f0; }
+  .langswitch-dd .lang-menu { position:absolute; top:calc(100% + 4px); inset-inline-end:0; background:#fff; border:1px solid #e5e7eb; border-radius:8px; padding:4px; min-width:140px; box-shadow:0 6px 16px rgba(15,23,42,0.08); display:flex; flex-direction:column; z-index:10; }
+  .langswitch-dd .lang-menu a { padding:7px 10px; border-radius:6px; font-size:13px; text-decoration:none; color:#374151; }
+  .langswitch-dd .lang-menu a:hover { background:#f3f4f6; }
+  .langswitch-dd .lang-menu a.active { background:#1d4ed8; color:#fff; font-weight:600; }
+  html[dir="rtl"] .langswitch-dd .lang-menu { inset-inline-end:auto; inset-inline-start:0; }
+  .lede { font-size:15px; color:#374151; margin:6px 0 16px; max-width:760px; line-height:1.55; }
+  .cta { margin-bottom:20px; }
+  .cta a { display:inline-block; padding:9px 16px; background:#1d4ed8; color:#fff; border-radius:8px; text-decoration:none; font-size:14px; font-weight:600; }
+  .panel { background:#fff; border:1px solid #e5e7eb; border-radius:12px; padding:6px 20px 18px; }
+  table { width:100%; border-collapse:collapse; font-size:13px; }
+  th, td { padding:8px 12px; text-align:start; border-bottom:1px solid #f3f4f6; }
+  th { font-weight:600; color:#6b7280; font-size:11px; text-transform:uppercase; letter-spacing:0.04em; background:#f8fafc; position:sticky; top:0; }
+  td a { color:#1d4ed8; text-decoration:none; }
+  td a:hover { text-decoration:underline; }
+  td.num, th.num { text-align:end; font-variant-numeric:tabular-nums; }
+  .nav { margin-top:24px; padding-top:18px; border-top:1px solid #e5e7eb; font-size:14px; }
+  .nav a { color:#1d4ed8; text-decoration:none; margin-inline-end:18px; }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div class="breadcrumb">
+    <a href="https://antontkachev.github.io/dld-viewer/zh/">迪拜</a> ›
+    <span></span>
+  </div>
+
+  <div class="topbar">
+    <h1>🏗️ 迪拜的在建项目</h1>
+    <div class="topbar-controls">
+      <details class="langswitch-dd"><summary><span class="globe" aria-hidden="true">🌐</span><span class="lang-current">ZH</span><span class="caret" aria-hidden="true">▾</span></summary><div class="lang-menu"><a href="https://antontkachev.github.io/dld-viewer/construction/" lang="ru">RU</a><a href="https://antontkachev.github.io/dld-viewer/en/construction/" lang="en">EN</a><a href="https://antontkachev.github.io/dld-viewer/ar/construction/" lang="ar">AR</a><a href="https://antontkachev.github.io/dld-viewer/hi/construction/" lang="hi">HI</a><a class="active" href="https://antontkachev.github.io/dld-viewer/zh/construction/" lang="zh">ZH</a></div></details>
+    </div>
+  </div>
+
+  <p class="lede">根据 RERA，迪拜共 93 个处于活跃或待建状态的住宅项目。每行显示社区、单元数和在建项目数。</p>
+
+  <div class="cta">
+    <a href="https://antontkachev.github.io/dld-viewer/zh/sales/?layers=proj">在地图上显示 →</a>
+  </div>
+
+  <div class="panel">
+    <table>
+<thead><tr><th>名称</th><th class="num">在建</th><th class="num">单元数</th><th>社区</th></tr></thead>
+<tbody>
+<tr><td>Al Barari</td><td class="num">1</td><td class="num">0</td><td><a href="https://antontkachev.github.io/dld-viewer/zh/sales/al-barari/">Al Barari</a></td></tr>
+<tr><td>Living Legends</td><td class="num">6</td><td class="num">2,196</td><td><a href="https://antontkachev.github.io/dld-viewer/zh/sales/al-barari/">Al Barari</a></td></tr>
+<tr><td>Mohammed Bin Rashid AL Maktoum District 11</td><td class="num">35</td><td class="num">2,016</td><td><a href="https://antontkachev.github.io/dld-viewer/zh/sales/al-barari/">Al Barari</a></td></tr>
+<tr><td>Wadi Al Safa 3</td><td class="num">5</td><td class="num">525</td><td><a href="https://antontkachev.github.io/dld-viewer/zh/sales/al-barari/">Al Barari</a></td></tr>
+<tr><td>Al Barsha First</td><td class="num">2</td><td class="num">577</td><td><a href="https://antontkachev.github.io/dld-viewer/zh/sales/al-barsha-1/">Al Barsha 1</a></td></tr>
+<tr><td>Dubai Science Park</td><td class="num">12</td><td class="num">11,210</td><td><a href="https://antontkachev.github.io/dld-viewer/zh/sales/al-barsha-south-2/">Al Barsha South 2</a></td></tr>
+<tr><td>Al Furjan</td><td class="num">49</td><td class="num">13,295</td><td><a href="https://antontkachev.github.io/dld-viewer/zh/sales/al-furjan/">Al Furjan</a></td></tr>
+<tr><td>DAMAC HILLS</td><td class="num">9</td><td class="num">8,598</td><td><a href="https://antontkachev.github.io/dld-viewer/zh/sales/al-hebiah-3/">Al Hebiah 3</a></td></tr>
+<tr><td>Dubai Sports City</td><td class="num">27</td><td class="num">21,134</td><td><a href="https://antontkachev.github.io/dld-viewer/zh/sales/al-hebiah-4/">Al Hebiah 4</a></td></tr>
+<tr><td>TILAL AL GHAF</td><td class="num">7</td><td class="num">0</td><td><a href="https://antontkachev.github.io/dld-viewer/zh/sales/al-hebiah-4/">Al Hebiah 4</a></td></tr>
+<tr><td>Al Hebiah Fifth</td><td class="num">22</td><td class="num">3,481</td><td><a href="https://antontkachev.github.io/dld-viewer/zh/sales/al-hebiah-5/">Al Hebiah 5</a></td></tr>
+<tr><td>DAMAC Lagoons</td><td class="num">10</td><td class="num">0</td><td><a href="https://antontkachev.github.io/dld-viewer/zh/sales/al-hebiah-5/">Al Hebiah 5</a></td></tr>
+<tr><td>Dubai Health Care City Phase 2</td><td class="num">8</td><td class="num">5,441</td><td><a href="https://antontkachev.github.io/dld-viewer/zh/sales/al-jaddaf/">Al Jaddaf</a></td></tr>
+<tr><td>Jumeirah Garden City</td><td class="num">35</td><td class="num">3,060</td><td><a href="https://antontkachev.github.io/dld-viewer/zh/sales/al-satwa/">Al Satwa</a></td></tr>
+<tr><td>Sufouh Gardens</td><td class="num">1</td><td class="num">844</td><td><a href="https://antontkachev.github.io/dld-viewer/zh/sales/al-sufouh-1/">Al Sufouh 1</a></td></tr>
+<tr><td>Site A</td><td class="num">3</td><td class="num">1,243</td><td><a href="https://antontkachev.github.io/dld-viewer/zh/sales/al-sufouh-2/">Al Sufouh 2</a></td></tr>
+<tr><td>Barsha Heights</td><td class="num">3</td><td class="num">3,728</td><td><a href="https://antontkachev.github.io/dld-viewer/zh/sales/al-thanyah-1/">Al Thanyah 1</a></td></tr>
+<tr><td>City Walk</td><td class="num">12</td><td class="num">4,390</td><td><a href="https://antontkachev.github.io/dld-viewer/zh/sales/al-wasl/">Al Wasl</a></td></tr>
+<tr><td>Dubai Water Canal</td><td class="num">9</td><td class="num">3,560</td><td><a href="https://antontkachev.github.io/dld-viewer/zh/sales/al-wasl/">Al Wasl</a></td></tr>
+<tr><td>Al Yelayiss 1</td><td class="num">18</td><td class="num">0</td><td><a href="https://antontkachev.github.io/dld-viewer/zh/sales/al-yalayis-1/">Al Yalayis 1</a></td></tr>
+<tr><td>Al Yelayiss 2</td><td class="num">1</td><td class="num">576</td><td><a href="https://antontkachev.github.io/dld-viewer/zh/sales/al-yalayis-2/">Al Yalayis 2</a></td></tr>
+<tr><td>TOWN SQUARE</td><td class="num">23</td><td class="num">10,355</td><td><a href="https://antontkachev.github.io/dld-viewer/zh/sales/al-yalayis-2/">Al Yalayis 2</a></td></tr>
+<tr><td>Al Yelayiss 4</td><td class="num">1</td><td class="num">0</td><td><a href="https://antontkachev.github.io/dld-viewer/zh/sales/al-yalayis-4/">Al Yalayis 4</a></td></tr>
+<tr><td>Arjan</td><td class="num">39</td><td class="num">20,792</td><td><a href="https://antontkachev.github.io/dld-viewer/zh/sales/arjan/">Arjan</a></td></tr>
+<tr><td>City Of Arabia</td><td class="num">11</td><td class="num">10,225</td><td><a href="https://antontkachev.github.io/dld-viewer/zh/sales/city-of-arabia/">City of Arabia</a></td></tr>
+<tr><td>Falcon City</td><td class="num">2</td><td class="num">2,172</td><td><a href="https://antontkachev.github.io/dld-viewer/zh/sales/city-of-arabia/">City of Arabia</a></td></tr>
+<tr><td>Liwan1</td><td class="num">15</td><td class="num">6,310</td><td><a href="https://antontkachev.github.io/dld-viewer/zh/sales/city-of-arabia/">City of Arabia</a></td></tr>
+<tr><td>Wadi Al Safa 4</td><td class="num">9</td><td class="num">4,588</td><td><a href="https://antontkachev.github.io/dld-viewer/zh/sales/city-of-arabia/">City of Arabia</a></td></tr>
+<tr><td>DAMAC HILLS 2</td><td class="num">15</td><td class="num">3,920</td><td><a href="https://antontkachev.github.io/dld-viewer/zh/sales/damac-hills-2/">Damac Hills 2</a></td></tr>
+<tr><td>Discovery Gardens</td><td class="num">9</td><td class="num">1,959</td><td><a href="https://antontkachev.github.io/dld-viewer/zh/sales/discovery-gardens/">Discovery Gardens</a></td></tr>
+<tr><td>Business Bay</td><td class="num">53</td><td class="num">64,372</td><td><a href="https://antontkachev.github.io/dld-viewer/zh/sales/downtown-dubai/">Downtown Dubai</a></td></tr>
+<tr><td>DownTown Dubai</td><td class="num">19</td><td class="num">23,338</td><td><a href="https://antontkachev.github.io/dld-viewer/zh/sales/downtown-dubai/">Downtown Dubai</a></td></tr>
+<tr><td>Dubai Creek Harbour</td><td class="num">17</td><td class="num">18,481</td><td><a href="https://antontkachev.github.io/dld-viewer/zh/sales/dubai-creek-harbour/">Dubai Creek Harbour</a></td></tr>
+<tr><td>Dubai Harbour</td><td class="num">13</td><td class="num">9,305</td><td><a href="https://antontkachev.github.io/dld-viewer/zh/sales/dubai-harbour/">Dubai Harbour</a></td></tr>
+<tr><td>Dubai Investment Park First</td><td class="num">12</td><td class="num">3,593</td><td><a href="https://antontkachev.github.io/dld-viewer/zh/sales/dubai-investment-park-1/">Dubai Investment Park 1</a></td></tr>
+<tr><td>Dubai Investment Park Second</td><td class="num">27</td><td class="num">7,689</td><td><a href="https://antontkachev.github.io/dld-viewer/zh/sales/dubai-investment-park-2/">Dubai Investment Park 2</a></td></tr>
+<tr><td>Dubai Marina</td><td class="num">14</td><td class="num">24,440</td><td><a href="https://antontkachev.github.io/dld-viewer/zh/sales/dubai-marina/">Dubai Marina</a></td></tr>
+<tr><td>Silicon Oasis</td><td class="num">13</td><td class="num">14,956</td><td><a href="https://antontkachev.github.io/dld-viewer/zh/sales/dubai-silicon-oasis/">Dubai Silicon Oasis</a></td></tr>
+<tr><td>Dubai South Residential District</td><td class="num">50</td><td class="num">7,694</td><td><a href="https://antontkachev.github.io/dld-viewer/zh/sales/dubai-south-residential-district/">Dubai South Residential District</a></td></tr>
+<tr><td>Dubai Studio City</td><td class="num">11</td><td class="num">5,042</td><td><a href="https://antontkachev.github.io/dld-viewer/zh/sales/dubai-studio-city/">Dubai Studio City</a></td></tr>
+<tr><td>Dubai World Central</td><td class="num">55</td><td class="num">28,024</td><td><a href="https://antontkachev.github.io/dld-viewer/zh/sales/dubai-world-central/">Dubai World Central</a></td></tr>
+<tr><td>Ghadeer Al tair</td><td class="num">2</td><td class="num">0</td><td><a href="https://antontkachev.github.io/dld-viewer/zh/sales/ghadeer-al-tair/">Ghadeer Al Tair</a></td></tr>
+<tr><td>DUBAI HILLS</td><td class="num">3</td><td class="num">0</td><td><a href="https://antontkachev.github.io/dld-viewer/zh/sales/hadaeq-sheikh-mohammed-bin-rashid/">Hadaeq Sheikh Mohammed Bin Rashid</a></td></tr>
+<tr><td>Dubai Hills Estate</td><td class="num">31</td><td class="num">18,141</td><td><a href="https://antontkachev.github.io/dld-viewer/zh/sales/hadaeq-sheikh-mohammed-bin-rashid/">Hadaeq Sheikh Mohammed Bin Rashid</a></td></tr>
+<tr><td>HADAEQ SHEIKH MOHAMMED BIN RASHID - DISRICT 7</td><td class="num">2</td><td class="num">1,455</td><td><a href="https://antontkachev.github.io/dld-viewer/zh/sales/hadaeq-sheikh-mohammed-bin-rashid/">Hadaeq Sheikh Mohammed Bin Rashid</a></td></tr>
+<tr><td>Jaddaf Waterfront</td><td class="num">14</td><td class="num">4,242</td><td><a href="https://antontkachev.github.io/dld-viewer/zh/sales/jaddaf-waterfront/">Jaddaf Waterfront</a></td></tr>
+<tr><td>Wasl Gate</td><td class="num">13</td><td class="num">4,230</td><td><a href="https://antontkachev.github.io/dld-viewer/zh/sales/jebel-ali-village/">Jebel Ali Village</a></td></tr>
+<tr><td>Jumeirah Islands</td><td class="num">12</td><td class="num">9,115</td><td><a href="https://antontkachev.github.io/dld-viewer/zh/sales/jumeirah-islands/">Jumeirah Islands</a></td></tr>
+<tr><td>Jumeirah Park</td><td class="num">2</td><td class="num">0</td><td><a href="https://antontkachev.github.io/dld-viewer/zh/sales/jumeirah-islands/">Jumeirah Islands</a></td></tr>
+<tr><td>Jumeirah Lakes Towers</td><td class="num">8</td><td class="num">21,944</td><td><a href="https://antontkachev.github.io/dld-viewer/zh/sales/jumeirah-lakes-towers/">Jumeirah Lakes Towers</a></td></tr>
+<tr><td>Al Barsha South Fifth</td><td class="num">3</td><td class="num">1,060</td><td><a href="https://antontkachev.github.io/dld-viewer/zh/sales/jumeirah-village-circle/">Jumeirah Village Circle</a></td></tr>
+<tr><td>Jumeirah Village Circle</td><td class="num">167</td><td class="num">68,930</td><td><a href="https://antontkachev.github.io/dld-viewer/zh/sales/jumeirah-village-circle/">Jumeirah Village Circle</a></td></tr>
+<tr><td>Jumeirah Village Triangle</td><td class="num">40</td><td class="num">16,065</td><td><a href="https://antontkachev.github.io/dld-viewer/zh/sales/jumeirah-village-circle/">Jumeirah Village Circle</a></td></tr>
+<tr><td>LA MER</td><td class="num">6</td><td class="num">1,612</td><td><a href="https://antontkachev.github.io/dld-viewer/zh/sales/la-mer/">LA MER</a></td></tr>
+<tr><td>Mohammed Bin Rashid AL Maktoum City -District -1 Community</td><td class="num">2</td><td class="num">2,135</td><td><a href="https://antontkachev.github.io/dld-viewer/zh/sales/mbr-al-merkad/">MBR- Al Merkad</a></td></tr>
+<tr><td>Me'Aisem Second</td><td class="num">7</td><td class="num">0</td><td><a href="https://antontkachev.github.io/dld-viewer/zh/sales/me-aisem-2/">Me'aisem 2</a></td></tr>
+<tr><td>Bukadra</td><td class="num">22</td><td class="num">10,572</td><td><a href="https://antontkachev.github.io/dld-viewer/zh/sales/meydan/">Meydan</a></td></tr>
+<tr><td>Meydan One Community</td><td class="num">16</td><td class="num">14,133</td><td><a href="https://antontkachev.github.io/dld-viewer/zh/sales/meydan/">Meydan</a></td></tr>
+<tr><td>SOBHA HARTLAND</td><td class="num">5</td><td class="num">10,493</td><td><a href="https://antontkachev.github.io/dld-viewer/zh/sales/meydan/">Meydan</a></td></tr>
+<tr><td>International Media Production Zone</td><td class="num">19</td><td class="num">14,507</td><td><a href="https://antontkachev.github.io/dld-viewer/zh/sales/meaisem-1/">Me’aisem 1</a></td></tr>
+<tr><td>Jumeirah Golf Estates</td><td class="num">6</td><td class="num">589</td><td><a href="https://antontkachev.github.io/dld-viewer/zh/sales/meaisem-1/">Me’aisem 1</a></td></tr>
+<tr><td>Jumeirah Golf Estates - Phase B</td><td class="num">2</td><td class="num">0</td><td><a href="https://antontkachev.github.io/dld-viewer/zh/sales/meaisem-1/">Me’aisem 1</a></td></tr>
+<tr><td>Uptown Mirdif</td><td class="num">1</td><td class="num">1,594</td><td><a href="https://antontkachev.github.io/dld-viewer/zh/sales/mirdif/">Mirdif</a></td></tr>
+<tr><td>Motor City</td><td class="num">12</td><td class="num">10,341</td><td><a href="https://antontkachev.github.io/dld-viewer/zh/sales/motor-city/">Motor City</a></td></tr>
+<tr><td>Mudon</td><td class="num">5</td><td class="num">181</td><td><a href="https://antontkachev.github.io/dld-viewer/zh/sales/mudon/">Mudon</a></td></tr>
+<tr><td>Meydan Racecourse Community</td><td class="num">11</td><td class="num">2,564</td><td><a href="https://antontkachev.github.io/dld-viewer/zh/sales/nadd-al-sheba-2/">Nadd Al Sheba 2</a></td></tr>
+<tr><td>Palm Jumeirah</td><td class="num">23</td><td class="num">12,276</td><td><a href="https://antontkachev.github.io/dld-viewer/zh/sales/palm-jumeirah/">Palm Jumeirah</a></td></tr>
+<tr><td>JABEL ALI HILLS</td><td class="num">1</td><td class="num">0</td><td><a href="https://antontkachev.github.io/dld-viewer/zh/sales/saih-shuaib-1/">Saih Shuaib 1</a></td></tr>
+<tr><td>Saih Shuaib 2</td><td class="num">10</td><td class="num">1,558</td><td><a href="https://antontkachev.github.io/dld-viewer/zh/sales/saih-shuaib-2/">Saih Shuaib 2</a></td></tr>
+<tr><td>The Greens</td><td class="num">1</td><td class="num">1,612</td><td><a href="https://antontkachev.github.io/dld-viewer/zh/sales/the-greens/">The Greens</a></td></tr>
+<tr><td>Trade Center First</td><td class="num">3</td><td class="num">2,557</td><td><a href="https://antontkachev.github.io/dld-viewer/zh/sales/trade-centre/">Trade Centre</a></td></tr>
+<tr><td>Trade Center Second</td><td class="num">1</td><td class="num">754</td><td><a href="https://antontkachev.github.io/dld-viewer/zh/sales/trade-centre/">Trade Centre</a></td></tr>
+<tr><td>Dubai Health Care City Phase 1</td><td class="num">3</td><td class="num">215</td><td><a href="https://antontkachev.github.io/dld-viewer/zh/sales/umm-hurair-2/">Umm Hurair 2</a></td></tr>
+<tr><td>Um Suqaim Third</td><td class="num">6</td><td class="num">2,931</td><td><a href="https://antontkachev.github.io/dld-viewer/zh/sales/umm-suqeim-3/">Umm Suqeim 3</a></td></tr>
+<tr><td>Majan</td><td class="num">37</td><td class="num">8,416</td><td><a href="https://antontkachev.github.io/dld-viewer/zh/sales/wadi-al-safa-3/">Wadi Al Safa 3</a></td></tr>
+<tr><td>Dubai Land Residence Complex</td><td class="num">72</td><td class="num">22,186</td><td><a href="https://antontkachev.github.io/dld-viewer/zh/sales/wadi-al-safa-5/">Wadi Al Safa 5</a></td></tr>
+<tr><td>The Villa</td><td class="num">1</td><td class="num">0</td><td><a href="https://antontkachev.github.io/dld-viewer/zh/sales/wadi-al-safa-5/">Wadi Al Safa 5</a></td></tr>
+<tr><td>Wadi Al Safa 5</td><td class="num">19</td><td class="num">2,290</td><td><a href="https://antontkachev.github.io/dld-viewer/zh/sales/wadi-al-safa-5/">Wadi Al Safa 5</a></td></tr>
+<tr><td>800 Villas</td><td class="num">5</td><td class="num">11</td><td><a href="https://antontkachev.github.io/dld-viewer/zh/sales/wadi-al-safa-7/">Wadi Al Safa 7</a></td></tr>
+<tr><td>Dubai Life Style City</td><td class="num">1</td><td class="num">473</td><td><a href="https://antontkachev.github.io/dld-viewer/zh/sales/wadi-al-safa-7/">Wadi Al Safa 7</a></td></tr>
+<tr><td>Rukan</td><td class="num">1</td><td class="num">774</td><td><a href="https://antontkachev.github.io/dld-viewer/zh/sales/wadi-al-safa-7/">Wadi Al Safa 7</a></td></tr>
+<tr><td>International City Phase 3</td><td class="num">30</td><td class="num">3,713</td><td><a href="https://antontkachev.github.io/dld-viewer/zh/sales/warsan/">Warsan</a></td></tr>
+<tr><td>WARSAN FIRST DEVELOPMENT</td><td class="num">5</td><td class="num">809</td><td><a href="https://antontkachev.github.io/dld-viewer/zh/sales/warsan/">Warsan</a></td></tr>
+<tr><td>International City Phase 1</td><td class="num">5</td><td class="num">7,560</td><td><a href="https://antontkachev.github.io/dld-viewer/zh/sales/warsan-4/">Warsan 4</a></td></tr>
+<tr><td>Business Park</td><td class="num">2</td><td class="num">2,832</td><td><a href="https://antontkachev.github.io/dld-viewer/zh/sales/zabeel/">Zabeel</a></td></tr>
+<tr><td>Dubai International Financial Center</td><td class="num">1</td><td class="num">546</td><td><a href="https://antontkachev.github.io/dld-viewer/zh/sales/zabeel/">Zabeel</a></td></tr>
+<tr><td>Wasl 1</td><td class="num">3</td><td class="num">3,284</td><td><a href="https://antontkachev.github.io/dld-viewer/zh/sales/zabeel/">Zabeel</a></td></tr>
+<tr><td>Zaabeel First</td><td class="num">1</td><td class="num">2,219</td><td><a href="https://antontkachev.github.io/dld-viewer/zh/sales/zabeel/">Zabeel</a></td></tr>
+<tr><td>Down Town Jabal Ali</td><td class="num">6</td><td class="num">3,865</td><td>—</td></tr>
+<tr><td>Jabal Ali Village</td><td class="num">4</td><td class="num">0</td><td>—</td></tr>
+<tr><td>Jumeira Bay</td><td class="num">1</td><td class="num">212</td><td>—</td></tr>
+<tr><td>Mina Rashid</td><td class="num">19</td><td class="num">4,442</td><td>—</td></tr>
+<tr><td>Palm Deira</td><td class="num">103</td><td class="num">9,198</td><td>—</td></tr>
+</tbody>
+</table>
+  </div>
+
+  <div class="nav">
+    <a href="https://antontkachev.github.io/dld-viewer/zh/sales/?layers=proj">← 返回地图</a>
+  </div>
+</div>
+</body>
+</html>

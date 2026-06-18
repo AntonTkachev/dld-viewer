@@ -40,7 +40,7 @@ from _seo_config import BASE_URL
 DISTRICTS = None
 
 # Languages: 'ru' is the canonical / default at root paths; others under /<lang>/.
-LANGUAGES = ('ru', 'en', 'ar', 'hi')
+LANGUAGES = ('ru', 'en', 'ar', 'hi', 'zh')
 
 MODES = (
     # mode key, url-prefix
@@ -81,6 +81,13 @@ PERIOD_SUFFIX = {
         '3y':  {'title': ' पिछले 3 वर्षों में',     'h1': 'पिछले 3 वर्षों में'},
         '5y':  {'title': ' पिछले 5 वर्षों में',     'h1': 'पिछले 5 वर्षों में'},
         '10y': {'title': ' पिछले 10 वर्षों में',    'h1': 'पिछले 10 वर्षों में'},
+    },
+    'zh': {
+        'all': {'title': '',           'h1': '全部时间'},
+        '1y':  {'title': ' 近 12 个月', 'h1': '近 12 个月'},
+        '3y':  {'title': ' 近 3 年',    'h1': '近 3 年'},
+        '5y':  {'title': ' 近 5 年',    'h1': '近 5 年'},
+        '10y': {'title': ' 近 10 年',   'h1': '近 10 年'},
     },
 }
 
@@ -450,6 +457,97 @@ COPY = {
         'crumb_period_10y':'पिछले 10 वर्षों में',
         'lang_switch_to': 'RU',
     },
+    'zh': {
+        'html_lang': 'zh',
+        'breadcrumb_dubai': '迪拜',
+        'mode_sales': '销售', 'mode_rents': '租赁',
+        'nav_back_map': '← 所有社区（地图）',
+        'nav_table': '所有社区表格',
+        'subpages_title': '更多内容',
+        'subpages_top_projects': '热门项目',
+        'subpages_top_deals': '最大交易',
+        'subpages_recent_sale': '最新交易',
+        'subpages_recent_rent': '最新租赁合同',
+        'loading': '正在加载统计数据…',
+        'load_err': '无法加载数据',
+        'about_title': '关于 {name}',
+        'about_intro': '{name} 是迪拜的一个社区。',
+        'about_unknown': '根据迪拜土地局的数据,{name} 是迪拜的社区之一。',
+        'about_all_flat':  '所有交易均为公寓;该社区没有别墅或联排别墅。',
+        'about_all_villa': '所有交易均为别墅及联排别墅。',
+        'about_mostly_flat':  '以公寓为主 — {pct}% 的交易。',
+        'about_mostly_villa': '以别墅/联排别墅为主 — {pct}% 的交易。',
+        'about_mixed': '公寓占 {pct}%,其余为别墅/联排别墅。',
+        'about_offplan': '约 {pct}% 的交易为在建项目的期房 (Off-Plan)。',
+        'about_top_room': '最常见的户型 — {label}({n} 笔交易)。',
+        'about_top_project': '最活跃的项目之一 — {proj}。',
+        'about_rent_hint': '另登记 {n} 份租赁合同 — 该社区既适合购置也适合长期居住。',
+        'about_stat_total_sales': '总交易数',
+        'about_stat_med_price':   '中位价格',
+        'about_stat_ppsqm':       '每平方米价格',
+        'about_stat_rent_n':      '租赁合同',
+        'about_stat_rent_med':    '中位租金',
+        'about_room_studio':  '开间',
+        'about_room_1br':     '1 卧',
+        'about_room_2br':     '2 卧',
+        'about_room_3br':     '3 卧',
+        'about_room_4br':     '4+',
+        'about_room_villa':   '别墅',
+        'about_room_other':   '其他',
+        'h1_sales': '{name} 房产交易 {period_h1}',
+        'h1_rent':  '{name} 房产租赁 {period_h1}',
+        'lede_sales_intro':    '根据迪拜土地局数据,{name} {period_h1}共登记 {n} 笔房产交易。',
+        'lede_sales_median':   '中位房产价格 — {v} AED。',
+        'lede_sales_ppsqm':    '每平方米价格 — {v} AED。',
+        'lede_sales_sqm':      '中位面积 — {v} m²。',
+        'lede_rent_intro':     '根据迪拜土地局数据,{name} {period_h1}共登记 {n} 份租赁合同。',
+        'lede_rent_median':    '年租金中位数 — {v} AED。',
+        'lede_rent_ppsqm':     '租金 — {v} AED/m²/年。',
+        'title_sales': '{name} 交易{period_title}:{n} 笔 — DLD',
+        'title_rent':  '{name} 租赁{period_title}:{n} 份合同 — DLD',
+        'desc_sales':  '{name} 房产买卖{period_title}:{n} 笔 DLD 交易,中位价、每平方米价格、热门项目、月度价格走势。',
+        'desc_rent':   '{name} 租赁合同{period_title}:{n} 份 DLD 合同,年租金中位数、AED/m²/年、房产类型。',
+        'list_h1_top_projects_sale': '{name} 销售热门项目',
+        'list_h1_top_deals':         '{name} 最大交易',
+        'list_h1_recent_sale':       '{name} 最新交易',
+        'list_h1_top_projects_rent': '{name} 租赁热门项目',
+        'list_h1_recent_rent':       '{name} 最新租赁合同',
+        'list_lede_top_projects_sale': '根据迪拜土地局数据,按交易量排序的 {name} 最活跃项目。',
+        'list_lede_top_deals':         '根据迪拜土地局数据,按合同金额排序的 {name} 最大交易。',
+        'list_lede_recent_sale':       '根据迪拜土地局数据,按登记日期排序的 {name} 最新房产交易。',
+        'list_lede_top_projects_rent': '按已登记租赁合同数量排序的 {name} 最活跃项目。',
+        'list_lede_recent_rent':       '根据迪拜土地局数据,{name} 最新租赁合同。',
+        'list_title_suffix': '{n} 条记录 — DLD',
+        'list_breadcrumb_top_projects': '热门项目',
+        'list_breadcrumb_top_deals':    '最大交易',
+        'list_breadcrumb_recent':       '最新',
+        'list_back':                    '← 返回 {name}',
+        'list_main_link':               '社区主页',
+        'list_no_data':                 '暂无数据可显示。',
+        'col_proj':   '项目',
+        'col_n':      '交易数',
+        'col_med':    '中位',
+        'col_total':  '总量',
+        'col_date':   '日期',
+        'col_rooms':  '卧室',
+        'col_area':   '面积,m²',
+        'col_amount': '金额,AED',
+        'col_op':     '类型',
+        'col_cat':    '类别',
+        'col_n_rent': '合同数',
+        'col_med_rent':'中位,AED/年',
+        'col_subtype':'类型',
+        'col_aed_yr': 'AED/年',
+        'col_version':'版本',
+        'rent_v_new':    '新签',
+        'rent_v_renew':  '续约',
+        'no_data_dash':  '—',
+        'crumb_period_1y': '近 12 个月',
+        'crumb_period_3y': '近 3 年',
+        'crumb_period_5y': '近 5 年',
+        'crumb_period_10y':'近 10 年',
+        'lang_switch_to': 'RU',
+    },
 }
 
 # Sub-page list types — all label/text references go through COPY[lang][key].
@@ -678,12 +776,13 @@ def load_period_aggregates():
 
 # Locale-aware number / currency formatters.
 # RU uses a non-breaking space as thousands separator; EN uses comma; AR/HI use comma.
-_INT_SEP = {'ru': ' ', 'en': ',', 'ar': ',', 'hi': ','}
+_INT_SEP = {'ru': ' ', 'en': ',', 'ar': ',', 'hi': ',', 'zh': ','}
 _BIG_AED = {
     'ru': {'B': 'млрд', 'M': 'млн'},
     'en': {'B': 'B',    'M': 'M'},
     'ar': {'B': 'مليار', 'M': 'مليون'},
     'hi': {'B': 'अरब',   'M': 'मिलियन'},
+    'zh': {'B': '十亿',  'M': '百万'},
 }
 
 
@@ -898,12 +997,20 @@ def build_main_subpages_block(slug, mode, lang):
 
 
 def build_lang_switcher(make_url_for, current_lang):
-    """Tiny dropdown-like row at the top of every page. make_url_for(lang) → URL."""
-    items = []
+    """Globe + dropdown (native <details>, no JS, RTL-friendly).
+    make_url_for(lang) → URL."""
+    items = ['<details class="langswitch-dd">',
+             '<summary>',
+             '<span class="globe" aria-hidden="true">🌐</span>',
+             f'<span class="lang-current">{current_lang.upper()}</span>',
+             '<span class="caret" aria-hidden="true">▾</span>',
+             '</summary>',
+             '<div class="lang-menu">']
     for l in LANGUAGES:
         cls = ' class="active"' if l == current_lang else ''
         items.append(f'<a href="{make_url_for(l)}" lang="{l}"{cls}>{l.upper()}</a>')
-    return '<div class="langswitch">' + ''.join(items) + '</div>'
+    items.append('</div></details>')
+    return ''.join(items)
 
 
 def build_mode_switcher(slug, mode, lang):
