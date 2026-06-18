@@ -29,6 +29,9 @@ ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 SRC = os.path.join(ROOT, 'index.html')
 GEO = os.path.join(ROOT, '_data_communities.geojson')
 
+# Production base URL — see comment in build_pages.py.
+BASE_URL = 'https://antontkachev.github.io/dld-viewer'
+
 LANGUAGES = ('ru', 'en', 'ar', 'hi')
 
 # Category configuration.
@@ -396,12 +399,16 @@ def lang_prefix(lang):
 
 
 def page_url(lang, slug):
-    return f'{lang_prefix(lang)}/{slug}/'
+    """Absolute URL — used for canonical, hreflang, AND internal anchors
+    (lang switcher, district links). Internal anchors NEED absolute on the
+    live site because GH Pages serves the app under /dld-viewer/, so a
+    root-relative '/schools/' would 404."""
+    return f'{BASE_URL}{lang_prefix(lang)}/{slug}/'
 
 
 def map_deep_url(lang, layer_key):
     """Open the SALES viewer with the requested layer toggled on."""
-    return f'{lang_prefix(lang)}/sales/?layers={layer_key}'
+    return f'{BASE_URL}{lang_prefix(lang)}/sales/?layers={layer_key}'
 
 
 def hreflang_block(slug):
@@ -427,7 +434,7 @@ def build_district_link(lang, district):
     if not district:
         return COPY[lang]['no_district']
     slug = slugify(district['name'])
-    href = f'{lang_prefix(lang)}/sales/{slug}/'
+    href = f'{BASE_URL}{lang_prefix(lang)}/sales/{slug}/'
     return f'<a href="{href}">{html_escape(district["name"])}</a>'
 
 
@@ -467,21 +474,43 @@ def build_table(rows_with_district, cat, lang):
     )
 
 
-def build_itemlist_ld(rows_with_district, name_key, h1):
-    items = []
-    for i, (r, _d) in enumerate(rows_with_district[:200], start=1):
-        nm = r.get(name_key)
-        if not nm:
-            continue
-        items.append({'@type': 'ListItem', 'position': i, 'name': str(nm)})
-    ld = {
+def build_seo_ld(cat, n, lang, h1_plain, lede_plain):
+    """Lean Schema.org pair: CollectionPage describes WHAT the page is + a
+    summary ItemList carrying only the count (no per-item names — that is
+    page content, not metadata), plus a BreadcrumbList for site hierarchy."""
+    canonical = page_url(lang, cat['slug'])
+    cp = {
         '@context': 'https://schema.org',
-        '@type': 'ItemList',
-        'name': h1,
-        'numberOfItems': len(items),
-        'itemListElement': items,
+        '@type': 'CollectionPage',
+        'name': h1_plain,
+        'description': lede_plain,
+        'inLanguage': lang,
+        'url': canonical,
+        'about': {'@type': 'Place', 'name': 'Dubai, UAE'},
+        'isPartOf': {'@type': 'WebSite', 'name': 'DLD Viewer', 'url': '/'},
+        'mainEntity': {
+            '@type': 'ItemList',
+            'name': h1_plain,
+            'numberOfItems': n,
+        },
     }
-    return '<script type="application/ld+json">' + json.dumps(ld, ensure_ascii=False) + '</script>'
+    bc = {
+        '@context': 'https://schema.org',
+        '@type': 'BreadcrumbList',
+        'itemListElement': [
+            {'@type': 'ListItem', 'position': 1,
+             'name': COPY[lang]['breadcrumb_dubai'],
+             'item': f'{BASE_URL}{lang_prefix(lang)}/'},
+            {'@type': 'ListItem', 'position': 2,
+             'name': h1_plain, 'item': canonical},
+        ],
+    }
+    return (
+        '<script type="application/ld+json">'
+        + json.dumps(cp, ensure_ascii=False) + '</script>\n'
+        '<script type="application/ld+json">'
+        + json.dumps(bc, ensure_ascii=False) + '</script>'
+    )
 
 
 PAGE_TEMPLATE = '''<!DOCTYPE html>
@@ -498,7 +527,7 @@ PAGE_TEMPLATE = '''<!DOCTYPE html>
 <meta property="og:description" content="{desc}">
 {hreflang}
 {ld_json}
-<link rel="stylesheet" href="/css/viewer.css">
+<link rel="stylesheet" href="{css_url}">
 <style>
   html, body {{ background:#f8fafc; min-height:100%; }}
   .wrap {{ max-width:1080px; margin:0 auto; padding:18px 20px 64px; }}
@@ -570,10 +599,11 @@ def build_page(cat, rows_with_district, lang):
 
     canonical = page_url(lang, slug)
     map_url = map_deep_url(lang, cat['layer_key'])
-    home_url = lang_prefix(lang) + '/'
+    home_url = f'{BASE_URL}{lang_prefix(lang)}/'
 
     table = build_table(rows_with_district, cat, lang)
-    ld_json = build_itemlist_ld(rows_with_district, cat['name_key'], h1_plain)
+    lede_plain = re.sub(r'<[^>]+>', '', lede)
+    ld_json = build_seo_ld(cat, len(rows_with_district), lang, h1_plain, lede_plain)
 
     html = PAGE_TEMPLATE.format(
         html_lang=c['html_lang'], dir=c['dir'],
@@ -582,6 +612,7 @@ def build_page(cat, rows_with_district, lang):
         canonical=canonical,
         hreflang=hreflang_block(slug),
         ld_json=ld_json,
+        css_url=f'{BASE_URL}/css/viewer.css',
         home_url=home_url,
         breadcrumb_dubai=c['breadcrumb_dubai'],
         h1=h1, h1_plain=h1_plain,

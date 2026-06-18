@@ -31,6 +31,9 @@ SRC  = os.path.join(ROOT, 'index.html')
 TPL  = os.path.join(ROOT, 'templates', 'district.html')
 TPL_LIST = os.path.join(ROOT, 'templates', 'district-list.html')
 
+# Production base URL — see comment in build_pages.py.
+BASE_URL = 'https://antontkachev.github.io/dld-viewer'
+
 # DISTRICTS = None  → build every district present in AGGREGATES / RENT_AGGREGATES.
 # DISTRICTS = ('business bay',) for pilot work on a single district.
 DISTRICTS = None
@@ -515,13 +518,18 @@ def lang_prefix(lang):
 
 
 def base_url(mode, slug, lang):
-    return f'{lang_prefix(lang)}/{"sales" if mode == "sale" else "rents"}/{slug}/'
+    """Absolute district URL — used for canonical, hreflang, JSON-LD,
+    and the in-page anchors that need to work on live (GH Pages serves
+    the app under /dld-viewer/, so root-relative paths 404)."""
+    return f'{BASE_URL}{lang_prefix(lang)}/{"sales" if mode == "sale" else "rents"}/{slug}/'
 
 
 def data_url(mode, slug):
     """Data JSON is language-independent — one file shared across langs.
-    Lives under the RU canonical path."""
-    return f'/{"sales" if mode == "sale" else "rents"}/{slug}/data.json'
+    Lives under the RU canonical path. Absolute URL for the same reason
+    as base_url() — fetched at runtime from the browser, needs to resolve
+    on live."""
+    return f'{BASE_URL}/{"sales" if mode == "sale" else "rents"}/{slug}/data.json'
 
 
 def out_root(lang):
@@ -605,13 +613,30 @@ def build_list_seo_head(mode, name, slug, list_slug, list_h1, list_lede, n_items
     title = f'{list_h1}: {title_suffix}'
     desc = list_lede
     hreflang = hreflang_block(lambda l: f'{base_url(mode, slug, l)}{list_slug}/')
+    c = COPY[lang]
+    mode_label = c['mode_sales'] if mode == 'sale' else c['mode_rents']
+    mode_url = f'{BASE_URL}{lang_prefix(lang)}/{"sales" if mode == "sale" else "rents"}/'
+    # Look up the localized leaf breadcrumb for this list-type by its slug.
+    leaf_key = {
+        'projects': 'list_breadcrumb_top_projects',
+        'deals':    'list_breadcrumb_top_deals',
+        'recent':   'list_breadcrumb_recent',
+    }.get(list_slug, 'list_breadcrumb_recent')
+    crumbs = [
+        (c['breadcrumb_dubai'], f'{BASE_URL}{lang_prefix(lang)}/'),
+        (mode_label, mode_url),
+        (name, base_url(mode, slug, lang)),
+        (c[leaf_key], canon),
+    ]
+    breadcrumb_ld = _breadcrumb_ld(crumbs)
     return f'''<title>{title}</title>
 <meta name="description" content="{html_escape(desc)}">
 <link rel="canonical" href="{canon}">
 {hreflang}
 <meta property="og:type" content="article">
 <meta property="og:title" content="{html_escape(title)}">
-<meta property="og:description" content="{html_escape(desc)}">'''
+<meta property="og:description" content="{html_escape(desc)}">
+{breadcrumb_ld}'''
 
 
 def build_list_crosslinks(slug, mode, current_list_slug, lang):
@@ -790,6 +815,20 @@ def build_about(name, sale_rec, rent_rec, lang):
     return f'<section class="about"><h2>{html_escape(title_text)}</h2>{intro}{grid_html}</section>'
 
 
+def _breadcrumb_ld(items):
+    return ('<script type="application/ld+json">'
+            + json.dumps({
+                '@context': 'https://schema.org',
+                '@type': 'BreadcrumbList',
+                'itemListElement': [
+                    {'@type': 'ListItem', 'position': i + 1,
+                     'name': name, 'item': url}
+                    for i, (name, url) in enumerate(items)
+                ],
+            }, ensure_ascii=False)
+            + '</script>')
+
+
 def build_seo_head(mode, name, slug, n, period_code, lang):
     c = COPY[lang]
     n_s = fmt_int(n, lang)
@@ -806,6 +845,27 @@ def build_seo_head(mode, name, slug, n, period_code, lang):
         return u if period_code == 'all' else u + period_code + '/'
     hreflang = hreflang_block(period_url)
 
+    place_ld = ('<script type="application/ld+json">'
+                + json.dumps({
+                    '@context': 'https://schema.org',
+                    '@type': 'Place',
+                    'name': f'{name}, Dubai',
+                    'url': canon,
+                    'containedInPlace': {'@type': 'Place', 'name': 'Dubai, UAE'},
+                }, ensure_ascii=False)
+                + '</script>')
+
+    mode_label = c['mode_sales'] if mode == 'sale' else c['mode_rents']
+    mode_url = f'{BASE_URL}{lang_prefix(lang)}/{"sales" if mode == "sale" else "rents"}/'
+    crumbs = [
+        (c['breadcrumb_dubai'], f'{BASE_URL}{lang_prefix(lang)}/'),
+        (mode_label, mode_url),
+        (name, base_canon),
+    ]
+    if period_code != 'all':
+        crumbs.append((c[f'crumb_period_{period_code}'], canon))
+    breadcrumb_ld = _breadcrumb_ld(crumbs)
+
     return f'''<title>{html_escape(title)}</title>
 <meta name="description" content="{html_escape(desc)}">
 <link rel="canonical" href="{canon}">
@@ -813,10 +873,8 @@ def build_seo_head(mode, name, slug, n, period_code, lang):
 <meta property="og:type" content="article">
 <meta property="og:title" content="{html_escape(title)}">
 <meta property="og:description" content="{html_escape(desc)}">
-<script type="application/ld+json">
-{{"@context":"https://schema.org","@type":"Place","name":"{name}, Dubai",
- "containedInPlace":{{"@type":"Place","name":"Dubai, UAE"}}}}
-</script>'''
+{place_ld}
+{breadcrumb_ld}'''
 
 
 def build_main_subpages_block(slug, mode, lang):
@@ -884,7 +942,7 @@ def build_list_page(template, name, slug, mode, prefix, list_type, rec, about_ht
     html = html.replace('<html lang="ru">', f'<html lang="{html_lang}" dir="{html_dir}">')
     html = html.replace('<!--__SEO_HEAD__-->', seo_head)
     html = html.replace('__BREADCRUMB_DUBAI__', html_escape(bread_district))
-    html = html.replace('__MODE_INDEX_URL__', f'{lang_prefix(lang)}/{prefix}/')
+    html = html.replace('__MODE_INDEX_URL__', f'{BASE_URL}{lang_prefix(lang)}/{prefix}/')
     html = html.replace('__MODE_BREADCRUMB__', html_escape(bread_mode))
     html = html.replace('__DISTRICT_URL__', base_url(mode, slug, lang))
     html = html.replace('__DISTRICT_NAME__', html_escape(name))
@@ -999,7 +1057,7 @@ def main():
                     html = html.replace('<!--__SEO_HEAD__-->',
                                         build_seo_head(mode, name, slug, copy_now['n'], period_code, lang))
                     html = html.replace('__BREADCRUMB_DUBAI__', html_escape(c['breadcrumb_dubai']))
-                    html = html.replace('__MODE_INDEX_URL__', f'{lang_prefix(lang)}/{prefix}/')
+                    html = html.replace('__MODE_INDEX_URL__', f'{BASE_URL}{lang_prefix(lang)}/{prefix}/')
                     html = html.replace('__MODE_BREADCRUMB__', html_escape(bread_mode))
                     html = html.replace('__DISTRICT_URL__', bu)
                     html = html.replace('<!--__MODE_SWITCHER__-->', mode_switcher)

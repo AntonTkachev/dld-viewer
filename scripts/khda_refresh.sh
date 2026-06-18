@@ -43,4 +43,8 @@ python3 scripts/build_pages.py
 #    out of the freshly-patched index.html.
 python3 scripts/build_poi_pages.py
 
+# 7. Refresh sitemap.xml + robots.txt — walks the on-disk site tree, so it
+#    must run AFTER all page generators.
+python3 scripts/build_sitemap.py
+
 echo "[$(ts)] khda_refresh: done"

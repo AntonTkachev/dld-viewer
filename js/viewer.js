@@ -69,7 +69,11 @@ setTimeout(() => {
         && typeof I18N !== 'undefined' && I18N[window.__INITIAL_LANG__]) {
       _bootLang = window.__INITIAL_LANG__;
     } else {
-      const pm = (window.location.pathname || '').match(/^\/(en|ar|hi)(?:\/|$)/);
+      // Strip the project subpath (_BASE_PATH, e.g. /dld-viewer) before
+      // matching the /(en|ar|hi)/ language prefix — on GH Pages project
+      // sites the path is /dld-viewer/en/sales/, not /en/sales/.
+      const _pPath = ((window.location.pathname || '').slice(_BASE_PATH.length)) || '/';
+      const pm = _pPath.match(/^\/(en|ar|hi)(?:\/|$)/);
       if (pm && typeof I18N !== 'undefined' && I18N[pm[1]]) {
         _bootLang = pm[1];
       } else {
@@ -105,11 +109,29 @@ function _slugify(s) {
   return (s || '').normalize('NFKD').replace(/[\u0300-\u036f]/g, '')
     .toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '');
 }
+// Auto-detected project subpath. Empty when served at the host root (custom
+// domain, local http.server from the repo); '/dld-viewer' when served as a
+// GH Pages project page. Probes the first URL segment against the set of
+// known content roots \u2014 anything else is assumed to be the project subpath.
+const _BASE_PATH = (() => {
+  if (typeof window === 'undefined') return '';
+  const ROOT_SEGS = new Set([
+    '', 'index.html',
+    'en', 'ar', 'hi',
+    'sales', 'rents', 'growth', 'payback',
+    'metro', 'schools', 'universities', 'medical',
+    'mosques', 'construction', 'malls',
+    'sitemap.xml', 'robots.txt',
+    'css', 'js', 'data', 'og', 'templates',
+  ]);
+  const first = ((window.location.pathname || '').split('/').filter(Boolean)[0] || '');
+  return ROOT_SEGS.has(first) ? '' : '/' + first;
+})();
 function _langUrlPrefix() {
-  return (typeof currentLang === 'string' && currentLang !== 'ru') ? '/' + currentLang : '';
+  return _BASE_PATH + ((typeof currentLang === 'string' && currentLang !== 'ru') ? '/' + currentLang : '');
 }
 function _langUrlPrefixOf(lang) {
-  return (lang && lang !== 'ru') ? '/' + lang : '';
+  return _BASE_PATH + ((lang && lang !== 'ru') ? '/' + lang : '');
 }
 // Navigate to the same mask/view in a different language, preserving
 // ?layers= and any other relevant query state. The mask landings exist
@@ -118,8 +140,9 @@ function _navigateToLang(targetLang) {
   if (!targetLang || typeof window === 'undefined') return;
   // Strip an existing /(en|ar|hi)/ prefix from the current path to expose
   // the bare path (/sales/, /rents/table/, /metro/, …) — then prepend the
-  // new language prefix.
-  const p = window.location.pathname || '/';
+  // new language prefix. Also strip _BASE_PATH first (e.g. /dld-viewer)
+  // so the regex against /en/, /ar/, /hi/ matches on GH Pages.
+  const p = (window.location.pathname || '/').slice(_BASE_PATH.length) || '/';
   let stripped = p.replace(/^\/(en|ar|hi)(?=\/|$)/, '') || '/';
   // No /<lang>/index.html exists — only /<lang>/<mask>/ landings. The root
   // viewer (/, /index.html, /<lang>/) is effectively the sales landing in
