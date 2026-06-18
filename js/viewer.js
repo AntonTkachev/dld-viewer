@@ -97,6 +97,50 @@ setTimeout(() => {
       }
     }, true);
   });
+
+  // Detail panel controls. Close + Escape collapse the slide-out; FS toggle
+  // expands it to full width. invalidateSize() after the CSS transition so
+  // Leaflet reflows tiles to the new map width.
+  const _closePanel = () => {
+    const panel = document.getElementById('detail-panel');
+    if (!panel) return;
+    panel.classList.remove('open');
+    panel.classList.remove('fullscreen');
+    panel.setAttribute('aria-hidden', 'true');
+    const mapEl = document.getElementById('map');
+    mapEl.classList.remove('with-panel-open');
+    mapEl.classList.add('with-panel-closed');
+    setTimeout(() => { if (typeof map !== 'undefined') map.invalidateSize(); }, 280);
+  };
+  const closeBtn = document.getElementById('dp-close');
+  if (closeBtn) closeBtn.addEventListener('click', _closePanel);
+  const fsBtn = document.getElementById('dp-fs-toggle');
+  if (fsBtn) fsBtn.addEventListener('click', () => {
+    const panel = document.getElementById('detail-panel');
+    if (panel) panel.classList.toggle('fullscreen');
+    setTimeout(() => { if (typeof map !== 'undefined') map.invalidateSize(); }, 280);
+  });
+  document.addEventListener('keydown', e => {
+    if (e.key === 'Escape') {
+      const panel = document.getElementById('detail-panel');
+      if (panel && panel.classList.contains('open')) _closePanel();
+    }
+  });
+  // Delegated: clicks on any element carrying data-open-panel="<key>" open
+  // the left slide-out for that district. Used by the polygon popup's
+  // "▸ Open details" button (which keeps its href so middle-click still
+  // opens the full SEO page in a new tab).
+  document.addEventListener('click', e => {
+    // Ignore middle-click / Ctrl-click / Shift-click — let the browser do
+    // its native "open in new tab" / "open in new window".
+    if (e.button !== 0 || e.ctrlKey || e.metaKey || e.shiftKey) return;
+    const a = e.target.closest('[data-open-panel]');
+    if (a && a.dataset.openPanel) {
+      e.preventDefault();
+      if (typeof map !== 'undefined' && map.closePopup) map.closePopup();
+      window.openDistrictByKey(a.dataset.openPanel);
+    }
+  });
 }, 0);
 
 
@@ -201,8 +245,46 @@ function _districtHrefForKey(key, name) {
   const mode = _districtModePrefix(typeof currentMask !== 'undefined' ? currentMask : 'sales');
   return _langUrlPrefix() + '/' + mode + '/' + slug + '/';
 }
+// Open a district: slide the left panel in (NOT navigate) and mount
+// DetailPanel into it. Panel header carries an ↗ link to the full SEO
+// page at /<lang>/<mode>/<slug>/ — Google keeps indexing those, the user
+// gets a no-reload preview from the map.
 window.openDistrictByKey = function(key) {
-  window.location.href = _districtHrefForKey(key);
+  if (!key) return;
+  const panel = document.getElementById('detail-panel');
+  if (!panel) {
+    // No panel in this template (e.g. district subpage) — fall back.
+    window.location.href = _districtHrefForKey(key);
+    return;
+  }
+  const sale = (typeof AGGREGATES !== 'undefined' && AGGREGATES[key]) || null;
+  const rent = (typeof RENT_AGGREGATES !== 'undefined' && RENT_AGGREGATES[key]) || null;
+  const name = (sale && sale.name) || (rent && rent.name) || key;
+  const mode = (typeof currentMask !== 'undefined' && currentMask === 'rents') ? 'rent' : 'sale';
+
+  panel.classList.add('open');
+  panel.setAttribute('aria-hidden', 'false');
+  const mapEl = document.getElementById('map');
+  mapEl.classList.remove('with-panel-closed');
+  mapEl.classList.add('with-panel-open');
+  setTimeout(() => { if (typeof map !== 'undefined') map.invalidateSize(); }, 280);
+
+  const titleEl = document.getElementById('dp-title');
+  if (titleEl) { titleEl.textContent = name; titleEl.dataset.key = key; }
+  const fullLink = document.getElementById('dp-open-full');
+  if (fullLink) {
+    fullLink.href = _districtHrefForKey(key);
+    fullLink.title = (typeof t === 'function') ? t('dp_open_full') : 'Open full page';
+  }
+
+  if (window.DetailPanel && DetailPanel.mount) {
+    DetailPanel.mount({
+      container: document.getElementById('dp-body'),
+      sale: sale, rent: rent,
+      title: name,
+      mode: mode, initialPeriod: 'all',
+    });
+  }
 };
 window.openDubai = function() { /* Dubai-wide overview moved off the slide-out panel; no-op for now. */ };
 function openDistrict(props) {
@@ -1229,8 +1311,11 @@ function renderChoro(){
         const sourceLabel = ({'osm-admin':'OSM admin_level=10','osm-place':'OSM place='+_h(p.kind||''),'osm-residential':'OSM landuse=residential'})[p.source] || 'OSM';
         const newDev = p._new_dev_count || 0;
         const newDevRow = newDev ? `<div class="stat"><span class="k">${t("new_buildings")} <span class="src-tag src-osm">OSM</span></span><span class="v">${newDev|0}</span></div>` : '';
+        // Button stays an <a href> so middle-click / Ctrl-click still opens
+        // the full SEO page in a new tab. Left-click is intercepted by the
+        // delegated handler below and slides the left panel in instead.
         const detailsBtn = p.real_area_key
-          ? `<div style="margin-top:8px"><a href="${_h(_safeUrl(_districtHrefForKey(p.real_area_key, p.name)))}" style="background:#0366d6;color:#fff;text-decoration:none;padding:6px 12px;border-radius:4px;font-size:12px;font-weight:600;display:inline-block">${t("pp_open")}</a></div>`
+          ? `<div style="margin-top:8px"><a href="${_h(_safeUrl(_districtHrefForKey(p.real_area_key, p.name)))}" data-open-panel="${_h(p.real_area_key)}" style="background:#0366d6;color:#fff;text-decoration:none;padding:6px 12px;border-radius:4px;font-size:12px;font-weight:600;display:inline-block">${t("pp_open")}</a></div>`
           : '';
         let bodyRows;
         if (typeof m.popupRows === 'function') {
