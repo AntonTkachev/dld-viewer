@@ -1,9 +1,7 @@
 // Wire buttons (deferred until DOM exists)
 setTimeout(() => {
-  // Lang buttons
-  document.querySelectorAll('#mp-lang-list .lang-btn').forEach(b => {
-    b.addEventListener('click', () => applyLang(b.dataset.lang));
-  });
+  // Lang buttons — wired later (see "Lang switcher" block at the bottom of
+  // this setTimeout) so the navigation handler is the ONLY one attached.
   // Middle-panel item toggles
   document.querySelectorAll('#mp-panel .mp-btn').forEach(btn => {
     btn.addEventListener('click', e => {
@@ -60,15 +58,41 @@ setTimeout(() => {
       }
     });
   }
-  // Respect ?lang=<code> in the URL so /sales/?lang=en boots in English
-  // (and so the "Open details" links built later land on the matching
-  // /<lang>/sales/<slug>/ page). Falls through to the default 'ru' otherwise.
+  // Boot language detection — priority:
+  //   1. window.__INITIAL_LANG__ (injected by build_pages.py for /<lang>/<mask>/)
+  //   2. URL path prefix /(en|ar|hi)/...
+  //   3. ?lang=<code> query param (legacy / backward compatibility)
+  // Falls through to default 'ru' (set in i18n.js currentLang).
   let _bootLang = currentLang;
   try {
-    const qp = new URLSearchParams(window.location.search).get('lang');
-    if (qp && typeof I18N !== 'undefined' && I18N[qp]) _bootLang = qp;
+    if (typeof window.__INITIAL_LANG__ === 'string'
+        && typeof I18N !== 'undefined' && I18N[window.__INITIAL_LANG__]) {
+      _bootLang = window.__INITIAL_LANG__;
+    } else {
+      const pm = (window.location.pathname || '').match(/^\/(en|ar|hi)(?:\/|$)/);
+      if (pm && typeof I18N !== 'undefined' && I18N[pm[1]]) {
+        _bootLang = pm[1];
+      } else {
+        const qp = new URLSearchParams(window.location.search).get('lang');
+        if (qp && typeof I18N !== 'undefined' && I18N[qp]) _bootLang = qp;
+      }
+    }
   } catch (e) { /* sandbox / file:// edge — ignore */ }
   applyLang(_bootLang);
+
+  // Lang switcher (middle panel) — navigate to /<newlang>/<mask>/[table/]
+  // instead of just re-rendering labels in place. Preserves ?layers=… so
+  // active POI overlays survive a language switch.
+  document.querySelectorAll('#mp-lang-list .lang-btn').forEach(b => {
+    b.addEventListener('click', e => {
+      const target = b.dataset.lang;
+      if (!target || target === currentLang) return;
+      if (typeof _navigateToLang === 'function') {
+        e.stopPropagation();
+        _navigateToLang(target);
+      }
+    }, true);
+  });
 }, 0);
 
 
@@ -83,6 +107,33 @@ function _slugify(s) {
 }
 function _langUrlPrefix() {
   return (typeof currentLang === 'string' && currentLang !== 'ru') ? '/' + currentLang : '';
+}
+function _langUrlPrefixOf(lang) {
+  return (lang && lang !== 'ru') ? '/' + lang : '';
+}
+// Navigate to the same mask/view in a different language, preserving
+// ?layers= and any other relevant query state. The mask landings exist
+// under /<lang>/<mask>/[table/] (see scripts/build_pages.py).
+function _navigateToLang(targetLang) {
+  if (!targetLang || typeof window === 'undefined') return;
+  // Strip an existing /(en|ar|hi)/ prefix from the current path to expose
+  // the bare path (/sales/, /rents/table/, /metro/, …) — then prepend the
+  // new language prefix.
+  const p = window.location.pathname || '/';
+  let stripped = p.replace(/^\/(en|ar|hi)(?=\/|$)/, '') || '/';
+  // No /<lang>/index.html exists — only /<lang>/<mask>/ landings. The root
+  // viewer (/, /index.html, /<lang>/) is effectively the sales landing in
+  // RU; route the lang switch there so we don't land on a directory listing.
+  if (stripped === '/' || stripped === '/index.html') {
+    stripped = '/sales/';
+  }
+  const newPath = _langUrlPrefixOf(targetLang) + stripped;
+  let url;
+  try { url = new URL(newPath + window.location.search + window.location.hash, window.location.origin); }
+  catch (e) { window.location.href = newPath; return; }
+  // Drop a legacy ?lang=… now that language is encoded in the path.
+  try { url.searchParams.delete('lang'); } catch (e) { /* ignore */ }
+  window.location.href = url.pathname + (url.search || '') + (url.hash || '');
 }
 function _districtModePrefix(mask) {
   // Per-district pages exist only for sales + rents. growth/payback land on /sales/.
