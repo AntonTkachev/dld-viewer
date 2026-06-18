@@ -846,12 +846,59 @@ const _TX_P      = (typeof TX_PERIODS      !== 'undefined') ? TX_PERIODS      : 
 const _RENTS_P   = (typeof RENTS_PERIODS   !== 'undefined') ? RENTS_PERIODS   : {};
 const _GROWTH_P  = (typeof GROWTH_PERIODS  !== 'undefined') ? GROWTH_PERIODS  : {};
 const _PAYBACK_P = (typeof PAYBACK_PERIODS !== 'undefined') ? PAYBACK_PERIODS : {};
+
+// SPLIT_SQL in build_*_map.py produces keys like "springs" / "meadows" /
+// "jumeirah heights" that don't exist in the rich legacy AGGREGATES (which
+// is built by a separate, older pipeline). Without a stub the detail panel
+// alerts "not found" when the user clicks "Open" on those sub-communities.
+// Fill in a minimal shape so renderBodySale/Rent render with empty timelines
+// and empty tables instead of crashing.
+(function _stubSplitAggregates() {
+  const EMPTY_BUCKET = {n:0,total:0,med:0,mean:0,p25:0,p75:0,p90:0,med_sqm:0,med_ppsqm:0};
+  function stubSale(r) {
+    return {
+      name: r.name || '', n: r.n || 0, total: r.total || 0,
+      med: r.med || 0, mean: r.med || 0,
+      p25: 0, p75: 0, p90: 0,
+      med_sqm: r.med_sqm || 0, med_ppsqm: r.med_ppsqm || 0,
+      avg_per_day: 0,
+      flat: {...EMPTY_BUCKET}, villa: {...EMPTY_BUCKET},
+      commercial: {...EMPTY_BUCKET}, land: {...EMPTY_BUCKET},
+      rooms_flat: {}, rooms_villa: {}, offplan: {},
+      timeline: [], top_projects: [], top_deals: [], recent: [],
+    };
+  }
+  function stubRent(r) {
+    return {
+      name: r.name || '', n: r.n || 0,
+      med: r.med || 0, med_annual: r.med || 0, mean: r.med || 0,
+      p25: 0, p75: 0, p90: 0,
+      med_sqm: r.med_sqm || 0, med_ppsqm: r.med_ppsqm || 0,
+      ejari: {}, rooms: {}, timeline: [], top_projects: [], recent: [],
+    };
+  }
+  if (typeof AGGREGATES !== 'undefined') {
+    const tx = (_TX_P && _TX_P.all) || {};
+    for (const k of Object.keys(tx)) {
+      if (!AGGREGATES[k]) AGGREGATES[k] = stubSale(tx[k]);
+    }
+  }
+  if (typeof RENT_AGGREGATES !== 'undefined') {
+    const rt = (_RENTS_P && _RENTS_P.all) || {};
+    for (const k of Object.keys(rt)) {
+      if (!RENT_AGGREGATES[k]) RENT_AGGREGATES[k] = stubRent(rt[k]);
+    }
+  }
+})();
 const MASKS = {
   sales: {
     labelKey: 'mask_sales', descKey: 'mask_sales_desc',
     periods: ['1y','3y','5y','10y','all'], defaultPeriod: 'all',
+    // For `all`, layer the per-period build over AGGREGATES so newly split
+    // sub-community keys (springs / meadows / jumeirah heights) appear on
+    // top of the legacy aggregate.
     data: {
-      all:   AGGREGATES,
+      all:   Object.assign({}, AGGREGATES, _TX_P['all'] || {}),
       '1y':  _TX_P['1y']  || {},
       '3y':  _TX_P['3y']  || {},
       '5y':  _TX_P['5y']  || {},
@@ -871,7 +918,10 @@ const MASKS = {
     labelKey: 'mask_rents', descKey: 'mask_rents_desc',
     periods: ['1y','3y','5y','10y','all'], defaultPeriod: 'all',
     data: {
-      all:   (typeof RENT_AGGREGATES !== 'undefined') ? RENT_AGGREGATES : {},
+      // Same overlay pattern as sales — _RENTS_P['all'] adds the split keys.
+      all:   Object.assign({},
+              (typeof RENT_AGGREGATES !== 'undefined') ? RENT_AGGREGATES : {},
+              _RENTS_P['all'] || {}),
       '1y':  _RENTS_P['1y']  || {},
       '3y':  _RENTS_P['3y']  || {},
       '5y':  _RENTS_P['5y']  || {},
