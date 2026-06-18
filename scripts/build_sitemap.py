@@ -39,7 +39,7 @@ TOP_DIRS = (
     # POI category landings
     'metro', 'schools', 'universities', 'medical', 'mosques', 'construction', 'malls',
 )
-LANG_DIRS = ('en', 'ar', 'hi')
+LANG_DIRS = ('en', 'ar', 'hi', 'zh')
 
 
 def is_noindex_stub(rel_path):
