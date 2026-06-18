@@ -2190,8 +2190,11 @@ for (const ml of MALLS) {
     if (ml.wheelchair === 'yes') rows.push(`<div class="stat"><span class="k">${t('ml_access')}</span><span class="v" style="color:#0a7f00">✓ wheelchair</span></div>`);
     if (ml.internet_access === 'yes' || ml.internet_access === 'wlan') rows.push(`<div class="stat"><span class="k">${t('ml_wifi')}</span><span class="v" style="color:#0a7f00">✓</span></div>`);
     if (ml.description) rows.push(`<div class="muted" style="margin-top:6px;font-size:11px;color:#555">${ml.description}</div>`);
+    const srcTag = ml.manual
+      ? '<span class="src-tag" style="background:#fff5e0;color:#b35900" title="Hand-added; tagged building=retail / landuse=retail in OSM, not shop=mall">~coords</span>'
+      : '<span class="src-tag src-osm">OSM</span>';
     return `
-      <h3>${emoji} ${ml.name || '—'} <span class="src-tag src-osm">OSM</span></h3>
+      <h3>${emoji} ${ml.name || '—'} ${srcTag}</h3>
       ${ml.name_ar ? `<div class="muted" style="color:#888;margin-bottom:4px" dir="rtl">${ml.name_ar}</div>` : ''}
       ${rows.join('')}
     `;

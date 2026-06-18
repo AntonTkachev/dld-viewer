@@ -1,0 +1,127 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+
+<title>Business Bay — статистика DLD: 115 612 сделок и 282 530 аренд</title>
+<meta name="description" content="Сделки с недвижимостью в районе Business Bay по данным Dubai Land Department: 115 612 транзакций, 282 530 договоров аренды. Медиана, объём, топ-проекты.">
+<link rel="canonical" href="/sales/business-bay/">
+<meta property="og:type" content="article">
+<meta property="og:title" content="Business Bay — статистика DLD: 115 612 сделок и 282 530 аренд">
+<meta property="og:description" content="Сделки с недвижимостью в районе Business Bay по данным Dubai Land Department: 115 612 транзакций, 282 530 договоров аренды. Медиана, объём, топ-проекты.">
+<script type="application/ld+json">
+{"@context":"https://schema.org","@type":"Place","name":"Business Bay, Dubai",
+ "containedInPlace":{"@type":"Place","name":"Dubai, UAE"}}
+</script>
+
+<style>
+  * { box-sizing: border-box; }
+  body { margin:0; font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif; color:#1f2937; background:#f8fafc; }
+  .wrap { max-width:920px; margin:0 auto; padding:24px 20px 60px; }
+  h1 { font-size:28px; margin:0 0 4px; }
+  .breadcrumb { font-size:13px; color:#6b7280; margin-bottom:16px; }
+  .breadcrumb a { color:#1d4ed8; text-decoration:none; }
+  .breadcrumb a:hover { text-decoration:underline; }
+  .lede { font-size:15px; color:#374151; margin:0 0 24px; max-width:680px; line-height:1.55; }
+  .stats { display:grid; grid-template-columns:repeat(auto-fit,minmax(160px,1fr)); gap:12px; margin-bottom:32px; }
+  .stat { background:#fff; padding:16px; border-radius:10px; border:1px solid #e5e7eb; }
+  .stat .k { font-size:12px; color:#6b7280; text-transform:uppercase; letter-spacing:0.04em; margin-bottom:6px; }
+  .stat .v { font-size:24px; font-weight:600; color:#0f172a; }
+  .stat .sub { font-size:12px; color:#6b7280; margin-top:2px; }
+  .section { background:#fff; padding:20px; border-radius:10px; border:1px solid #e5e7eb; margin-bottom:16px; }
+  .section h2 { font-size:16px; margin:0 0 14px; }
+  table { width:100%; border-collapse:collapse; font-size:13px; }
+  th,td { padding:8px 12px; text-align:left; border-bottom:1px solid #f3f4f6; }
+  th { font-weight:600; color:#6b7280; font-size:11px; text-transform:uppercase; letter-spacing:0.04em; }
+  td.num,th.num { text-align:right; font-variant-numeric:tabular-nums; }
+  .loading { color:#94a3b8; padding:40px 0; text-align:center; font-size:14px; }
+  .nav { margin-top:32px; padding-top:20px; border-top:1px solid #e5e7eb; }
+  .nav a { color:#1d4ed8; text-decoration:none; font-size:14px; margin-right:16px; }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div class="breadcrumb">
+    <a href="/">Дубай</a> ›
+    <a href="/sales/">Сделки</a> ›
+    <span id="bc-name">…</span>
+  </div>
+
+  <h1 id="d-name">…</h1>
+  <p class="lede" id="d-lede">Загружаем данные DLD по району…</p>
+
+  <div id="content" class="loading">Загрузка…</div>
+
+  <div class="nav">
+    <a href="/sales/">← Все районы (карта)</a>
+    <a href="/sales/table/">Таблица всех районов</a>
+  </div>
+</div>
+
+<script>
+const DISTRICT_KEY = "business bay";
+const DISTRICT_NAME = "Business Bay";
+
+function fmtInt(n) { return (n||0).toLocaleString('ru-RU'); }
+function fmtAed(n) {
+  if (!n) return '—';
+  if (n >= 1e9) return (n/1e9).toFixed(2) + ' млрд';
+  if (n >= 1e6) return (n/1e6).toFixed(2) + ' млн';
+  return fmtInt(Math.round(n));
+}
+
+async function load() {
+  try {
+    const res = await fetch('data.json');
+    if (!res.ok) throw new Error('HTTP ' + res.status);
+    const d = await res.json();
+    render(d);
+  } catch (e) {
+    document.getElementById('content').textContent = 'Не удалось загрузить данные: ' + e.message;
+  }
+}
+
+function render(d) {
+  const s = d.sales || {};
+  const r = d.rent  || {};
+
+  document.getElementById('d-name').textContent = DISTRICT_NAME;
+  document.getElementById('bc-name').textContent = DISTRICT_NAME;
+  document.getElementById('d-lede').textContent =
+    `${fmtInt(s.n)} сделок и ${fmtInt(r.n)} договоров аренды по данным DLD. ` +
+    `Медианная цена ${fmtAed(s.med)} AED, медианная годовая аренда ${fmtAed(r.med)} AED.`;
+
+  const top = (s.top_projects || []).slice(0, 10);
+  const topRows = top.map(p => `<tr>
+    <td>${p.proj || '—'}</td>
+    <td class="num">${fmtInt(p.n)}</td>
+    <td class="num">${fmtAed(p.med)}</td>
+    <td class="num">${fmtAed(p.total)}</td>
+  </tr>`).join('');
+
+  document.getElementById('content').className = '';
+  document.getElementById('content').innerHTML = `
+    <div class="stats">
+      <div class="stat"><div class="k">Сделок (всего)</div><div class="v">${fmtInt(s.n)}</div></div>
+      <div class="stat"><div class="k">Объём</div><div class="v">${fmtAed(s.total)}</div><div class="sub">AED</div></div>
+      <div class="stat"><div class="k">Медиана</div><div class="v">${fmtAed(s.med)}</div><div class="sub">AED</div></div>
+      <div class="stat"><div class="k">AED/м²</div><div class="v">${fmtInt(s.med_ppsqm)}</div></div>
+      <div class="stat"><div class="k">Аренда / контрактов</div><div class="v">${fmtInt(r.n)}</div></div>
+      <div class="stat"><div class="k">Аренда / медиана</div><div class="v">${fmtAed(r.med)}</div><div class="sub">AED / год</div></div>
+    </div>
+
+    <div class="section">
+      <h2>Топ-10 проектов по объёму сделок</h2>
+      <table>
+        <thead><tr><th>Проект</th><th class="num">Сделок</th><th class="num">Медиана, AED</th><th class="num">Объём, AED</th></tr></thead>
+        <tbody>${topRows}</tbody>
+      </table>
+    </div>
+  `;
+}
+
+load();
+</script>
+</body>
+</html>
