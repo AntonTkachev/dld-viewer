@@ -88,6 +88,11 @@
   .nav-foot a{color:#1d4ed8;text-decoration:none}
   td .proj-pn{font-weight:600;color:#0f172a;display:block;line-height:1.3}
   td .proj-sub{color:#64748b;font-size:11.5px;line-height:1.3;margin-top:1px}
+  /* Aliased developer/project name — translated by our manual map. The
+     superscript ᵃʳ flag plus dotted underline tells the user this isn't
+     the literal RERA spelling; hover shows the original Arabic. */
+  td .aliased{border-bottom:1px dotted #cbd5e1;cursor:help}
+  td .aliased .alias-dot{color:#94a3b8;font-size:10px;margin-inline-start:2px;vertical-align:super;font-style:italic}
 </style>
 </head>
 <body>
@@ -148,7 +153,7 @@
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
 <script>
 const COPY = {"breadcrumb_dubai": "迪拜", "section": "迪拜的在建项目", "h1": "🏗️ 迪拜在建项目 — RERA 登记", "lede": "RERA 项目级登记：{n_total} 个项目，{n_inflight} 个在建，规划 {units} 户。", "cta_map": "在地图上显示", "title": "迪拜在建项目 — RERA 登记，可筛选", "meta": "RERA {n_total} 个项目中有 {n_inflight} 个在建。", "h_inflight": "🏗️ 当前在建", "h_units": "🏠 规划户数", "h_completing": "📅 {y} 年完工", "h_top_dev": "🏢 项目最多的开发商", "h_avg_pct": "✓ 平均进度", "chart_status": "按项目状态", "chart_completion": "按预计完工年份", "chart_top_devs": "前 10 开发商 (在建)", "chart_top_areas": "前 10 社区 (在建)", "filter_status": "状态", "filter_search": "搜索项目或开发商…", "filter_area": "所有社区", "filter_clear": "重置", "showing": "显示 {n} / {total}", "sort_col_name": "项目", "sort_col_status": "状态", "sort_col_pct": "完成度", "sort_col_units": "户数", "sort_col_area": "社区", "sort_col_master": "主项目", "sort_col_dev": "开发商", "sort_col_end": "完工", "st_FINISHED": "已完成", "st_ACTIVE": "在建", "st_NOT_STARTED": "未启动", "st_PENDING": "待定", "st_CONDITIONAL_ACTIVATING": "有条件激活", "st_FRIEZED": "冻结", "per_page": "每页", "prev": "←", "next": "→", "empty_results": "无结果。", "no_units": "—", "no_data": "—", "nav_map": "← 返回地图", "nav_districts": "所有社区 →"};
-const HERO = {"inflight": 1569, "units_pipeline": 382625, "completing_year": 128, "this_year": 2026, "top_dev": "شركة نخيل (ش.م.خ)", "top_dev_n": 220, "avg_pct_inflight": 19.9};
+const HERO = {"inflight": 1569, "units_pipeline": 382625, "completing_year": 128, "this_year": 2026, "top_dev": "Nakheel PJSC", "top_dev_n": 220, "avg_pct_inflight": 19.9};
 const LANG = "zh";
 const BASE_URL = "https://antontkachev.github.io/dld-viewer";
 const LANG_PREFIX = "/zh";
@@ -341,6 +346,11 @@ function renderBody() {
     if (p.v) subBits.push(p.v + " villa");
     if (p.l) subBits.push(p.l + " land");
     const projSub = subBits.length ? `<span class="proj-sub">${_h(subBits.join(" · "))}</span>` : "";
+    // Aliased developer name: show English, tooltip the original Arabic.
+    // Marker dot signals "translated" so users know it isn't raw RERA.
+    const devCell = p.dev_orig
+      ? `<span title="${_h(p.dev_orig)}" class="aliased">${_h(p.dev || COPY.no_data)}<span class="alias-dot" aria-hidden="true">ᵃʳ</span></span>`
+      : _h(p.dev || COPY.no_data);
     return `<tr>
       <td><span class="proj-pn">${projName}</span>${projSub}</td>
       <td>${stCell}</td>
@@ -348,7 +358,7 @@ function renderBody() {
       <td class="num">${unitsCell}</td>
       <td>${areaCell}</td>
       <td>${_h(p.mp || COPY.no_data)}</td>
-      <td>${_h(p.dev || COPY.no_data)}</td>
+      <td>${devCell}</td>
       <td class="num">${p.ey || _h(COPY.no_data)}</td>
     </tr>`;
   }).join("");

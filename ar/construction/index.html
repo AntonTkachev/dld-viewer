@@ -88,6 +88,11 @@
   .nav-foot a{color:#1d4ed8;text-decoration:none}
   td .proj-pn{font-weight:600;color:#0f172a;display:block;line-height:1.3}
   td .proj-sub{color:#64748b;font-size:11.5px;line-height:1.3;margin-top:1px}
+  /* Aliased developer/project name — translated by our manual map. The
+     superscript ᵃʳ flag plus dotted underline tells the user this isn't
+     the literal RERA spelling; hover shows the original Arabic. */
+  td .aliased{border-bottom:1px dotted #cbd5e1;cursor:help}
+  td .aliased .alias-dot{color:#94a3b8;font-size:10px;margin-inline-start:2px;vertical-align:super;font-style:italic}
 </style>
 </head>
 <body>
@@ -148,7 +153,7 @@
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
 <script>
 const COPY = {"breadcrumb_dubai": "دبي", "section": "مشاريع البناء في دبي", "h1": "🏗️ مشاريع البناء في دبي — سجل RERA", "lede": "سجل RERA على مستوى المشروع: {n_total} مشروعًا، {n_inflight} قيد التنفيذ، {units} وحدة في خط الإنتاج. تصفية حسب الحالة / المطور / المنطقة.", "cta_map": "عرض على الخريطة", "title": "البناء في دبي — سجل RERA مع تصفية ورسوم", "meta": "{n_inflight} مشروع بناء نشط من أصل {n_total} سجل في RERA.", "h_inflight": "🏗️ قيد التنفيذ", "h_units": "🏠 وحدات في الخط", "h_completing": "📅 التسليم في {y}", "h_top_dev": "🏢 أهم مطور", "h_avg_pct": "✓ متوسط الإنجاز", "chart_status": "حسب حالة المشروع", "chart_completion": "النشطة حسب سنة التسليم المتوقعة", "chart_top_devs": "أفضل 10 مطورين (قيد التنفيذ)", "chart_top_areas": "أفضل 10 مناطق (قيد التنفيذ)", "filter_status": "الحالة", "filter_search": "ابحث عن مشروع أو مطور…", "filter_area": "كل المناطق", "filter_clear": "إعادة تعيين", "showing": "عرض {n} من {total}", "sort_col_name": "المشروع", "sort_col_status": "الحالة", "sort_col_pct": "الإنجاز", "sort_col_units": "الوحدات", "sort_col_area": "المنطقة", "sort_col_master": "المشروع الرئيسي", "sort_col_dev": "المطور", "sort_col_end": "التسليم", "st_FINISHED": "مكتمل", "st_ACTIVE": "نشط", "st_NOT_STARTED": "لم يبدأ", "st_PENDING": "معلق", "st_CONDITIONAL_ACTIVATING": "نشط مشروط", "st_FRIEZED": "مجمد", "per_page": "لكل صفحة", "prev": "→", "next": "←", "empty_results": "لا توجد نتائج — عدّل المرشحات.", "no_units": "—", "no_data": "—", "nav_map": "→ إلى الخريطة", "nav_districts": "كل الأحياء →"};
-const HERO = {"inflight": 1569, "units_pipeline": 382625, "completing_year": 128, "this_year": 2026, "top_dev": "شركة نخيل (ش.م.خ)", "top_dev_n": 220, "avg_pct_inflight": 19.9};
+const HERO = {"inflight": 1569, "units_pipeline": 382625, "completing_year": 128, "this_year": 2026, "top_dev": "Nakheel PJSC", "top_dev_n": 220, "avg_pct_inflight": 19.9};
 const LANG = "ar";
 const BASE_URL = "https://antontkachev.github.io/dld-viewer";
 const LANG_PREFIX = "/ar";
@@ -341,6 +346,11 @@ function renderBody() {
     if (p.v) subBits.push(p.v + " villa");
     if (p.l) subBits.push(p.l + " land");
     const projSub = subBits.length ? `<span class="proj-sub">${_h(subBits.join(" · "))}</span>` : "";
+    // Aliased developer name: show English, tooltip the original Arabic.
+    // Marker dot signals "translated" so users know it isn't raw RERA.
+    const devCell = p.dev_orig
+      ? `<span title="${_h(p.dev_orig)}" class="aliased">${_h(p.dev || COPY.no_data)}<span class="alias-dot" aria-hidden="true">ᵃʳ</span></span>`
+      : _h(p.dev || COPY.no_data);
     return `<tr>
       <td><span class="proj-pn">${projName}</span>${projSub}</td>
       <td>${stCell}</td>
@@ -348,7 +358,7 @@ function renderBody() {
       <td class="num">${unitsCell}</td>
       <td>${areaCell}</td>
       <td>${_h(p.mp || COPY.no_data)}</td>
-      <td>${_h(p.dev || COPY.no_data)}</td>
+      <td>${devCell}</td>
       <td class="num">${p.ey || _h(COPY.no_data)}</td>
     </tr>`;
   }).join("");

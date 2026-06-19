@@ -88,6 +88,11 @@
   .nav-foot a{color:#1d4ed8;text-decoration:none}
   td .proj-pn{font-weight:600;color:#0f172a;display:block;line-height:1.3}
   td .proj-sub{color:#64748b;font-size:11.5px;line-height:1.3;margin-top:1px}
+  /* Aliased developer/project name — translated by our manual map. The
+     superscript ᵃʳ flag plus dotted underline tells the user this isn't
+     the literal RERA spelling; hover shows the original Arabic. */
+  td .aliased{border-bottom:1px dotted #cbd5e1;cursor:help}
+  td .aliased .alias-dot{color:#94a3b8;font-size:10px;margin-inline-start:2px;vertical-align:super;font-style:italic}
 </style>
 </head>
 <body>
@@ -148,7 +153,7 @@
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
 <script>
 const COPY = {"breadcrumb_dubai": "Dubai", "section": "Construction projects in Dubai", "h1": "🏗️ Dubai construction — RERA register", "lede": "Project-level RERA register: {n_total} projects, {n_inflight} in flight, {units} units in the pipeline. Filter by status / developer / district; charts re-render with the table.", "cta_map": "Show on map", "title": "Dubai construction — RERA register with filters & charts", "meta": "{n_inflight} active construction projects out of {n_total} RERA records. Filter and analyse by developer, area, expected completion year.", "h_inflight": "🏗️ In flight now", "h_units": "🏠 Units in pipeline", "h_completing": "📅 Completing in {y}", "h_top_dev": "🏢 Leading developer", "h_avg_pct": "✓ Avg completion", "chart_status": "By project status", "chart_completion": "Active by expected completion year", "chart_top_devs": "Top-10 developers (in-flight)", "chart_top_areas": "Top-10 areas (in-flight)", "filter_status": "Status", "filter_search": "Search project or developer…", "filter_area": "All areas", "filter_clear": "Clear", "showing": "Showing {n} of {total}", "sort_col_name": "Project", "sort_col_status": "Status", "sort_col_pct": "Completion", "sort_col_units": "Units", "sort_col_area": "Area", "sort_col_master": "Master project", "sort_col_dev": "Developer", "sort_col_end": "Completion", "st_FINISHED": "Finished", "st_ACTIVE": "Active", "st_NOT_STARTED": "Not started", "st_PENDING": "Pending", "st_CONDITIONAL_ACTIVATING": "Cond. active", "st_FRIEZED": "Frozen", "per_page": "Per page", "prev": "←", "next": "→", "empty_results": "No matches — adjust the filters.", "no_units": "—", "no_data": "—", "nav_map": "← To map", "nav_districts": "All districts →"};
-const HERO = {"inflight": 1569, "units_pipeline": 382625, "completing_year": 128, "this_year": 2026, "top_dev": "شركة نخيل (ش.م.خ)", "top_dev_n": 220, "avg_pct_inflight": 19.9};
+const HERO = {"inflight": 1569, "units_pipeline": 382625, "completing_year": 128, "this_year": 2026, "top_dev": "Nakheel PJSC", "top_dev_n": 220, "avg_pct_inflight": 19.9};
 const LANG = "en";
 const BASE_URL = "https://antontkachev.github.io/dld-viewer";
 const LANG_PREFIX = "/en";
@@ -341,6 +346,11 @@ function renderBody() {
     if (p.v) subBits.push(p.v + " villa");
     if (p.l) subBits.push(p.l + " land");
     const projSub = subBits.length ? `<span class="proj-sub">${_h(subBits.join(" · "))}</span>` : "";
+    // Aliased developer name: show English, tooltip the original Arabic.
+    // Marker dot signals "translated" so users know it isn't raw RERA.
+    const devCell = p.dev_orig
+      ? `<span title="${_h(p.dev_orig)}" class="aliased">${_h(p.dev || COPY.no_data)}<span class="alias-dot" aria-hidden="true">ᵃʳ</span></span>`
+      : _h(p.dev || COPY.no_data);
     return `<tr>
       <td><span class="proj-pn">${projName}</span>${projSub}</td>
       <td>${stCell}</td>
@@ -348,7 +358,7 @@ function renderBody() {
       <td class="num">${unitsCell}</td>
       <td>${areaCell}</td>
       <td>${_h(p.mp || COPY.no_data)}</td>
-      <td>${_h(p.dev || COPY.no_data)}</td>
+      <td>${devCell}</td>
       <td class="num">${p.ey || _h(COPY.no_data)}</td>
     </tr>`;
   }).join("");

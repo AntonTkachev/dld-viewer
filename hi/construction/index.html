@@ -88,6 +88,11 @@
   .nav-foot a{color:#1d4ed8;text-decoration:none}
   td .proj-pn{font-weight:600;color:#0f172a;display:block;line-height:1.3}
   td .proj-sub{color:#64748b;font-size:11.5px;line-height:1.3;margin-top:1px}
+  /* Aliased developer/project name — translated by our manual map. The
+     superscript ᵃʳ flag plus dotted underline tells the user this isn't
+     the literal RERA spelling; hover shows the original Arabic. */
+  td .aliased{border-bottom:1px dotted #cbd5e1;cursor:help}
+  td .aliased .alias-dot{color:#94a3b8;font-size:10px;margin-inline-start:2px;vertical-align:super;font-style:italic}
 </style>
 </head>
 <body>
@@ -148,7 +153,7 @@
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
 <script>
 const COPY = {"breadcrumb_dubai": "दुबई", "section": "दुबई में निर्माण परियोजनाएँ", "h1": "🏗️ दुबई का निर्माण — RERA रजिस्टर", "lede": "RERA रजिस्टर: {n_total} परियोजनाएँ, {n_inflight} चालू, {units} यूनिट पाइपलाइन में।", "cta_map": "मानचित्र पर दिखाएँ", "title": "दुबई निर्माण — RERA रजिस्टर फिल्टर के साथ", "meta": "{n_inflight} सक्रिय निर्माण परियोजनाएँ {n_total} RERA रिकॉर्ड में से।", "h_inflight": "🏗️ अभी चालू", "h_units": "🏠 पाइपलाइन यूनिट", "h_completing": "📅 {y} में पूर्णता", "h_top_dev": "🏢 शीर्ष डेवलपर", "h_avg_pct": "✓ औसत पूर्णता", "chart_status": "परियोजना स्थिति", "chart_completion": "अपेक्षित पूर्णता वर्ष", "chart_top_devs": "शीर्ष-10 डेवलपर (in-flight)", "chart_top_areas": "शीर्ष-10 क्षेत्र (in-flight)", "filter_status": "स्थिति", "filter_search": "प्रोजेक्ट या डेवलपर खोजें…", "filter_area": "सभी क्षेत्र", "filter_clear": "रीसेट", "showing": "{n} में से {total}", "sort_col_name": "प्रोजेक्ट", "sort_col_status": "स्थिति", "sort_col_pct": "पूर्णता", "sort_col_units": "यूनिट", "sort_col_area": "क्षेत्र", "sort_col_master": "मास्टर प्रोजेक्ट", "sort_col_dev": "डेवलपर", "sort_col_end": "सम्पन्न", "st_FINISHED": "सम्पन्न", "st_ACTIVE": "सक्रिय", "st_NOT_STARTED": "शुरू नहीं", "st_PENDING": "लंबित", "st_CONDITIONAL_ACTIVATING": "सशर्त सक्रिय", "st_FRIEZED": "फ्रोजन", "per_page": "प्रति पेज", "prev": "←", "next": "→", "empty_results": "कुछ नहीं मिला।", "no_units": "—", "no_data": "—", "nav_map": "← मानचित्र पर", "nav_districts": "सभी जिले →"};
-const HERO = {"inflight": 1569, "units_pipeline": 382625, "completing_year": 128, "this_year": 2026, "top_dev": "شركة نخيل (ش.م.خ)", "top_dev_n": 220, "avg_pct_inflight": 19.9};
+const HERO = {"inflight": 1569, "units_pipeline": 382625, "completing_year": 128, "this_year": 2026, "top_dev": "Nakheel PJSC", "top_dev_n": 220, "avg_pct_inflight": 19.9};
 const LANG = "hi";
 const BASE_URL = "https://antontkachev.github.io/dld-viewer";
 const LANG_PREFIX = "/hi";
@@ -341,6 +346,11 @@ function renderBody() {
     if (p.v) subBits.push(p.v + " villa");
     if (p.l) subBits.push(p.l + " land");
     const projSub = subBits.length ? `<span class="proj-sub">${_h(subBits.join(" · "))}</span>` : "";
+    // Aliased developer name: show English, tooltip the original Arabic.
+    // Marker dot signals "translated" so users know it isn't raw RERA.
+    const devCell = p.dev_orig
+      ? `<span title="${_h(p.dev_orig)}" class="aliased">${_h(p.dev || COPY.no_data)}<span class="alias-dot" aria-hidden="true">ᵃʳ</span></span>`
+      : _h(p.dev || COPY.no_data);
     return `<tr>
       <td><span class="proj-pn">${projName}</span>${projSub}</td>
       <td>${stCell}</td>
@@ -348,7 +358,7 @@ function renderBody() {
       <td class="num">${unitsCell}</td>
       <td>${areaCell}</td>
       <td>${_h(p.mp || COPY.no_data)}</td>
-      <td>${_h(p.dev || COPY.no_data)}</td>
+      <td>${devCell}</td>
       <td class="num">${p.ey || _h(COPY.no_data)}</td>
     </tr>`;
   }).join("");

@@ -1,0 +1,66 @@
+{
+  "version": 1,
+  "_doc": "Manually-verified Arabic → English aliases for RERA project register fields. Only mappings with >90% confidence are included; lower-confidence ones go to _skipped with a note so the next pass knows why. Source: cross-referencing developer name + their dominant master_project_en + DLD's public registry on https://dubailand.gov.ae and Crunchbase/company profiles.",
+
+  "developers": {
+    "قرية جميرا (ش.ذ.م.م)": "Jumeirah Village LLC",
+    "شركة نخيل (ش.م.خ)": "Nakheel PJSC",
+    "مجموعة ميدان (ش.ذ.م.م)": "Meydan Group LLC",
+    "اعمار العقارية (ش . م. ع)": "Emaar Properties PJSC",
+    "ليوان(ش.ذ.م.م.)": "Liwan LLC",
+    "دبي للعقارات (ش.ذ.م.م)": "Dubai Properties LLC",
+    "الخليج التجاري (ش.ذ.م.م)": "Business Bay LLC",
+    "مؤسسه مدينه دبى للطيران": "Dubai Aviation City Corporation",
+    "دبي لاند ريزيدنسز (ش.ذ.م.م)": "Dubai Land Residences LLC",
+    "مراس العقارية (ش.ذ.م.م)": "Meraas Properties LLC",
+    "مدينة دبي الرياضية (ش. ذ. م. م)": "Dubai Sports City LLC",
+    "الفرجان ( ش.ذ.م.م )": "Al Furjan LLC",
+    "إعمار للتطوير (مساهمة عامة)": "Emaar Development PJSC",
+    "سلطة دبي للمناطق الإقتصادية المتكاملة": "Dubai Integrated Economic Zones Authority",
+    "دبي هيلز استيت ش.ذ.م.م": "Dubai Hills Estate LLC",
+    "تيكوم للإستثمارات منطقة حرة- ذ.م.م": "TECOM Investments Free Zone LLC",
+    "رمرام ش.ذ.م.م": "Remraam LLC",
+    "مركز دبي للسلع المتعددة": "Dubai Multi Commodities Centre (DMCC)",
+    "داماك كريسنت للعقارات (ش.ذ.م.م)": "DAMAC Crescent Properties LLC",
+    "انترناشونال سيتي ( ش.ذ.م.م )": "International City LLC",
+    "شوبا ش.ذ.م.م": "Sobha LLC",
+    "نشاما للعقارات لمالكها نشمي ديفلوبمنت شركة الشخص الواحد": "Nshama Real Estate",
+    "دبي لاند (ش.ذ.م.م)": "Dubailand LLC",
+    "إعمار دبي الجنوب دي دبليو سي ش.ذ.م.م": "Emaar Dubai South DWC LLC",
+    "شركة النخلة - جميرا (ش.ذ.م.م)": "Nakheel Palm Jumeirah LLC",
+    "مدينة دبي الملاحية م م ح": "Dubai Maritime City FZE",
+    "عقارات جميرا جولف ش.ذ.م.م": "Jumeirah Golf Estates Properties LLC",
+    "النخلة  - ديره (ش.ذ.م.م)": "Nakheel Palm Deira LLC",
+    "دبي كريك هاربور ش.ذ.م.م": "Dubai Creek Harbour LLC",
+    "ذي لاجونز المرحلة الاولى ش.ذ.م.م": "The Lagoons Phase 1 LLC",
+    "ميناء راشد العقارية ش.ذ.م.م": "Mina Rashid Properties LLC",
+    "مدينه دبى الطبيه منطقه حرة - ذ.م.م.": "Dubai Healthcare City Free Zone LLC",
+    "الاتحاد العقارية (شركة مساهمة عامة)": "Union Properties PJSC",
+    "شركة تطوير مجمع دبي للاستثمار (ذ. م. م)": "Dubai Investments Park Development Co LLC",
+    "الحي الاول - منطقة حرة": "District One Free Zone",
+    "جيه ايه جي للتطوير ش.ذ.م.م": "JAG Development LLC",
+    "ماجد الفطيم لتشغيل مشاريع المدن المتكاملة الاماراتية ش.م.ذ": "Majid Al Futtaim Integrated Cities LLC",
+    "جميرا هيلز ديفيلوبمنت ش.ذ.م.م": "Jumeirah Hills Development LLC",
+    "الياس و مصطفى كلداري لإدارة الاستثمار و التطوير (ش.ذ.م.م)": "Ilyas & Mustafa Galadari Investment & Development LLC",
+    "إكسبو سيتي للتطوير العقاري ش م ح": "Expo City Real Estate Development",
+    "مرسى دبي المرحلة الاولى (ش.ذ.م.م)": "Marsa Dubai Phase 1 LLC",
+    "مؤسسة مدينة ميدان": "Meydan City Corporation",
+    "سيتي ووك ريزيدينشال 1 ش.ذ.م.م": "City Walk Residential 1 LLC",
+    "شمال العقارية ش.ذ.م.م": "Shamal Properties LLC"
+  },
+
+  "project_classifications": {
+    "مباني": "Building",
+    "فلل": "Villa",
+    "مجمع فلل": "Villa Compound"
+  },
+
+  "_skipped": [
+    "دى اتش ايه ام منطقه حره - ذ.م.م — couldn't confirm full English entity name ('DHAM Free Zone LLC'?), skipping",
+    "شركة الخط الامامي لادارة الاستثمار ش.ذ.م.م — produces only DAMAC HILLS 2; literal translation = 'Front Line Investment Management Co LLC' but couldn't verify as their official English name. Probably a DAMAC sub-entity.",
+    "واحة الجزيرة العقارية (ش.ذ.م.م) — literal = 'Island Oasis Properties LLC' but couldn't confirm official spelling; produces DAMAC Lagoons",
+    "داماك ميري للاستثمار ش.ذ.م.م — DAMAC sub-entity ('Marie'? 'Miri'?); skipping till verified",
+    "دبي بينينسولا ش.ذ.م.م — 'Dubai Peninsula' is the literal name but corp identity unclear",
+    "individual / small developers (≤5 projects each) — too many to verify confidently; left in original Arabic"
+  ]
+}
