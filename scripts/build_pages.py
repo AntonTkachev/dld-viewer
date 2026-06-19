@@ -42,11 +42,11 @@ PAGES = {
         initial_period='all',
         og_image='/og/sales.png',
         title=dict(
-            ru='Сделки с недвижимостью в Дубае по районам — карта DLD',
-            en='Real estate transactions in Dubai by district — DLD map',
-            ar='صفقات العقارات في دبي حسب الحي — خريطة DLD',
-            hi='जिले के अनुसार दुबई में रियल एस्टेट लेन-देन — DLD मानचित्र',
-            zh='迪拜各社区房产交易 — DLD 地图',
+            ru='Сделки с недвижимостью в Дубае по районам — Deedmap',
+            en='Real estate transactions in Dubai by district — Deedmap',
+            ar='صفقات العقارات في دبي حسب الحي — Deedmap',
+            hi='जिले के अनुसार दुबई में रियल एस्टेट लेन-देन — Deedmap',
+            zh='迪拜各社区房产交易 — Deedmap',
         ),
         desc=dict(
             ru='Интерактивная карта сделок Dubai Land Department: количество сделок, '
@@ -85,11 +85,11 @@ PAGES = {
         initial_period='all',
         og_image='/og/rents.png',
         title=dict(
-            ru='Аренда недвижимости в Дубае по районам — карта DLD',
-            en='Rental contracts in Dubai by district — DLD map',
-            ar='عقود إيجار العقارات في دبي حسب الحي — خريطة DLD',
-            hi='जिले के अनुसार दुबई में किराये के अनुबंध — DLD मानचित्र',
-            zh='迪拜各社区房产租赁合同 — DLD 地图',
+            ru='Аренда недвижимости в Дубае по районам — Deedmap',
+            en='Rental contracts in Dubai by district — Deedmap',
+            ar='عقود إيجار العقارات في دبي حسب الحي — Deedmap',
+            hi='जिले के अनुसार दुबई में किराये के अनुबंध — Deedmap',
+            zh='迪拜各社区房产租赁合同 — Deedmap',
         ),
         desc=dict(
             ru='Интерактивная карта договоров аренды Dubai Land Department: количество '
@@ -126,11 +126,11 @@ PAGES = {
         initial_period='5y',
         og_image='/og/growth.png',
         title=dict(
-            ru='Рост цен на недвижимость в Дубае по районам — карта DLD',
-            en='Real estate price growth in Dubai by district — DLD map',
-            ar='نمو أسعار العقارات في دبي حسب الحي — خريطة DLD',
-            hi='जिले के अनुसार दुबई में रियल एस्टेट मूल्य वृद्धि — DLD मानचित्र',
-            zh='迪拜各社区房产价格涨幅 — DLD 地图',
+            ru='Рост цен на недвижимость в Дубае по районам — Deedmap',
+            en='Real estate price growth in Dubai by district — Deedmap',
+            ar='نمو أسعار العقارات في دبي حسب الحي — Deedmap',
+            hi='जिले के अनुसार दुबई में रियल एस्टेट मूल्य वृद्धि — Deedmap',
+            zh='迪拜各社区房产价格涨幅 — Deedmap',
         ),
         desc=dict(
             ru='Интерактивная карта роста медианной цены AED/м² по районам Дубая: '
@@ -168,11 +168,11 @@ PAGES = {
         initial_period='1br',
         og_image='/og/payback.png',
         title=dict(
-            ru='Окупаемость аренды в Дубае по районам — карта DLD',
-            en='Rental payback in Dubai by district — DLD map',
-            ar='استرداد الإيجار في دبي حسب الحي — خريطة DLD',
-            hi='जिले के अनुसार दुबई में किराये की पेबैक — DLD मानचित्र',
-            zh='迪拜各社区租金回本年限 — DLD 地图',
+            ru='Окупаемость аренды в Дубае по районам — Deedmap',
+            en='Rental payback in Dubai by district — Deedmap',
+            ar='استرداد الإيجار في دبي حسب الحي — Deedmap',
+            hi='जिले के अनुसार दुबई में किराये की पेबैक — Deedmap',
+            zh='迪拜各社区租金回本年限 — Deedmap',
         ),
         desc=dict(
             ru='Карта показывает за сколько лет годовая аренда окупит покупку. '
@@ -217,11 +217,11 @@ TABLE_DESC_PREFIX = {
 
 # Per-language "map → table" title suffix swap. Keys are (pattern_in_title, replacement).
 TABLE_TITLE_SWAP = {
-    'ru': ('— карта DLD',  '— таблица DLD'),
-    'en': ('DLD map',      'DLD table'),
-    'ar': ('خريطة DLD',    'جدول DLD'),
-    'hi': ('DLD मानचित्र', 'DLD तालिका'),
-    'zh': ('DLD 地图',     'DLD 表格'),
+    'ru': ('— Deedmap', '— Deedmap • Таблица'),
+    'en': ('— Deedmap', '— Deedmap • Table'),
+    'ar': ('— Deedmap', '— Deedmap • جدول'),
+    'hi': ('— Deedmap', '— Deedmap • तालिका'),
+    'zh': ('— Deedmap', '— Deedmap • 表格'),
 }
 
 # Direction tag for <html>: Arabic is RTL.
@@ -291,7 +291,7 @@ def build(page_key, cfg, view, lang):
         '@context': 'https://schema.org', '@type': 'Dataset',
         'name': dataset_name, 'alternateName': dataset_name_en,
         'description': desc, 'inLanguage': lang, 'url': canonical,
-        'creator': {'@type': 'Organization', 'name': 'DLD Viewer'},
+        'creator': {'@type': 'Organization', 'name': 'Deedmap'},
         'license': 'https://www.dubaipulse.gov.ae/terms',
         'isAccessibleForFree': True,
         'spatialCoverage': {'@type': 'Place', 'name': 'Dubai, UAE'},
@@ -347,9 +347,10 @@ def build(page_key, cfg, view, lang):
         s, count=1,
     )
 
-    s = s.replace('href="css/viewer.css"', f'href="{asset_prefix}css/viewer.css"')
-    s = s.replace('src="js/i18n.js"',      f'src="{asset_prefix}js/i18n.js"')
-    s = s.replace('src="js/viewer.js"',    f'src="{asset_prefix}js/viewer.js"')
+    s = s.replace('href="css/viewer.css"',  f'href="{asset_prefix}css/viewer.css"')
+    s = s.replace('href="favicon.svg"',     f'href="{asset_prefix}favicon.svg"')
+    s = s.replace('src="js/i18n.js"',       f'src="{asset_prefix}js/i18n.js"')
+    s = s.replace('src="js/viewer.js"',     f'src="{asset_prefix}js/viewer.js"')
 
     boot = (
         '<script>'
@@ -388,10 +389,10 @@ for key, cfg in PAGES.items():
 # which breaks BreadcrumbList "Dubai" links and any direct typing /ar/.
 # RU root (/) already has the master index.html, so only non-RU need stubs.
 LANG_STUB = {
-    'en': dict(dir='ltr', title='DLD Viewer — Dubai real estate data', label='Open the Dubai map →'),
-    'ar': dict(dir='rtl', title='عارض DLD — بيانات عقارات دبي', label='افتح خريطة دبي ←'),
-    'hi': dict(dir='ltr', title='DLD Viewer — दुबई रियल एस्टेट डेटा', label='दुबई का मानचित्र खोलें →'),
-    'zh': dict(dir='ltr', title='DLD Viewer — 迪拜房产数据', label='打开迪拜地图 →'),
+    'en': dict(dir='ltr', title='Deedmap — Dubai real estate data', label='Open the Dubai map →'),
+    'ar': dict(dir='rtl', title='Deedmap — بيانات عقارات دبي', label='افتح خريطة دبي ←'),
+    'hi': dict(dir='ltr', title='Deedmap — दुबई रियल एस्टेट डेटा', label='दुबई का मानचित्र खोलें →'),
+    'zh': dict(dir='ltr', title='Deedmap — 迪拜房产数据', label='打开迪拜地图 →'),
 }
 for l, s in LANG_STUB.items():
     target = f'{BASE_URL}/{l}/sales/'
@@ -402,6 +403,7 @@ for l, s in LANG_STUB.items():
             f'<!doctype html>\n<html lang="{l}" dir="{s["dir"]}">\n<head>\n'
             f'<meta charset="utf-8">\n'
             f'<title>{s["title"]}</title>\n'
+            f'<link rel="icon" type="image/svg+xml" href="{BASE_URL}/favicon.svg">\n'
             f'<link rel="canonical" href="{target}">\n'
             f'<meta http-equiv="refresh" content="0; url={target}">\n'
             f'<meta name="robots" content="noindex,follow">\n'
