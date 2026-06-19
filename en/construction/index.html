@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <title>Dubai construction — RERA register with filters & charts</title>
-<meta name="description" content="1,569 active construction projects out of 3,039 RERA records. Filter and analyse by developer, area, expected completion year.">
+<meta name="description" content="1,487 active construction projects out of 3,039 RERA records. Filter and analyse by developer, area, expected completion year.">
 <link rel="canonical" href="https://antontkachev.github.io/dld-viewer/en/construction/">
 <link rel="alternate" hreflang="ru" href="https://antontkachev.github.io/dld-viewer/construction/">
 <link rel="alternate" hreflang="en" href="https://antontkachev.github.io/dld-viewer/en/construction/">
@@ -14,7 +14,7 @@
 <link rel="alternate" hreflang="x-default" href="https://antontkachev.github.io/dld-viewer/construction/">
 <meta property="og:type" content="website">
 <meta property="og:title" content="Dubai construction — RERA register with filters & charts">
-<meta property="og:description" content="1,569 active construction projects out of 3,039 RERA records. Filter and analyse by developer, area, expected completion year.">
+<meta property="og:description" content="1,487 active construction projects out of 3,039 RERA records. Filter and analyse by developer, area, expected completion year.">
 <link rel="icon" type="image/svg+xml" href="https://antontkachev.github.io/dld-viewer/favicon.svg">
 <link rel="stylesheet" href="https://antontkachev.github.io/dld-viewer/css/viewer.css">
 <script async src="https://www.googletagmanager.com/gtag/js?id=G-5G3EY3Y2KG"></script>
@@ -78,6 +78,7 @@
   .stbadge{display:inline-block;padding:2px 7px;border-radius:12px;font-size:11px;font-weight:600}
   .stbadge-FINISHED{background:#ecfdf5;color:#047857}
   .stbadge-ACTIVE{background:#dbeafe;color:#1d4ed8}
+  .stbadge-OVERDUE{background:#fee2e2;color:#991b1b}
   .stbadge-NOT_STARTED{background:#fef3c7;color:#92400e}
   .stbadge-PENDING{background:#fff7ed;color:#c2410c}
   .stbadge-CONDITIONAL_ACTIVATING{background:#f1f5f9;color:#475569}
@@ -115,7 +116,7 @@
     <details class="langswitch-dd"><summary><span class="globe" aria-hidden="true">🌐</span><span class="lang-current">EN</span><span class="caret" aria-hidden="true">▾</span></summary><div class="lang-menu"><a class="" href="https://antontkachev.github.io/dld-viewer/construction/" lang="ru">RU</a><a class="active" href="https://antontkachev.github.io/dld-viewer/en/construction/" lang="en">EN</a><a class="" href="https://antontkachev.github.io/dld-viewer/ar/construction/" lang="ar">AR</a><a class="" href="https://antontkachev.github.io/dld-viewer/hi/construction/" lang="hi">HI</a><a class="" href="https://antontkachev.github.io/dld-viewer/zh/construction/" lang="zh">ZH</a></div></details>
   </div>
 
-  <p class="lede">Project-level RERA register: 3,039 projects, 1,569 in flight, 382,625 units in the pipeline. Filter by status / developer / district; charts re-render with the table.</p>
+  <p class="lede">Project-level RERA register: 3,039 projects, 1,487 in flight, 363,069 units in the pipeline. Filter by status / developer / district; charts re-render with the table.</p>
 
   <div class="cta"><a href="https://antontkachev.github.io/dld-viewer/en/sales/?layers=proj">Show on map →</a></div>
 
@@ -156,14 +157,18 @@
 
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
 <script>
-const COPY = {"breadcrumb_dubai": "Dubai", "section": "Construction projects in Dubai", "h1": "Dubai construction — RERA register", "lede": "Project-level RERA register: {n_total} projects, {n_inflight} in flight, {units} units in the pipeline. Filter by status / developer / district; charts re-render with the table.", "cta_map": "Show on map", "title": "Dubai construction — RERA register with filters & charts", "meta": "{n_inflight} active construction projects out of {n_total} RERA records. Filter and analyse by developer, area, expected completion year.", "h_inflight": "In flight now", "h_units": "Units in pipeline", "h_completing": "Completing in {y}", "h_top_dev": "Leading developer", "h_avg_pct": "Avg completion", "chart_status": "By project status", "chart_completion": "Active by expected completion year", "chart_top_devs": "Top-10 developers (in-flight)", "chart_top_areas": "Top-10 areas (in-flight)", "filter_status": "Status", "filter_search": "Search project or developer…", "filter_area": "All areas", "filter_clear": "Clear", "showing": "Showing {n} of {total}", "sort_col_name": "Project", "sort_col_status": "Status", "sort_col_pct": "Completion", "sort_col_units": "Units", "sort_col_area": "Area", "sort_col_master": "Master project", "sort_col_dev": "Developer", "sort_col_end": "Completion", "st_FINISHED": "Finished", "st_ACTIVE": "Active", "st_NOT_STARTED": "Not started", "st_PENDING": "Pending", "st_CONDITIONAL_ACTIVATING": "Cond. active", "st_FRIEZED": "Frozen", "per_page": "Per page", "prev": "←", "next": "→", "empty_results": "No matches — adjust the filters.", "no_units": "—", "no_data": "—", "nav_map": "← To map", "nav_districts": "All districts →"};
-const HERO = {"inflight": 1569, "units_pipeline": 382625, "completing_year": 128, "this_year": 2026, "top_dev": "Nakheel PJSC", "top_dev_n": 220, "avg_pct_inflight": 19.9};
+const COPY = {"breadcrumb_dubai": "Dubai", "section": "Construction projects in Dubai", "h1": "Dubai construction — RERA register", "lede": "Project-level RERA register: {n_total} projects, {n_inflight} in flight, {units} units in the pipeline. Filter by status / developer / district; charts re-render with the table.", "cta_map": "Show on map", "title": "Dubai construction — RERA register with filters & charts", "meta": "{n_inflight} active construction projects out of {n_total} RERA records. Filter and analyse by developer, area, expected completion year.", "h_inflight": "In flight now", "h_units": "Units in pipeline", "h_completing": "Completing in {y}", "h_top_dev": "Leading developer", "h_avg_pct": "Avg completion", "chart_status": "By project status", "chart_completion": "Active by expected completion year", "chart_top_devs": "Top-10 developers (in-flight)", "chart_top_areas": "Top-10 areas (in-flight)", "filter_status": "Status", "filter_search": "Search project or developer…", "filter_area": "All areas", "filter_clear": "Clear", "showing": "Showing {n} of {total}", "sort_col_name": "Project", "sort_col_status": "Status", "sort_col_pct": "Completion", "sort_col_units": "Units", "sort_col_area": "Area", "sort_col_master": "Master project", "sort_col_dev": "Developer", "sort_col_end": "Completion", "st_FINISHED": "Finished", "st_ACTIVE": "Active", "st_NOT_STARTED": "Not started", "st_PENDING": "Pending", "st_CONDITIONAL_ACTIVATING": "Cond. active", "st_FRIEZED": "Frozen", "st_OVERDUE": "Overdue", "per_page": "Per page", "prev": "←", "next": "→", "empty_results": "No matches — adjust the filters.", "no_units": "—", "no_data": "—", "nav_map": "← To map", "nav_districts": "All districts →"};
+const HERO = {"inflight": 1487, "units_pipeline": 363069, "completing_year": 117, "this_year": 2026, "top_dev": "Nakheel PJSC", "top_dev_n": 217, "avg_pct_inflight": 16.5};
 const LANG = "en";
 const BASE_URL = "https://antontkachev.github.io/dld-viewer";
 const LANG_PREFIX = "/en";
-const IN_FLIGHT_STATES = ["ACTIVE","NOT_STARTED","PENDING","CONDITIONAL_ACTIVATING"];
-const STATUS_ORDER = ["ACTIVE","PENDING","NOT_STARTED","CONDITIONAL_ACTIVATING","FINISHED","FRIEZED"];
-const STATUS_COLORS = {ACTIVE:"#1d4ed8", PENDING:"#c2410c", NOT_STARTED:"#92400e", CONDITIONAL_ACTIVATING:"#475569", FINISHED:"#047857", FRIEZED:"#991b1b"};
+const IN_FLIGHT_STATES = ["ACTIVE","OVERDUE","NOT_STARTED","PENDING","CONDITIONAL_ACTIVATING"];
+// OVERDUE is a virtual status — `st` in the data is still ACTIVE, but
+// when `overdue:true` we render the row as if its status were OVERDUE
+// (red pill, separate filter chip). Effective status function below.
+const STATUS_ORDER = ["ACTIVE","OVERDUE","PENDING","NOT_STARTED","CONDITIONAL_ACTIVATING","FINISHED","FRIEZED"];
+const STATUS_COLORS = {ACTIVE:"#1d4ed8", OVERDUE:"#991b1b", PENDING:"#c2410c", NOT_STARTED:"#92400e", CONDITIONAL_ACTIVATING:"#475569", FINISHED:"#047857", FRIEZED:"#991b1b"};
+function effectiveStatus(p) { return p.overdue ? "OVERDUE" : p.st; }
 const NUM_FMT = new Intl.NumberFormat({ru:"ru-RU",en:"en-US",ar:"ar-AE",hi:"hi-IN",zh:"zh-CN"}[LANG] || "en-US");
 const fmt = (n) => NUM_FMT.format(n||0);
 const _h = (s) => String(s||"").replace(/[&<>"'`]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":"&#39;","`":"&#96;"})[c]);
@@ -206,7 +211,7 @@ function applyFilters() {
   const area = STATE.area.trim().toLowerCase();
   const sf = STATE.statusFilter;
   STATE.filtered = STATE.data.filter(p => {
-    if (sf.size > 0 && !sf.has(p.st)) return false;
+    if (sf.size > 0 && !sf.has(effectiveStatus(p))) return false;
     if (area && (p.a || "").toLowerCase() !== area) return false;
     if (q) {
       const hay = (p.pn + " " + p.mp + " " + p.dev + " " + p.a).toLowerCase();
@@ -247,9 +252,12 @@ function renderCharts() {
   destroyCharts();
   const arr = STATE.filtered;
 
-  // 1) Status donut
+  // 1) Status donut — uses effectiveStatus so OVERDUE shows as its own slice.
   const statusCounts = {};
-  for (const p of arr) statusCounts[p.st] = (statusCounts[p.st] || 0) + 1;
+  for (const p of arr) {
+    const es = effectiveStatus(p);
+    statusCounts[es] = (statusCounts[es] || 0) + 1;
+  }
   const stKeys = STATUS_ORDER.filter(k => statusCounts[k]);
   const stLabels = stKeys.map(statusLabel);
   const stValues = stKeys.map(k => statusCounts[k]);
@@ -264,8 +272,9 @@ function renderCharts() {
     }));
   }
 
-  // 2) Active completion year bar
-  const inflightArr = arr.filter(p => IN_FLIGHT_STATES.includes(p.st) && p.ey);
+  // 2) Active completion year bar — counts only true in-flight (excludes
+  //    OVERDUE, since their year is already in the past).
+  const inflightArr = arr.filter(p => IN_FLIGHT_STATES.includes(effectiveStatus(p)) && effectiveStatus(p) !== "OVERDUE" && p.ey);
   const yearCounts = {};
   for (const p of inflightArr) yearCounts[p.ey] = (yearCounts[p.ey] || 0) + 1;
   const years = Object.keys(yearCounts).map(Number).sort();
@@ -341,7 +350,8 @@ function renderBody() {
   tbody.innerHTML = slice.map(p => {
     const areaHref = safeAreaHref(p.as, p.a);
     const areaCell = areaHref ? `<a href="${areaHref}">${_h(p.a)}</a>` : _h(p.a || COPY.no_data);
-    const stCell = `<span class="stbadge stbadge-${p.st}">${_h(statusLabel(p.st))}</span>`;
+    const es = effectiveStatus(p);
+    const stCell = `<span class="stbadge stbadge-${es}">${_h(statusLabel(es))}</span>`;
     const pctCell = `<div class="pct-bar"><span style="width:${p.pct||0}%"></span></div><span class="pct-num">${p.pct||0}%</span>`;
     const unitsCell = p.u > 0 ? fmt(p.u) : _h(COPY.no_units);
     // Project name cell: same alias treatment as developer — show English

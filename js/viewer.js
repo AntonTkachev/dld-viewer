@@ -1580,9 +1580,13 @@ for (const d of PROJECTS) {
 
     // Status breakdown — show every non-zero count, coloured. In-flight
     // states first, then FINISHED/CANCELLED so the eye lands on what's
-    // currently happening.
+    // currently happening. Overdue surfaces as its own red chip when
+    // non-zero (it's a subset of ACTIVE in `by_status`).
     const order = ['ACTIVE','NOT_STARTED','PENDING','CONDITIONAL_ACTIVATING','FINISHED','CANCELLED','FRIEZED'];
     const chips = [];
+    if (d.overdue) {
+      chips.push(`<span class="pj-status-chip" style="background:#fee2e21f;color:#991b1b">${t('pj_status_overdue') || 'Overdue'} · ${d.overdue}</span>`);
+    }
     for (const s of order) {
       const v = d.by_status[s] || 0;
       if (!v) continue;

@@ -20,6 +20,7 @@ Shape per entry:
 import csv
 import gzip
 import json
+import os
 import re
 import sys
 from collections import Counter, defaultdict
@@ -29,6 +30,10 @@ ROOT = Path(__file__).resolve().parent.parent
 HTML = ROOT / 'index.html'
 SRC  = ROOT / 'data' / 'dld_projects.csv.gz'
 
+# In-flight = projects still in some "not yet done" state. Note: we use the
+# DERIVED status from _rera_enrich, so projects that RERA still has marked
+# ACTIVE but Ejari shows as rented out get correctly excluded — they
+# already came back as 'FINISHED' from the enricher.
 IN_FLIGHT_STATES = {'ACTIVE', 'NOT_STARTED', 'PENDING', 'CONDITIONAL_ACTIVATING'}
 
 # Manual aliases for cases where the RERA-side name doesn't match the
@@ -106,39 +111,47 @@ def main() -> int:
     polys = build_polygon_index()
     print(f'Polygon centroids: {len(polys)}')
 
+    # Pull RERA + Ejari-derived status from the shared enricher so the map
+    # badges agree with /construction/.
+    sys.path.insert(0, str(Path(__file__).resolve().parent))
+    from _rera_enrich import load_enriched_rows
+    rera_rows = load_enriched_rows()
+
     # Bucket rows by the resolved polygon key (master preferred, area fallback).
     by_poly = defaultdict(list)
     no_poly_master = Counter()
     no_poly_area = Counter()
     total_rows = 0
 
-    with gzip.open(SRC, 'rt', encoding='utf-8') as f:
-        for r in csv.DictReader(f):
-            total_rows += 1
-            hit = lookup(polys, r['master_project_en'], MASTER_ALIASES)
-            geocode = 'master'
-            if hit is None:
-                hit = lookup(polys, r['area_name_en'], AREA_ALIASES)
-                geocode = 'area'
-            if hit is None:
-                if r['master_project_en']:
-                    no_poly_master[r['master_project_en']] += 1
-                elif r['area_name_en']:
-                    no_poly_area[r['area_name_en']] += 1
-                continue
-            key, (lat, lon, display) = hit
-            r['__poly_key'] = key
-            r['__poly_lat'] = lat
-            r['__poly_lon'] = lon
-            r['__poly_display'] = display
-            r['__geocode'] = geocode
-            by_poly[key].append(r)
+    for r in rera_rows:
+        total_rows += 1
+        hit = lookup(polys, r['master_project_en'], MASTER_ALIASES)
+        geocode = 'master'
+        if hit is None:
+            hit = lookup(polys, r['area_name_en'], AREA_ALIASES)
+            geocode = 'area'
+        if hit is None:
+            if r['master_project_en']:
+                no_poly_master[r['master_project_en']] += 1
+            elif r['area_name_en']:
+                no_poly_area[r['area_name_en']] += 1
+            continue
+        key, (lat, lon, display) = hit
+        r['__poly_key'] = key
+        r['__poly_lat'] = lat
+        r['__poly_lon'] = lon
+        r['__poly_display'] = display
+        r['__geocode'] = geocode
+        by_poly[key].append(r)
 
-    # Build aggregate per polygon.
+    # Build aggregate per polygon — using __derived_status so the map's
+    # "in-flight" badge reflects the Ejari-cross-checked reality, not the
+    # raw RERA register.
     aggregates = []
     for key, rows in by_poly.items():
-        statuses = Counter(r['project_status'] for r in rows)
+        statuses = Counter(r['__derived_status'] for r in rows)
         in_flight = sum(statuses[s] for s in IN_FLIGHT_STATES)
+        overdue_n = sum(1 for r in rows if r['__overdue'])
         # Choose display name: prefer the master_project_en that's most common
         # among rows here, fall back to area_name_en, fall back to polygon's own name.
         masters = Counter(r['master_project_en'] for r in rows if r['master_project_en'])
@@ -149,9 +162,11 @@ def main() -> int:
         # Top developers (excluding empty)
         devs = Counter(r['developer_name'] for r in rows if r['developer_name']).most_common(5)
         # In-flight percent_completed average (skip 0 to avoid bias from
-        # NOT_STARTED rows that all sit at 0%).
+        # NOT_STARTED rows that all sit at 0%). Use derived status here too
+        # — otherwise the average includes the projects we just reclassified
+        # as FINISHED based on Ejari signal, pulling avg_pct down spuriously.
         active_pcts = [int(float(r['percent_completed'])) for r in rows
-                       if r['project_status'] == 'ACTIVE'
+                       if r['__derived_status'] == 'ACTIVE'
                        and r['percent_completed']]
         avg_pct = round(sum(active_pcts) / len(active_pcts), 1) if active_pcts else None
 
@@ -161,6 +176,7 @@ def main() -> int:
             'lat': round(rows[0]['__poly_lat'], 6),
             'lon': round(rows[0]['__poly_lon'], 6),
             'in_flight': in_flight,
+            'overdue':   overdue_n,
             'total': len(rows),
             'by_status': dict(statuses),
             'top_developers': devs,
