@@ -136,11 +136,6 @@
       <button id="prev-btn" type="button">←</button>
       <span class="page-info" id="page-info"></span>
       <button id="next-btn" type="button">→</button>
-      <span class="pp-lbl">प्रति पेज:</span>
-      <select id="pp">
-        <option value="25">25</option><option value="50" selected>50</option>
-        <option value="100">100</option><option value="200">200</option>
-      </select>
     </div>
   </div>
 
@@ -190,7 +185,7 @@ const STATE = {
   sortKey: "u",       // default sort by units desc — biggest pipelines first
   sortDir: "desc",
   page: 1,
-  perPage: 50,
+  perPage: 10,
   data: [],           // loaded from data.json
   filtered: [],
   charts: [],
@@ -340,7 +335,12 @@ function renderBody() {
     const stCell = `<span class="stbadge stbadge-${p.st}">${_h(statusLabel(p.st))}</span>`;
     const pctCell = `<div class="pct-bar"><span style="width:${p.pct||0}%"></span></div><span class="pct-num">${p.pct||0}%</span>`;
     const unitsCell = p.u > 0 ? fmt(p.u) : _h(COPY.no_units);
-    const projName = _h(p.pn || COPY.no_data);
+    // Project name cell: same alias treatment as developer — show English
+    // when joined from DLD transactions, tooltip with the Arabic original.
+    const projNameInner = _h(p.pn || COPY.no_data);
+    const projName = p.pn_orig
+      ? `<span title="${_h(p.pn_orig)}" class="aliased">${projNameInner}<span class="alias-dot" aria-hidden="true">ᵃʳ</span></span>`
+      : projNameInner;
     const subBits = [];
     if (p.b) subBits.push(p.b + " bld");
     if (p.v) subBits.push(p.v + " villa");
@@ -433,10 +433,6 @@ function bind() {
   });
   document.getElementById("prev-btn").addEventListener("click", () => { if (STATE.page > 1) { STATE.page--; renderBody(); renderPager(); } });
   document.getElementById("next-btn").addEventListener("click", () => { STATE.page++; renderBody(); renderPager(); });
-  document.getElementById("pp").addEventListener("change", e => {
-    STATE.perPage = parseInt(e.target.value, 10) || 50;
-    STATE.page = 1; renderBody(); renderPager();
-  });
 }
 
 async function boot() {
