@@ -1,0 +1,48 @@
+# Cloudflare Pages — real HTTP security headers.
+#
+# GitHub Pages ignores this file (different deploy system), so the prod
+# deployment on antontkachev.github.io is unaffected. Cloudflare Pages
+# applies these to every response on *.pages.dev (or our custom domain
+# when we point one).
+#
+# Why this exists in parallel to the <meta http-equiv> CSP in HTML:
+#   - meta-CSP is the GH Pages fallback (only way to set CSP on static
+#     hosting without header control).
+#   - HTTP-CSP is stronger: blocks `<base>` injection earlier in parse,
+#     applies to non-HTML responses (data.json, geojson), and the browser
+#     receives it BEFORE any HTML byte. We use both; the browser
+#     intersects them per-directive.
+
+/*
+  X-Content-Type-Options: nosniff
+  X-Frame-Options: DENY
+  Referrer-Policy: strict-origin-when-cross-origin
+  Permissions-Policy: geolocation=(), microphone=(), camera=(), payment=(), usb=(), interest-cohort=()
+  Strict-Transport-Security: max-age=31536000; includeSubDomains
+  Content-Security-Policy: default-src 'self'; script-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net https://unpkg.com; style-src 'self' 'unsafe-inline' https://unpkg.com; img-src 'self' data: https://*.tile.openstreetmap.org; connect-src 'self'; font-src 'self' data:; frame-ancestors 'none'; base-uri 'self'; form-action 'self'; object-src 'none'; upgrade-insecure-requests
+  Cross-Origin-Opener-Policy: same-origin
+  Cross-Origin-Resource-Policy: same-origin
+
+# data.json — short cache so when we flip the premium gate, scrapers
+# can't survive on stale cached copies for long. No-index for safety
+# (these endpoints have no SEO value; the HTML pages do).
+/sales/*/data.json
+  Cache-Control: public, max-age=300, must-revalidate
+  X-Robots-Tag: noindex, nofollow
+
+/rents/*/data.json
+  Cache-Control: public, max-age=300, must-revalidate
+  X-Robots-Tag: noindex, nofollow
+
+# Static assets — versioning is by content (we'd need filename hashing for
+# `immutable`), keep cache modest until that's in place.
+/js/*
+  Cache-Control: public, max-age=3600
+
+/css/*
+  Cache-Control: public, max-age=3600
+
+# Sitemap — let crawlers in, but short TTL since district list grows.
+/sitemap.xml
+  Cache-Control: public, max-age=3600
+  X-Robots-Tag: noindex
