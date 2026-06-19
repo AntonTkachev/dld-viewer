@@ -1215,7 +1215,11 @@ def main():
                     html = html.replace("/*__DATA_URL__*/'data.json'", json.dumps(data_u))
                     html = html.replace("/*__PERIOD_COPY__*/null",
                                         json.dumps(period_copy, ensure_ascii=False))
-                    html = html.replace('<!--__SUBPAGES__-->', build_main_subpages_block(slug, mode, lang))
+                    # "Explore further" block removed — duplicates the collapsed
+                    # <details> dropdowns already on the page above (Top projects,
+                    # Top deals, Recent). Sub-page links remain in the breadcrumb
+                    # nav and inside each <details> body.
+                    html = html.replace('<!--__SUBPAGES__-->', '')
 
                     html_path = os.path.join(out_dir, 'index.html')
                     with open(html_path, 'w', encoding='utf-8') as f:
