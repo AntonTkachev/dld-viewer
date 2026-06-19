@@ -2,187 +2,447 @@
 <html lang="hi" dir="ltr">
 <head>
 <meta charset="UTF-8">
-<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net https://unpkg.com https://antontkachev.github.io https://www.googletagmanager.com; style-src 'self' 'unsafe-inline' https://unpkg.com https://antontkachev.github.io; img-src 'self' data: https://*.tile.openstreetmap.org https://antontkachev.github.io https://*.google-analytics.com https://*.analytics.google.com https://*.g.doubleclick.net; connect-src 'self' https://antontkachev.github.io https://*.google-analytics.com https://*.analytics.google.com https://*.g.doubleclick.net; font-src 'self' data:; frame-ancestors 'none'; base-uri 'self'; form-action 'self'">
-<script async src="https://www.googletagmanager.com/gtag/js?id=G-5G3EY3Y2KG"></script>
-<script>window.dataLayer=window.dataLayer||[];function gtag(){dataLayer.push(arguments);}gtag('js',new Date());gtag('config','G-5G3EY3Y2KG');</script>
 <meta name="viewport" content="width=device-width,initial-scale=1">
-<link rel="icon" type="image/svg+xml" href="https://antontkachev.github.io/dld-viewer/favicon.svg">
-<title>दुबई में निर्माण परियोजनाएँ</title>
-<meta name="description" content="RERA के अनुसार दुबई में 93 सक्रिय या लंबित आवासीय परियोजनाएँ। प्रत्येक पंक्ति इलाका, यूनिट्स की संख्या और सक्रिय निर्माण दिखाती है.">
-<meta name="robots" content="index,follow">
+<title>दुबई निर्माण — RERA रजिस्टर फिल्टर के साथ</title>
+<meta name="description" content="1,569 सक्रिय निर्माण परियोजनाएँ 3,039 RERA रिकॉर्ड में से।">
 <link rel="canonical" href="https://antontkachev.github.io/dld-viewer/hi/construction/">
-<meta property="og:type" content="website">
-<meta property="og:title" content="दुबई में निर्माण परियोजनाएँ">
-<meta property="og:description" content="RERA के अनुसार दुबई में 93 सक्रिय या लंबित आवासीय परियोजनाएँ। प्रत्येक पंक्ति इलाका, यूनिट्स की संख्या और सक्रिय निर्माण दिखाती है.">
 <link rel="alternate" hreflang="ru" href="https://antontkachev.github.io/dld-viewer/construction/">
 <link rel="alternate" hreflang="en" href="https://antontkachev.github.io/dld-viewer/en/construction/">
 <link rel="alternate" hreflang="ar" href="https://antontkachev.github.io/dld-viewer/ar/construction/">
 <link rel="alternate" hreflang="hi" href="https://antontkachev.github.io/dld-viewer/hi/construction/">
 <link rel="alternate" hreflang="zh" href="https://antontkachev.github.io/dld-viewer/zh/construction/">
 <link rel="alternate" hreflang="x-default" href="https://antontkachev.github.io/dld-viewer/construction/">
-<script type="application/ld+json">{"@context": "https://schema.org", "@type": "CollectionPage", "name": "दुबई में निर्माण परियोजनाएँ", "description": "RERA के अनुसार दुबई में 93 सक्रिय या लंबित आवासीय परियोजनाएँ। प्रत्येक पंक्ति इलाका, यूनिट्स की संख्या और सक्रिय निर्माण दिखाती है.", "inLanguage": "hi", "url": "https://antontkachev.github.io/dld-viewer/hi/construction/", "about": {"@type": "Place", "name": "Dubai, UAE"}, "isPartOf": {"@type": "WebSite", "name": "Deedmap", "url": "https://antontkachev.github.io/dld-viewer/"}, "mainEntity": {"@type": "ItemList", "name": "दुबई में निर्माण परियोजनाएँ", "numberOfItems": 93}}</script>
-<script type="application/ld+json">{"@context": "https://schema.org", "@type": "BreadcrumbList", "itemListElement": [{"@type": "ListItem", "position": 1, "name": "दुबई", "item": "https://antontkachev.github.io/dld-viewer/hi/"}, {"@type": "ListItem", "position": 2, "name": "दुबई में निर्माण परियोजनाएँ", "item": "https://antontkachev.github.io/dld-viewer/hi/construction/"}]}</script>
+<meta property="og:type" content="website">
+<meta property="og:title" content="दुबई निर्माण — RERA रजिस्टर फिल्टर के साथ">
+<meta property="og:description" content="1,569 सक्रिय निर्माण परियोजनाएँ 3,039 RERA रिकॉर्ड में से।">
+<link rel="icon" type="image/svg+xml" href="https://antontkachev.github.io/dld-viewer/favicon.svg">
 <link rel="stylesheet" href="https://antontkachev.github.io/dld-viewer/css/viewer.css">
+<script async src="https://www.googletagmanager.com/gtag/js?id=G-5G3EY3Y2KG"></script>
+<script>window.dataLayer=window.dataLayer||[];function gtag(){dataLayer.push(arguments);}gtag('js',new Date());gtag('config','G-5G3EY3Y2KG');</script>
 <style>
-  html, body { background:#f8fafc; min-height:100%; }
-  .wrap { max-width:1080px; margin:0 auto; padding:18px 20px 64px; }
-  .breadcrumb { font-size:13px; color:#6b7280; margin-bottom:10px; }
-  .breadcrumb a { color:#1d4ed8; text-decoration:none; }
-  .breadcrumb a:hover { text-decoration:underline; }
-  .topbar { display:flex; align-items:baseline; justify-content:space-between; gap:16px; margin-bottom:14px; flex-wrap:wrap; }
-  h1 { font-size:24px; margin:0; line-height:1.25; }
-  .topbar-controls { display:flex; gap:10px; align-items:center; flex-wrap:wrap; }
-  .langswitch-dd { position:relative; }
-  .langswitch-dd > summary { list-style:none; cursor:pointer; display:inline-flex; align-items:center; gap:6px; padding:6px 10px; background:#f1f5f9; border-radius:8px; font-size:12px; font-weight:600; color:#6b7280; user-select:none; }
-  .langswitch-dd > summary::-webkit-details-marker { display:none; }
-  .langswitch-dd > summary::marker { content:""; }
-  .langswitch-dd > summary .globe { font-size:14px; }
-  .langswitch-dd > summary .lang-current { color:#1d4ed8; }
-  .langswitch-dd > summary .caret { font-size:10px; opacity:.6; }
-  .langswitch-dd[open] > summary { background:#e2e8f0; }
-  .langswitch-dd .lang-menu { position:absolute; top:calc(100% + 4px); inset-inline-end:0; background:#fff; border:1px solid #e5e7eb; border-radius:8px; padding:4px; min-width:140px; box-shadow:0 6px 16px rgba(15,23,42,0.08); display:flex; flex-direction:column; z-index:10; }
-  .langswitch-dd .lang-menu a { padding:7px 10px; border-radius:6px; font-size:13px; text-decoration:none; color:#374151; }
-  .langswitch-dd .lang-menu a:hover { background:#f3f4f6; }
-  .langswitch-dd .lang-menu a.active { background:#1d4ed8; color:#fff; font-weight:600; }
-  html[dir="rtl"] .langswitch-dd .lang-menu { inset-inline-end:auto; inset-inline-start:0; }
-  .lede { font-size:15px; color:#374151; margin:6px 0 16px; max-width:760px; line-height:1.55; }
-  .cta { margin-bottom:20px; }
-  .cta a { display:inline-block; padding:9px 16px; background:#1d4ed8; color:#fff; border-radius:8px; text-decoration:none; font-size:14px; font-weight:600; }
-  .panel { background:#fff; border:1px solid #e5e7eb; border-radius:12px; padding:6px 20px 18px; }
-  table { width:100%; border-collapse:collapse; font-size:13px; }
-  th, td { padding:8px 12px; text-align:start; border-bottom:1px solid #f3f4f6; }
-  th { font-weight:600; color:#6b7280; font-size:11px; text-transform:uppercase; letter-spacing:0.04em; background:#f8fafc; position:sticky; top:0; }
-  td a { color:#1d4ed8; text-decoration:none; }
-  td a:hover { text-decoration:underline; }
-  td.num, th.num { text-align:end; font-variant-numeric:tabular-nums; }
-  .nav { margin-top:24px; padding-top:18px; border-top:1px solid #e5e7eb; font-size:14px; }
-  .nav a { color:#1d4ed8; text-decoration:none; margin-inline-end:18px; }
+  html,body{background:#f8fafc;min-height:100%}
+  .wrap{max-width:1280px;margin:0 auto;padding:18px 20px 64px}
+  .breadcrumb{font-size:13px;color:#6b7280;margin-bottom:10px}
+  .breadcrumb a{color:#1d4ed8;text-decoration:none} .breadcrumb a:hover{text-decoration:underline}
+  .topbar{display:flex;align-items:baseline;justify-content:space-between;gap:16px;margin-bottom:14px;flex-wrap:wrap}
+  h1{font-size:24px;margin:0;line-height:1.25}
+  .langswitch{font-size:12px}
+  .langswitch a{padding:5px 9px;border-radius:6px;text-decoration:none;color:#475569;margin-inline-start:2px}
+  .langswitch a:hover{background:#f1f5f9}
+  .langswitch a.active{background:#1d4ed8;color:#fff;font-weight:600}
+  .lede{font-size:14.5px;color:#374151;margin:6px 0 14px;max-width:920px;line-height:1.55}
+  .cta{margin-bottom:18px}
+  .cta a{display:inline-block;padding:8px 14px;background:#1d4ed8;color:#fff;border-radius:8px;text-decoration:none;font-size:13.5px;font-weight:600}
+  .hero-stats{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:10px;margin-bottom:18px}
+  @media (max-width:900px){.hero-stats{grid-template-columns:repeat(2,minmax(0,1fr))}}
+  .hero-stat{background:#fff;border:1px solid #e5e7eb;border-left:3px solid #1d4ed8;border-radius:10px;padding:11px 14px}
+  .hero-stat.hs-units{border-left-color:#0e7c66} .hero-stat.hs-year{border-left-color:#9a6418}
+  .hero-stat.hs-dev{border-left-color:#475569} .hero-stat.hs-pct{border-left-color:#7e22ce}
+  .hero-stat .k{font-size:11.5px;color:#6b7280;line-height:1.3;margin-bottom:2px;font-weight:500}
+  .hero-stat .v{font-size:18px;font-weight:700;color:#0f172a;font-variant-numeric:tabular-nums;line-height:1.2}
+  .hero-stat .sub{font-size:11px;color:#94a3b8;margin-top:2px;line-height:1.3;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+  .chart-grid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:10px;margin-bottom:18px}
+  @media (max-width:1000px){.chart-grid{grid-template-columns:repeat(2,minmax(0,1fr))}}
+  .chart-card{background:#fff;border:1px solid #e5e7eb;border-radius:10px;padding:10px 12px}
+  .chart-card .ct{font-size:11.5px;font-weight:600;color:#475569;margin-bottom:6px;text-align:center;line-height:1.25}
+  .chart-card .cv{position:relative;height:170px}
+  .filters{background:#fff;border:1px solid #e5e7eb;border-radius:10px;padding:10px 12px;margin-bottom:14px;display:flex;flex-wrap:wrap;gap:8px;align-items:center}
+  .fchips{display:flex;flex-wrap:wrap;gap:5px}
+  .fchip{font-family:inherit;cursor:pointer;border-radius:14px;border:1px solid #d6dde6;background:#fff;color:#374151;padding:4px 10px;font-size:11.5px;font-weight:600;line-height:1.2;transition:background .12s,border-color .12s,color .12s}
+  .fchip:hover{background:#f1f5fb;border-color:#9bb6e2}
+  .fchip.active{background:#1d4ed8;color:#fff;border-color:#1d4ed8}
+  .filters input[type=search]{font-family:inherit;padding:6px 10px;border:1px solid #d6dde6;border-radius:6px;font-size:13px;min-width:240px;flex:1 1 240px;max-width:360px}
+  .filters select{font-family:inherit;padding:6px 10px;border:1px solid #d6dde6;border-radius:6px;font-size:12.5px;background:#fff;max-width:200px}
+  .filters .fbtn-clear{font-family:inherit;cursor:pointer;background:#f8fafc;border:1px solid #d6dde6;border-radius:6px;padding:6px 12px;font-size:12px;color:#475569}
+  .filters .fbtn-clear:hover{background:#eef2f7}
+  .filters .fshowing{font-size:12px;color:#6b7280;margin-inline-start:auto;font-variant-numeric:tabular-nums}
+  .panel{background:#fff;border:1px solid #e5e7eb;border-radius:12px;overflow:hidden}
+  table.tbl{width:100%;border-collapse:collapse;font-size:13px}
+  table.tbl th,table.tbl td{padding:8px 10px;text-align:start;border-bottom:1px solid #f3f4f6;vertical-align:top}
+  table.tbl th{font-weight:600;color:#6b7280;font-size:11px;text-transform:uppercase;letter-spacing:0.04em;background:#f8fafc;position:sticky;top:0;user-select:none;cursor:pointer}
+  table.tbl th.sortable:hover{background:#eef2f7;color:#1d4ed8}
+  table.tbl th .sort-arr{margin-inline-start:3px;opacity:.4;font-size:9px}
+  table.tbl th.sort-asc .sort-arr,table.tbl th.sort-desc .sort-arr{opacity:1;color:#1d4ed8}
+  table.tbl tr:hover td{background:#fbfcfd}
+  td.num,th.num{text-align:end;font-variant-numeric:tabular-nums}
+  td a{color:#1d4ed8;text-decoration:none} td a:hover{text-decoration:underline}
+  .stbadge{display:inline-block;padding:2px 7px;border-radius:12px;font-size:11px;font-weight:600}
+  .stbadge-FINISHED{background:#ecfdf5;color:#047857}
+  .stbadge-ACTIVE{background:#dbeafe;color:#1d4ed8}
+  .stbadge-NOT_STARTED{background:#fef3c7;color:#92400e}
+  .stbadge-PENDING{background:#fff7ed;color:#c2410c}
+  .stbadge-CONDITIONAL_ACTIVATING{background:#f1f5f9;color:#475569}
+  .stbadge-FRIEZED{background:#fee2e2;color:#991b1b}
+  .pct-bar{position:relative;background:#f1f5f9;border-radius:4px;height:8px;width:80px;overflow:hidden}
+  .pct-bar > span{position:absolute;top:0;left:0;height:100%;background:linear-gradient(90deg,#1d4ed8,#0ea5e9);border-radius:4px}
+  .pct-num{display:inline-block;font-variant-numeric:tabular-nums;font-size:11px;color:#475569;margin-inline-start:6px}
+  .pager{display:flex;align-items:center;gap:8px;padding:10px 14px;background:#f8fafc;border-top:1px solid #e5e7eb;flex-wrap:wrap}
+  .pager button{font-family:inherit;cursor:pointer;background:#fff;border:1px solid #d6dde6;border-radius:6px;padding:5px 12px;font-size:12.5px;color:#374151}
+  .pager button:hover:not(:disabled){background:#eef2f7}
+  .pager button:disabled{opacity:.4;cursor:not-allowed}
+  .pager .page-info{font-size:12.5px;color:#475569;font-variant-numeric:tabular-nums}
+  .pager select{font-family:inherit;padding:4px 8px;border:1px solid #d6dde6;border-radius:5px;font-size:12.5px;background:#fff}
+  .pager .pp-lbl{font-size:12px;color:#6b7280}
+  .empty-row td{text-align:center;padding:32px 16px;color:#94a3b8;font-size:13px}
+  .nav-foot{margin-top:20px;padding-top:16px;border-top:1px solid #e5e7eb;font-size:13.5px;display:flex;gap:18px;flex-wrap:wrap}
+  .nav-foot a{color:#1d4ed8;text-decoration:none}
+  td .proj-pn{font-weight:600;color:#0f172a;display:block;line-height:1.3}
+  td .proj-sub{color:#64748b;font-size:11.5px;line-height:1.3;margin-top:1px}
 </style>
 </head>
 <body>
 <div class="wrap">
   <div class="breadcrumb">
-    <a href="https://antontkachev.github.io/dld-viewer/hi/">दुबई</a> ›
-    <span>दुबई में निर्माण परियोजनाएँ</span>
+    <a href="https://antontkachev.github.io/dld-viewer/hi/">दुबई</a> › <span>दुबई में निर्माण परियोजनाएँ</span>
   </div>
 
   <div class="topbar">
-    <h1>🏗️ दुबई में निर्माण परियोजनाएँ</h1>
-    <div class="topbar-controls">
-      <details class="langswitch-dd"><summary><span class="globe" aria-hidden="true">🌐</span><span class="lang-current">HI</span><span class="caret" aria-hidden="true">▾</span></summary><div class="lang-menu"><a href="https://antontkachev.github.io/dld-viewer/construction/" lang="ru">RU</a><a href="https://antontkachev.github.io/dld-viewer/en/construction/" lang="en">EN</a><a href="https://antontkachev.github.io/dld-viewer/ar/construction/" lang="ar">AR</a><a class="active" href="https://antontkachev.github.io/dld-viewer/hi/construction/" lang="hi">HI</a><a href="https://antontkachev.github.io/dld-viewer/zh/construction/" lang="zh">ZH</a></div></details>
-    </div>
+    <h1>🏗️ दुबई का निर्माण — RERA रजिस्टर</h1>
+    <div class="langswitch"><a class="" href="https://antontkachev.github.io/dld-viewer/construction/" lang="ru">RU</a><a class="" href="https://antontkachev.github.io/dld-viewer/en/construction/" lang="en">EN</a><a class="" href="https://antontkachev.github.io/dld-viewer/ar/construction/" lang="ar">AR</a><a class="active" href="https://antontkachev.github.io/dld-viewer/hi/construction/" lang="hi">HI</a><a class="" href="https://antontkachev.github.io/dld-viewer/zh/construction/" lang="zh">ZH</a></div>
   </div>
 
-  <p class="lede">RERA के अनुसार दुबई में 93 सक्रिय या लंबित आवासीय परियोजनाएँ। प्रत्येक पंक्ति इलाका, यूनिट्स की संख्या और सक्रिय निर्माण दिखाती है.</p>
+  <p class="lede">RERA रजिस्टर: 3,039 परियोजनाएँ, 1,569 चालू, 382,625 यूनिट पाइपलाइन में।</p>
 
-  <div class="cta">
-    <a href="https://antontkachev.github.io/dld-viewer/hi/sales/?layers=proj">मानचित्र पर दिखाएँ →</a>
+  <div class="cta"><a href="https://antontkachev.github.io/dld-viewer/hi/sales/?layers=proj">मानचित्र पर दिखाएँ →</a></div>
+
+  <div class="hero-stats" id="hero"></div>
+
+  <div class="chart-grid">
+    <div class="chart-card"><div class="ct">परियोजना स्थिति</div><div class="cv"><canvas id="ch-status"></canvas></div></div>
+    <div class="chart-card"><div class="ct">अपेक्षित पूर्णता वर्ष</div><div class="cv"><canvas id="ch-completion"></canvas></div></div>
+    <div class="chart-card"><div class="ct">शीर्ष-10 डेवलपर (in-flight)</div><div class="cv"><canvas id="ch-devs"></canvas></div></div>
+    <div class="chart-card"><div class="ct">शीर्ष-10 क्षेत्र (in-flight)</div><div class="cv"><canvas id="ch-areas"></canvas></div></div>
+  </div>
+
+  <div class="filters">
+    <div class="fchips" id="status-chips"></div>
+    <input type="search" id="search" placeholder="प्रोजेक्ट या डेवलपर खोजें…" autocomplete="off">
+    <select id="area-filter"><option value="">सभी क्षेत्र</option></select>
+    <button class="fbtn-clear" id="clear-btn" type="button">रीसेट</button>
+    <span class="fshowing" id="showing"></span>
   </div>
 
   <div class="panel">
-    <table>
-<thead><tr><th>नाम</th><th class="num">चालू</th><th class="num">यूनिट्स</th><th>इलाका</th></tr></thead>
-<tbody>
-<tr><td>Al Barari</td><td class="num">1</td><td class="num">0</td><td><a href="https://antontkachev.github.io/dld-viewer/hi/sales/al-barari/">Al Barari</a></td></tr>
-<tr><td>Living Legends</td><td class="num">6</td><td class="num">2,196</td><td><a href="https://antontkachev.github.io/dld-viewer/hi/sales/al-barari/">Al Barari</a></td></tr>
-<tr><td>Mohammed Bin Rashid AL Maktoum District 11</td><td class="num">35</td><td class="num">2,016</td><td><a href="https://antontkachev.github.io/dld-viewer/hi/sales/al-barari/">Al Barari</a></td></tr>
-<tr><td>Wadi Al Safa 3</td><td class="num">5</td><td class="num">525</td><td><a href="https://antontkachev.github.io/dld-viewer/hi/sales/al-barari/">Al Barari</a></td></tr>
-<tr><td>Al Barsha First</td><td class="num">2</td><td class="num">577</td><td><a href="https://antontkachev.github.io/dld-viewer/hi/sales/al-barsha-1/">Al Barsha 1</a></td></tr>
-<tr><td>Dubai Science Park</td><td class="num">12</td><td class="num">11,210</td><td><a href="https://antontkachev.github.io/dld-viewer/hi/sales/al-barsha-south-2/">Al Barsha South 2</a></td></tr>
-<tr><td>Al Furjan</td><td class="num">49</td><td class="num">13,295</td><td><a href="https://antontkachev.github.io/dld-viewer/hi/sales/al-furjan/">Al Furjan</a></td></tr>
-<tr><td>DAMAC HILLS</td><td class="num">9</td><td class="num">8,598</td><td><a href="https://antontkachev.github.io/dld-viewer/hi/sales/al-hebiah-3/">Al Hebiah 3</a></td></tr>
-<tr><td>Dubai Sports City</td><td class="num">27</td><td class="num">21,134</td><td><a href="https://antontkachev.github.io/dld-viewer/hi/sales/al-hebiah-4/">Al Hebiah 4</a></td></tr>
-<tr><td>TILAL AL GHAF</td><td class="num">7</td><td class="num">0</td><td><a href="https://antontkachev.github.io/dld-viewer/hi/sales/al-hebiah-4/">Al Hebiah 4</a></td></tr>
-<tr><td>Al Hebiah Fifth</td><td class="num">22</td><td class="num">3,481</td><td><a href="https://antontkachev.github.io/dld-viewer/hi/sales/al-hebiah-5/">Al Hebiah 5</a></td></tr>
-<tr><td>DAMAC Lagoons</td><td class="num">10</td><td class="num">0</td><td><a href="https://antontkachev.github.io/dld-viewer/hi/sales/al-hebiah-5/">Al Hebiah 5</a></td></tr>
-<tr><td>Dubai Health Care City Phase 2</td><td class="num">8</td><td class="num">5,441</td><td><a href="https://antontkachev.github.io/dld-viewer/hi/sales/al-jaddaf/">Al Jaddaf</a></td></tr>
-<tr><td>Jumeirah Garden City</td><td class="num">35</td><td class="num">3,060</td><td><a href="https://antontkachev.github.io/dld-viewer/hi/sales/al-satwa/">Al Satwa</a></td></tr>
-<tr><td>Sufouh Gardens</td><td class="num">1</td><td class="num">844</td><td><a href="https://antontkachev.github.io/dld-viewer/hi/sales/al-sufouh-1/">Al Sufouh 1</a></td></tr>
-<tr><td>Site A</td><td class="num">3</td><td class="num">1,243</td><td><a href="https://antontkachev.github.io/dld-viewer/hi/sales/al-sufouh-2/">Al Sufouh 2</a></td></tr>
-<tr><td>Barsha Heights</td><td class="num">3</td><td class="num">3,728</td><td><a href="https://antontkachev.github.io/dld-viewer/hi/sales/al-thanyah-1/">Al Thanyah 1</a></td></tr>
-<tr><td>City Walk</td><td class="num">12</td><td class="num">4,390</td><td><a href="https://antontkachev.github.io/dld-viewer/hi/sales/al-wasl/">Al Wasl</a></td></tr>
-<tr><td>Dubai Water Canal</td><td class="num">9</td><td class="num">3,560</td><td><a href="https://antontkachev.github.io/dld-viewer/hi/sales/al-wasl/">Al Wasl</a></td></tr>
-<tr><td>Al Yelayiss 1</td><td class="num">18</td><td class="num">0</td><td><a href="https://antontkachev.github.io/dld-viewer/hi/sales/al-yalayis-1/">Al Yalayis 1</a></td></tr>
-<tr><td>Al Yelayiss 2</td><td class="num">1</td><td class="num">576</td><td><a href="https://antontkachev.github.io/dld-viewer/hi/sales/al-yalayis-2/">Al Yalayis 2</a></td></tr>
-<tr><td>TOWN SQUARE</td><td class="num">23</td><td class="num">10,355</td><td><a href="https://antontkachev.github.io/dld-viewer/hi/sales/al-yalayis-2/">Al Yalayis 2</a></td></tr>
-<tr><td>Al Yelayiss 4</td><td class="num">1</td><td class="num">0</td><td><a href="https://antontkachev.github.io/dld-viewer/hi/sales/al-yalayis-4/">Al Yalayis 4</a></td></tr>
-<tr><td>Arjan</td><td class="num">39</td><td class="num">20,792</td><td><a href="https://antontkachev.github.io/dld-viewer/hi/sales/arjan/">Arjan</a></td></tr>
-<tr><td>City Of Arabia</td><td class="num">11</td><td class="num">10,225</td><td><a href="https://antontkachev.github.io/dld-viewer/hi/sales/city-of-arabia/">City of Arabia</a></td></tr>
-<tr><td>Falcon City</td><td class="num">2</td><td class="num">2,172</td><td><a href="https://antontkachev.github.io/dld-viewer/hi/sales/city-of-arabia/">City of Arabia</a></td></tr>
-<tr><td>Liwan1</td><td class="num">15</td><td class="num">6,310</td><td><a href="https://antontkachev.github.io/dld-viewer/hi/sales/city-of-arabia/">City of Arabia</a></td></tr>
-<tr><td>Wadi Al Safa 4</td><td class="num">9</td><td class="num">4,588</td><td><a href="https://antontkachev.github.io/dld-viewer/hi/sales/city-of-arabia/">City of Arabia</a></td></tr>
-<tr><td>DAMAC HILLS 2</td><td class="num">15</td><td class="num">3,920</td><td><a href="https://antontkachev.github.io/dld-viewer/hi/sales/damac-hills-2/">Damac Hills 2</a></td></tr>
-<tr><td>Discovery Gardens</td><td class="num">9</td><td class="num">1,959</td><td><a href="https://antontkachev.github.io/dld-viewer/hi/sales/discovery-gardens/">Discovery Gardens</a></td></tr>
-<tr><td>Business Bay</td><td class="num">53</td><td class="num">64,372</td><td><a href="https://antontkachev.github.io/dld-viewer/hi/sales/downtown-dubai/">Downtown Dubai</a></td></tr>
-<tr><td>DownTown Dubai</td><td class="num">19</td><td class="num">23,338</td><td><a href="https://antontkachev.github.io/dld-viewer/hi/sales/downtown-dubai/">Downtown Dubai</a></td></tr>
-<tr><td>Dubai Creek Harbour</td><td class="num">17</td><td class="num">18,481</td><td><a href="https://antontkachev.github.io/dld-viewer/hi/sales/dubai-creek-harbour/">Dubai Creek Harbour</a></td></tr>
-<tr><td>Dubai Harbour</td><td class="num">13</td><td class="num">9,305</td><td><a href="https://antontkachev.github.io/dld-viewer/hi/sales/dubai-harbour/">Dubai Harbour</a></td></tr>
-<tr><td>Dubai Investment Park First</td><td class="num">12</td><td class="num">3,593</td><td><a href="https://antontkachev.github.io/dld-viewer/hi/sales/dubai-investment-park-1/">Dubai Investment Park 1</a></td></tr>
-<tr><td>Dubai Investment Park Second</td><td class="num">27</td><td class="num">7,689</td><td><a href="https://antontkachev.github.io/dld-viewer/hi/sales/dubai-investment-park-2/">Dubai Investment Park 2</a></td></tr>
-<tr><td>Dubai Marina</td><td class="num">14</td><td class="num">24,440</td><td><a href="https://antontkachev.github.io/dld-viewer/hi/sales/dubai-marina/">Dubai Marina</a></td></tr>
-<tr><td>Silicon Oasis</td><td class="num">13</td><td class="num">14,956</td><td><a href="https://antontkachev.github.io/dld-viewer/hi/sales/dubai-silicon-oasis/">Dubai Silicon Oasis</a></td></tr>
-<tr><td>Dubai South Residential District</td><td class="num">50</td><td class="num">7,694</td><td><a href="https://antontkachev.github.io/dld-viewer/hi/sales/dubai-south-residential-district/">Dubai South Residential District</a></td></tr>
-<tr><td>Dubai Studio City</td><td class="num">11</td><td class="num">5,042</td><td><a href="https://antontkachev.github.io/dld-viewer/hi/sales/dubai-studio-city/">Dubai Studio City</a></td></tr>
-<tr><td>Dubai World Central</td><td class="num">55</td><td class="num">28,024</td><td><a href="https://antontkachev.github.io/dld-viewer/hi/sales/dubai-world-central/">Dubai World Central</a></td></tr>
-<tr><td>Ghadeer Al tair</td><td class="num">2</td><td class="num">0</td><td><a href="https://antontkachev.github.io/dld-viewer/hi/sales/ghadeer-al-tair/">Ghadeer Al Tair</a></td></tr>
-<tr><td>DUBAI HILLS</td><td class="num">3</td><td class="num">0</td><td><a href="https://antontkachev.github.io/dld-viewer/hi/sales/hadaeq-sheikh-mohammed-bin-rashid/">Hadaeq Sheikh Mohammed Bin Rashid</a></td></tr>
-<tr><td>Dubai Hills Estate</td><td class="num">31</td><td class="num">18,141</td><td><a href="https://antontkachev.github.io/dld-viewer/hi/sales/hadaeq-sheikh-mohammed-bin-rashid/">Hadaeq Sheikh Mohammed Bin Rashid</a></td></tr>
-<tr><td>HADAEQ SHEIKH MOHAMMED BIN RASHID - DISRICT 7</td><td class="num">2</td><td class="num">1,455</td><td><a href="https://antontkachev.github.io/dld-viewer/hi/sales/hadaeq-sheikh-mohammed-bin-rashid/">Hadaeq Sheikh Mohammed Bin Rashid</a></td></tr>
-<tr><td>Jaddaf Waterfront</td><td class="num">14</td><td class="num">4,242</td><td><a href="https://antontkachev.github.io/dld-viewer/hi/sales/jaddaf-waterfront/">Jaddaf Waterfront</a></td></tr>
-<tr><td>Wasl Gate</td><td class="num">13</td><td class="num">4,230</td><td><a href="https://antontkachev.github.io/dld-viewer/hi/sales/jebel-ali-village/">Jebel Ali Village</a></td></tr>
-<tr><td>Jumeirah Islands</td><td class="num">12</td><td class="num">9,115</td><td><a href="https://antontkachev.github.io/dld-viewer/hi/sales/jumeirah-islands/">Jumeirah Islands</a></td></tr>
-<tr><td>Jumeirah Park</td><td class="num">2</td><td class="num">0</td><td><a href="https://antontkachev.github.io/dld-viewer/hi/sales/jumeirah-islands/">Jumeirah Islands</a></td></tr>
-<tr><td>Jumeirah Lakes Towers</td><td class="num">8</td><td class="num">21,944</td><td><a href="https://antontkachev.github.io/dld-viewer/hi/sales/jumeirah-lakes-towers/">Jumeirah Lakes Towers</a></td></tr>
-<tr><td>Al Barsha South Fifth</td><td class="num">3</td><td class="num">1,060</td><td><a href="https://antontkachev.github.io/dld-viewer/hi/sales/jumeirah-village-circle/">Jumeirah Village Circle</a></td></tr>
-<tr><td>Jumeirah Village Circle</td><td class="num">167</td><td class="num">68,930</td><td><a href="https://antontkachev.github.io/dld-viewer/hi/sales/jumeirah-village-circle/">Jumeirah Village Circle</a></td></tr>
-<tr><td>Jumeirah Village Triangle</td><td class="num">40</td><td class="num">16,065</td><td><a href="https://antontkachev.github.io/dld-viewer/hi/sales/jumeirah-village-circle/">Jumeirah Village Circle</a></td></tr>
-<tr><td>LA MER</td><td class="num">6</td><td class="num">1,612</td><td><a href="https://antontkachev.github.io/dld-viewer/hi/sales/la-mer/">LA MER</a></td></tr>
-<tr><td>Mohammed Bin Rashid AL Maktoum City -District -1 Community</td><td class="num">2</td><td class="num">2,135</td><td><a href="https://antontkachev.github.io/dld-viewer/hi/sales/mbr-al-merkad/">MBR- Al Merkad</a></td></tr>
-<tr><td>Me'Aisem Second</td><td class="num">7</td><td class="num">0</td><td><a href="https://antontkachev.github.io/dld-viewer/hi/sales/me-aisem-2/">Me'aisem 2</a></td></tr>
-<tr><td>Bukadra</td><td class="num">22</td><td class="num">10,572</td><td><a href="https://antontkachev.github.io/dld-viewer/hi/sales/meydan/">Meydan</a></td></tr>
-<tr><td>Meydan One Community</td><td class="num">16</td><td class="num">14,133</td><td><a href="https://antontkachev.github.io/dld-viewer/hi/sales/meydan/">Meydan</a></td></tr>
-<tr><td>SOBHA HARTLAND</td><td class="num">5</td><td class="num">10,493</td><td><a href="https://antontkachev.github.io/dld-viewer/hi/sales/meydan/">Meydan</a></td></tr>
-<tr><td>International Media Production Zone</td><td class="num">19</td><td class="num">14,507</td><td><a href="https://antontkachev.github.io/dld-viewer/hi/sales/meaisem-1/">Me’aisem 1</a></td></tr>
-<tr><td>Jumeirah Golf Estates</td><td class="num">6</td><td class="num">589</td><td><a href="https://antontkachev.github.io/dld-viewer/hi/sales/meaisem-1/">Me’aisem 1</a></td></tr>
-<tr><td>Jumeirah Golf Estates - Phase B</td><td class="num">2</td><td class="num">0</td><td><a href="https://antontkachev.github.io/dld-viewer/hi/sales/meaisem-1/">Me’aisem 1</a></td></tr>
-<tr><td>Uptown Mirdif</td><td class="num">1</td><td class="num">1,594</td><td><a href="https://antontkachev.github.io/dld-viewer/hi/sales/mirdif/">Mirdif</a></td></tr>
-<tr><td>Motor City</td><td class="num">12</td><td class="num">10,341</td><td><a href="https://antontkachev.github.io/dld-viewer/hi/sales/motor-city/">Motor City</a></td></tr>
-<tr><td>Mudon</td><td class="num">5</td><td class="num">181</td><td><a href="https://antontkachev.github.io/dld-viewer/hi/sales/mudon/">Mudon</a></td></tr>
-<tr><td>Meydan Racecourse Community</td><td class="num">11</td><td class="num">2,564</td><td><a href="https://antontkachev.github.io/dld-viewer/hi/sales/nadd-al-sheba-2/">Nadd Al Sheba 2</a></td></tr>
-<tr><td>Palm Jumeirah</td><td class="num">23</td><td class="num">12,276</td><td><a href="https://antontkachev.github.io/dld-viewer/hi/sales/palm-jumeirah/">Palm Jumeirah</a></td></tr>
-<tr><td>JABEL ALI HILLS</td><td class="num">1</td><td class="num">0</td><td><a href="https://antontkachev.github.io/dld-viewer/hi/sales/saih-shuaib-1/">Saih Shuaib 1</a></td></tr>
-<tr><td>Saih Shuaib 2</td><td class="num">10</td><td class="num">1,558</td><td><a href="https://antontkachev.github.io/dld-viewer/hi/sales/saih-shuaib-2/">Saih Shuaib 2</a></td></tr>
-<tr><td>The Greens</td><td class="num">1</td><td class="num">1,612</td><td><a href="https://antontkachev.github.io/dld-viewer/hi/sales/the-greens/">The Greens</a></td></tr>
-<tr><td>Trade Center First</td><td class="num">3</td><td class="num">2,557</td><td><a href="https://antontkachev.github.io/dld-viewer/hi/sales/trade-centre/">Trade Centre</a></td></tr>
-<tr><td>Trade Center Second</td><td class="num">1</td><td class="num">754</td><td><a href="https://antontkachev.github.io/dld-viewer/hi/sales/trade-centre/">Trade Centre</a></td></tr>
-<tr><td>Dubai Health Care City Phase 1</td><td class="num">3</td><td class="num">215</td><td><a href="https://antontkachev.github.io/dld-viewer/hi/sales/umm-hurair-2/">Umm Hurair 2</a></td></tr>
-<tr><td>Um Suqaim Third</td><td class="num">6</td><td class="num">2,931</td><td><a href="https://antontkachev.github.io/dld-viewer/hi/sales/umm-suqeim-3/">Umm Suqeim 3</a></td></tr>
-<tr><td>Majan</td><td class="num">37</td><td class="num">8,416</td><td><a href="https://antontkachev.github.io/dld-viewer/hi/sales/wadi-al-safa-3/">Wadi Al Safa 3</a></td></tr>
-<tr><td>Dubai Land Residence Complex</td><td class="num">72</td><td class="num">22,186</td><td><a href="https://antontkachev.github.io/dld-viewer/hi/sales/wadi-al-safa-5/">Wadi Al Safa 5</a></td></tr>
-<tr><td>The Villa</td><td class="num">1</td><td class="num">0</td><td><a href="https://antontkachev.github.io/dld-viewer/hi/sales/wadi-al-safa-5/">Wadi Al Safa 5</a></td></tr>
-<tr><td>Wadi Al Safa 5</td><td class="num">19</td><td class="num">2,290</td><td><a href="https://antontkachev.github.io/dld-viewer/hi/sales/wadi-al-safa-5/">Wadi Al Safa 5</a></td></tr>
-<tr><td>800 Villas</td><td class="num">5</td><td class="num">11</td><td><a href="https://antontkachev.github.io/dld-viewer/hi/sales/wadi-al-safa-7/">Wadi Al Safa 7</a></td></tr>
-<tr><td>Dubai Life Style City</td><td class="num">1</td><td class="num">473</td><td><a href="https://antontkachev.github.io/dld-viewer/hi/sales/wadi-al-safa-7/">Wadi Al Safa 7</a></td></tr>
-<tr><td>Rukan</td><td class="num">1</td><td class="num">774</td><td><a href="https://antontkachev.github.io/dld-viewer/hi/sales/wadi-al-safa-7/">Wadi Al Safa 7</a></td></tr>
-<tr><td>International City Phase 3</td><td class="num">30</td><td class="num">3,713</td><td><a href="https://antontkachev.github.io/dld-viewer/hi/sales/warsan/">Warsan</a></td></tr>
-<tr><td>WARSAN FIRST DEVELOPMENT</td><td class="num">5</td><td class="num">809</td><td><a href="https://antontkachev.github.io/dld-viewer/hi/sales/warsan/">Warsan</a></td></tr>
-<tr><td>International City Phase 1</td><td class="num">5</td><td class="num">7,560</td><td><a href="https://antontkachev.github.io/dld-viewer/hi/sales/warsan-4/">Warsan 4</a></td></tr>
-<tr><td>Business Park</td><td class="num">2</td><td class="num">2,832</td><td><a href="https://antontkachev.github.io/dld-viewer/hi/sales/zabeel/">Zabeel</a></td></tr>
-<tr><td>Dubai International Financial Center</td><td class="num">1</td><td class="num">546</td><td><a href="https://antontkachev.github.io/dld-viewer/hi/sales/zabeel/">Zabeel</a></td></tr>
-<tr><td>Wasl 1</td><td class="num">3</td><td class="num">3,284</td><td><a href="https://antontkachev.github.io/dld-viewer/hi/sales/zabeel/">Zabeel</a></td></tr>
-<tr><td>Zaabeel First</td><td class="num">1</td><td class="num">2,219</td><td><a href="https://antontkachev.github.io/dld-viewer/hi/sales/zabeel/">Zabeel</a></td></tr>
-<tr><td>Down Town Jabal Ali</td><td class="num">6</td><td class="num">3,865</td><td>—</td></tr>
-<tr><td>Jabal Ali Village</td><td class="num">4</td><td class="num">0</td><td>—</td></tr>
-<tr><td>Jumeira Bay</td><td class="num">1</td><td class="num">212</td><td>—</td></tr>
-<tr><td>Mina Rashid</td><td class="num">19</td><td class="num">4,442</td><td>—</td></tr>
-<tr><td>Palm Deira</td><td class="num">103</td><td class="num">9,198</td><td>—</td></tr>
-</tbody>
-</table>
+    <table class="tbl" id="tbl">
+      <thead><tr id="thead-row"></tr></thead>
+      <tbody id="tbody"></tbody>
+    </table>
+    <div class="pager">
+      <button id="prev-btn" type="button">←</button>
+      <span class="page-info" id="page-info"></span>
+      <button id="next-btn" type="button">→</button>
+      <span class="pp-lbl">प्रति पेज:</span>
+      <select id="pp">
+        <option value="25">25</option><option value="50" selected>50</option>
+        <option value="100">100</option><option value="200">200</option>
+      </select>
+    </div>
   </div>
 
-  <div class="nav">
-    <a href="https://antontkachev.github.io/dld-viewer/hi/sales/?layers=proj">← मानचित्र पर वापस</a>
+  <div class="nav-foot">
+    <a href="https://antontkachev.github.io/dld-viewer/hi/sales/">← मानचित्र पर</a>
+    <a href="https://antontkachev.github.io/dld-viewer/hi/sales/table/">सभी जिले →</a>
   </div>
 </div>
+
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+<script>
+const COPY = {"breadcrumb_dubai": "दुबई", "section": "दुबई में निर्माण परियोजनाएँ", "h1": "🏗️ दुबई का निर्माण — RERA रजिस्टर", "lede": "RERA रजिस्टर: {n_total} परियोजनाएँ, {n_inflight} चालू, {units} यूनिट पाइपलाइन में।", "cta_map": "मानचित्र पर दिखाएँ", "title": "दुबई निर्माण — RERA रजिस्टर फिल्टर के साथ", "meta": "{n_inflight} सक्रिय निर्माण परियोजनाएँ {n_total} RERA रिकॉर्ड में से।", "h_inflight": "🏗️ अभी चालू", "h_units": "🏠 पाइपलाइन यूनिट", "h_completing": "📅 {y} में पूर्णता", "h_top_dev": "🏢 शीर्ष डेवलपर", "h_avg_pct": "✓ औसत पूर्णता", "chart_status": "परियोजना स्थिति", "chart_completion": "अपेक्षित पूर्णता वर्ष", "chart_top_devs": "शीर्ष-10 डेवलपर (in-flight)", "chart_top_areas": "शीर्ष-10 क्षेत्र (in-flight)", "filter_status": "स्थिति", "filter_search": "प्रोजेक्ट या डेवलपर खोजें…", "filter_area": "सभी क्षेत्र", "filter_clear": "रीसेट", "showing": "{n} में से {total}", "sort_col_name": "प्रोजेक्ट", "sort_col_status": "स्थिति", "sort_col_pct": "पूर्णता", "sort_col_units": "यूनिट", "sort_col_area": "क्षेत्र", "sort_col_master": "मास्टर प्रोजेक्ट", "sort_col_dev": "डेवलपर", "sort_col_end": "सम्पन्न", "st_FINISHED": "सम्पन्न", "st_ACTIVE": "सक्रिय", "st_NOT_STARTED": "शुरू नहीं", "st_PENDING": "लंबित", "st_CONDITIONAL_ACTIVATING": "सशर्त सक्रिय", "st_FRIEZED": "फ्रोजन", "per_page": "प्रति पेज", "prev": "←", "next": "→", "empty_results": "कुछ नहीं मिला।", "no_units": "—", "no_data": "—", "nav_map": "← मानचित्र पर", "nav_districts": "सभी जिले →"};
+const HERO = {"inflight": 1569, "units_pipeline": 382625, "completing_year": 128, "this_year": 2026, "top_dev": "شركة نخيل (ش.م.خ)", "top_dev_n": 220, "avg_pct_inflight": 19.9};
+const LANG = "hi";
+const BASE_URL = "https://antontkachev.github.io/dld-viewer";
+const LANG_PREFIX = "/hi";
+const IN_FLIGHT_STATES = ["ACTIVE","NOT_STARTED","PENDING","CONDITIONAL_ACTIVATING"];
+const STATUS_ORDER = ["ACTIVE","PENDING","NOT_STARTED","CONDITIONAL_ACTIVATING","FINISHED","FRIEZED"];
+const STATUS_COLORS = {ACTIVE:"#1d4ed8", PENDING:"#c2410c", NOT_STARTED:"#92400e", CONDITIONAL_ACTIVATING:"#475569", FINISHED:"#047857", FRIEZED:"#991b1b"};
+const NUM_FMT = new Intl.NumberFormat({ru:"ru-RU",en:"en-US",ar:"ar-AE",hi:"hi-IN",zh:"zh-CN"}[LANG] || "en-US");
+const fmt = (n) => NUM_FMT.format(n||0);
+const _h = (s) => String(s||"").replace(/[&<>"'`]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":"&#39;","`":"&#96;"})[c]);
+function statusLabel(s) { return COPY['st_'+s] || s; }
+function safeAreaHref(slug, area) {
+  if (!slug) return null;
+  return BASE_URL + LANG_PREFIX + "/sales/" + slug + "/";
+}
+
+// ─── Hero ──────────────────────────────────────────────────────────
+function renderHero() {
+  const el = document.getElementById("hero");
+  el.innerHTML = `
+    <div class="hero-stat hs-inflight"><div class="k">${_h(COPY.h_inflight)}</div><div class="v">${fmt(HERO.inflight)}</div><div class="sub">/ ${fmt(3039)}</div></div>
+    <div class="hero-stat hs-units"><div class="k">${_h(COPY.h_units)}</div><div class="v">${fmt(HERO.units_pipeline)}</div></div>
+    <div class="hero-stat hs-year"><div class="k">${_h(COPY.h_completing.replace("{y}", HERO.this_year))}</div><div class="v">${fmt(HERO.completing_year)}</div></div>
+    <div class="hero-stat hs-dev"><div class="k">${_h(COPY.h_top_dev)}</div><div class="v">${fmt(HERO.top_dev_n)}</div><div class="sub">${_h(HERO.top_dev)}</div></div>
+    <div class="hero-stat hs-pct"><div class="k">${_h(COPY.h_avg_pct)}</div><div class="v">${HERO.avg_pct_inflight.toFixed(1)}%</div></div>
+  `;
+}
+
+// ─── Filters state ────────────────────────────────────────────────
+const STATE = {
+  // null = all statuses; otherwise a Set of allowed state codes.
+  statusFilter: new Set(IN_FLIGHT_STATES),
+  search: "",
+  area: "",
+  sortKey: "u",       // default sort by units desc — biggest pipelines first
+  sortDir: "desc",
+  page: 1,
+  perPage: 50,
+  data: [],           // loaded from data.json
+  filtered: [],
+  charts: [],
+};
+
+// ─── Filter pipeline ──────────────────────────────────────────────
+function applyFilters() {
+  const q = STATE.search.trim().toLowerCase();
+  const area = STATE.area.trim().toLowerCase();
+  const sf = STATE.statusFilter;
+  STATE.filtered = STATE.data.filter(p => {
+    if (sf.size > 0 && !sf.has(p.st)) return false;
+    if (area && (p.a || "").toLowerCase() !== area) return false;
+    if (q) {
+      const hay = (p.pn + " " + p.mp + " " + p.dev + " " + p.a).toLowerCase();
+      if (!hay.includes(q)) return false;
+    }
+    return true;
+  });
+  applySort();
+  STATE.page = 1;
+}
+
+const SORT_NUMERIC = new Set(["pct","u","b","v","l","sy","ey"]);
+function applySort() {
+  const k = STATE.sortKey, dir = STATE.sortDir === "asc" ? 1 : -1;
+  const numeric = SORT_NUMERIC.has(k);
+  STATE.filtered.sort((a, b) => {
+    let va = a[k], vb = b[k];
+    if (numeric) {
+      va = va == null ? -Infinity : va;
+      vb = vb == null ? -Infinity : vb;
+      return (va - vb) * dir;
+    }
+    return String(va||"").localeCompare(String(vb||"")) * dir;
+  });
+}
+
+// ─── Charts ────────────────────────────────────────────────────────
+// Charts redraw against `STATE.filtered` — apparent contradiction: top
+// developers and top areas are also inside the filter set when the user
+// has selected an area filter, but that's intentional — the user is
+// saying "show me only this area" and a top-areas chart with a single
+// bar makes the relationship visible.
+function destroyCharts() {
+  for (const c of STATE.charts) c.destroy();
+  STATE.charts = [];
+}
+function renderCharts() {
+  destroyCharts();
+  const arr = STATE.filtered;
+
+  // 1) Status donut
+  const statusCounts = {};
+  for (const p of arr) statusCounts[p.st] = (statusCounts[p.st] || 0) + 1;
+  const stKeys = STATUS_ORDER.filter(k => statusCounts[k]);
+  const stLabels = stKeys.map(statusLabel);
+  const stValues = stKeys.map(k => statusCounts[k]);
+  const stColors = stKeys.map(k => STATUS_COLORS[k] || "#94a3b8");
+  if (stKeys.length) {
+    STATE.charts.push(new Chart(document.getElementById("ch-status"), {
+      type: "doughnut",
+      data: {labels: stLabels, datasets: [{data: stValues, backgroundColor: stColors, borderWidth:1, borderColor:"#fff"}]},
+      options: {responsive:true, maintainAspectRatio:false, cutout:"58%",
+        plugins:{legend:{position:"bottom", labels:{boxWidth:8, font:{size:10}, padding:4}},
+                  tooltip:{callbacks:{label:c=>" "+c.label+": "+fmt(c.parsed)}}}}
+    }));
+  }
+
+  // 2) Active completion year bar
+  const inflightArr = arr.filter(p => IN_FLIGHT_STATES.includes(p.st) && p.ey);
+  const yearCounts = {};
+  for (const p of inflightArr) yearCounts[p.ey] = (yearCounts[p.ey] || 0) + 1;
+  const years = Object.keys(yearCounts).map(Number).sort();
+  if (years.length) {
+    STATE.charts.push(new Chart(document.getElementById("ch-completion"), {
+      type: "bar",
+      data: {labels: years, datasets: [{data: years.map(y => yearCounts[y]), backgroundColor: years.map(y => y === HERO.this_year ? "#9a6418" : "#1d4ed8"), borderWidth:0}]},
+      options: {responsive:true, maintainAspectRatio:false,
+        plugins:{legend:{display:false}, tooltip:{callbacks:{label:c=>" "+fmt(c.parsed.y)}}},
+        scales:{x:{ticks:{font:{size:10}, maxRotation:0}}, y:{ticks:{font:{size:10}, precision:0}, beginAtZero:true}}}
+    }));
+  }
+
+  // 3) Top-10 developers in-flight (horizontal bar)
+  const devCounts = {};
+  for (const p of inflightArr) if (p.dev) devCounts[p.dev] = (devCounts[p.dev]||0) + 1;
+  const topDevs = Object.entries(devCounts).sort((a,b)=>b[1]-a[1]).slice(0,10);
+  if (topDevs.length) {
+    STATE.charts.push(new Chart(document.getElementById("ch-devs"), {
+      type: "bar",
+      data: {labels: topDevs.map(([n])=> n.length > 28 ? n.slice(0,26)+"…" : n), datasets: [{data: topDevs.map(([,c])=>c), backgroundColor:"#475569", borderWidth:0}]},
+      options: {indexAxis:"y", responsive:true, maintainAspectRatio:false,
+        plugins:{legend:{display:false}, tooltip:{callbacks:{title:c=>topDevs[c[0].dataIndex][0], label:c=>" "+fmt(c.parsed.x)}}},
+        scales:{x:{ticks:{font:{size:10}, precision:0}, beginAtZero:true}, y:{ticks:{font:{size:9}}}}}
+    }));
+  }
+
+  // 4) Top-10 areas in-flight (horizontal bar)
+  const areaCounts = {};
+  for (const p of inflightArr) if (p.a) areaCounts[p.a] = (areaCounts[p.a]||0) + 1;
+  const topAreas = Object.entries(areaCounts).sort((a,b)=>b[1]-a[1]).slice(0,10);
+  if (topAreas.length) {
+    STATE.charts.push(new Chart(document.getElementById("ch-areas"), {
+      type: "bar",
+      data: {labels: topAreas.map(([n])=> n.length > 26 ? n.slice(0,24)+"…" : n), datasets: [{data: topAreas.map(([,c])=>c), backgroundColor:"#0e7c66", borderWidth:0}]},
+      options: {indexAxis:"y", responsive:true, maintainAspectRatio:false,
+        plugins:{legend:{display:false}, tooltip:{callbacks:{title:c=>topAreas[c[0].dataIndex][0], label:c=>" "+fmt(c.parsed.x)}}},
+        scales:{x:{ticks:{font:{size:10}, precision:0}, beginAtZero:true}, y:{ticks:{font:{size:9}}}}}
+    }));
+  }
+}
+
+// ─── Table ────────────────────────────────────────────────────────
+const COLS = [
+  {key:"pn",  label:"sort_col_name",   sortable:true, align:"start"},
+  {key:"st",  label:"sort_col_status", sortable:true, align:"start"},
+  {key:"pct", label:"sort_col_pct",    sortable:true, align:"end"},
+  {key:"u",   label:"sort_col_units",  sortable:true, align:"end"},
+  {key:"a",   label:"sort_col_area",   sortable:true, align:"start"},
+  {key:"mp",  label:"sort_col_master", sortable:true, align:"start"},
+  {key:"dev", label:"sort_col_dev",    sortable:true, align:"start"},
+  {key:"ey",  label:"sort_col_end",    sortable:true, align:"end"},
+];
+function renderHead() {
+  const tr = document.getElementById("thead-row");
+  tr.innerHTML = COLS.map(c => {
+    const cls = ["sortable"];
+    if (STATE.sortKey === c.key) cls.push(STATE.sortDir === "asc" ? "sort-asc" : "sort-desc");
+    if (c.align === "end") cls.push("num");
+    const arrow = STATE.sortKey === c.key ? (STATE.sortDir === "asc" ? "▲" : "▼") : "▾";
+    return `<th class="${cls.join(" ")}" data-sort="${c.key}">${_h(COPY[c.label])}<span class="sort-arr">${arrow}</span></th>`;
+  }).join("");
+}
+function renderBody() {
+  const tbody = document.getElementById("tbody");
+  const total = STATE.filtered.length;
+  if (!total) {
+    tbody.innerHTML = `<tr class="empty-row"><td colspan="${COLS.length}">${_h(COPY.empty_results)}</td></tr>`;
+    return;
+  }
+  const start = (STATE.page - 1) * STATE.perPage;
+  const slice = STATE.filtered.slice(start, start + STATE.perPage);
+  tbody.innerHTML = slice.map(p => {
+    const areaHref = safeAreaHref(p.as, p.a);
+    const areaCell = areaHref ? `<a href="${areaHref}">${_h(p.a)}</a>` : _h(p.a || COPY.no_data);
+    const stCell = `<span class="stbadge stbadge-${p.st}">${_h(statusLabel(p.st))}</span>`;
+    const pctCell = `<div class="pct-bar"><span style="width:${p.pct||0}%"></span></div><span class="pct-num">${p.pct||0}%</span>`;
+    const unitsCell = p.u > 0 ? fmt(p.u) : _h(COPY.no_units);
+    const projName = _h(p.pn || COPY.no_data);
+    const subBits = [];
+    if (p.b) subBits.push(p.b + " bld");
+    if (p.v) subBits.push(p.v + " villa");
+    if (p.l) subBits.push(p.l + " land");
+    const projSub = subBits.length ? `<span class="proj-sub">${_h(subBits.join(" · "))}</span>` : "";
+    return `<tr>
+      <td><span class="proj-pn">${projName}</span>${projSub}</td>
+      <td>${stCell}</td>
+      <td class="num">${pctCell}</td>
+      <td class="num">${unitsCell}</td>
+      <td>${areaCell}</td>
+      <td>${_h(p.mp || COPY.no_data)}</td>
+      <td>${_h(p.dev || COPY.no_data)}</td>
+      <td class="num">${p.ey || _h(COPY.no_data)}</td>
+    </tr>`;
+  }).join("");
+}
+function renderPager() {
+  const total = STATE.filtered.length;
+  const pages = Math.max(1, Math.ceil(total / STATE.perPage));
+  if (STATE.page > pages) STATE.page = pages;
+  document.getElementById("page-info").textContent = STATE.page + " / " + pages;
+  document.getElementById("prev-btn").disabled = STATE.page <= 1;
+  document.getElementById("next-btn").disabled = STATE.page >= pages;
+  document.getElementById("showing").textContent = COPY.showing.replace("{n}", fmt(total)).replace("{total}", fmt(STATE.data.length));
+}
+function rerender() { renderHead(); renderBody(); renderPager(); renderCharts(); }
+
+// ─── Status chip strip ────────────────────────────────────────────
+function renderStatusChips() {
+  const el = document.getElementById("status-chips");
+  const chips = STATUS_ORDER.map(k => {
+    const active = STATE.statusFilter.has(k);
+    return `<button class="fchip ${active?"active":""}" data-status="${k}" type="button">${_h(statusLabel(k))}</button>`;
+  }).join("");
+  el.innerHTML = chips;
+}
+
+// ─── Area dropdown ────────────────────────────────────────────────
+function renderAreaSelect() {
+  const el = document.getElementById("area-filter");
+  const areas = [...new Set(STATE.data.map(p => p.a).filter(Boolean))].sort();
+  // Keep the "All areas" placeholder option, append the rest.
+  const existing = el.firstElementChild;
+  el.innerHTML = "";
+  el.appendChild(existing);
+  for (const a of areas) {
+    const o = document.createElement("option");
+    o.value = a; o.textContent = a;
+    el.appendChild(o);
+  }
+}
+
+// ─── Wire ─────────────────────────────────────────────────────────
+function bind() {
+  document.getElementById("status-chips").addEventListener("click", e => {
+    const b = e.target.closest("[data-status]"); if (!b) return;
+    const k = b.dataset.status;
+    if (STATE.statusFilter.has(k)) STATE.statusFilter.delete(k);
+    else STATE.statusFilter.add(k);
+    renderStatusChips();
+    applyFilters(); rerender();
+  });
+  document.getElementById("search").addEventListener("input", e => {
+    STATE.search = e.target.value;
+    applyFilters(); rerender();
+  });
+  document.getElementById("area-filter").addEventListener("change", e => {
+    STATE.area = e.target.value;
+    applyFilters(); rerender();
+  });
+  document.getElementById("clear-btn").addEventListener("click", () => {
+    STATE.statusFilter = new Set(IN_FLIGHT_STATES);
+    STATE.search = ""; STATE.area = "";
+    document.getElementById("search").value = "";
+    document.getElementById("area-filter").value = "";
+    renderStatusChips(); applyFilters(); rerender();
+  });
+  document.getElementById("thead-row").addEventListener("click", e => {
+    const th = e.target.closest("[data-sort]"); if (!th) return;
+    const k = th.dataset.sort;
+    if (STATE.sortKey === k) STATE.sortDir = STATE.sortDir === "asc" ? "desc" : "asc";
+    else { STATE.sortKey = k; STATE.sortDir = SORT_NUMERIC.has(k) ? "desc" : "asc"; }
+    applySort(); renderHead(); renderBody();
+  });
+  document.getElementById("prev-btn").addEventListener("click", () => { if (STATE.page > 1) { STATE.page--; renderBody(); renderPager(); } });
+  document.getElementById("next-btn").addEventListener("click", () => { STATE.page++; renderBody(); renderPager(); });
+  document.getElementById("pp").addEventListener("change", e => {
+    STATE.perPage = parseInt(e.target.value, 10) || 50;
+    STATE.page = 1; renderBody(); renderPager();
+  });
+}
+
+async function boot() {
+  // Always fetch from the canonical RU path — same origin, no CORS, and
+  // it skips the symlink-from-/<lang>/ path entirely (GH Pages doesn't
+  // always follow symlinks).
+  const r = await fetch(BASE_URL + "/construction/data.json");
+  STATE.data = await r.json();
+  renderHero();
+  renderStatusChips();
+  renderAreaSelect();
+  applyFilters();
+  bind();
+  rerender();
+}
+boot();
+</script>
 </body>
 </html>

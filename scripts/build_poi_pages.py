@@ -90,16 +90,10 @@ CATS = [
             ('col_addr', lambda r, d: r.get('addr_street') or r.get('addr_city'), 'text'),
         ],
     },
-    {
-        'slug': 'construction',
-        'const': 'PROJECTS',
-        'layer_key': 'proj',
-        'name_key': 'name',
-        'extra_cols': [
-            ('col_in_flight', lambda r, d: r.get('in_flight'), 'num'),
-            ('col_total_units', lambda r, d: r.get('total_units'), 'num'),
-        ],
-    },
+    # 'construction' is handled by scripts/build_construction_page.py — it
+    # uses the project-level RERA register directly (~3000 projects) plus
+    # client-side filters / sort / charts, which the generic POI table
+    # template can't accommodate.
     {
         'slug': 'malls',
         'const': 'MALLS',
