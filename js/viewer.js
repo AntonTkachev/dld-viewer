@@ -927,14 +927,22 @@ function renderMaskList() {
     const row = document.createElement('div');
     row.className = 'mask-row' + (id === currentMask ? ' active' : '');
     row.dataset.mask = id;
-    const periodHTML = mask.periods.length > 1
-      ? `<div class="mask-row-periods">
+    let periodHTML = '';
+    if (mask.periods.length > 1) {
+      const curP = (id === currentMask) ? currentMaskPeriod : mask.defaultPeriod;
+      const idx  = Math.max(0, mask.periods.indexOf(curP));
+      const maxIdx = mask.periods.length - 1;
+      const ticks = mask.periods.map((p, i) =>
+        `<span class="period-tick${(id===currentMask && i===idx)?' active':''}" data-idx="${i}">${_periodLabel(mask, p)}</span>`
+      ).join('');
+      periodHTML = `<div class="mask-row-periods">
            <span class="pc-lbl">${t(mask.periodLabelKey || 'mask_period_label')}</span>
-           ${mask.periods.map(p =>
-              `<button type="button" class="mask-period-chip${(id===currentMask && p===currentMaskPeriod)?' active':''}" data-period="${p}">${_periodLabel(mask, p)}</button>`
-           ).join('')}
-         </div>`
-      : '';
+           <div class="period-slider-wrap">
+             <input type="range" class="period-slider" min="0" max="${maxIdx}" step="1" value="${idx}" aria-label="${t(mask.periodLabelKey || 'mask_period_label')}">
+             <div class="period-slider-ticks">${ticks}</div>
+           </div>
+         </div>`;
+    }
     row.innerHTML = `
       <div class="mask-row-head">
         <div class="mask-row-radio"></div>
@@ -944,15 +952,26 @@ function renderMaskList() {
       ${periodHTML}
     `;
     row.addEventListener('click', e => {
-      if (e.target.closest('.mask-period-chip')) return;
+      if (e.target.closest('.period-slider-wrap')) return;
       applyMask(id, (id === currentMask) ? currentMaskPeriod : mask.defaultPeriod);
       renderMaskList();
     });
-    row.querySelectorAll('.mask-period-chip').forEach(chip => {
-      chip.addEventListener('click', e => {
+    const slider = row.querySelector('.period-slider');
+    if (slider) {
+      slider.addEventListener('input', e => {
         e.stopPropagation();
-        applyMask(id, chip.dataset.period);
-        renderMaskList();
+        const i = parseInt(slider.value, 10);
+        const p = mask.periods[i];
+        if (p) { applyMask(id, p); renderMaskList(); }
+      });
+      slider.addEventListener('click', e => e.stopPropagation());
+    }
+    row.querySelectorAll('.period-tick').forEach(tick => {
+      tick.addEventListener('click', e => {
+        e.stopPropagation();
+        const i = parseInt(tick.dataset.idx, 10);
+        const p = mask.periods[i];
+        if (p) { applyMask(id, p); renderMaskList(); }
       });
     });
     list.appendChild(row);
@@ -969,37 +988,6 @@ function renderMaskList() {
     b.addEventListener('click', () => setView(b.dataset.view));
   });
   list.appendChild(viewRow);
-
-  // ── SEO page pills (preserve current view in hrefs) ───────────────────
-  const cur = _currentPageMask();
-  const foot = document.createElement('div');
-  foot.className = 'mp-mask-page';
-  const viewSuffix = currentView === 'table' ? 'table/' : '';
-  const parts = [`<span class="mp-mask-page-k">${t('current_page')}</span>`];
-  for (const m of _SEO_MASKS) {
-    const mk = MASKS[m];
-    if (!mk) continue;
-    const label = t(mk.labelKey);
-    const path  = '/' + m + '/' + viewSuffix;
-    if (m === cur) {
-      parts.push(`<span class="mp-mask-page-cur" title="${label}">${path}</span>`);
-    } else {
-      const href = _hrefForPage(m, currentView) || '#';
-      parts.push(`<a class="mp-mask-page-go" href="${href}" data-mask="${m}" title="${label}">${path}</a>`);
-    }
-  }
-  foot.innerHTML = parts.join(' ');
-  foot.querySelectorAll('a').forEach(a => {
-    a.addEventListener('click', e => {
-      e.preventDefault();
-      const m = a.dataset.mask;
-      const mk = MASKS[m];
-      if (!mk) return;
-      applyMask(m, mk.defaultPeriod);
-      renderMaskList();
-    });
-  });
-  list.appendChild(foot);
 }
 
 // Wire table-view controls (script is in <body> end, so DOM exists)
