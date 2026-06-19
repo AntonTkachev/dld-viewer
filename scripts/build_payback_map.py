@@ -34,29 +34,9 @@ CLASSES = {
                  "('4 bed rooms+hall','5 bed rooms+hall','6 bed rooms+hall','7 bed rooms+hall','8 bed rooms+hall','9 bed rooms+hall','10 bed rooms+hall')"),
 }
 
-ROLLUP = """
-CASE
-  WHEN master_project_en LIKE 'DUBAI HILLS - %'              THEN 'Dubai Hills Estate'
-  WHEN master_project_en = 'DUBAI HILLS'                     THEN 'Dubai Hills Estate'
-  WHEN master_project_en LIKE 'Lakes - %'                    THEN 'Emirates Living'
-  WHEN master_project_en = 'Jumeirah Golf Estates - Phase B' THEN 'Jumeirah Golf Estates'
-  WHEN master_project_en = 'International City Phase 2'      THEN 'International City Phase 3'
-  WHEN master_project_en IN ('Liwan1', 'Liwan2')             THEN 'Liwan'
-  ELSE master_project_en
-END
-"""
-# Split sub-communities OUT of their master before the rollup —
-# DLD records Springs under master "Emirates Living" and Jumeirah Heights
-# under master "Jumeirah Islands"; locally they're own communities.
-SPLIT = """
-CASE
-  WHEN project_name_en LIKE 'Emirates Living - Springs%' THEN 'Springs'
-  WHEN project_name_en LIKE 'JUMEIRAH HEIGHTS%'          THEN 'Jumeirah Heights'
-  WHEN master_project_en LIKE 'Meadows%'                 THEN 'Meadows'
-END
-"""
-NAME = f"COALESCE(NULLIF(({SPLIT}), ''), NULLIF(({ROLLUP}), ''), area_name_en)"
-KEY  = f"lower({NAME})"
+sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+from _curated_sql import build_curated_sql
+KEY, NAME, _ = build_curated_sql()
 
 con = duckdb.connect()
 dfrom = (TODAY - timedelta(days=WINDOW_DAYS)).isoformat()

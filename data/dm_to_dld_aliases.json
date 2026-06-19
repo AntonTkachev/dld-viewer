@@ -1,0 +1,113 @@
+{
+  "version": 1,
+  "_doc": "Manual DM ↔ DLD aliases — override the auto fuzzy-matcher in build_curated_polygons.py. Two use cases: (1) force a DLD area_name_en match when fuzzy score is too low (Palm Jumeirah, Palm Deira); (2) override the polygon's display name where DM's admin spelling differs from the user-facing marketing name (Burj Khalifa → 'Downtown Dubai'). Aliases here always win over the fuzzy match.",
+
+  "aliases": [
+    {
+      "_comment": "44k tx hidden by fuzzy score 0.71 — biggest single fix in this file",
+      "dm_name": "NAKHLAT JUMEIRA",
+      "dld_area_name_en": "Palm Jumeirah",
+      "display_name": "Palm Jumeirah",
+      "display_name_ar": "نخلة جميرا"
+    },
+    {
+      "dm_name": "NAKHLAT DEIRA",
+      "dld_area_name_en": "Palm Deira",
+      "display_name": "Palm Deira",
+      "display_name_ar": "نخلة ديرة"
+    },
+    {
+      "dm_name": "NAKHLAT JABAL ALI",
+      "dld_area_name_en": "Palm Jabal Ali",
+      "display_name": "Palm Jabal Ali",
+      "display_name_ar": "نخلة جبل علي"
+    },
+    {
+      "dm_name": "DUBAI INT'L AIRPORT",
+      "dld_area_name_en": "Dubai International Airport",
+      "display_name": "Dubai International Airport",
+      "display_name_ar": "مطار دبي الدولي"
+    },
+    {
+      "_comment": "Marketing alias: DLD admin area = Burj Khalifa, user-facing = Downtown Dubai",
+      "dm_name": "BURJ KHALIFA",
+      "display_name": "Downtown Dubai",
+      "display_name_ar": "وسط مدينة دبي"
+    },
+    {
+      "_comment": "International City phase 1 — DLD's admin = Al Warsan First. dld_area_name_en required because the build_*_map.py CASE keys off the DLD spelling, not DM.",
+      "dm_name": "WARSAN FIRST",
+      "dld_area_name_en": "Al Warsan First",
+      "display_name": "International City Phase 1",
+      "display_name_ar": "المدينة العالمية - المرحلة 1"
+    },
+    {
+      "dm_name": "WARSAN SECOND",
+      "dld_area_name_en": "Al Warsan Second",
+      "display_name": "International City Phase 2",
+      "display_name_ar": "المدينة العالمية - المرحلة 2"
+    },
+    {
+      "dm_name": "WARSAN THIRD",
+      "dld_area_name_en": "Al Warsan Third",
+      "display_name": "International City Phase 3",
+      "display_name_ar": "المدينة العالمية - المرحلة 3"
+    },
+    {
+      "dm_name": "WARSAN FOURTH",
+      "dld_area_name_en": "Warsan Fourth",
+      "display_name": "Warsan Fourth",
+      "display_name_ar": "ورسان الرابعة"
+    },
+    {
+      "dm_name": "AL WUHEIDA",
+      "dld_area_name_en": "Al Waheda",
+      "display_name": "Al Waheda",
+      "display_name_ar": "الوحيدة"
+    },
+    {
+      "dm_name": "RIGGAT AL BUTEEN",
+      "dld_area_name_en": "Rega Al Buteen",
+      "display_name": "Rega Al Buteen",
+      "display_name_ar": "ركة البطين"
+    },
+    {
+      "dm_name": "AL RIGGA",
+      "dld_area_name_en": "Al Rega",
+      "display_name": "Al Rega (Al Rigga)",
+      "display_name_ar": "الرقة"
+    },
+    {
+      "dm_name": "AYAL NASIR",
+      "dld_area_name_en": "Eyal Nasser",
+      "display_name": "Ayal Nasir",
+      "display_name_ar": "عيال ناصر"
+    },
+    {
+      "_comment": "Admin name Al Hebiah First — all 24k tx are master_project='Motor City'. Display the marketing name; geometry stays DM admin (Motor City covers ~all of Al Hebiah First).",
+      "dm_name": "AL HEBIAH FIRST",
+      "display_name": "Motor City",
+      "display_name_ar": "موتور سيتي"
+    },
+    {
+      "_comment": "Al Yelayiss 2 admin → all 25k tx are TOWN SQUARE (no remainder worth surfacing). DM spells it 'AL YALAYIS 2' (no 'e' in middle).",
+      "dm_name": "AL YALAYIS 2",
+      "display_name": "Town Square Dubai",
+      "display_name_ar": "تاون سكوير دبي"
+    },
+    {
+      "_comment": "Madinat Hind 4 admin → all 16k tx are DAMAC HILLS 2 (no remainder worth surfacing).",
+      "dm_name": "MADINAT HIND 4",
+      "display_name": "DAMAC Hills 2",
+      "display_name_ar": "داماك هيلز 2"
+    }
+  ],
+
+  "_unsure_skipped": [
+    "AL THANYAH SECOND — fuzzy says 'Al Nahda Second' but they're likely different",
+    "OUD AL MUTEENA → Al Muteena — these may be separate Deira neighbourhoods",
+    "AL MURAR — DLD has only 'Al-Murar Qadeem' (59) / 'Al-Murar Jadeed' (29); skipping till verified",
+    "AL HATHMAH → AL Athbah — different places",
+    "MEREIYEEL, AL O'SHOOSH, AL WOHOOSH, HEFAIR, MARGAB, ENKHALI — peripheral, ≤50 tx if anything"
+  ]
+}
