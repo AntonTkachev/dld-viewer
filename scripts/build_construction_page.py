@@ -36,10 +36,24 @@ from datetime import date
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 SRC  = os.path.join(ROOT, 'data', 'dld_projects.csv.gz')
 GEOJSON = os.path.join(ROOT, 'data', 'curated_polygons.geojson')
+ALIASES = os.path.join(ROOT, 'data', 'rera_arabic_aliases.json')
 BASE_URL = 'https://antontkachev.github.io/dld-viewer'
 LANGUAGES = ('ru', 'en', 'ar', 'hi', 'zh')
 
 IN_FLIGHT_STATES = {'ACTIVE', 'NOT_STARTED', 'PENDING', 'CONDITIONAL_ACTIVATING'}
+
+
+def load_aliases():
+    """Read the manually-verified Arabic → English alias map. Empty dict
+    when the file is missing so the build still works without it."""
+    if not os.path.exists(ALIASES):
+        return {'developers': {}, 'project_classifications': {}}
+    with open(ALIASES, encoding='utf-8') as f:
+        a = json.load(f)
+    return {
+        'developers':              a.get('developers') or {},
+        'project_classifications': a.get('project_classifications') or {},
+    }
 
 
 def slugify(s):
@@ -95,7 +109,13 @@ def load_projects():
     with gzip.open(SRC, 'rt') as f:
         rows = list(csv.DictReader(f))
     area_slugs = load_area_slugs()
+    aliases = load_aliases()
+    dev_map = aliases['developers']
+    cls_map = aliases['project_classifications']
 
+    # Track alias hit rates so the build summary tells the user how much
+    # Arabic remains — useful when deciding whether to extend the alias file.
+    dev_hit = dev_total = 0
     out = []
     for r in rows:
         area = (r.get('area_name_en') or '').strip()
@@ -104,13 +124,29 @@ def load_projects():
         # still safer to skip the link than to point at a 404.
         slug = area_slugs.get(area.lower()) or (slugify(area) if area else '')
         end_year = parse_year(r.get('completion_date'))
-        out.append({
+
+        dev_ar = (r.get('developer_name') or '').strip()
+        dev_en = dev_map.get(dev_ar)
+        # `dev` is the displayed name (English when verified, otherwise the
+        # original Arabic). `dev_ar` keeps the original so the page can show
+        # it as a tooltip / secondary line for context.
+        dev = dev_en or dev_ar
+        if dev_ar: dev_total += 1
+        if dev_en: dev_hit += 1
+
+        mdev_ar = (r.get('master_developer_name') or '').strip()
+        mdev = dev_map.get(mdev_ar) or mdev_ar
+
+        cls_ar = (r.get('project_classification_ar') or '').strip()
+        cls = cls_map.get(cls_ar) or cls_ar
+
+        row = {
             'pn':    (r.get('project_name') or '').strip(),
             'mp':    (r.get('master_project_en') or '').strip(),
             'a':     area,
             'as':    slug,
-            'dev':   (r.get('developer_name') or '').strip(),
-            'mdev':  (r.get('master_developer_name') or '').strip(),
+            'dev':   dev,
+            'mdev':  mdev,
             'st':    (r.get('project_status') or '').strip(),
             'pct':   parse_int(r.get('percent_completed')),
             'u':     parse_int(r.get('no_of_units')),
@@ -119,8 +155,16 @@ def load_projects():
             'l':     parse_int(r.get('no_of_lands')),
             'sy':    parse_year(r.get('project_start_date')),
             'ey':    end_year,
-            'cls':   (r.get('project_classification_ar') or '').strip(),
-        })
+            'cls':   cls,
+        }
+        # `dev_orig` is only written when the alias changed the displayed
+        # name — keeps the JSON file slim (otherwise the field equals `dev`
+        # and just bloats every row).
+        if dev_en and dev_en != dev_ar:
+            row['dev_orig'] = dev_ar
+        out.append(row)
+    coverage = (dev_hit / dev_total * 100) if dev_total else 0
+    print(f'  developer alias coverage: {dev_hit:,}/{dev_total:,} ({coverage:.1f}%)', file=sys.stderr)
     return out
 
 
@@ -405,6 +449,11 @@ def render_page(lang, projects_count, hero, this_year):
   .nav-foot a{{color:#1d4ed8;text-decoration:none}}
   td .proj-pn{{font-weight:600;color:#0f172a;display:block;line-height:1.3}}
   td .proj-sub{{color:#64748b;font-size:11.5px;line-height:1.3;margin-top:1px}}
+  /* Aliased developer/project name — translated by our manual map. The
+     superscript ᵃʳ flag plus dotted underline tells the user this isn't
+     the literal RERA spelling; hover shows the original Arabic. */
+  td .aliased{{border-bottom:1px dotted #cbd5e1;cursor:help}}
+  td .aliased .alias-dot{{color:#94a3b8;font-size:10px;margin-inline-start:2px;vertical-align:super;font-style:italic}}
 </style>
 </head>
 <body>
@@ -658,6 +707,11 @@ function renderBody() {{
     if (p.v) subBits.push(p.v + " villa");
     if (p.l) subBits.push(p.l + " land");
     const projSub = subBits.length ? `<span class="proj-sub">${{_h(subBits.join(" · "))}}</span>` : "";
+    // Aliased developer name: show English, tooltip the original Arabic.
+    // Marker dot signals "translated" so users know it isn't raw RERA.
+    const devCell = p.dev_orig
+      ? `<span title="${{_h(p.dev_orig)}}" class="aliased">${{_h(p.dev || COPY.no_data)}}<span class="alias-dot" aria-hidden="true">ᵃʳ</span></span>`
+      : _h(p.dev || COPY.no_data);
     return `<tr>
       <td><span class="proj-pn">${{projName}}</span>${{projSub}}</td>
       <td>${{stCell}}</td>
@@ -665,7 +719,7 @@ function renderBody() {{
       <td class="num">${{unitsCell}}</td>
       <td>${{areaCell}}</td>
       <td>${{_h(p.mp || COPY.no_data)}}</td>
-      <td>${{_h(p.dev || COPY.no_data)}}</td>
+      <td>${{devCell}}</td>
       <td class="num">${{p.ey || _h(COPY.no_data)}}</td>
     </tr>`;
   }}).join("");
