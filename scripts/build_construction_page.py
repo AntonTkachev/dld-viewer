@@ -245,14 +245,14 @@ COPY = {
     'ru': dict(
         html_lang='ru', dir_='ltr', breadcrumb_dubai='Дубай',
         section='Строящиеся объекты в Дубае',
-        h1='🏗️ Стройки Дубая — RERA реестр',
+        h1='Стройки Дубая — RERA реестр',
         lede='Проект-уровень из реестра RERA: {n_total} объектов, {n_inflight} в работе, {units} юнитов в пайплайне. Фильтры по статусу/застройщику/району и графики обновляются вместе с таблицей.',
         cta_map='Показать на карте',
         title='Стройки Дубая — реестр RERA с фильтрами и графиками',
         meta='{n_inflight} активных строек из {n_total} проектов RERA. Анализ по застройщикам, районам, годам сдачи. Полный реестр с фильтрами и графиками.',
-        h_inflight='🏗️ В работе сейчас', h_units='🏠 Юнитов в пайплайне',
-        h_completing='📅 Сдача в {y}', h_top_dev='🏢 Лидер по проектам',
-        h_avg_pct='✓ Средняя готовность',
+        h_inflight='В работе сейчас', h_units='Юнитов в пайплайне',
+        h_completing='Сдача в {y}', h_top_dev='Лидер по проектам',
+        h_avg_pct='Средняя готовность',
         chart_status='Распределение по статусу',
         chart_completion='Сдача активных по годам',
         chart_top_devs='Топ-10 застройщиков (in-flight)',
@@ -273,14 +273,14 @@ COPY = {
     'en': dict(
         html_lang='en', dir_='ltr', breadcrumb_dubai='Dubai',
         section='Construction projects in Dubai',
-        h1='🏗️ Dubai construction — RERA register',
+        h1='Dubai construction — RERA register',
         lede='Project-level RERA register: {n_total} projects, {n_inflight} in flight, {units} units in the pipeline. Filter by status / developer / district; charts re-render with the table.',
         cta_map='Show on map',
         title='Dubai construction — RERA register with filters & charts',
         meta='{n_inflight} active construction projects out of {n_total} RERA records. Filter and analyse by developer, area, expected completion year.',
-        h_inflight='🏗️ In flight now', h_units='🏠 Units in pipeline',
-        h_completing='📅 Completing in {y}', h_top_dev='🏢 Leading developer',
-        h_avg_pct='✓ Avg completion',
+        h_inflight='In flight now', h_units='Units in pipeline',
+        h_completing='Completing in {y}', h_top_dev='Leading developer',
+        h_avg_pct='Avg completion',
         chart_status='By project status',
         chart_completion='Active by expected completion year',
         chart_top_devs='Top-10 developers (in-flight)',
@@ -301,14 +301,14 @@ COPY = {
     'ar': dict(
         html_lang='ar', dir_='rtl', breadcrumb_dubai='دبي',
         section='مشاريع البناء في دبي',
-        h1='🏗️ مشاريع البناء في دبي — سجل RERA',
+        h1='مشاريع البناء في دبي — سجل RERA',
         lede='سجل RERA على مستوى المشروع: {n_total} مشروعًا، {n_inflight} قيد التنفيذ، {units} وحدة في خط الإنتاج. تصفية حسب الحالة / المطور / المنطقة.',
         cta_map='عرض على الخريطة',
         title='البناء في دبي — سجل RERA مع تصفية ورسوم',
         meta='{n_inflight} مشروع بناء نشط من أصل {n_total} سجل في RERA.',
-        h_inflight='🏗️ قيد التنفيذ', h_units='🏠 وحدات في الخط',
-        h_completing='📅 التسليم في {y}', h_top_dev='🏢 أهم مطور',
-        h_avg_pct='✓ متوسط الإنجاز',
+        h_inflight='قيد التنفيذ', h_units='وحدات في الخط',
+        h_completing='التسليم في {y}', h_top_dev='أهم مطور',
+        h_avg_pct='متوسط الإنجاز',
         chart_status='حسب حالة المشروع',
         chart_completion='النشطة حسب سنة التسليم المتوقعة',
         chart_top_devs='أفضل 10 مطورين (قيد التنفيذ)',
@@ -329,14 +329,14 @@ COPY = {
     'hi': dict(
         html_lang='hi', dir_='ltr', breadcrumb_dubai='दुबई',
         section='दुबई में निर्माण परियोजनाएँ',
-        h1='🏗️ दुबई का निर्माण — RERA रजिस्टर',
+        h1='दुबई का निर्माण — RERA रजिस्टर',
         lede='RERA रजिस्टर: {n_total} परियोजनाएँ, {n_inflight} चालू, {units} यूनिट पाइपलाइन में।',
         cta_map='मानचित्र पर दिखाएँ',
         title='दुबई निर्माण — RERA रजिस्टर फिल्टर के साथ',
         meta='{n_inflight} सक्रिय निर्माण परियोजनाएँ {n_total} RERA रिकॉर्ड में से।',
-        h_inflight='🏗️ अभी चालू', h_units='🏠 पाइपलाइन यूनिट',
-        h_completing='📅 {y} में पूर्णता', h_top_dev='🏢 शीर्ष डेवलपर',
-        h_avg_pct='✓ औसत पूर्णता',
+        h_inflight='अभी चालू', h_units='पाइपलाइन यूनिट',
+        h_completing='{y} में पूर्णता', h_top_dev='शीर्ष डेवलपर',
+        h_avg_pct='औसत पूर्णता',
         chart_status='परियोजना स्थिति',
         chart_completion='अपेक्षित पूर्णता वर्ष',
         chart_top_devs='शीर्ष-10 डेवलपर (in-flight)',
@@ -357,14 +357,14 @@ COPY = {
     'zh': dict(
         html_lang='zh', dir_='ltr', breadcrumb_dubai='迪拜',
         section='迪拜的在建项目',
-        h1='🏗️ 迪拜在建项目 — RERA 登记',
+        h1='迪拜在建项目 — RERA 登记',
         lede='RERA 项目级登记：{n_total} 个项目，{n_inflight} 个在建，规划 {units} 户。',
         cta_map='在地图上显示',
         title='迪拜在建项目 — RERA 登记，可筛选',
         meta='RERA {n_total} 个项目中有 {n_inflight} 个在建。',
-        h_inflight='🏗️ 当前在建', h_units='🏠 规划户数',
-        h_completing='📅 {y} 年完工', h_top_dev='🏢 项目最多的开发商',
-        h_avg_pct='✓ 平均进度',
+        h_inflight='当前在建', h_units='规划户数',
+        h_completing='{y} 年完工', h_top_dev='项目最多的开发商',
+        h_avg_pct='平均进度',
         chart_status='按项目状态',
         chart_completion='按预计完工年份',
         chart_top_devs='前 10 开发商 (在建)',
@@ -393,9 +393,22 @@ def render_page(lang, projects_count, hero, this_year):
         f'<link rel="alternate" hreflang="{l}" href="{BASE_URL}{lang_prefix(l)}/construction/">'
         for l in LANGUAGES
     ) + f'\n<link rel="alternate" hreflang="x-default" href="{BASE_URL}/construction/">'
-    lang_switcher = ''.join(
+    # Match the <details class="langswitch-dd"> pattern used on every other
+    # landing page (templates/district.html, build_pages.py) so the chrome
+    # reads as one site, not five.
+    lang_links = ''.join(
         f'<a class="{"active" if l == lang else ""}" href="{BASE_URL}{lang_prefix(l)}/construction/" lang="{l}">{l.upper()}</a>'
         for l in LANGUAGES
+    )
+    lang_switcher = (
+        '<details class="langswitch-dd">'
+        '<summary>'
+        '<span class="globe" aria-hidden="true">🌐</span>'
+        f'<span class="lang-current">{lang.upper()}</span>'
+        '<span class="caret" aria-hidden="true">▾</span>'
+        '</summary>'
+        f'<div class="lang-menu">{lang_links}</div>'
+        '</details>'
     )
     fmt = lambda s: s.format(
         n_total=f'{projects_count:,}',
@@ -442,10 +455,19 @@ def render_page(lang, projects_count, hero, this_year):
   .breadcrumb a{{color:#1d4ed8;text-decoration:none}} .breadcrumb a:hover{{text-decoration:underline}}
   .topbar{{display:flex;align-items:baseline;justify-content:space-between;gap:16px;margin-bottom:14px;flex-wrap:wrap}}
   h1{{font-size:24px;margin:0;line-height:1.25}}
-  .langswitch{{font-size:12px}}
-  .langswitch a{{padding:5px 9px;border-radius:6px;text-decoration:none;color:#475569;margin-inline-start:2px}}
-  .langswitch a:hover{{background:#f1f5f9}}
-  .langswitch a.active{{background:#1d4ed8;color:#fff;font-weight:600}}
+  .langswitch-dd{{position:relative}}
+  .langswitch-dd > summary{{list-style:none;cursor:pointer;display:inline-flex;align-items:center;gap:6px;padding:6px 10px;background:#f1f5f9;border-radius:8px;font-size:12px;font-weight:600;color:#6b7280;user-select:none}}
+  .langswitch-dd > summary::-webkit-details-marker{{display:none}}
+  .langswitch-dd > summary::marker{{content:""}}
+  .langswitch-dd > summary .globe{{font-size:14px}}
+  .langswitch-dd > summary .lang-current{{color:#1d4ed8}}
+  .langswitch-dd > summary .caret{{font-size:10px;opacity:.6}}
+  .langswitch-dd[open] > summary{{background:#e2e8f0}}
+  .langswitch-dd .lang-menu{{position:absolute;top:calc(100% + 4px);inset-inline-end:0;background:#fff;border:1px solid #e5e7eb;border-radius:8px;padding:4px;min-width:140px;box-shadow:0 6px 16px rgba(15,23,42,0.08);display:flex;flex-direction:column;z-index:10}}
+  .langswitch-dd .lang-menu a{{padding:7px 10px;border-radius:6px;font-size:13px;text-decoration:none;color:#374151}}
+  .langswitch-dd .lang-menu a:hover{{background:#f3f4f6}}
+  .langswitch-dd .lang-menu a.active{{background:#1d4ed8;color:#fff;font-weight:600}}
+  html[dir="rtl"] .langswitch-dd .lang-menu{{inset-inline-end:auto;inset-inline-start:0}}
   .lede{{font-size:14.5px;color:#374151;margin:6px 0 14px;max-width:920px;line-height:1.55}}
   .cta{{margin-bottom:18px}}
   .cta a{{display:inline-block;padding:8px 14px;background:#1d4ed8;color:#fff;border-radius:8px;text-decoration:none;font-size:13.5px;font-weight:600}}
@@ -519,7 +541,7 @@ def render_page(lang, projects_count, hero, this_year):
 
   <div class="topbar">
     <h1>{c["h1"]}</h1>
-    <div class="langswitch">{lang_switcher}</div>
+    {lang_switcher}
   </div>
 
   <p class="lede">{lede}</p>

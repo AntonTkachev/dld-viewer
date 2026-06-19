@@ -26,10 +26,19 @@
   .breadcrumb a{color:#1d4ed8;text-decoration:none} .breadcrumb a:hover{text-decoration:underline}
   .topbar{display:flex;align-items:baseline;justify-content:space-between;gap:16px;margin-bottom:14px;flex-wrap:wrap}
   h1{font-size:24px;margin:0;line-height:1.25}
-  .langswitch{font-size:12px}
-  .langswitch a{padding:5px 9px;border-radius:6px;text-decoration:none;color:#475569;margin-inline-start:2px}
-  .langswitch a:hover{background:#f1f5f9}
-  .langswitch a.active{background:#1d4ed8;color:#fff;font-weight:600}
+  .langswitch-dd{position:relative}
+  .langswitch-dd > summary{list-style:none;cursor:pointer;display:inline-flex;align-items:center;gap:6px;padding:6px 10px;background:#f1f5f9;border-radius:8px;font-size:12px;font-weight:600;color:#6b7280;user-select:none}
+  .langswitch-dd > summary::-webkit-details-marker{display:none}
+  .langswitch-dd > summary::marker{content:""}
+  .langswitch-dd > summary .globe{font-size:14px}
+  .langswitch-dd > summary .lang-current{color:#1d4ed8}
+  .langswitch-dd > summary .caret{font-size:10px;opacity:.6}
+  .langswitch-dd[open] > summary{background:#e2e8f0}
+  .langswitch-dd .lang-menu{position:absolute;top:calc(100% + 4px);inset-inline-end:0;background:#fff;border:1px solid #e5e7eb;border-radius:8px;padding:4px;min-width:140px;box-shadow:0 6px 16px rgba(15,23,42,0.08);display:flex;flex-direction:column;z-index:10}
+  .langswitch-dd .lang-menu a{padding:7px 10px;border-radius:6px;font-size:13px;text-decoration:none;color:#374151}
+  .langswitch-dd .lang-menu a:hover{background:#f3f4f6}
+  .langswitch-dd .lang-menu a.active{background:#1d4ed8;color:#fff;font-weight:600}
+  html[dir="rtl"] .langswitch-dd .lang-menu{inset-inline-end:auto;inset-inline-start:0}
   .lede{font-size:14.5px;color:#374151;margin:6px 0 14px;max-width:920px;line-height:1.55}
   .cta{margin-bottom:18px}
   .cta a{display:inline-block;padding:8px 14px;background:#1d4ed8;color:#fff;border-radius:8px;text-decoration:none;font-size:13.5px;font-weight:600}
@@ -102,8 +111,8 @@
   </div>
 
   <div class="topbar">
-    <h1>🏗️ दुबई का निर्माण — RERA रजिस्टर</h1>
-    <div class="langswitch"><a class="" href="https://antontkachev.github.io/dld-viewer/construction/" lang="ru">RU</a><a class="" href="https://antontkachev.github.io/dld-viewer/en/construction/" lang="en">EN</a><a class="" href="https://antontkachev.github.io/dld-viewer/ar/construction/" lang="ar">AR</a><a class="active" href="https://antontkachev.github.io/dld-viewer/hi/construction/" lang="hi">HI</a><a class="" href="https://antontkachev.github.io/dld-viewer/zh/construction/" lang="zh">ZH</a></div>
+    <h1>दुबई का निर्माण — RERA रजिस्टर</h1>
+    <details class="langswitch-dd"><summary><span class="globe" aria-hidden="true">🌐</span><span class="lang-current">HI</span><span class="caret" aria-hidden="true">▾</span></summary><div class="lang-menu"><a class="" href="https://antontkachev.github.io/dld-viewer/construction/" lang="ru">RU</a><a class="" href="https://antontkachev.github.io/dld-viewer/en/construction/" lang="en">EN</a><a class="" href="https://antontkachev.github.io/dld-viewer/ar/construction/" lang="ar">AR</a><a class="active" href="https://antontkachev.github.io/dld-viewer/hi/construction/" lang="hi">HI</a><a class="" href="https://antontkachev.github.io/dld-viewer/zh/construction/" lang="zh">ZH</a></div></details>
   </div>
 
   <p class="lede">RERA रजिस्टर: 3,039 परियोजनाएँ, 1,569 चालू, 382,625 यूनिट पाइपलाइन में।</p>
@@ -147,7 +156,7 @@
 
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
 <script>
-const COPY = {"breadcrumb_dubai": "दुबई", "section": "दुबई में निर्माण परियोजनाएँ", "h1": "🏗️ दुबई का निर्माण — RERA रजिस्टर", "lede": "RERA रजिस्टर: {n_total} परियोजनाएँ, {n_inflight} चालू, {units} यूनिट पाइपलाइन में।", "cta_map": "मानचित्र पर दिखाएँ", "title": "दुबई निर्माण — RERA रजिस्टर फिल्टर के साथ", "meta": "{n_inflight} सक्रिय निर्माण परियोजनाएँ {n_total} RERA रिकॉर्ड में से।", "h_inflight": "🏗️ अभी चालू", "h_units": "🏠 पाइपलाइन यूनिट", "h_completing": "📅 {y} में पूर्णता", "h_top_dev": "🏢 शीर्ष डेवलपर", "h_avg_pct": "✓ औसत पूर्णता", "chart_status": "परियोजना स्थिति", "chart_completion": "अपेक्षित पूर्णता वर्ष", "chart_top_devs": "शीर्ष-10 डेवलपर (in-flight)", "chart_top_areas": "शीर्ष-10 क्षेत्र (in-flight)", "filter_status": "स्थिति", "filter_search": "प्रोजेक्ट या डेवलपर खोजें…", "filter_area": "सभी क्षेत्र", "filter_clear": "रीसेट", "showing": "{n} में से {total}", "sort_col_name": "प्रोजेक्ट", "sort_col_status": "स्थिति", "sort_col_pct": "पूर्णता", "sort_col_units": "यूनिट", "sort_col_area": "क्षेत्र", "sort_col_master": "मास्टर प्रोजेक्ट", "sort_col_dev": "डेवलपर", "sort_col_end": "सम्पन्न", "st_FINISHED": "सम्पन्न", "st_ACTIVE": "सक्रिय", "st_NOT_STARTED": "शुरू नहीं", "st_PENDING": "लंबित", "st_CONDITIONAL_ACTIVATING": "सशर्त सक्रिय", "st_FRIEZED": "फ्रोजन", "per_page": "प्रति पेज", "prev": "←", "next": "→", "empty_results": "कुछ नहीं मिला।", "no_units": "—", "no_data": "—", "nav_map": "← मानचित्र पर", "nav_districts": "सभी जिले →"};
+const COPY = {"breadcrumb_dubai": "दुबई", "section": "दुबई में निर्माण परियोजनाएँ", "h1": "दुबई का निर्माण — RERA रजिस्टर", "lede": "RERA रजिस्टर: {n_total} परियोजनाएँ, {n_inflight} चालू, {units} यूनिट पाइपलाइन में।", "cta_map": "मानचित्र पर दिखाएँ", "title": "दुबई निर्माण — RERA रजिस्टर फिल्टर के साथ", "meta": "{n_inflight} सक्रिय निर्माण परियोजनाएँ {n_total} RERA रिकॉर्ड में से।", "h_inflight": "अभी चालू", "h_units": "पाइपलाइन यूनिट", "h_completing": "{y} में पूर्णता", "h_top_dev": "शीर्ष डेवलपर", "h_avg_pct": "औसत पूर्णता", "chart_status": "परियोजना स्थिति", "chart_completion": "अपेक्षित पूर्णता वर्ष", "chart_top_devs": "शीर्ष-10 डेवलपर (in-flight)", "chart_top_areas": "शीर्ष-10 क्षेत्र (in-flight)", "filter_status": "स्थिति", "filter_search": "प्रोजेक्ट या डेवलपर खोजें…", "filter_area": "सभी क्षेत्र", "filter_clear": "रीसेट", "showing": "{n} में से {total}", "sort_col_name": "प्रोजेक्ट", "sort_col_status": "स्थिति", "sort_col_pct": "पूर्णता", "sort_col_units": "यूनिट", "sort_col_area": "क्षेत्र", "sort_col_master": "मास्टर प्रोजेक्ट", "sort_col_dev": "डेवलपर", "sort_col_end": "सम्पन्न", "st_FINISHED": "सम्पन्न", "st_ACTIVE": "सक्रिय", "st_NOT_STARTED": "शुरू नहीं", "st_PENDING": "लंबित", "st_CONDITIONAL_ACTIVATING": "सशर्त सक्रिय", "st_FRIEZED": "फ्रोजन", "per_page": "प्रति पेज", "prev": "←", "next": "→", "empty_results": "कुछ नहीं मिला।", "no_units": "—", "no_data": "—", "nav_map": "← मानचित्र पर", "nav_districts": "सभी जिले →"};
 const HERO = {"inflight": 1569, "units_pipeline": 382625, "completing_year": 128, "this_year": 2026, "top_dev": "Nakheel PJSC", "top_dev_n": 220, "avg_pct_inflight": 19.9};
 const LANG = "hi";
 const BASE_URL = "https://antontkachev.github.io/dld-viewer";
