@@ -93,6 +93,18 @@
   .chart-modal{position:fixed;inset:0;background:rgba(15,23,42,.62);display:none;align-items:center;justify-content:center;z-index:9000;padding:24px}
   .chart-modal.open{display:flex}
   .chart-modal-inner{background:#fff;border-radius:8px;width:100%;max-width:1400px;height:100%;max-height:90vh;display:flex;flex-direction:column;box-shadow:0 8px 40px rgba(0,0,0,.3)}
+  /* Insight donut grid — 4 cards side by side, each a compact analytic
+     exhibit (off-plan share / top projects / big-money years / what's
+     selling now). Collapses to 2x2 on narrow screens. */
+  .dp-donut-grid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:10px;margin-top:6px}
+  @media (max-width:780px){.dp-donut-grid{grid-template-columns:repeat(2,minmax(0,1fr))}}
+  .dp-donut-card{background:#fff;border:1px solid #edf0f4;border-radius:8px;padding:8px 8px 6px;display:flex;flex-direction:column;min-width:0}
+  .dp-donut-title{font-size:11.5px;font-weight:600;color:#475569;margin:0 0 6px;text-align:center;line-height:1.25;min-height:28px;display:flex;align-items:center;justify-content:center}
+  .dp-donut{position:relative;flex:1 1 auto}
+  .dp-donut-foot{margin-top:4px;text-align:right;font-size:11.5px;line-height:1.2}
+  .dp-donut-foot .dp-section-more{padding-top:0}
+  .dp-donut-foot a{font-size:11.5px;font-weight:500;color:#1d4ed8;text-decoration:none}
+  .dp-donut-foot a:hover{text-decoration:underline}
   /* Room-breakdown legend — chip per room category, click to toggle. */
   .rb-legend{display:flex;flex-wrap:wrap;gap:5px;margin:4px 0 10px}
   .rb-chip{font-family:inherit;cursor:pointer;border-radius:14px;border:1px solid;padding:4px 10px;font-size:11.5px;font-weight:600;display:inline-flex;align-items:center;gap:5px;line-height:1.2;transition:opacity .12s}
