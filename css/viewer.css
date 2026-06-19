@@ -175,20 +175,18 @@
   .mask-row-title{font-size:13px;font-weight:600;color:#1f2933}
   .mask-row.active .mask-row-title{color:#1d4ed8}
   .mask-row-desc{font-size:11px;color:#888;margin:2px 0 0 22px;line-height:1.3}
-  .mask-row-periods{display:none;align-items:center;gap:5px;margin:8px 0 0 22px;flex-wrap:wrap}
-  .mask-row.active .mask-row-periods{display:flex}
-  .mask-row-periods .pc-lbl{font-size:11px;color:#777;margin-right:2px}
-  .mask-period-chip{background:#fff;border:1px solid #d6dde6;color:#374151;padding:3px 10px;border-radius:12px;font-size:11px;font-weight:500;cursor:pointer;line-height:1.4;transition:background .12s,border-color .12s,color .12s;font-family:inherit}
-  .mask-period-chip:hover{background:#f1f5fb;border-color:#9bb6e2}
-  .mask-period-chip.active{background:#0f172a;border-color:#0f172a;color:#fff}
-  /* SEO-page footer inside mask dropdown */
-  .mp-mask-page{display:flex;flex-wrap:wrap;align-items:center;gap:4px;padding:8px 10px;margin-top:4px;border-top:1px solid #eef0f3;font-size:11px;color:#666;font-family:inherit}
-  .mp-mask-page-k{color:#888;margin-right:2px}
-  .mp-mask-page-cur,.mp-mask-page-go{font-family:ui-monospace,SFMono-Regular,Menlo,monospace;font-weight:600;padding:2px 6px;border-radius:3px;border:1px solid transparent;font-size:11px}
-  .mp-mask-page-cur{background:#0f172a;color:#fff}
-  .mp-mask-page-go{color:#1d4ed8;text-decoration:none;background:#fff;border-color:#d6dde6;transition:background .12s,border-color .12s}
-  .mp-mask-page-go:hover{background:#eef3fc;border-color:#9bb6e2}
-  /* View toggle pills (Map / Table) — sit above page pills in mask body */
+  .mask-row-periods{display:flex;align-items:center;gap:8px;margin:6px 0 0 22px;flex-wrap:nowrap}
+  .mask-row-periods .pc-lbl{font-size:11px;color:#777;flex-shrink:0}
+  .period-slider-wrap{flex:1 1 auto;min-width:160px;display:flex;flex-direction:column;gap:2px;padding:0 4px}
+  .period-slider{-webkit-appearance:none;appearance:none;width:100%;height:4px;background:#d6dde6;border-radius:2px;outline:none;margin:6px 0 2px;cursor:pointer}
+  .period-slider:focus{outline:none}
+  .period-slider::-webkit-slider-thumb{-webkit-appearance:none;appearance:none;width:16px;height:16px;border-radius:50%;background:#1d4ed8;border:2px solid #fff;box-shadow:0 1px 3px rgba(0,0,0,.25);cursor:pointer}
+  .period-slider::-moz-range-thumb{width:16px;height:16px;border-radius:50%;background:#1d4ed8;border:2px solid #fff;box-shadow:0 1px 3px rgba(0,0,0,.25);cursor:pointer}
+  .period-slider-ticks{display:flex;justify-content:space-between;font-size:10px;color:#777;padding:0 1px}
+  .period-tick{cursor:pointer;padding:1px 4px;border-radius:3px;transition:color .12s,background .12s;white-space:nowrap;font-family:inherit}
+  .period-tick:hover{color:#1d4ed8}
+  .period-tick.active{color:#0f172a;font-weight:700;background:#eef3fc}
+  /* View toggle pills (Map / Table) — sit at bottom of mask body */
   .mp-mask-view{display:flex;align-items:center;gap:4px;padding:6px 10px 0;font-size:11px;color:#666;font-family:inherit}
   .mp-mask-view-k{color:#888;margin-right:2px}
   .mp-mask-view-btn{font-family:inherit;font-weight:600;padding:3px 10px;border-radius:12px;border:1px solid #d6dde6;background:#fff;color:#374151;cursor:pointer;font-size:11px;transition:background .12s,border-color .12s,color .12s}
