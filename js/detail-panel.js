@@ -405,15 +405,6 @@
 
   // ─── Tab content ───────────────────────────────────────────────
   function renderBodySale(a) {
-    const isDubai = S.isDubai;
-    const proj_rows = (a.top_projects || []).map(p => {
-      const areaCell = isDubai ? `<td>${_h(p.area || '—')}</td>` : '';
-      return `<tr><td>${projName(p.proj)}</td>${areaCell}<td class="num">${fmtInt(p.n)}</td><td class="num">${fmtAedDP(p.med)}</td><td class="num">${fmtAedDP(p.total)}</td></tr>`;
-    }).join('');
-    const deal_rows = (a.top_deals || []).map(d => `<tr><td>${_h(d.d)}</td><td>${projName(d.proj)}</td><td>${_h(d.room)}</td><td class="num">${d.area ? fmtInt(d.area) : '—'}</td><td class="num">${fmtAedDP(d.val)}</td><td><span class="dp-tag-op dp-tag-op-${_h(d.op)}">${_h(d.op)}</span></td></tr>`).join('');
-    const recent_rows = (a.recent || []).map(d => `<tr><td>${_h(d.d)}</td><td>${projName(d.proj)}</td><td>${_h(d.room)}</td><td class="num">${fmtAedDP(d.val)}</td><td><span class="dp-tag-g dp-tag-g-${_h(d.g)}">${_h(d.g)}</span></td></tr>`).join('');
-    const proj_th_area = isDubai ? `<th>${t('th_district')}</th>` : '';
-
     return `
       <div class="period-chips" id="dp-period-chips">${renderPeriodChips()}</div>
       <div class="dp-stats" id="dp-stats-sale">${renderStatsSale(a)}</div>
@@ -449,27 +440,42 @@
       ${renderRoomBreakdown(a)}
 
       <div class="dp-section">
-        <h3>${t("sp_section_offplan")}</h3>
-        <div class="dp-chart" style="height:160px"><canvas id="ch-offplan"></canvas></div>
+        <h3>${t("sp_section_insights")}</h3>
+        <div class="dp-donut-grid">
+          <div class="dp-donut-card">
+            <div class="dp-donut-title">${t("sp_section_offplan")}</div>
+            <div class="dp-chart dp-donut" style="height:160px">
+              <button class="chart-expand-btn" type="button" data-dp-expand-donut="offplan" title="${t('chart_expand')}" aria-label="${t('chart_expand')}">⛶</button>
+              <canvas id="ch-offplan"></canvas>
+            </div>
+            <div class="dp-donut-foot">${t('donut_offplan_hint')}</div>
+          </div>
+          <div class="dp-donut-card">
+            <div class="dp-donut-title">${t("donut_proj_title")}</div>
+            <div class="dp-chart dp-donut" style="height:160px">
+              <button class="chart-expand-btn" type="button" data-dp-expand-donut="projects" title="${t('chart_expand')}" aria-label="${t('chart_expand')}">⛶</button>
+              <canvas id="ch-donut-projects"></canvas>
+            </div>
+            <div class="dp-donut-foot">${listLinkFooter('top_projects', t('open_full_top_projects'))}</div>
+          </div>
+          <div class="dp-donut-card">
+            <div class="dp-donut-title">${t("donut_deals_title")}</div>
+            <div class="dp-chart dp-donut" style="height:160px">
+              <button class="chart-expand-btn" type="button" data-dp-expand-donut="deals" title="${t('chart_expand')}" aria-label="${t('chart_expand')}">⛶</button>
+              <canvas id="ch-donut-deals"></canvas>
+            </div>
+            <div class="dp-donut-foot">${listLinkFooter('top_deals', t('open_full_top_deals'))}</div>
+          </div>
+          <div class="dp-donut-card">
+            <div class="dp-donut-title">${t("donut_recent_title")}</div>
+            <div class="dp-chart dp-donut" style="height:160px">
+              <button class="chart-expand-btn" type="button" data-dp-expand-donut="recent" title="${t('chart_expand')}" aria-label="${t('chart_expand')}">⛶</button>
+              <canvas id="ch-donut-recent"></canvas>
+            </div>
+            <div class="dp-donut-foot">${listLinkFooter('recent', t('open_full_recent'))}</div>
+          </div>
+        </div>
       </div>
-
-      <details class="dp-collapsible" data-tier="premium">
-        <summary>${t("sp_section_top_projects")}</summary>
-        <table class="dp-table"><thead><tr><th>${t("th_project")}</th>${proj_th_area}<th class="num">${t("th_n")}</th><th class="num">${t("th_median")}</th><th class="num">${t("th_volume")}</th></tr></thead><tbody>${proj_rows}</tbody></table>
-        ${listLinkFooter('top_projects', 'Открыть полный список топ-проектов')}
-      </details>
-
-      <details class="dp-collapsible" data-tier="premium">
-        <summary>${t("sp_section_top_deals")}</summary>
-        <table class="dp-table"><thead><tr><th>${t("th_date")}</th><th>${t("th_project")}</th><th>${t("th_br")}</th><th class="num">${t("th_sqm")}</th><th class="num">${t("th_aed")}</th><th></th></tr></thead><tbody>${deal_rows}</tbody></table>
-        ${listLinkFooter('top_deals', 'Открыть полный список крупных сделок')}
-      </details>
-
-      <details class="dp-collapsible" data-tier="premium">
-        <summary>${t("sp_section_recent")}</summary>
-        <table class="dp-table"><thead><tr><th>${t("th_date")}</th><th>${t("th_project")}</th><th>${t("th_br")}</th><th class="num">${t("th_aed")}</th><th>${t("th_type")}</th></tr></thead><tbody>${recent_rows}</tbody></table>
-        ${listLinkFooter('recent', 'Открыть последние сделки')}
-      </details>
     `;
   }
   function listLinkFooter(field, label) {
@@ -804,23 +810,202 @@
     });
     el.classList.add('open');
   }
-  function renderOffplanChart(a) {
-    const ctxO = document.getElementById('ch-offplan');
-    if (!ctxO || !a.offplan) return;
-    const labels = Object.keys(a.offplan);
-    if (!labels.length) return;
-    const data = labels.map(k => a.offplan[k]);
-    const colors = labels.map(k => k==='Off-Plan' ? '#f0a020' : '#21918c');
-    S.activeCharts.push(new Chart(ctxO, {
-      type:'doughnut',
-      data:{ labels, datasets:[{ data, backgroundColor:colors }]},
-      options:{ responsive:true, maintainAspectRatio:false, plugins:{legend:{position:'bottom', labels:{boxWidth:10, font:{size:11}}}} }
-    }));
+  // ─── Insight donuts ─────────────────────────────────────────────
+  // 4-up grid that turns the legacy expandable tables (top projects / top
+  // deals / recent 20) into at-a-glance slices alongside the off-plan vs
+  // ready donut. The deeper view (full table) is still one click away via
+  // the "Открыть полный список →" footer link under each card.
+  const DONUT_FALLBACK_COLORS = ['#1d4ed8','#0ea5e9','#22c55e','#eab308','#f97316','#ef4444','#a855f7','#ec4899','#14b8a6','#64748b'];
+  const OP_COLORS = { 'Off-Plan': '#f0a020', 'Ready': '#21918c' };
+  const ROOM_DONUT_COLORS = {
+    'Studio': '#9ca3af',
+    '1BR': '#60a5fa', '2BR': '#3b82f6', '3BR': '#1d4ed8', '4BR+': '#1e3a8a',
+    'Villa': '#d97706',
+    'Other': '#a78bfa',
+  };
+  // Empty-state placeholder. Chart.js can't draw a donut with no data — show
+  // a centred "—" so the card still occupies its grid slot.
+  function _donutEmpty(canvasId, msg) {
+    const ctx = document.getElementById(canvasId);
+    if (!ctx) return;
+    const c2 = ctx.getContext('2d');
+    c2.save();
+    c2.clearRect(0, 0, ctx.width, ctx.height);
+    c2.fillStyle = '#94a3b8';
+    c2.font = '13px system-ui, -apple-system, sans-serif';
+    c2.textAlign = 'center';
+    c2.textBaseline = 'middle';
+    c2.fillText(msg || '—', ctx.width/2, ctx.height/2);
+    c2.restore();
+  }
+  function _donutPalette(n, hint) {
+    if (hint && hint.length >= n) return hint.slice(0, n);
+    const out = [];
+    for (let i = 0; i < n; i++) out.push(DONUT_FALLBACK_COLORS[i % DONUT_FALLBACK_COLORS.length]);
+    return out;
+  }
+  // Build the off-plan dataset: {Off-Plan: n, Ready: n} (sometimes missing
+  // a key entirely — handle gracefully).
+  function _offplanData(a) {
+    const op = a.offplan || {};
+    const labels = Object.keys(op).filter(k => op[k] > 0);
+    if (!labels.length) return null;
+    return {
+      labels,
+      values: labels.map(k => op[k]),
+      colors: labels.map(k => OP_COLORS[k] || '#64748b'),
+      fmt: v => fmtInt(v) + ' ' + t('ch_count').toLowerCase(),
+    };
+  }
+  // Top projects by deal count — keep the leaders, fold the long tail into
+  // a single "Others" slice so the donut doesn't fragment into 30 toothpicks.
+  function _projectsDonutData(a) {
+    const list = (a.top_projects || []).filter(p => p.n > 0);
+    if (!list.length) return null;
+    const N = 8;
+    const top = list.slice(0, N);
+    const tail = list.slice(N);
+    const tailN = tail.reduce((s,p) => s + (p.n||0), 0);
+    const items = top.map(p => ({ name: p.proj || t('not_specified'), n: p.n, total: p.total }));
+    if (tailN > 0) items.push({ name: t('donut_others'), n: tailN, total: tail.reduce((s,p)=>s+(p.total||0),0) });
+    return {
+      labels: items.map(i => i.name),
+      values: items.map(i => i.n),
+      totals: items.map(i => i.total),
+      colors: _donutPalette(items.length),
+      fmt: v => fmtInt(v) + ' ' + t('ch_count').toLowerCase(),
+    };
+  }
+  // "When did the big money land?" — group the top-10 largest deals by
+  // calendar year, value = sum of AED. Highlights "this district had a 2014
+  // spike of 5B AED + a smaller 2020 echo" at a glance.
+  function _dealsByYearData(a) {
+    const list = (a.top_deals || []).filter(d => d.val > 0 && d.d);
+    if (!list.length) return null;
+    const byYear = new Map();
+    for (const d of list) {
+      const y = String(d.d).slice(0, 4);
+      byYear.set(y, (byYear.get(y) || 0) + d.val);
+    }
+    const sorted = [...byYear.entries()].sort((a,b) => a[0].localeCompare(b[0]));
+    return {
+      labels: sorted.map(([y]) => y),
+      values: sorted.map(([, v]) => v),
+      colors: _donutPalette(sorted.length),
+      fmt: fmtAedDP,
+    };
+  }
+  // Distribution of the most recent N transactions by room type. A snapshot
+  // of "what's actually changing hands right now" — complements the rooms
+  // breakdown chart (which is historical).
+  function _recentByRoomData(a) {
+    const list = (a.recent || []).filter(d => d.room);
+    if (!list.length) return null;
+    const order = ['Studio','1BR','2BR','3BR','4BR+','Villa','Other'];
+    const counts = new Map();
+    for (const d of list) {
+      const k = d.room;
+      counts.set(k, (counts.get(k) || 0) + 1);
+    }
+    const labels = order.filter(k => counts.has(k));
+    for (const k of counts.keys()) if (!order.includes(k)) labels.push(k);
+    return {
+      labels,
+      values: labels.map(k => counts.get(k)),
+      colors: labels.map(k => ROOM_DONUT_COLORS[k] || '#64748b'),
+      fmt: v => fmtInt(v) + ' ' + t('ch_count').toLowerCase(),
+    };
+  }
+  function _renderDonut(canvasId, d, opts) {
+    const ctx = document.getElementById(canvasId);
+    if (!ctx) return null;
+    if (!d) { _donutEmpty(canvasId, t('donut_empty')); return null; }
+    const ch = new Chart(ctx, {
+      type: 'doughnut',
+      data: { labels: d.labels, datasets: [{ data: d.values, backgroundColor: d.colors, borderWidth: 1, borderColor: '#fff' }] },
+      options: {
+        responsive: true, maintainAspectRatio: false, cutout: '58%',
+        plugins: {
+          legend: { position: 'bottom', labels: { boxWidth: 9, font: { size: 10.5 }, padding: 5 } },
+          tooltip: {
+            callbacks: {
+              label: c => {
+                const total = c.dataset.data.reduce((s,v)=>s+v,0);
+                const pct = total ? ((c.parsed/total)*100).toFixed(1) : 0;
+                return ' ' + c.label + ': ' + d.fmt(c.parsed) + ' (' + pct + '%)';
+              },
+            },
+          },
+        },
+        ...(opts || {}),
+      },
+    });
+    S.activeCharts.push(ch);
+    return ch;
+  }
+  function renderInsightDonuts(a) {
+    // Cache datasets so the expand-modal can rebuild from the same data.
+    S.donutData = {
+      offplan:  _offplanData(a),
+      projects: _projectsDonutData(a),
+      deals:    _dealsByYearData(a),
+      recent:   _recentByRoomData(a),
+    };
+    _renderDonut('ch-offplan',           S.donutData.offplan);
+    _renderDonut('ch-donut-projects',    S.donutData.projects);
+    _renderDonut('ch-donut-deals',       S.donutData.deals);
+    _renderDonut('ch-donut-recent',      S.donutData.recent);
+  }
+  // Big-mode donut: legend on the side + a summary "leader" badge in the
+  // header, so the modal reads like a quick analytic exhibit.
+  function openDonutModal(kind) {
+    if (!S.donutData || !S.donutData[kind]) return;
+    const d = S.donutData[kind];
+    const titleKey = {
+      offplan:  'sp_section_offplan',
+      projects: 'donut_proj_title_full',
+      deals:    'donut_deals_title_full',
+      recent:   'donut_recent_title_full',
+    }[kind];
+    const el = _modalDOM();
+    el.querySelector('#dp-cm-title').textContent = t(titleKey);
+    const total = d.values.reduce((s,v)=>s+v,0);
+    const leadIdx = d.values.indexOf(Math.max(...d.values));
+    const leadLabel = d.labels[leadIdx];
+    const leadPct = total ? (d.values[leadIdx]/total*100).toFixed(1) : 0;
+    const badges = [
+      `<span class="cm-badge muted">Σ ${d.fmt(total)}</span>`,
+      `<span class="cm-badge pos">${t('donut_leader')}: ${_h(leadLabel)} (${leadPct}%)</span>`,
+      `<span class="cm-badge muted">n=${d.labels.length}</span>`,
+    ];
+    el.querySelector('#dp-cm-badges').innerHTML = badges.join('');
+    if (S.modalChart) { S.modalChart.destroy(); S.modalChart = null; }
+    const ctx = el.querySelector('#dp-cm-canvas');
+    S.modalChart = new Chart(ctx, {
+      type: 'doughnut',
+      data: { labels: d.labels, datasets: [{ data: d.values, backgroundColor: d.colors, borderWidth: 2, borderColor: '#fff' }] },
+      options: {
+        responsive: true, maintainAspectRatio: false, cutout: '52%',
+        plugins: {
+          legend: { position: 'right', labels: { boxWidth: 14, font: { size: 12 }, padding: 8 } },
+          tooltip: {
+            callbacks: {
+              label: c => {
+                const sub = c.dataset.data.reduce((s,v)=>s+v,0);
+                const pct = sub ? ((c.parsed/sub)*100).toFixed(1) : 0;
+                return ' ' + c.label + ': ' + d.fmt(c.parsed) + ' (' + pct + '%)';
+              },
+            },
+          },
+        },
+      },
+    });
+    el.classList.add('open');
   }
   function renderSaleCharts(a) {
     renderTimelineCharts(a);
     try { renderRoomBreakdownChart(a); } catch(e) { console.error('rooms chart:', e); }
-    try { renderOffplanChart(a); } catch(e) { console.error('offplan chart:', e); }
+    try { renderInsightDonuts(a);    } catch(e) { console.error('donuts:', e); }
   }
   function renderRentCharts(r) {
     const series = periodSlice(r.timeline || []);
@@ -910,6 +1095,13 @@
       if (expandRoomBtn && S.container && S.container.contains(expandRoomBtn)) {
         e.preventDefault();
         openRoomChartModal();
+        return;
+      }
+      // Insight-donut expand button → enlarged donut in modal.
+      const expandDonutBtn = e.target.closest('[data-dp-expand-donut]');
+      if (expandDonutBtn && S.container && S.container.contains(expandDonutBtn)) {
+        e.preventDefault();
+        openDonutModal(expandDonutBtn.dataset.dpExpandDonut);
         return;
       }
       // Room-breakdown legend chip → toggle category in/out of the chart.
