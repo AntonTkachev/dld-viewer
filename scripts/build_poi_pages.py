@@ -535,7 +535,7 @@ def build_seo_ld(cat, n, lang, h1_plain, lede_plain):
         'inLanguage': lang,
         'url': canonical,
         'about': {'@type': 'Place', 'name': 'Dubai, UAE'},
-        'isPartOf': {'@type': 'WebSite', 'name': 'DLD Viewer', 'url': f'{BASE_URL}/'},
+        'isPartOf': {'@type': 'WebSite', 'name': 'Deedmap', 'url': f'{BASE_URL}/'},
         'mainEntity': {
             '@type': 'ItemList',
             'name': h1_plain,
@@ -565,8 +565,11 @@ PAGE_TEMPLATE = '''<!DOCTYPE html>
 <html lang="{html_lang}" dir="{dir}">
 <head>
 <meta charset="UTF-8">
-<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net https://unpkg.com https://antontkachev.github.io; style-src 'self' 'unsafe-inline' https://unpkg.com https://antontkachev.github.io; img-src 'self' data: https://*.tile.openstreetmap.org https://antontkachev.github.io; connect-src 'self' https://antontkachev.github.io; font-src 'self' data:; frame-ancestors 'none'; base-uri 'self'; form-action 'self'">
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net https://unpkg.com https://antontkachev.github.io https://www.googletagmanager.com; style-src 'self' 'unsafe-inline' https://unpkg.com https://antontkachev.github.io; img-src 'self' data: https://*.tile.openstreetmap.org https://antontkachev.github.io https://*.google-analytics.com https://*.analytics.google.com https://*.g.doubleclick.net; connect-src 'self' https://antontkachev.github.io https://*.google-analytics.com https://*.analytics.google.com https://*.g.doubleclick.net; font-src 'self' data:; frame-ancestors 'none'; base-uri 'self'; form-action 'self'">
+<script async src="https://www.googletagmanager.com/gtag/js?id=G-5G3EY3Y2KG"></script>
+<script>window.dataLayer=window.dataLayer||[];function gtag(){{dataLayer.push(arguments);}}gtag('js',new Date());gtag('config','G-5G3EY3Y2KG');</script>
 <meta name="viewport" content="width=device-width,initial-scale=1">
+<link rel="icon" type="image/svg+xml" href="{favicon_url}">
 <title>{title}</title>
 <meta name="description" content="{desc}">
 <meta name="robots" content="index,follow">
@@ -673,6 +676,7 @@ def build_page(cat, rows_with_district, lang):
         hreflang=hreflang_block(slug),
         ld_json=ld_json,
         css_url=f'{BASE_URL}/css/viewer.css',
+        favicon_url=f'{BASE_URL}/favicon.svg',
         home_url=home_url,
         breadcrumb_dubai=c['breadcrumb_dubai'],
         h1=h1, h1_plain=h1_plain,

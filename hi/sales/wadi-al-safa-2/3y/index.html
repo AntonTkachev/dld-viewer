@@ -2,10 +2,11 @@
 <html lang="hi" dir="ltr">
 <head>
 <meta charset="UTF-8">
-<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net https://unpkg.com https://antontkachev.github.io; style-src 'self' 'unsafe-inline' https://unpkg.com https://antontkachev.github.io; img-src 'self' data: https://*.tile.openstreetmap.org https://antontkachev.github.io; connect-src 'self' https://antontkachev.github.io; font-src 'self' data:; frame-ancestors 'none'; base-uri 'self'; form-action 'self'">
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net https://unpkg.com https://antontkachev.github.io https://www.googletagmanager.com; style-src 'self' 'unsafe-inline' https://unpkg.com https://antontkachev.github.io; img-src 'self' data: https://*.tile.openstreetmap.org https://antontkachev.github.io https://*.google-analytics.com https://*.analytics.google.com https://*.g.doubleclick.net; connect-src 'self' https://antontkachev.github.io https://*.google-analytics.com https://*.analytics.google.com https://*.g.doubleclick.net; font-src 'self' data:; frame-ancestors 'none'; base-uri 'self'; form-action 'self'">
 <meta name="viewport" content="width=device-width,initial-scale=1">
+<link rel="icon" type="image/svg+xml" href="https://antontkachev.github.io/dld-viewer/favicon.svg">
 
-<title>Wadi Al Safa 2 में सौदे पिछले 3 वर्षों में: 1,014 लेनदेन — DLD</title>
+<title>Wadi Al Safa 2 में सौदे पिछले 3 वर्षों में: 1,014 लेनदेन — Deedmap</title>
 <meta name="description" content="Wadi Al Safa 2 में संपत्ति की खरीद-बिक्री पिछले 3 वर्षों में: 1,014 DLD सौदे, औसत, प्रति m² कीमत, शीर्ष परियोजनाएं, मासिक मूल्य गतिशीलता।">
 <link rel="canonical" href="https://antontkachev.github.io/dld-viewer/hi/sales/wadi-al-safa-2/3y/">
 <link rel="alternate" hreflang="ru" href="https://antontkachev.github.io/dld-viewer/sales/wadi-al-safa-2/3y/">
@@ -15,7 +16,7 @@
 <link rel="alternate" hreflang="zh" href="https://antontkachev.github.io/dld-viewer/zh/sales/wadi-al-safa-2/3y/">
 <link rel="alternate" hreflang="x-default" href="https://antontkachev.github.io/dld-viewer/sales/wadi-al-safa-2/3y/">
 <meta property="og:type" content="article">
-<meta property="og:title" content="Wadi Al Safa 2 में सौदे पिछले 3 वर्षों में: 1,014 लेनदेन — DLD">
+<meta property="og:title" content="Wadi Al Safa 2 में सौदे पिछले 3 वर्षों में: 1,014 लेनदेन — Deedmap">
 <meta property="og:description" content="Wadi Al Safa 2 में संपत्ति की खरीद-बिक्री पिछले 3 वर्षों में: 1,014 DLD सौदे, औसत, प्रति m² कीमत, शीर्ष परियोजनाएं, मासिक मूल्य गतिशीलता।">
 <script type="application/ld+json">{"@context": "https://schema.org", "@type": "Place", "name": "Wadi Al Safa 2, Dubai", "url": "https://antontkachev.github.io/dld-viewer/hi/sales/wadi-al-safa-2/3y/", "containedInPlace": {"@type": "Place", "name": "Dubai, UAE"}}</script>
 <script type="application/ld+json">{"@context": "https://schema.org", "@type": "BreadcrumbList", "itemListElement": [{"@type": "ListItem", "position": 1, "name": "दुबई", "item": "https://antontkachev.github.io/dld-viewer/hi/"}, {"@type": "ListItem", "position": 2, "name": "बिक्री", "item": "https://antontkachev.github.io/dld-viewer/hi/sales/"}, {"@type": "ListItem", "position": 3, "name": "Wadi Al Safa 2", "item": "https://antontkachev.github.io/dld-viewer/hi/sales/wadi-al-safa-2/"}, {"@type": "ListItem", "position": 4, "name": "पिछले 3 वर्षों में", "item": "https://antontkachev.github.io/dld-viewer/hi/sales/wadi-al-safa-2/3y/"}]}</script>
@@ -77,6 +78,8 @@
   html[dir="rtl"] .breadcrumb { direction:rtl; }
   html[dir="rtl"] .dp-section-more { text-align:left; }
 </style>
+<script async src="https://www.googletagmanager.com/gtag/js?id=G-5G3EY3Y2KG"></script>
+<script>window.dataLayer=window.dataLayer||[];function gtag(){dataLayer.push(arguments);}gtag('js',new Date());gtag('config','G-5G3EY3Y2KG');</script>
 </head>
 <body>
 <div class="wrap">
@@ -138,7 +141,7 @@ function applyPeriodCopy(period) {
   const c = PERIOD_COPY[period];
   document.getElementById('d-name').textContent = c.h1;
   document.getElementById('d-lede').textContent = c.lede;
-  if (c.h1) document.title = c.h1 + ' — DLD';
+  if (c.h1) document.title = c.h1 + ' — Deedmap';
 }
 
 async function load() {
