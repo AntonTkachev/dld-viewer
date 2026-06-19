@@ -64,12 +64,6 @@
   .about-stat .k { font-size:11px; color:#6b7280; text-transform:uppercase; letter-spacing:0.04em; margin-bottom:4px; }
   .about-stat .v { font-size:16px; font-weight:600; color:#0f172a; }
 
-  .subpages { background:#fff; border:1px solid #e5e7eb; border-radius:12px; padding:16px 20px; margin:0 0 18px; }
-  .subpages h2 { font-size:14px; font-weight:600; color:#6b7280; text-transform:uppercase; letter-spacing:0.04em; margin:0 0 10px; }
-  .subpages-list { display:flex; flex-wrap:wrap; gap:8px; }
-  .subpages-list a { padding:7px 12px; border:1px solid #e5e7eb; border-radius:8px; font-size:13px; text-decoration:none; color:#1d4ed8; background:#fff; }
-  .subpages-list a:hover { background:#eff6ff; border-color:#bfdbfe; }
-
   .dp-section-more { text-align:right; padding:8px 0 0; }
   .dp-section-more a { color:#1d4ed8; text-decoration:none; font-size:13px; font-weight:500; }
   .dp-section-more a:hover { text-decoration:underline; }
@@ -105,7 +99,7 @@
     <div id="detail-content" class="loading">Loading statistics…</div>
   </div>
 
-  <nav class="subpages"><h2>Explore further</h2><div class="subpages-list"><a href="https://antontkachev.github.io/dld-viewer/en/rents/dubai-maritime-city/projects/">Top projects →</a><a href="https://antontkachev.github.io/dld-viewer/en/rents/dubai-maritime-city/recent/">Recent →</a></div></nav>
+  
 
   <div class="nav">
     <a href="https://antontkachev.github.io/dld-viewer/en/rents/">← All districts (map)</a>
@@ -124,7 +118,7 @@ const PAGE_PERIOD   = "all";
 const PAGE_LANG     = "en";
 const BASE_URL      = "https://antontkachev.github.io/dld-viewer/en/rents/dubai-maritime-city/";
 const DATA_URL      = "https://antontkachev.github.io/dld-viewer/rents/dubai-maritime-city/data.json";
-const PERIOD_COPY   = {"all": {"h1": "Real estate rentals in Dubai Maritime City all-time", "lede": "In Dubai Maritime City all-time, 5,500 rental contracts have been registered according to the Dubai Land Department. Rent per area — 1,201 AED/m²/year.", "n": 5500}, "1y": {"h1": "Real estate rentals in Dubai Maritime City over 12 months", "lede": "In Dubai Maritime City over 12 months, 1,680 rental contracts have been registered according to the Dubai Land Department. Median annual rent — 648,000 AED. Rent per area — 21,246 AED/m²/year.", "n": 1680}, "3y": {"h1": "Real estate rentals in Dubai Maritime City over 3 years", "lede": "In Dubai Maritime City over 3 years, 4,035 rental contracts have been registered according to the Dubai Land Department. Median annual rent — 360,000 AED. Rent per area — 11,331 AED/m²/year.", "n": 4035}, "5y": {"h1": "Real estate rentals in Dubai Maritime City over 5 years", "lede": "In Dubai Maritime City over 5 years, 4,744 rental contracts have been registered according to the Dubai Land Department. Median annual rent — 252,000 AED. Rent per area — 4,249 AED/m²/year.", "n": 4744}, "10y": {"h1": "Real estate rentals in Dubai Maritime City over 10 years", "lede": "In Dubai Maritime City over 10 years, 5,462 rental contracts have been registered according to the Dubai Land Department. Median annual rent — 201,742 AED. Rent per area — 1,229 AED/m²/year.", "n": 5462}};
+const PERIOD_COPY   = {"all": {"h1": "Real estate rentals in Dubai Maritime City all-time", "lede": "In Dubai Maritime City all-time, 5,500 rental contracts have been registered according to the Dubai Land Department. Rent per area — 1,201 AED/m²/year.", "n": 5500}, "1y": {"h1": "Real estate rentals in Dubai Maritime City over 12 months", "lede": "In Dubai Maritime City over 12 months, 5,500 rental contracts have been registered according to the Dubai Land Department. Rent per area — 1,201 AED/m²/year.", "n": 5500}, "3y": {"h1": "Real estate rentals in Dubai Maritime City over 3 years", "lede": "In Dubai Maritime City over 3 years, 5,500 rental contracts have been registered according to the Dubai Land Department. Rent per area — 1,201 AED/m²/year.", "n": 5500}, "5y": {"h1": "Real estate rentals in Dubai Maritime City over 5 years", "lede": "In Dubai Maritime City over 5 years, 5,500 rental contracts have been registered according to the Dubai Land Department. Rent per area — 1,201 AED/m²/year.", "n": 5500}, "10y": {"h1": "Real estate rentals in Dubai Maritime City over 10 years", "lede": "In Dubai Maritime City over 10 years, 5,500 rental contracts have been registered according to the Dubai Land Department. Rent per area — 1,201 AED/m²/year.", "n": 5500}};
 
 // Activate the requested language so detail-panel.js's t() returns localized
 // strings. i18n.js exposes a top-level `currentLang` closure variable + a t()

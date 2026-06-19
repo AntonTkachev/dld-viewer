@@ -64,12 +64,6 @@
   .about-stat .k { font-size:11px; color:#6b7280; text-transform:uppercase; letter-spacing:0.04em; margin-bottom:4px; }
   .about-stat .v { font-size:16px; font-weight:600; color:#0f172a; }
 
-  .subpages { background:#fff; border:1px solid #e5e7eb; border-radius:12px; padding:16px 20px; margin:0 0 18px; }
-  .subpages h2 { font-size:14px; font-weight:600; color:#6b7280; text-transform:uppercase; letter-spacing:0.04em; margin:0 0 10px; }
-  .subpages-list { display:flex; flex-wrap:wrap; gap:8px; }
-  .subpages-list a { padding:7px 12px; border:1px solid #e5e7eb; border-radius:8px; font-size:13px; text-decoration:none; color:#1d4ed8; background:#fff; }
-  .subpages-list a:hover { background:#eff6ff; border-color:#bfdbfe; }
-
   .dp-section-more { text-align:right; padding:8px 0 0; }
   .dp-section-more a { color:#1d4ed8; text-decoration:none; font-size:13px; font-weight:500; }
   .dp-section-more a:hover { text-decoration:underline; }
@@ -105,7 +99,7 @@
     <div id="detail-content" class="loading">Загрузка статистики…</div>
   </div>
 
-  <nav class="subpages"><h2>Подробнее по разделам</h2><div class="subpages-list"><a href="https://antontkachev.github.io/dld-viewer/sales/eyal-nasser/projects/">Топ проекты →</a><a href="https://antontkachev.github.io/dld-viewer/sales/eyal-nasser/deals/">Крупнейшие сделки →</a><a href="https://antontkachev.github.io/dld-viewer/sales/eyal-nasser/recent/">Последние →</a></div></nav>
+  
 
   <div class="nav">
     <a href="https://antontkachev.github.io/dld-viewer/sales/">← Все районы (карта)</a>
@@ -124,7 +118,7 @@ const PAGE_PERIOD   = "all";
 const PAGE_LANG     = "ru";
 const BASE_URL      = "https://antontkachev.github.io/dld-viewer/sales/eyal-nasser/";
 const DATA_URL      = "https://antontkachev.github.io/dld-viewer/sales/eyal-nasser/data.json";
-const PERIOD_COPY   = {"all": {"h1": "Сделки с недвижимостью в Eyal Nasser за всё время", "lede": "В районе Eyal Nasser за всё время совершено 502 сделок с недвижимостью по данным Dubai Land Department. Медианная цена объекта — 5.00 млн AED. Цена за квадратный метр — 21 584 AED. Медианная площадь — 232 м².", "n": 502}, "1y": {"h1": "Сделки с недвижимостью в Eyal Nasser за 1 год", "lede": "В районе Eyal Nasser за 1 год совершено 17 сделок с недвижимостью по данным Dubai Land Department. Медианная цена объекта — 7.68 млн AED. Цена за квадратный метр — 31 308 AED. Медианная площадь — 275 м².", "n": 17}, "3y": {"h1": "Сделки с недвижимостью в Eyal Nasser за 3 года", "lede": "В районе Eyal Nasser за 3 года совершено 36 сделок с недвижимостью по данным Dubai Land Department. Медианная цена объекта — 7.59 млн AED. Цена за квадратный метр — 33 463 AED. Медианная площадь — 270 м².", "n": 36}, "5y": {"h1": "Сделки с недвижимостью в Eyal Nasser за 5 лет", "lede": "В районе Eyal Nasser за 5 лет совершено 57 сделок с недвижимостью по данным Dubai Land Department. Медианная цена объекта — 7.68 млн AED. Цена за квадратный метр — 36 241 AED. Медианная площадь — 264 м².", "n": 57}, "10y": {"h1": "Сделки с недвижимостью в Eyal Nasser за 10 лет", "lede": "В районе Eyal Nasser за 10 лет совершено 107 сделок с недвижимостью по данным Dubai Land Department. Медианная цена объекта — 10.00 млн AED. Цена за квадратный метр — 38 250 AED. Медианная площадь — 265 м².", "n": 107}};
+const PERIOD_COPY   = {"all": {"h1": "Сделки с недвижимостью в Eyal Nasser за всё время", "lede": "В районе Eyal Nasser за всё время совершено 502 сделок с недвижимостью по данным Dubai Land Department. Медианная цена объекта — 5.00 млн AED. Цена за квадратный метр — 21 584 AED. Медианная площадь — 232 м².", "n": 502}, "1y": {"h1": "Сделки с недвижимостью в Eyal Nasser за 1 год", "lede": "В районе Eyal Nasser за 1 год совершено 502 сделок с недвижимостью по данным Dubai Land Department. Медианная цена объекта — 5.00 млн AED. Цена за квадратный метр — 21 584 AED. Медианная площадь — 232 м².", "n": 502}, "3y": {"h1": "Сделки с недвижимостью в Eyal Nasser за 3 года", "lede": "В районе Eyal Nasser за 3 года совершено 502 сделок с недвижимостью по данным Dubai Land Department. Медианная цена объекта — 5.00 млн AED. Цена за квадратный метр — 21 584 AED. Медианная площадь — 232 м².", "n": 502}, "5y": {"h1": "Сделки с недвижимостью в Eyal Nasser за 5 лет", "lede": "В районе Eyal Nasser за 5 лет совершено 502 сделок с недвижимостью по данным Dubai Land Department. Медианная цена объекта — 5.00 млн AED. Цена за квадратный метр — 21 584 AED. Медианная площадь — 232 м².", "n": 502}, "10y": {"h1": "Сделки с недвижимостью в Eyal Nasser за 10 лет", "lede": "В районе Eyal Nasser за 10 лет совершено 502 сделок с недвижимостью по данным Dubai Land Department. Медианная цена объекта — 5.00 млн AED. Цена за квадратный метр — 21 584 AED. Медианная площадь — 232 м².", "n": 502}};
 
 // Activate the requested language so detail-panel.js's t() returns localized
 // strings. i18n.js exposes a top-level `currentLang` closure variable + a t()

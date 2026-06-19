@@ -64,12 +64,6 @@
   .about-stat .k { font-size:11px; color:#6b7280; text-transform:uppercase; letter-spacing:0.04em; margin-bottom:4px; }
   .about-stat .v { font-size:16px; font-weight:600; color:#0f172a; }
 
-  .subpages { background:#fff; border:1px solid #e5e7eb; border-radius:12px; padding:16px 20px; margin:0 0 18px; }
-  .subpages h2 { font-size:14px; font-weight:600; color:#6b7280; text-transform:uppercase; letter-spacing:0.04em; margin:0 0 10px; }
-  .subpages-list { display:flex; flex-wrap:wrap; gap:8px; }
-  .subpages-list a { padding:7px 12px; border:1px solid #e5e7eb; border-radius:8px; font-size:13px; text-decoration:none; color:#1d4ed8; background:#fff; }
-  .subpages-list a:hover { background:#eff6ff; border-color:#bfdbfe; }
-
   .dp-section-more { text-align:right; padding:8px 0 0; }
   .dp-section-more a { color:#1d4ed8; text-decoration:none; font-size:13px; font-weight:500; }
   .dp-section-more a:hover { text-decoration:underline; }
@@ -105,7 +99,7 @@
     <div id="detail-content" class="loading">جاري تحميل الإحصاءات…</div>
   </div>
 
-  <nav class="subpages"><h2>مزيد من التفاصيل</h2><div class="subpages-list"><a href="https://antontkachev.github.io/dld-viewer/ar/sales/al-barsha-first/projects/">أهم المشاريع →</a><a href="https://antontkachev.github.io/dld-viewer/ar/sales/al-barsha-first/deals/">أكبر الصفقات →</a><a href="https://antontkachev.github.io/dld-viewer/ar/sales/al-barsha-first/recent/">الأحدث →</a></div></nav>
+  
 
   <div class="nav">
     <a href="https://antontkachev.github.io/dld-viewer/ar/sales/">← جميع الأحياء (الخريطة)</a>
@@ -124,7 +118,7 @@ const PAGE_PERIOD   = "1y";
 const PAGE_LANG     = "ar";
 const BASE_URL      = "https://antontkachev.github.io/dld-viewer/ar/sales/al-barsha-first/";
 const DATA_URL      = "https://antontkachev.github.io/dld-viewer/sales/al-barsha-first/data.json";
-const PERIOD_COPY   = {"all": {"h1": "صفقات العقارات في Al Barsha First لكل الوقت", "lede": "في حي Al Barsha First لكل الوقت تم تسجيل 2,229 صفقة عقارية وفقًا لبيانات دائرة الأراضي والأملاك بدبي. السعر الوسيط للعقار — 13.62 مليون درهم. السعر للمتر المربع — 13,905 درهم. المساحة الوسيطة — 1202 م².", "n": 2229}, "1y": {"h1": "صفقات العقارات في Al Barsha First خلال 12 شهرًا", "lede": "في حي Al Barsha First خلال 12 شهرًا تم تسجيل 173 صفقة عقارية وفقًا لبيانات دائرة الأراضي والأملاك بدبي. السعر الوسيط للعقار — 2.80 مليون درهم. السعر للمتر المربع — 19,375 درهم. المساحة الوسيطة — 144 م².", "n": 173}, "3y": {"h1": "صفقات العقارات في Al Barsha First خلال 3 سنوات", "lede": "في حي Al Barsha First خلال 3 سنوات تم تسجيل 359 صفقة عقارية وفقًا لبيانات دائرة الأراضي والأملاك بدبي. السعر الوسيط للعقار — 2.83 مليون درهم. السعر للمتر المربع — 18,730 درهم. المساحة الوسيطة — 145 م².", "n": 359}, "5y": {"h1": "صفقات العقارات في Al Barsha First خلال 5 سنوات", "lede": "في حي Al Barsha First خلال 5 سنوات تم تسجيل 518 صفقة عقارية وفقًا لبيانات دائرة الأراضي والأملاك بدبي. السعر الوسيط للعقار — 2.82 مليون درهم. السعر للمتر المربع — 17,449 درهم. المساحة الوسيطة — 146 م².", "n": 518}, "10y": {"h1": "صفقات العقارات في Al Barsha First خلال 10 سنوات", "lede": "في حي Al Barsha First خلال 10 سنوات تم تسجيل 1,002 صفقة عقارية وفقًا لبيانات دائرة الأراضي والأملاك بدبي. السعر الوسيط للعقار — 2.81 مليون درهم. السعر للمتر المربع — 15,069 درهم. المساحة الوسيطة — 167 م².", "n": 1002}};
+const PERIOD_COPY   = {"all": {"h1": "صفقات العقارات في Al Barsha First لكل الوقت", "lede": "في حي Al Barsha First لكل الوقت تم تسجيل 2,229 صفقة عقارية وفقًا لبيانات دائرة الأراضي والأملاك بدبي. السعر الوسيط للعقار — 13.62 مليون درهم. السعر للمتر المربع — 13,905 درهم. المساحة الوسيطة — 1202 م².", "n": 2229}, "1y": {"h1": "صفقات العقارات في Al Barsha First خلال 12 شهرًا", "lede": "في حي Al Barsha First خلال 12 شهرًا تم تسجيل 173 صفقة عقارية وفقًا لبيانات دائرة الأراضي والأملاك بدبي. السعر الوسيط للعقار — 2.80 مليون درهم. السعر للمتر المربع — 19,375 درهم. المساحة الوسيطة — 144 م².", "n": 173}, "3y": {"h1": "صفقات العقارات في Al Barsha First خلال 3 سنوات", "lede": "في حي Al Barsha First خلال 3 سنوات تم تسجيل 358 صفقة عقارية وفقًا لبيانات دائرة الأراضي والأملاك بدبي. السعر الوسيط للعقار — 2.82 مليون درهم. السعر للمتر المربع — 18,664 درهم. المساحة الوسيطة — 145 م².", "n": 358}, "5y": {"h1": "صفقات العقارات في Al Barsha First خلال 5 سنوات", "lede": "في حي Al Barsha First خلال 5 سنوات تم تسجيل 518 صفقة عقارية وفقًا لبيانات دائرة الأراضي والأملاك بدبي. السعر الوسيط للعقار — 2.82 مليون درهم. السعر للمتر المربع — 17,449 درهم. المساحة الوسيطة — 146 م².", "n": 518}, "10y": {"h1": "صفقات العقارات في Al Barsha First خلال 10 سنوات", "lede": "في حي Al Barsha First خلال 10 سنوات تم تسجيل 1,000 صفقة عقارية وفقًا لبيانات دائرة الأراضي والأملاك بدبي. السعر الوسيط للعقار — 2.80 مليون درهم. السعر للمتر المربع — 15,039 درهم. المساحة الوسيطة — 165 م².", "n": 1000}};
 
 // Activate the requested language so detail-panel.js's t() returns localized
 // strings. i18n.js exposes a top-level `currentLang` closure variable + a t()

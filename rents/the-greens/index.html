@@ -64,12 +64,6 @@
   .about-stat .k { font-size:11px; color:#6b7280; text-transform:uppercase; letter-spacing:0.04em; margin-bottom:4px; }
   .about-stat .v { font-size:16px; font-weight:600; color:#0f172a; }
 
-  .subpages { background:#fff; border:1px solid #e5e7eb; border-radius:12px; padding:16px 20px; margin:0 0 18px; }
-  .subpages h2 { font-size:14px; font-weight:600; color:#6b7280; text-transform:uppercase; letter-spacing:0.04em; margin:0 0 10px; }
-  .subpages-list { display:flex; flex-wrap:wrap; gap:8px; }
-  .subpages-list a { padding:7px 12px; border:1px solid #e5e7eb; border-radius:8px; font-size:13px; text-decoration:none; color:#1d4ed8; background:#fff; }
-  .subpages-list a:hover { background:#eff6ff; border-color:#bfdbfe; }
-
   .dp-section-more { text-align:right; padding:8px 0 0; }
   .dp-section-more a { color:#1d4ed8; text-decoration:none; font-size:13px; font-weight:500; }
   .dp-section-more a:hover { text-decoration:underline; }
@@ -105,7 +99,7 @@
     <div id="detail-content" class="loading">Загрузка статистики…</div>
   </div>
 
-  <nav class="subpages"><h2>Подробнее по разделам</h2><div class="subpages-list"><a href="https://antontkachev.github.io/dld-viewer/rents/the-greens/projects/">Топ проекты →</a><a href="https://antontkachev.github.io/dld-viewer/rents/the-greens/recent/">Последние →</a></div></nav>
+  
 
   <div class="nav">
     <a href="https://antontkachev.github.io/dld-viewer/rents/">← Все районы (карта)</a>
@@ -124,7 +118,7 @@ const PAGE_PERIOD   = "all";
 const PAGE_LANG     = "ru";
 const BASE_URL      = "https://antontkachev.github.io/dld-viewer/rents/the-greens/";
 const DATA_URL      = "https://antontkachev.github.io/dld-viewer/rents/the-greens/data.json";
-const PERIOD_COPY   = {"all": {"h1": "Аренда недвижимости в The Greens за всё время", "lede": "В районе The Greens за всё время зарегистрировано 51 186 договоров аренды по данным Dubai Land Department. Стоимость аренды — 992 AED/м²/год.", "n": 51186}, "1y": {"h1": "Аренда недвижимости в The Greens за 1 год", "lede": "В районе The Greens за 1 год зарегистрировано 3 703 договоров аренды по данным Dubai Land Department. Медианная годовая аренда — 116 000 AED. Стоимость аренды — 1 213 AED/м²/год.", "n": 3703}, "3y": {"h1": "Аренда недвижимости в The Greens за 3 года", "lede": "В районе The Greens за 3 года зарегистрировано 12 356 договоров аренды по данным Dubai Land Department. Медианная годовая аренда — 110 000 AED. Стоимость аренды — 1 134 AED/м²/год.", "n": 12356}, "5y": {"h1": "Аренда недвижимости в The Greens за 5 лет", "lede": "В районе The Greens за 5 лет зарегистрировано 21 622 договоров аренды по данным Dubai Land Department. Медианная годовая аренда — 97 000 AED. Стоимость аренды — 998 AED/м²/год.", "n": 21622}, "10y": {"h1": "Аренда недвижимости в The Greens за 10 лет", "lede": "В районе The Greens за 10 лет зарегистрировано 41 182 договоров аренды по данным Dubai Land Department. Медианная годовая аренда — 95 000 AED. Стоимость аренды — 958 AED/м²/год.", "n": 41182}};
+const PERIOD_COPY   = {"all": {"h1": "Аренда недвижимости в The Greens за всё время", "lede": "В районе The Greens за всё время зарегистрировано 51 186 договоров аренды по данным Dubai Land Department. Стоимость аренды — 992 AED/м²/год.", "n": 51186}, "1y": {"h1": "Аренда недвижимости в The Greens за 1 год", "lede": "В районе The Greens за 1 год зарегистрировано 3 697 договоров аренды по данным Dubai Land Department. Медианная годовая аренда — 115 995 AED. Стоимость аренды — 1 213 AED/м²/год.", "n": 3697}, "3y": {"h1": "Аренда недвижимости в The Greens за 3 года", "lede": "В районе The Greens за 3 года зарегистрировано 12 354 договоров аренды по данным Dubai Land Department. Медианная годовая аренда — 110 000 AED. Стоимость аренды — 1 134 AED/м²/год.", "n": 12354}, "5y": {"h1": "Аренда недвижимости в The Greens за 5 лет", "lede": "В районе The Greens за 5 лет зарегистрировано 21 614 договоров аренды по данным Dubai Land Department. Медианная годовая аренда — 97 000 AED. Стоимость аренды — 998 AED/м²/год.", "n": 21614}, "10y": {"h1": "Аренда недвижимости в The Greens за 10 лет", "lede": "В районе The Greens за 10 лет зарегистрировано 41 164 договоров аренды по данным Dubai Land Department. Медианная годовая аренда — 95 000 AED. Стоимость аренды — 957 AED/м²/год.", "n": 41164}};
 
 // Activate the requested language so detail-panel.js's t() returns localized
 // strings. i18n.js exposes a top-level `currentLang` closure variable + a t()

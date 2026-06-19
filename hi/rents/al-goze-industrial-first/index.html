@@ -64,12 +64,6 @@
   .about-stat .k { font-size:11px; color:#6b7280; text-transform:uppercase; letter-spacing:0.04em; margin-bottom:4px; }
   .about-stat .v { font-size:16px; font-weight:600; color:#0f172a; }
 
-  .subpages { background:#fff; border:1px solid #e5e7eb; border-radius:12px; padding:16px 20px; margin:0 0 18px; }
-  .subpages h2 { font-size:14px; font-weight:600; color:#6b7280; text-transform:uppercase; letter-spacing:0.04em; margin:0 0 10px; }
-  .subpages-list { display:flex; flex-wrap:wrap; gap:8px; }
-  .subpages-list a { padding:7px 12px; border:1px solid #e5e7eb; border-radius:8px; font-size:13px; text-decoration:none; color:#1d4ed8; background:#fff; }
-  .subpages-list a:hover { background:#eff6ff; border-color:#bfdbfe; }
-
   .dp-section-more { text-align:right; padding:8px 0 0; }
   .dp-section-more a { color:#1d4ed8; text-decoration:none; font-size:13px; font-weight:500; }
   .dp-section-more a:hover { text-decoration:underline; }
@@ -105,7 +99,7 @@
     <div id="detail-content" class="loading">आँकड़े लोड हो रहे हैं…</div>
   </div>
 
-  <nav class="subpages"><h2>और जानकारी</h2><div class="subpages-list"><a href="https://antontkachev.github.io/dld-viewer/hi/rents/al-goze-industrial-first/projects/">शीर्ष परियोजनाएं →</a><a href="https://antontkachev.github.io/dld-viewer/hi/rents/al-goze-industrial-first/recent/">हाल →</a></div></nav>
+  
 
   <div class="nav">
     <a href="https://antontkachev.github.io/dld-viewer/hi/rents/">← सभी कम्युनिटी (मानचित्र)</a>
@@ -124,7 +118,7 @@ const PAGE_PERIOD   = "all";
 const PAGE_LANG     = "hi";
 const BASE_URL      = "https://antontkachev.github.io/dld-viewer/hi/rents/al-goze-industrial-first/";
 const DATA_URL      = "https://antontkachev.github.io/dld-viewer/rents/al-goze-industrial-first/data.json";
-const PERIOD_COPY   = {"all": {"h1": "Al Goze Industrial First में रियल एस्टेट किराया सर्व समय", "lede": "Al Goze Industrial First में सर्व समय 74,104 किराया अनुबंध Dubai Land Department के अनुसार दर्ज हुए। किराया प्रति m² — 985 AED/m²/वर्ष।", "n": 74104}, "1y": {"h1": "Al Goze Industrial First में रियल एस्टेट किराया पिछले 12 महीनों में", "lede": "Al Goze Industrial First में पिछले 12 महीनों में 9,469 किराया अनुबंध Dubai Land Department के अनुसार दर्ज हुए। औसत वार्षिक किराया — 72,450 AED। किराया प्रति m² — 886 AED/m²/वर्ष।", "n": 9469}, "3y": {"h1": "Al Goze Industrial First में रियल एस्टेट किराया पिछले 3 वर्षों में", "lede": "Al Goze Industrial First में पिछले 3 वर्षों में 28,139 किराया अनुबंध Dubai Land Department के अनुसार दर्ज हुए। औसत वार्षिक किराया — 90,750 AED। किराया प्रति m² — 995 AED/m²/वर्ष।", "n": 28139}, "5y": {"h1": "Al Goze Industrial First में रियल एस्टेट किराया पिछले 5 वर्षों में", "lede": "Al Goze Industrial First में पिछले 5 वर्षों में 38,632 किराया अनुबंध Dubai Land Department के अनुसार दर्ज हुए। औसत वार्षिक किराया — 120,000 AED। किराया प्रति m² — 995 AED/m²/वर्ष।", "n": 38632}, "10y": {"h1": "Al Goze Industrial First में रियल एस्टेट किराया पिछले 10 वर्षों में", "lede": "Al Goze Industrial First में पिछले 10 वर्षों में 61,671 किराया अनुबंध Dubai Land Department के अनुसार दर्ज हुए। औसत वार्षिक किराया — 150,000 AED। किराया प्रति m² — 1,076 AED/m²/वर्ष।", "n": 61671}};
+const PERIOD_COPY   = {"all": {"h1": "Al Goze Industrial First में रियल एस्टेट किराया सर्व समय", "lede": "Al Goze Industrial First में सर्व समय 74,104 किराया अनुबंध Dubai Land Department के अनुसार दर्ज हुए। किराया प्रति m² — 985 AED/m²/वर्ष।", "n": 74104}, "1y": {"h1": "Al Goze Industrial First में रियल एस्टेट किराया पिछले 12 महीनों में", "lede": "Al Goze Industrial First में पिछले 12 महीनों में 9,466 किराया अनुबंध Dubai Land Department के अनुसार दर्ज हुए। औसत वार्षिक किराया — 72,238 AED। किराया प्रति m² — 886 AED/m²/वर्ष।", "n": 9466}, "3y": {"h1": "Al Goze Industrial First में रियल एस्टेट किराया पिछले 3 वर्षों में", "lede": "Al Goze Industrial First में पिछले 3 वर्षों में 28,132 किराया अनुबंध Dubai Land Department के अनुसार दर्ज हुए। औसत वार्षिक किराया — 90,801 AED। किराया प्रति m² — 995 AED/m²/वर्ष।", "n": 28132}, "5y": {"h1": "Al Goze Industrial First में रियल एस्टेट किराया पिछले 5 वर्षों में", "lede": "Al Goze Industrial First में पिछले 5 वर्षों में 38,631 किराया अनुबंध Dubai Land Department के अनुसार दर्ज हुए। औसत वार्षिक किराया — 120,000 AED। किराया प्रति m² — 995 AED/m²/वर्ष।", "n": 38631}, "10y": {"h1": "Al Goze Industrial First में रियल एस्टेट किराया पिछले 10 वर्षों में", "lede": "Al Goze Industrial First में पिछले 10 वर्षों में 61,660 किराया अनुबंध Dubai Land Department के अनुसार दर्ज हुए। औसत वार्षिक किराया — 150,000 AED। किराया प्रति m² — 1,076 AED/m²/वर्ष।", "n": 61660}};
 
 // Activate the requested language so detail-panel.js's t() returns localized
 // strings. i18n.js exposes a top-level `currentLang` closure variable + a t()

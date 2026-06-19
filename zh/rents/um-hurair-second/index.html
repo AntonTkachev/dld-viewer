@@ -64,12 +64,6 @@
   .about-stat .k { font-size:11px; color:#6b7280; text-transform:uppercase; letter-spacing:0.04em; margin-bottom:4px; }
   .about-stat .v { font-size:16px; font-weight:600; color:#0f172a; }
 
-  .subpages { background:#fff; border:1px solid #e5e7eb; border-radius:12px; padding:16px 20px; margin:0 0 18px; }
-  .subpages h2 { font-size:14px; font-weight:600; color:#6b7280; text-transform:uppercase; letter-spacing:0.04em; margin:0 0 10px; }
-  .subpages-list { display:flex; flex-wrap:wrap; gap:8px; }
-  .subpages-list a { padding:7px 12px; border:1px solid #e5e7eb; border-radius:8px; font-size:13px; text-decoration:none; color:#1d4ed8; background:#fff; }
-  .subpages-list a:hover { background:#eff6ff; border-color:#bfdbfe; }
-
   .dp-section-more { text-align:right; padding:8px 0 0; }
   .dp-section-more a { color:#1d4ed8; text-decoration:none; font-size:13px; font-weight:500; }
   .dp-section-more a:hover { text-decoration:underline; }
@@ -105,7 +99,7 @@
     <div id="detail-content" class="loading">正在加载统计数据…</div>
   </div>
 
-  <nav class="subpages"><h2>更多内容</h2><div class="subpages-list"><a href="https://antontkachev.github.io/dld-viewer/zh/rents/um-hurair-second/projects/">热门项目 →</a><a href="https://antontkachev.github.io/dld-viewer/zh/rents/um-hurair-second/recent/">最新 →</a></div></nav>
+  
 
   <div class="nav">
     <a href="https://antontkachev.github.io/dld-viewer/zh/rents/">← 所有社区（地图）</a>
@@ -124,7 +118,7 @@ const PAGE_PERIOD   = "all";
 const PAGE_LANG     = "zh";
 const BASE_URL      = "https://antontkachev.github.io/dld-viewer/zh/rents/um-hurair-second/";
 const DATA_URL      = "https://antontkachev.github.io/dld-viewer/rents/um-hurair-second/data.json";
-const PERIOD_COPY   = {"all": {"h1": "Um Hurair Second 房产租赁 全部时间", "lede": "根据迪拜土地局数据,Um Hurair Second 全部时间共登记 21,842 份租赁合同。 租金 — 917 AED/m²/年。", "n": 21842}, "1y": {"h1": "Um Hurair Second 房产租赁 近 12 个月", "lede": "根据迪拜土地局数据,Um Hurair Second 近 12 个月共登记 3,124 份租赁合同。 年租金中位数 — 18,000 AED。 租金 — 1,031 AED/m²/年。", "n": 3124}, "3y": {"h1": "Um Hurair Second 房产租赁 近 3 年", "lede": "根据迪拜土地局数据,Um Hurair Second 近 3 年共登记 8,249 份租赁合同。 年租金中位数 — 35,000 AED。 租金 — 1,016 AED/m²/年。", "n": 8249}, "5y": {"h1": "Um Hurair Second 房产租赁 近 5 年", "lede": "根据迪拜土地局数据,Um Hurair Second 近 5 年共登记 11,311 份租赁合同。 年租金中位数 — 46,424 AED。 租金 — 965 AED/m²/年。", "n": 11311}, "10y": {"h1": "Um Hurair Second 房产租赁 近 10 年", "lede": "根据迪拜土地局数据,Um Hurair Second 近 10 年共登记 16,851 份租赁合同。 年租金中位数 — 62,175 AED。 租金 — 944 AED/m²/年。", "n": 16851}};
+const PERIOD_COPY   = {"all": {"h1": "Um Hurair Second 房产租赁 全部时间", "lede": "根据迪拜土地局数据,Um Hurair Second 全部时间共登记 21,842 份租赁合同。 租金 — 917 AED/m²/年。", "n": 21842}, "1y": {"h1": "Um Hurair Second 房产租赁 近 12 个月", "lede": "根据迪拜土地局数据,Um Hurair Second 近 12 个月共登记 3,417 份租赁合同。 年租金中位数 — 26,950 AED。 租金 — 1,031 AED/m²/年。", "n": 3417}, "3y": {"h1": "Um Hurair Second 房产租赁 近 3 年", "lede": "根据迪拜土地局数据,Um Hurair Second 近 3 年共登记 9,167 份租赁合同。 年租金中位数 — 50,000 AED。 租金 — 1,000 AED/m²/年。", "n": 9167}, "5y": {"h1": "Um Hurair Second 房产租赁 近 5 年", "lede": "根据迪拜土地局数据,Um Hurair Second 近 5 年共登记 12,754 份租赁合同。 年租金中位数 — 55,132 AED。 租金 — 965 AED/m²/年。", "n": 12754}, "10y": {"h1": "Um Hurair Second 房产租赁 近 10 年", "lede": "根据迪拜土地局数据,Um Hurair Second 近 10 年共登记 19,460 份租赁合同。 年租金中位数 — 71,967 AED。 租金 — 945 AED/m²/年。", "n": 19460}};
 
 // Activate the requested language so detail-panel.js's t() returns localized
 // strings. i18n.js exposes a top-level `currentLang` closure variable + a t()

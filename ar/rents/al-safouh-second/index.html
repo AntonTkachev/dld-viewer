@@ -64,12 +64,6 @@
   .about-stat .k { font-size:11px; color:#6b7280; text-transform:uppercase; letter-spacing:0.04em; margin-bottom:4px; }
   .about-stat .v { font-size:16px; font-weight:600; color:#0f172a; }
 
-  .subpages { background:#fff; border:1px solid #e5e7eb; border-radius:12px; padding:16px 20px; margin:0 0 18px; }
-  .subpages h2 { font-size:14px; font-weight:600; color:#6b7280; text-transform:uppercase; letter-spacing:0.04em; margin:0 0 10px; }
-  .subpages-list { display:flex; flex-wrap:wrap; gap:8px; }
-  .subpages-list a { padding:7px 12px; border:1px solid #e5e7eb; border-radius:8px; font-size:13px; text-decoration:none; color:#1d4ed8; background:#fff; }
-  .subpages-list a:hover { background:#eff6ff; border-color:#bfdbfe; }
-
   .dp-section-more { text-align:right; padding:8px 0 0; }
   .dp-section-more a { color:#1d4ed8; text-decoration:none; font-size:13px; font-weight:500; }
   .dp-section-more a:hover { text-decoration:underline; }
@@ -105,7 +99,7 @@
     <div id="detail-content" class="loading">جاري تحميل الإحصاءات…</div>
   </div>
 
-  <nav class="subpages"><h2>مزيد من التفاصيل</h2><div class="subpages-list"><a href="https://antontkachev.github.io/dld-viewer/ar/rents/al-safouh-second/projects/">أهم المشاريع →</a><a href="https://antontkachev.github.io/dld-viewer/ar/rents/al-safouh-second/recent/">الأحدث →</a></div></nav>
+  
 
   <div class="nav">
     <a href="https://antontkachev.github.io/dld-viewer/ar/rents/">← جميع الأحياء (الخريطة)</a>
@@ -124,7 +118,7 @@ const PAGE_PERIOD   = "all";
 const PAGE_LANG     = "ar";
 const BASE_URL      = "https://antontkachev.github.io/dld-viewer/ar/rents/al-safouh-second/";
 const DATA_URL      = "https://antontkachev.github.io/dld-viewer/rents/al-safouh-second/data.json";
-const PERIOD_COPY   = {"all": {"h1": "إيجار العقارات في Al Safouh Second لكل الوقت", "lede": "في حي Al Safouh Second لكل الوقت تم تسجيل 23,462 عقد إيجار وفقًا لبيانات دائرة الأراضي والأملاك بدبي. الإيجار للمتر — 874 درهم/م²/سنة.", "n": 23462}, "1y": {"h1": "إيجار العقارات في Al Safouh Second خلال 12 شهرًا", "lede": "في حي Al Safouh Second خلال 12 شهرًا تم تسجيل 1,963 عقد إيجار وفقًا لبيانات دائرة الأراضي والأملاك بدبي. الإيجار السنوي الوسيط — 181,500 درهم. الإيجار للمتر — 1,031 درهم/م²/سنة.", "n": 1963}, "3y": {"h1": "إيجار العقارات في Al Safouh Second خلال 3 سنوات", "lede": "في حي Al Safouh Second خلال 3 سنوات تم تسجيل 6,153 عقد إيجار وفقًا لبيانات دائرة الأراضي والأملاك بدبي. الإيجار السنوي الوسيط — 179,400 درهم. الإيجار للمتر — 966 درهم/م²/سنة.", "n": 6153}, "5y": {"h1": "إيجار العقارات في Al Safouh Second خلال 5 سنوات", "lede": "في حي Al Safouh Second خلال 5 سنوات تم تسجيل 10,069 عقد إيجار وفقًا لبيانات دائرة الأراضي والأملاك بدبي. الإيجار السنوي الوسيط — 178,301 درهم. الإيجار للمتر — 897 درهم/م²/سنة.", "n": 10069}, "10y": {"h1": "إيجار العقارات في Al Safouh Second خلال 10 سنوات", "lede": "في حي Al Safouh Second خلال 10 سنوات تم تسجيل 19,424 عقد إيجار وفقًا لبيانات دائرة الأراضي والأملاك بدبي. الإيجار السنوي الوسيط — 180,000 درهم. الإيجار للمتر — 889 درهم/م²/سنة.", "n": 19424}};
+const PERIOD_COPY   = {"all": {"h1": "إيجار العقارات في Al Safouh Second لكل الوقت", "lede": "في حي Al Safouh Second لكل الوقت تم تسجيل 23,462 عقد إيجار وفقًا لبيانات دائرة الأراضي والأملاك بدبي. الإيجار للمتر — 874 درهم/م²/سنة.", "n": 23462}, "1y": {"h1": "إيجار العقارات في Al Safouh Second خلال 12 شهرًا", "lede": "في حي Al Safouh Second خلال 12 شهرًا تم تسجيل 4,369 عقد إيجار وفقًا لبيانات دائرة الأراضي والأملاك بدبي. الإيجار السنوي الوسيط — 213,929 درهم. الإيجار للمتر — 1,937 درهم/م²/سنة.", "n": 4369}, "3y": {"h1": "إيجار العقارات في Al Safouh Second خلال 3 سنوات", "lede": "في حي Al Safouh Second خلال 3 سنوات تم تسجيل 13,694 عقد إيجار وفقًا لبيانات دائرة الأراضي والأملاك بدبي. الإيجار السنوي الوسيط — 211,765 درهم. الإيجار للمتر — 1,722 درهم/م²/سنة.", "n": 13694}, "5y": {"h1": "إيجار العقارات في Al Safouh Second خلال 5 سنوات", "lede": "في حي Al Safouh Second خلال 5 سنوات تم تسجيل 22,078 عقد إيجار وفقًا لبيانات دائرة الأراضي والأملاك بدبي. الإيجار السنوي الوسيط — 200,000 درهم. الإيجار للمتر — 1,614 درهم/م²/سنة.", "n": 22078}, "10y": {"h1": "إيجار العقارات في Al Safouh Second خلال 10 سنوات", "lede": "في حي Al Safouh Second خلال 10 سنوات تم تسجيل 41,128 عقد إيجار وفقًا لبيانات دائرة الأراضي والأملاك بدبي. الإيجار السنوي الوسيط — 201,886 درهم. الإيجار للمتر — 1,561 درهم/م²/سنة.", "n": 41128}};
 
 // Activate the requested language so detail-panel.js's t() returns localized
 // strings. i18n.js exposes a top-level `currentLang` closure variable + a t()

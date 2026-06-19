@@ -64,12 +64,6 @@
   .about-stat .k { font-size:11px; color:#6b7280; text-transform:uppercase; letter-spacing:0.04em; margin-bottom:4px; }
   .about-stat .v { font-size:16px; font-weight:600; color:#0f172a; }
 
-  .subpages { background:#fff; border:1px solid #e5e7eb; border-radius:12px; padding:16px 20px; margin:0 0 18px; }
-  .subpages h2 { font-size:14px; font-weight:600; color:#6b7280; text-transform:uppercase; letter-spacing:0.04em; margin:0 0 10px; }
-  .subpages-list { display:flex; flex-wrap:wrap; gap:8px; }
-  .subpages-list a { padding:7px 12px; border:1px solid #e5e7eb; border-radius:8px; font-size:13px; text-decoration:none; color:#1d4ed8; background:#fff; }
-  .subpages-list a:hover { background:#eff6ff; border-color:#bfdbfe; }
-
   .dp-section-more { text-align:right; padding:8px 0 0; }
   .dp-section-more a { color:#1d4ed8; text-decoration:none; font-size:13px; font-weight:500; }
   .dp-section-more a:hover { text-decoration:underline; }
@@ -105,7 +99,7 @@
     <div id="detail-content" class="loading">جاري تحميل الإحصاءات…</div>
   </div>
 
-  <nav class="subpages"><h2>مزيد من التفاصيل</h2><div class="subpages-list"><a href="https://antontkachev.github.io/dld-viewer/ar/sales/al-baraha/projects/">أهم المشاريع →</a><a href="https://antontkachev.github.io/dld-viewer/ar/sales/al-baraha/deals/">أكبر الصفقات →</a><a href="https://antontkachev.github.io/dld-viewer/ar/sales/al-baraha/recent/">الأحدث →</a></div></nav>
+  
 
   <div class="nav">
     <a href="https://antontkachev.github.io/dld-viewer/ar/sales/">← جميع الأحياء (الخريطة)</a>
@@ -124,7 +118,7 @@ const PAGE_PERIOD   = "all";
 const PAGE_LANG     = "ar";
 const BASE_URL      = "https://antontkachev.github.io/dld-viewer/ar/sales/al-baraha/";
 const DATA_URL      = "https://antontkachev.github.io/dld-viewer/sales/al-baraha/data.json";
-const PERIOD_COPY   = {"all": {"h1": "صفقات العقارات في Al Baraha لكل الوقت", "lede": "في حي Al Baraha لكل الوقت تم تسجيل 739 صفقة عقارية وفقًا لبيانات دائرة الأراضي والأملاك بدبي. السعر الوسيط للعقار — 4.42 مليون درهم. السعر للمتر المربع — 13,616 درهم. المساحة الوسيطة — 304 م².", "n": 739}, "1y": {"h1": "صفقات العقارات في Al Baraha خلال 12 شهرًا", "lede": "في حي Al Baraha خلال 12 شهرًا تم تسجيل 15 صفقة عقارية وفقًا لبيانات دائرة الأراضي والأملاك بدبي. السعر الوسيط للعقار — 5.16 مليون درهم. السعر للمتر المربع — 17,255 درهم. المساحة الوسيطة — 356 م².", "n": 15}, "3y": {"h1": "صفقات العقارات في Al Baraha خلال 3 سنوات", "lede": "في حي Al Baraha خلال 3 سنوات تم تسجيل 37 صفقة عقارية وفقًا لبيانات دائرة الأراضي والأملاك بدبي. السعر الوسيط للعقار — 5.00 مليون درهم. السعر للمتر المربع — 20,956 درهم. المساحة الوسيطة — 356 م².", "n": 37}, "5y": {"h1": "صفقات العقارات في Al Baraha خلال 5 سنوات", "lede": "في حي Al Baraha خلال 5 سنوات تم تسجيل 69 صفقة عقارية وفقًا لبيانات دائرة الأراضي والأملاك بدبي. السعر الوسيط للعقار — 5.30 مليون درهم. السعر للمتر المربع — 20,956 درهم. المساحة الوسيطة — 342 م².", "n": 69}, "10y": {"h1": "صفقات العقارات في Al Baraha خلال 10 سنوات", "lede": "في حي Al Baraha خلال 10 سنوات تم تسجيل 151 صفقة عقارية وفقًا لبيانات دائرة الأراضي والأملاك بدبي. السعر الوسيط للعقار — 6.00 مليون درهم. السعر للمتر المربع — 20,705 درهم. المساحة الوسيطة — 407 م².", "n": 151}};
+const PERIOD_COPY   = {"all": {"h1": "صفقات العقارات في Al Baraha لكل الوقت", "lede": "في حي Al Baraha لكل الوقت تم تسجيل 739 صفقة عقارية وفقًا لبيانات دائرة الأراضي والأملاك بدبي. السعر الوسيط للعقار — 4.42 مليون درهم. السعر للمتر المربع — 13,616 درهم. المساحة الوسيطة — 304 م².", "n": 739}, "1y": {"h1": "صفقات العقارات في Al Baraha خلال 12 شهرًا", "lede": "في حي Al Baraha خلال 12 شهرًا تم تسجيل 15 صفقة عقارية وفقًا لبيانات دائرة الأراضي والأملاك بدبي. السعر الوسيط للعقار — 5.16 مليون درهم. السعر للمتر المربع — 17,255 درهم. المساحة الوسيطة — 356 م².", "n": 15}, "3y": {"h1": "صفقات العقارات في Al Baraha خلال 3 سنوات", "lede": "في حي Al Baraha خلال 3 سنوات تم تسجيل 37 صفقة عقارية وفقًا لبيانات دائرة الأراضي والأملاك بدبي. السعر الوسيط للعقار — 5.00 مليون درهم. السعر للمتر المربع — 20,956 درهم. المساحة الوسيطة — 356 م².", "n": 37}, "5y": {"h1": "صفقات العقارات في Al Baraha خلال 5 سنوات", "lede": "في حي Al Baraha خلال 5 سنوات تم تسجيل 69 صفقة عقارية وفقًا لبيانات دائرة الأراضي والأملاك بدبي. السعر الوسيط للعقار — 5.30 مليون درهم. السعر للمتر المربع — 20,956 درهم. المساحة الوسيطة — 342 م².", "n": 69}, "10y": {"h1": "صفقات العقارات في Al Baraha خلال 10 سنوات", "lede": "في حي Al Baraha خلال 10 سنوات تم تسجيل 150 صفقة عقارية وفقًا لبيانات دائرة الأراضي والأملاك بدبي. السعر الوسيط للعقار — 6.00 مليون درهم. السعر للمتر المربع — 20,426 درهم. المساحة الوسيطة — 382 م².", "n": 150}};
 
 // Activate the requested language so detail-panel.js's t() returns localized
 // strings. i18n.js exposes a top-level `currentLang` closure variable + a t()

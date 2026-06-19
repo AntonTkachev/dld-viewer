@@ -64,12 +64,6 @@
   .about-stat .k { font-size:11px; color:#6b7280; text-transform:uppercase; letter-spacing:0.04em; margin-bottom:4px; }
   .about-stat .v { font-size:16px; font-weight:600; color:#0f172a; }
 
-  .subpages { background:#fff; border:1px solid #e5e7eb; border-radius:12px; padding:16px 20px; margin:0 0 18px; }
-  .subpages h2 { font-size:14px; font-weight:600; color:#6b7280; text-transform:uppercase; letter-spacing:0.04em; margin:0 0 10px; }
-  .subpages-list { display:flex; flex-wrap:wrap; gap:8px; }
-  .subpages-list a { padding:7px 12px; border:1px solid #e5e7eb; border-radius:8px; font-size:13px; text-decoration:none; color:#1d4ed8; background:#fff; }
-  .subpages-list a:hover { background:#eff6ff; border-color:#bfdbfe; }
-
   .dp-section-more { text-align:right; padding:8px 0 0; }
   .dp-section-more a { color:#1d4ed8; text-decoration:none; font-size:13px; font-weight:500; }
   .dp-section-more a:hover { text-decoration:underline; }
@@ -97,7 +91,7 @@
       <details class="langswitch-dd"><summary><span class="globe" aria-hidden="true">🌐</span><span class="lang-current">RU</span><span class="caret" aria-hidden="true">▾</span></summary><div class="lang-menu"><a href="https://antontkachev.github.io/dld-viewer/rents/city-of-arabia/10y/" lang="ru" class="active">RU</a><a href="https://antontkachev.github.io/dld-viewer/en/rents/city-of-arabia/10y/" lang="en">EN</a><a href="https://antontkachev.github.io/dld-viewer/ar/rents/city-of-arabia/10y/" lang="ar">AR</a><a href="https://antontkachev.github.io/dld-viewer/hi/rents/city-of-arabia/10y/" lang="hi">HI</a><a href="https://antontkachev.github.io/dld-viewer/zh/rents/city-of-arabia/10y/" lang="zh">ZH</a></div></details>
     </div>
   </div>
-  <p class="lede" id="d-lede">В районе City Of Arabia за 10 лет зарегистрировано 66 договоров аренды по данным Dubai Land Department. Медианная годовая аренда — 45 000 AED. Стоимость аренды — 503 AED/м²/год.</p>
+  <p class="lede" id="d-lede">В районе City Of Arabia за 10 лет зарегистрировано 66 договоров аренды по данным Dubai Land Department. Стоимость аренды — 503 AED/м²/год.</p>
 
   <section class="about"><h2>О районе City Of Arabia</h2><p>City Of Arabia — один из районов Дубая. Преобладают квартиры — 97% сделок. Около 88% сделок — off-plan покупки в строящихся проектах. Самый частый тип — студии (895 сделок). Один из наиболее активных проектов — Mag 330. Также зарегистрировано 66 договоров аренды — район интересен как для покупки, так и для долгосрочного проживания.</p><div class="about-grid"><div class="about-stat"><div class="k">Всего сделок</div><div class="v">1 913</div></div><div class="about-stat"><div class="k">Медианная цена</div><div class="v">817 000 AED</div></div><div class="about-stat"><div class="k">Цена за м²</div><div class="v">15 108 AED</div></div><div class="about-stat"><div class="k">Договоров аренды</div><div class="v">66</div></div></div></section>
 
@@ -105,7 +99,7 @@
     <div id="detail-content" class="loading">Загрузка статистики…</div>
   </div>
 
-  <nav class="subpages"><h2>Подробнее по разделам</h2><div class="subpages-list"><a href="https://antontkachev.github.io/dld-viewer/rents/city-of-arabia/projects/">Топ проекты →</a><a href="https://antontkachev.github.io/dld-viewer/rents/city-of-arabia/recent/">Последние →</a></div></nav>
+  
 
   <div class="nav">
     <a href="https://antontkachev.github.io/dld-viewer/rents/">← Все районы (карта)</a>
@@ -124,7 +118,7 @@ const PAGE_PERIOD   = "10y";
 const PAGE_LANG     = "ru";
 const BASE_URL      = "https://antontkachev.github.io/dld-viewer/rents/city-of-arabia/";
 const DATA_URL      = "https://antontkachev.github.io/dld-viewer/rents/city-of-arabia/data.json";
-const PERIOD_COPY   = {"all": {"h1": "Аренда недвижимости в City Of Arabia за всё время", "lede": "В районе City Of Arabia за всё время зарегистрировано 66 договоров аренды по данным Dubai Land Department. Стоимость аренды — 503 AED/м²/год.", "n": 66}, "1y": {"h1": "Аренда недвижимости в City Of Arabia за 1 год", "lede": "В районе City Of Arabia за 1 год зарегистрировано 18 договоров аренды по данным Dubai Land Department. Медианная годовая аренда — 51 500 AED. Стоимость аренды — 587 AED/м²/год.", "n": 18}, "3y": {"h1": "Аренда недвижимости в City Of Arabia за 3 года", "lede": "В районе City Of Arabia за 3 года зарегистрировано 51 договоров аренды по данным Dubai Land Department. Медианная годовая аренда — 48 000 AED. Стоимость аренды — 539 AED/м²/год.", "n": 51}, "5y": {"h1": "Аренда недвижимости в City Of Arabia за 5 лет", "lede": "В районе City Of Arabia за 5 лет зарегистрировано 65 договоров аренды по данным Dubai Land Department. Медианная годовая аренда — 45 000 AED. Стоимость аренды — 502 AED/м²/год.", "n": 65}, "10y": {"h1": "Аренда недвижимости в City Of Arabia за 10 лет", "lede": "В районе City Of Arabia за 10 лет зарегистрировано 66 договоров аренды по данным Dubai Land Department. Медианная годовая аренда — 45 000 AED. Стоимость аренды — 503 AED/м²/год.", "n": 66}};
+const PERIOD_COPY   = {"all": {"h1": "Аренда недвижимости в City Of Arabia за всё время", "lede": "В районе City Of Arabia за всё время зарегистрировано 66 договоров аренды по данным Dubai Land Department. Стоимость аренды — 503 AED/м²/год.", "n": 66}, "1y": {"h1": "Аренда недвижимости в City Of Arabia за 1 год", "lede": "В районе City Of Arabia за 1 год зарегистрировано 66 договоров аренды по данным Dubai Land Department. Стоимость аренды — 503 AED/м²/год.", "n": 66}, "3y": {"h1": "Аренда недвижимости в City Of Arabia за 3 года", "lede": "В районе City Of Arabia за 3 года зарегистрировано 66 договоров аренды по данным Dubai Land Department. Стоимость аренды — 503 AED/м²/год.", "n": 66}, "5y": {"h1": "Аренда недвижимости в City Of Arabia за 5 лет", "lede": "В районе City Of Arabia за 5 лет зарегистрировано 66 договоров аренды по данным Dubai Land Department. Стоимость аренды — 503 AED/м²/год.", "n": 66}, "10y": {"h1": "Аренда недвижимости в City Of Arabia за 10 лет", "lede": "В районе City Of Arabia за 10 лет зарегистрировано 66 договоров аренды по данным Dubai Land Department. Стоимость аренды — 503 AED/м²/год.", "n": 66}};
 
 // Activate the requested language so detail-panel.js's t() returns localized
 // strings. i18n.js exposes a top-level `currentLang` closure variable + a t()

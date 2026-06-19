@@ -64,12 +64,6 @@
   .about-stat .k { font-size:11px; color:#6b7280; text-transform:uppercase; letter-spacing:0.04em; margin-bottom:4px; }
   .about-stat .v { font-size:16px; font-weight:600; color:#0f172a; }
 
-  .subpages { background:#fff; border:1px solid #e5e7eb; border-radius:12px; padding:16px 20px; margin:0 0 18px; }
-  .subpages h2 { font-size:14px; font-weight:600; color:#6b7280; text-transform:uppercase; letter-spacing:0.04em; margin:0 0 10px; }
-  .subpages-list { display:flex; flex-wrap:wrap; gap:8px; }
-  .subpages-list a { padding:7px 12px; border:1px solid #e5e7eb; border-radius:8px; font-size:13px; text-decoration:none; color:#1d4ed8; background:#fff; }
-  .subpages-list a:hover { background:#eff6ff; border-color:#bfdbfe; }
-
   .dp-section-more { text-align:right; padding:8px 0 0; }
   .dp-section-more a { color:#1d4ed8; text-decoration:none; font-size:13px; font-weight:500; }
   .dp-section-more a:hover { text-decoration:underline; }
@@ -105,7 +99,7 @@
     <div id="detail-content" class="loading">Loading statistics…</div>
   </div>
 
-  <nav class="subpages"><h2>Explore further</h2><div class="subpages-list"><a href="https://antontkachev.github.io/dld-viewer/en/sales/al-warqa-third/projects/">Top projects →</a><a href="https://antontkachev.github.io/dld-viewer/en/sales/al-warqa-third/deals/">Top deals →</a><a href="https://antontkachev.github.io/dld-viewer/en/sales/al-warqa-third/recent/">Recent →</a></div></nav>
+  
 
   <div class="nav">
     <a href="https://antontkachev.github.io/dld-viewer/en/sales/">← All districts (map)</a>
@@ -124,7 +118,7 @@ const PAGE_PERIOD   = "10y";
 const PAGE_LANG     = "en";
 const BASE_URL      = "https://antontkachev.github.io/dld-viewer/en/sales/al-warqa-third/";
 const DATA_URL      = "https://antontkachev.github.io/dld-viewer/sales/al-warqa-third/data.json";
-const PERIOD_COPY   = {"all": {"h1": "Real estate transactions in Al Warqa Third all-time", "lede": "In Al Warqa Third all-time, 2,718 property transactions have been recorded according to the Dubai Land Department. Median property price — 750,000 AED. Price per square meter — 674 AED. Median area — 1118 m².", "n": 2718}, "1y": {"h1": "Real estate transactions in Al Warqa Third over 12 months", "lede": "In Al Warqa Third over 12 months, 108 property transactions have been recorded according to the Dubai Land Department. Median property price — 1.16 M AED. Price per square meter — 1,243 AED. Median area — 1132 m².", "n": 108}, "3y": {"h1": "Real estate transactions in Al Warqa Third over 3 years", "lede": "In Al Warqa Third over 3 years, 350 property transactions have been recorded according to the Dubai Land Department. Median property price — 1.00 M AED. Price per square meter — 884 AED. Median area — 1124 m².", "n": 350}, "5y": {"h1": "Real estate transactions in Al Warqa Third over 5 years", "lede": "In Al Warqa Third over 5 years, 571 property transactions have been recorded according to the Dubai Land Department. Median property price — 1.00 M AED. Price per square meter — 885 AED. Median area — 1124 m².", "n": 571}, "10y": {"h1": "Real estate transactions in Al Warqa Third over 10 years", "lede": "In Al Warqa Third over 10 years, 978 property transactions have been recorded according to the Dubai Land Department. Median property price — 1.00 M AED. Price per square meter — 897 AED. Median area — 1126 m².", "n": 978}};
+const PERIOD_COPY   = {"all": {"h1": "Real estate transactions in Al Warqa Third all-time", "lede": "In Al Warqa Third all-time, 2,718 property transactions have been recorded according to the Dubai Land Department. Median property price — 750,000 AED. Price per square meter — 674 AED. Median area — 1118 m².", "n": 2718}, "1y": {"h1": "Real estate transactions in Al Warqa Third over 12 months", "lede": "In Al Warqa Third over 12 months, 107 property transactions have been recorded according to the Dubai Land Department. Median property price — 1.17 M AED. Price per square meter — 1,248 AED. Median area — 1132 m².", "n": 107}, "3y": {"h1": "Real estate transactions in Al Warqa Third over 3 years", "lede": "In Al Warqa Third over 3 years, 349 property transactions have been recorded according to the Dubai Land Department. Median property price — 1.00 M AED. Price per square meter — 884 AED. Median area — 1124 m².", "n": 349}, "5y": {"h1": "Real estate transactions in Al Warqa Third over 5 years", "lede": "In Al Warqa Third over 5 years, 571 property transactions have been recorded according to the Dubai Land Department. Median property price — 1.00 M AED. Price per square meter — 885 AED. Median area — 1124 m².", "n": 571}, "10y": {"h1": "Real estate transactions in Al Warqa Third over 10 years", "lede": "In Al Warqa Third over 10 years, 978 property transactions have been recorded according to the Dubai Land Department. Median property price — 1.00 M AED. Price per square meter — 897 AED. Median area — 1126 m².", "n": 978}};
 
 // Activate the requested language so detail-panel.js's t() returns localized
 // strings. i18n.js exposes a top-level `currentLang` closure variable + a t()

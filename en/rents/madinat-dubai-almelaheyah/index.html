@@ -64,12 +64,6 @@
   .about-stat .k { font-size:11px; color:#6b7280; text-transform:uppercase; letter-spacing:0.04em; margin-bottom:4px; }
   .about-stat .v { font-size:16px; font-weight:600; color:#0f172a; }
 
-  .subpages { background:#fff; border:1px solid #e5e7eb; border-radius:12px; padding:16px 20px; margin:0 0 18px; }
-  .subpages h2 { font-size:14px; font-weight:600; color:#6b7280; text-transform:uppercase; letter-spacing:0.04em; margin:0 0 10px; }
-  .subpages-list { display:flex; flex-wrap:wrap; gap:8px; }
-  .subpages-list a { padding:7px 12px; border:1px solid #e5e7eb; border-radius:8px; font-size:13px; text-decoration:none; color:#1d4ed8; background:#fff; }
-  .subpages-list a:hover { background:#eff6ff; border-color:#bfdbfe; }
-
   .dp-section-more { text-align:right; padding:8px 0 0; }
   .dp-section-more a { color:#1d4ed8; text-decoration:none; font-size:13px; font-weight:500; }
   .dp-section-more a:hover { text-decoration:underline; }
@@ -105,7 +99,7 @@
     <div id="detail-content" class="loading">Loading statistics…</div>
   </div>
 
-  <nav class="subpages"><h2>Explore further</h2><div class="subpages-list"><a href="https://antontkachev.github.io/dld-viewer/en/rents/madinat-dubai-almelaheyah/projects/">Top projects →</a><a href="https://antontkachev.github.io/dld-viewer/en/rents/madinat-dubai-almelaheyah/recent/">Recent →</a></div></nav>
+  
 
   <div class="nav">
     <a href="https://antontkachev.github.io/dld-viewer/en/rents/">← All districts (map)</a>
@@ -124,7 +118,7 @@ const PAGE_PERIOD   = "all";
 const PAGE_LANG     = "en";
 const BASE_URL      = "https://antontkachev.github.io/dld-viewer/en/rents/madinat-dubai-almelaheyah/";
 const DATA_URL      = "https://antontkachev.github.io/dld-viewer/rents/madinat-dubai-almelaheyah/data.json";
-const PERIOD_COPY   = {"all": {"h1": "Real estate rentals in Madinat Dubai Almelaheyah all-time", "lede": "In Madinat Dubai Almelaheyah all-time, 23,167 rental contracts have been registered according to the Dubai Land Department. Rent per area — 710 AED/m²/year.", "n": 23167}, "1y": {"h1": "Real estate rentals in Madinat Dubai Almelaheyah over 12 months", "lede": "In Madinat Dubai Almelaheyah over 12 months, 3,004 rental contracts have been registered according to the Dubai Land Department. Median annual rent — 99,000 AED. Rent per area — 869 AED/m²/year.", "n": 3004}, "3y": {"h1": "Real estate rentals in Madinat Dubai Almelaheyah over 3 years", "lede": "In Madinat Dubai Almelaheyah over 3 years, 8,937 rental contracts have been registered according to the Dubai Land Department. Median annual rent — 82,999 AED. Rent per area — 766 AED/m²/year.", "n": 8937}, "5y": {"h1": "Real estate rentals in Madinat Dubai Almelaheyah over 5 years", "lede": "In Madinat Dubai Almelaheyah over 5 years, 14,459 rental contracts have been registered according to the Dubai Land Department. Median annual rent — 74,999 AED. Rent per area — 690 AED/m²/year.", "n": 14459}, "10y": {"h1": "Real estate rentals in Madinat Dubai Almelaheyah over 10 years", "lede": "In Madinat Dubai Almelaheyah over 10 years, 20,133 rental contracts have been registered according to the Dubai Land Department. Median annual rent — 74,550 AED. Rent per area — 694 AED/m²/year.", "n": 20133}};
+const PERIOD_COPY   = {"all": {"h1": "Real estate rentals in Madinat Dubai Almelaheyah all-time", "lede": "In Madinat Dubai Almelaheyah all-time, 23,167 rental contracts have been registered according to the Dubai Land Department. Rent per area — 710 AED/m²/year.", "n": 23167}, "1y": {"h1": "Real estate rentals in Madinat Dubai Almelaheyah over 12 months", "lede": "In Madinat Dubai Almelaheyah over 12 months, 4,731 rental contracts have been registered according to the Dubai Land Department. Median annual rent — 172,800 AED. Rent per area — 1,615 AED/m²/year.", "n": 4731}, "3y": {"h1": "Real estate rentals in Madinat Dubai Almelaheyah over 3 years", "lede": "In Madinat Dubai Almelaheyah over 3 years, 13,104 rental contracts have been registered according to the Dubai Land Department. Median annual rent — 106,999 AED. Rent per area — 1,023 AED/m²/year.", "n": 13104}, "5y": {"h1": "Real estate rentals in Madinat Dubai Almelaheyah over 5 years", "lede": "In Madinat Dubai Almelaheyah over 5 years, 19,404 rental contracts have been registered according to the Dubai Land Department. Median annual rent — 83,958 AED. Rent per area — 754 AED/m²/year.", "n": 19404}, "10y": {"h1": "Real estate rentals in Madinat Dubai Almelaheyah over 10 years", "lede": "In Madinat Dubai Almelaheyah over 10 years, 25,836 rental contracts have been registered according to the Dubai Land Department. Median annual rent — 80,232 AED. Rent per area — 722 AED/m²/year.", "n": 25836}};
 
 // Activate the requested language so detail-panel.js's t() returns localized
 // strings. i18n.js exposes a top-level `currentLang` closure variable + a t()

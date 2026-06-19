@@ -64,12 +64,6 @@
   .about-stat .k { font-size:11px; color:#6b7280; text-transform:uppercase; letter-spacing:0.04em; margin-bottom:4px; }
   .about-stat .v { font-size:16px; font-weight:600; color:#0f172a; }
 
-  .subpages { background:#fff; border:1px solid #e5e7eb; border-radius:12px; padding:16px 20px; margin:0 0 18px; }
-  .subpages h2 { font-size:14px; font-weight:600; color:#6b7280; text-transform:uppercase; letter-spacing:0.04em; margin:0 0 10px; }
-  .subpages-list { display:flex; flex-wrap:wrap; gap:8px; }
-  .subpages-list a { padding:7px 12px; border:1px solid #e5e7eb; border-radius:8px; font-size:13px; text-decoration:none; color:#1d4ed8; background:#fff; }
-  .subpages-list a:hover { background:#eff6ff; border-color:#bfdbfe; }
-
   .dp-section-more { text-align:right; padding:8px 0 0; }
   .dp-section-more a { color:#1d4ed8; text-decoration:none; font-size:13px; font-weight:500; }
   .dp-section-more a:hover { text-decoration:underline; }
@@ -105,7 +99,7 @@
     <div id="detail-content" class="loading">Loading statistics…</div>
   </div>
 
-  <nav class="subpages"><h2>Explore further</h2><div class="subpages-list"><a href="https://antontkachev.github.io/dld-viewer/en/rents/al-warqa-first/projects/">Top projects →</a><a href="https://antontkachev.github.io/dld-viewer/en/rents/al-warqa-first/recent/">Recent →</a></div></nav>
+  
 
   <div class="nav">
     <a href="https://antontkachev.github.io/dld-viewer/en/rents/">← All districts (map)</a>
@@ -124,7 +118,7 @@ const PAGE_PERIOD   = "all";
 const PAGE_LANG     = "en";
 const BASE_URL      = "https://antontkachev.github.io/dld-viewer/en/rents/al-warqa-first/";
 const DATA_URL      = "https://antontkachev.github.io/dld-viewer/rents/al-warqa-first/data.json";
-const PERIOD_COPY   = {"all": {"h1": "Real estate rentals in Al Warqa First all-time", "lede": "In Al Warqa First all-time, 104,287 rental contracts have been registered according to the Dubai Land Department. Rent per area — 561 AED/m²/year.", "n": 104287}, "1y": {"h1": "Real estate rentals in Al Warqa First over 12 months", "lede": "In Al Warqa First over 12 months, 10,636 rental contracts have been registered according to the Dubai Land Department. Median annual rent — 55,440 AED. Rent per area — 642 AED/m²/year.", "n": 10636}, "3y": {"h1": "Real estate rentals in Al Warqa First over 3 years", "lede": "In Al Warqa First over 3 years, 33,556 rental contracts have been registered according to the Dubai Land Department. Median annual rent — 52,000 AED. Rent per area — 591 AED/m²/year.", "n": 33556}, "5y": {"h1": "Real estate rentals in Al Warqa First over 5 years", "lede": "In Al Warqa First over 5 years, 55,158 rental contracts have been registered according to the Dubai Land Department. Median annual rent — 47,250 AED. Rent per area — 541 AED/m²/year.", "n": 55158}, "10y": {"h1": "Real estate rentals in Al Warqa First over 10 years", "lede": "In Al Warqa First over 10 years, 91,433 rental contracts have been registered according to the Dubai Land Department. Median annual rent — 49,000 AED. Rent per area — 557 AED/m²/year.", "n": 91433}};
+const PERIOD_COPY   = {"all": {"h1": "Real estate rentals in Al Warqa First all-time", "lede": "In Al Warqa First all-time, 104,287 rental contracts have been registered according to the Dubai Land Department. Rent per area — 561 AED/m²/year.", "n": 104287}, "1y": {"h1": "Real estate rentals in Al Warqa First over 12 months", "lede": "In Al Warqa First over 12 months, 10,627 rental contracts have been registered according to the Dubai Land Department. Median annual rent — 55,440 AED. Rent per area — 642 AED/m²/year.", "n": 10627}, "3y": {"h1": "Real estate rentals in Al Warqa First over 3 years", "lede": "In Al Warqa First over 3 years, 33,553 rental contracts have been registered according to the Dubai Land Department. Median annual rent — 52,000 AED. Rent per area — 591 AED/m²/year.", "n": 33553}, "5y": {"h1": "Real estate rentals in Al Warqa First over 5 years", "lede": "In Al Warqa First over 5 years, 55,154 rental contracts have been registered according to the Dubai Land Department. Median annual rent — 47,250 AED. Rent per area — 541 AED/m²/year.", "n": 55154}, "10y": {"h1": "Real estate rentals in Al Warqa First over 10 years", "lede": "In Al Warqa First over 10 years, 91,400 rental contracts have been registered according to the Dubai Land Department. Median annual rent — 49,000 AED. Rent per area — 557 AED/m²/year.", "n": 91400}};
 
 // Activate the requested language so detail-panel.js's t() returns localized
 // strings. i18n.js exposes a top-level `currentLang` closure variable + a t()

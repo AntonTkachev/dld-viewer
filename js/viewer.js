@@ -219,10 +219,7 @@ function _districtHrefForKey(key, name, legacyKey) {
   const mode = _districtModePrefix(typeof currentMask !== 'undefined' ? currentMask : 'sales');
   return _langUrlPrefix() + '/' + mode + '/' + slug + '/';
 }
-// Open a district: slide the left panel in (NOT navigate) and mount
-// DetailPanel into it. Panel header carries an ↗ link to the full SEO
-// page at /<lang>/<mode>/<slug>/ — Google keeps indexing those, the user
-// gets a no-reload preview from the map.
+// Open a district: navigate to the SEO page at /<lang>/<mode>/<slug>/.
 window.openDistrictByKey = function(key) {
   window.location.href = _districtHrefForKey(key);
 };

@@ -64,12 +64,6 @@
   .about-stat .k { font-size:11px; color:#6b7280; text-transform:uppercase; letter-spacing:0.04em; margin-bottom:4px; }
   .about-stat .v { font-size:16px; font-weight:600; color:#0f172a; }
 
-  .subpages { background:#fff; border:1px solid #e5e7eb; border-radius:12px; padding:16px 20px; margin:0 0 18px; }
-  .subpages h2 { font-size:14px; font-weight:600; color:#6b7280; text-transform:uppercase; letter-spacing:0.04em; margin:0 0 10px; }
-  .subpages-list { display:flex; flex-wrap:wrap; gap:8px; }
-  .subpages-list a { padding:7px 12px; border:1px solid #e5e7eb; border-radius:8px; font-size:13px; text-decoration:none; color:#1d4ed8; background:#fff; }
-  .subpages-list a:hover { background:#eff6ff; border-color:#bfdbfe; }
-
   .dp-section-more { text-align:right; padding:8px 0 0; }
   .dp-section-more a { color:#1d4ed8; text-decoration:none; font-size:13px; font-weight:500; }
   .dp-section-more a:hover { text-decoration:underline; }
@@ -105,7 +99,7 @@
     <div id="detail-content" class="loading">आँकड़े लोड हो रहे हैं…</div>
   </div>
 
-  <nav class="subpages"><h2>और जानकारी</h2><div class="subpages-list"><a href="https://antontkachev.github.io/dld-viewer/hi/rents/al-goze-industrial-third/projects/">शीर्ष परियोजनाएं →</a><a href="https://antontkachev.github.io/dld-viewer/hi/rents/al-goze-industrial-third/recent/">हाल →</a></div></nav>
+  
 
   <div class="nav">
     <a href="https://antontkachev.github.io/dld-viewer/hi/rents/">← सभी कम्युनिटी (मानचित्र)</a>
@@ -124,7 +118,7 @@ const PAGE_PERIOD   = "all";
 const PAGE_LANG     = "hi";
 const BASE_URL      = "https://antontkachev.github.io/dld-viewer/hi/rents/al-goze-industrial-third/";
 const DATA_URL      = "https://antontkachev.github.io/dld-viewer/rents/al-goze-industrial-third/data.json";
-const PERIOD_COPY   = {"all": {"h1": "Al Goze Industrial Third में रियल एस्टेट किराया सर्व समय", "lede": "Al Goze Industrial Third में सर्व समय 58,186 किराया अनुबंध Dubai Land Department के अनुसार दर्ज हुए। किराया प्रति m² — 1,548 AED/m²/वर्ष।", "n": 58186}, "1y": {"h1": "Al Goze Industrial Third में रियल एस्टेट किराया पिछले 12 महीनों में", "lede": "Al Goze Industrial Third में पिछले 12 महीनों में 5,035 किराया अनुबंध Dubai Land Department के अनुसार दर्ज हुए। औसत वार्षिक किराया — 221,706 AED। किराया प्रति m² — 11,764 AED/m²/वर्ष।", "n": 5035}, "3y": {"h1": "Al Goze Industrial Third में रियल एस्टेट किराया पिछले 3 वर्षों में", "lede": "Al Goze Industrial Third में पिछले 3 वर्षों में 16,409 किराया अनुबंध Dubai Land Department के अनुसार दर्ज हुए। औसत वार्षिक किराया — 184,000 AED। किराया प्रति m² — 4,580 AED/m²/वर्ष।", "n": 16409}, "5y": {"h1": "Al Goze Industrial Third में रियल एस्टेट किराया पिछले 5 वर्षों में", "lede": "Al Goze Industrial Third में पिछले 5 वर्षों में 25,650 किराया अनुबंध Dubai Land Department के अनुसार दर्ज हुए। औसत वार्षिक किराया — 168,575 AED। किराया प्रति m² — 2,410 AED/m²/वर्ष।", "n": 25650}, "10y": {"h1": "Al Goze Industrial Third में रियल एस्टेट किराया पिछले 10 वर्षों में", "lede": "Al Goze Industrial Third में पिछले 10 वर्षों में 46,070 किराया अनुबंध Dubai Land Department के अनुसार दर्ज हुए। औसत वार्षिक किराया — 178,745 AED। किराया प्रति m² — 1,823 AED/m²/वर्ष।", "n": 46070}};
+const PERIOD_COPY   = {"all": {"h1": "Al Goze Industrial Third में रियल एस्टेट किराया सर्व समय", "lede": "Al Goze Industrial Third में सर्व समय 58,186 किराया अनुबंध Dubai Land Department के अनुसार दर्ज हुए। किराया प्रति m² — 1,548 AED/m²/वर्ष।", "n": 58186}, "1y": {"h1": "Al Goze Industrial Third में रियल एस्टेट किराया पिछले 12 महीनों में", "lede": "Al Goze Industrial Third में पिछले 12 महीनों में 5,022 किराया अनुबंध Dubai Land Department के अनुसार दर्ज हुए। औसत वार्षिक किराया — 224,420 AED। किराया प्रति m² — 11,764 AED/m²/वर्ष।", "n": 5022}, "3y": {"h1": "Al Goze Industrial Third में रियल एस्टेट किराया पिछले 3 वर्षों में", "lede": "Al Goze Industrial Third में पिछले 3 वर्षों में 16,412 किराया अनुबंध Dubai Land Department के अनुसार दर्ज हुए। औसत वार्षिक किराया — 184,000 AED। किराया प्रति m² — 4,540 AED/m²/वर्ष।", "n": 16412}, "5y": {"h1": "Al Goze Industrial Third में रियल एस्टेट किराया पिछले 5 वर्षों में", "lede": "Al Goze Industrial Third में पिछले 5 वर्षों में 25,655 किराया अनुबंध Dubai Land Department के अनुसार दर्ज हुए। औसत वार्षिक किराया — 168,575 AED। किराया प्रति m² — 2,400 AED/m²/वर्ष।", "n": 25655}, "10y": {"h1": "Al Goze Industrial Third में रियल एस्टेट किराया पिछले 10 वर्षों में", "lede": "Al Goze Industrial Third में पिछले 10 वर्षों में 46,070 किराया अनुबंध Dubai Land Department के अनुसार दर्ज हुए। औसत वार्षिक किराया — 178,740 AED। किराया प्रति m² — 1,815 AED/m²/वर्ष।", "n": 46070}};
 
 // Activate the requested language so detail-panel.js's t() returns localized
 // strings. i18n.js exposes a top-level `currentLang` closure variable + a t()

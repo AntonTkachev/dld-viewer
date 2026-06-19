@@ -64,12 +64,6 @@
   .about-stat .k { font-size:11px; color:#6b7280; text-transform:uppercase; letter-spacing:0.04em; margin-bottom:4px; }
   .about-stat .v { font-size:16px; font-weight:600; color:#0f172a; }
 
-  .subpages { background:#fff; border:1px solid #e5e7eb; border-radius:12px; padding:16px 20px; margin:0 0 18px; }
-  .subpages h2 { font-size:14px; font-weight:600; color:#6b7280; text-transform:uppercase; letter-spacing:0.04em; margin:0 0 10px; }
-  .subpages-list { display:flex; flex-wrap:wrap; gap:8px; }
-  .subpages-list a { padding:7px 12px; border:1px solid #e5e7eb; border-radius:8px; font-size:13px; text-decoration:none; color:#1d4ed8; background:#fff; }
-  .subpages-list a:hover { background:#eff6ff; border-color:#bfdbfe; }
-
   .dp-section-more { text-align:right; padding:8px 0 0; }
   .dp-section-more a { color:#1d4ed8; text-decoration:none; font-size:13px; font-weight:500; }
   .dp-section-more a:hover { text-decoration:underline; }
@@ -105,7 +99,7 @@
     <div id="detail-content" class="loading">正在加载统计数据…</div>
   </div>
 
-  <nav class="subpages"><h2>更多内容</h2><div class="subpages-list"><a href="https://antontkachev.github.io/dld-viewer/zh/rents/saih-shuaib-4/projects/">热门项目 →</a><a href="https://antontkachev.github.io/dld-viewer/zh/rents/saih-shuaib-4/recent/">最新 →</a></div></nav>
+  
 
   <div class="nav">
     <a href="https://antontkachev.github.io/dld-viewer/zh/rents/">← 所有社区（地图）</a>
@@ -124,7 +118,7 @@ const PAGE_PERIOD   = "all";
 const PAGE_LANG     = "zh";
 const BASE_URL      = "https://antontkachev.github.io/dld-viewer/zh/rents/saih-shuaib-4/";
 const DATA_URL      = "https://antontkachev.github.io/dld-viewer/rents/saih-shuaib-4/data.json";
-const PERIOD_COPY   = {"all": {"h1": "Saih Shuaib 4 房产租赁 全部时间", "lede": "根据迪拜土地局数据,Saih Shuaib 4 全部时间共登记 11,972 份租赁合同。 租金 — 32,768 AED/m²/年。", "n": 11972}, "1y": {"h1": "Saih Shuaib 4 房产租赁 近 12 个月", "lede": "根据迪拜土地局数据,Saih Shuaib 4 近 12 个月共登记 2,073 份租赁合同。 年租金中位数 — 1.04 百万 AED。 租金 — 47,924 AED/m²/年。", "n": 2073}, "3y": {"h1": "Saih Shuaib 4 房产租赁 近 3 年", "lede": "根据迪拜土地局数据,Saih Shuaib 4 近 3 年共登记 6,089 份租赁合同。 年租金中位数 — 936,120 AED。 租金 — 36,060 AED/m²/年。", "n": 6089}, "5y": {"h1": "Saih Shuaib 4 房产租赁 近 5 年", "lede": "根据迪拜土地局数据,Saih Shuaib 4 近 5 年共登记 7,312 份租赁合同。 年租金中位数 — 936,120 AED。 租金 — 32,321 AED/m²/年。", "n": 7312}, "10y": {"h1": "Saih Shuaib 4 房产租赁 近 10 年", "lede": "根据迪拜土地局数据,Saih Shuaib 4 近 10 年共登记 11,118 份租赁合同。 年租金中位数 — 936,120 AED。 租金 — 33,356 AED/m²/年。", "n": 11118}};
+const PERIOD_COPY   = {"all": {"h1": "Saih Shuaib 4 房产租赁 全部时间", "lede": "根据迪拜土地局数据,Saih Shuaib 4 全部时间共登记 11,972 份租赁合同。 租金 — 32,768 AED/m²/年。", "n": 11972}, "1y": {"h1": "Saih Shuaib 4 房产租赁 近 12 个月", "lede": "根据迪拜土地局数据,Saih Shuaib 4 近 12 个月共登记 2,850 份租赁合同。 年租金中位数 — 1.09 百万 AED。 租金 — 39,666 AED/m²/年。", "n": 2850}, "3y": {"h1": "Saih Shuaib 4 房产租赁 近 3 年", "lede": "根据迪拜土地局数据,Saih Shuaib 4 近 3 年共登记 9,079 份租赁合同。 年租金中位数 — 1.03 百万 AED。 租金 — 36,626 AED/m²/年。", "n": 9079}, "5y": {"h1": "Saih Shuaib 4 房产租赁 近 5 年", "lede": "根据迪拜土地局数据,Saih Shuaib 4 近 5 年共登记 11,091 份租赁合同。 年租金中位数 — 998,400 AED。 租金 — 33,280 AED/m²/年。", "n": 11091}, "10y": {"h1": "Saih Shuaib 4 房产租赁 近 10 年", "lede": "根据迪拜土地局数据,Saih Shuaib 4 近 10 年共登记 15,339 份租赁合同。 年租金中位数 — 999,105 AED。 租金 — 33,067 AED/m²/年。", "n": 15339}};
 
 // Activate the requested language so detail-panel.js's t() returns localized
 // strings. i18n.js exposes a top-level `currentLang` closure variable + a t()

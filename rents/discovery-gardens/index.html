@@ -64,12 +64,6 @@
   .about-stat .k { font-size:11px; color:#6b7280; text-transform:uppercase; letter-spacing:0.04em; margin-bottom:4px; }
   .about-stat .v { font-size:16px; font-weight:600; color:#0f172a; }
 
-  .subpages { background:#fff; border:1px solid #e5e7eb; border-radius:12px; padding:16px 20px; margin:0 0 18px; }
-  .subpages h2 { font-size:14px; font-weight:600; color:#6b7280; text-transform:uppercase; letter-spacing:0.04em; margin:0 0 10px; }
-  .subpages-list { display:flex; flex-wrap:wrap; gap:8px; }
-  .subpages-list a { padding:7px 12px; border:1px solid #e5e7eb; border-radius:8px; font-size:13px; text-decoration:none; color:#1d4ed8; background:#fff; }
-  .subpages-list a:hover { background:#eff6ff; border-color:#bfdbfe; }
-
   .dp-section-more { text-align:right; padding:8px 0 0; }
   .dp-section-more a { color:#1d4ed8; text-decoration:none; font-size:13px; font-weight:500; }
   .dp-section-more a:hover { text-decoration:underline; }
@@ -105,7 +99,7 @@
     <div id="detail-content" class="loading">Загрузка статистики…</div>
   </div>
 
-  <nav class="subpages"><h2>Подробнее по разделам</h2><div class="subpages-list"><a href="https://antontkachev.github.io/dld-viewer/rents/discovery-gardens/projects/">Топ проекты →</a><a href="https://antontkachev.github.io/dld-viewer/rents/discovery-gardens/recent/">Последние →</a></div></nav>
+  
 
   <div class="nav">
     <a href="https://antontkachev.github.io/dld-viewer/rents/">← Все районы (карта)</a>
@@ -124,7 +118,7 @@ const PAGE_PERIOD   = "all";
 const PAGE_LANG     = "ru";
 const BASE_URL      = "https://antontkachev.github.io/dld-viewer/rents/discovery-gardens/";
 const DATA_URL      = "https://antontkachev.github.io/dld-viewer/rents/discovery-gardens/data.json";
-const PERIOD_COPY   = {"all": {"h1": "Аренда недвижимости в Discovery Gardens за всё время", "lede": "В районе Discovery Gardens за всё время зарегистрировано 183 916 договоров аренды по данным Dubai Land Department. Стоимость аренды — 649 AED/м²/год.", "n": 183916}, "1y": {"h1": "Аренда недвижимости в Discovery Gardens за 1 год", "lede": "В районе Discovery Gardens за 1 год зарегистрировано 14 158 договоров аренды по данным Dubai Land Department. Медианная годовая аренда — 51 201 AED. Стоимость аренды — 754 AED/м²/год.", "n": 14158}, "3y": {"h1": "Аренда недвижимости в Discovery Gardens за 3 года", "lede": "В районе Discovery Gardens за 3 года зарегистрировано 44 617 договоров аренды по данным Dubai Land Department. Медианная годовая аренда — 48 300 AED. Стоимость аренды — 697 AED/м²/год.", "n": 44617}, "5y": {"h1": "Аренда недвижимости в Discovery Gardens за 5 лет", "lede": "В районе Discovery Gardens за 5 лет зарегистрировано 73 538 договоров аренды по данным Dubai Land Department. Медианная годовая аренда — 44 000 AED. Стоимость аренды — 617 AED/м²/год.", "n": 73538}, "10y": {"h1": "Аренда недвижимости в Discovery Gardens за 10 лет", "lede": "В районе Discovery Gardens за 10 лет зарегистрировано 134 043 договоров аренды по данным Dubai Land Department. Медианная годовая аренда — 45 000 AED. Стоимость аренды — 645 AED/м²/год.", "n": 134043}};
+const PERIOD_COPY   = {"all": {"h1": "Аренда недвижимости в Discovery Gardens за всё время", "lede": "В районе Discovery Gardens за всё время зарегистрировано 183 916 договоров аренды по данным Dubai Land Department. Стоимость аренды — 649 AED/м²/год.", "n": 183916}, "1y": {"h1": "Аренда недвижимости в Discovery Gardens за 1 год", "lede": "В районе Discovery Gardens за 1 год зарегистрировано 14 140 договоров аренды по данным Dubai Land Department. Медианная годовая аренда — 51 146 AED. Стоимость аренды — 755 AED/м²/год.", "n": 14140}, "3y": {"h1": "Аренда недвижимости в Discovery Gardens за 3 года", "lede": "В районе Discovery Gardens за 3 года зарегистрировано 44 607 договоров аренды по данным Dubai Land Department. Медианная годовая аренда — 48 300 AED. Стоимость аренды — 697 AED/м²/год.", "n": 44607}, "5y": {"h1": "Аренда недвижимости в Discovery Gardens за 5 лет", "lede": "В районе Discovery Gardens за 5 лет зарегистрировано 73 529 договоров аренды по данным Dubai Land Department. Медианная годовая аренда — 44 000 AED. Стоимость аренды — 617 AED/м²/год.", "n": 73529}, "10y": {"h1": "Аренда недвижимости в Discovery Gardens за 10 лет", "lede": "В районе Discovery Gardens за 10 лет зарегистрировано 134 006 договоров аренды по данным Dubai Land Department. Медианная годовая аренда — 45 000 AED. Стоимость аренды — 645 AED/м²/год.", "n": 134006}};
 
 // Activate the requested language so detail-panel.js's t() returns localized
 // strings. i18n.js exposes a top-level `currentLang` closure variable + a t()

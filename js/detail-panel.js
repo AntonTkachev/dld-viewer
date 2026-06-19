@@ -282,19 +282,19 @@
         <div class="dp-chart" style="height:160px"><canvas id="ch-offplan"></canvas></div>
       </div>
 
-      <details class="dp-collapsible" data-tier="premium" open>
+      <details class="dp-collapsible" data-tier="premium">
         <summary>${t("sp_section_top_projects")}</summary>
         <table class="dp-table"><thead><tr><th>${t("th_project")}</th>${proj_th_area}<th class="num">${t("th_n")}</th><th class="num">${t("th_median")}</th><th class="num">${t("th_volume")}</th></tr></thead><tbody>${proj_rows}</tbody></table>
         ${listLinkFooter('top_projects', 'Открыть полный список топ-проектов')}
       </details>
 
-      <details class="dp-collapsible" data-tier="premium" open>
+      <details class="dp-collapsible" data-tier="premium">
         <summary>${t("sp_section_top_deals")}</summary>
         <table class="dp-table"><thead><tr><th>${t("th_date")}</th><th>${t("th_project")}</th><th>${t("th_br")}</th><th class="num">${t("th_sqm")}</th><th class="num">${t("th_aed")}</th><th></th></tr></thead><tbody>${deal_rows}</tbody></table>
         ${listLinkFooter('top_deals', 'Открыть полный список крупных сделок')}
       </details>
 
-      <details class="dp-collapsible" data-tier="premium" open>
+      <details class="dp-collapsible" data-tier="premium">
         <summary>${t("sp_section_recent")}</summary>
         <table class="dp-table"><thead><tr><th>${t("th_date")}</th><th>${t("th_project")}</th><th>${t("th_br")}</th><th class="num">${t("th_aed")}</th><th>${t("th_type")}</th></tr></thead><tbody>${recent_rows}</tbody></table>
         ${listLinkFooter('recent', 'Открыть последние сделки')}
@@ -357,13 +357,13 @@
         <table class="dp-table"><thead><tr><th>${t("rent_section_usage")}</th><th class="num">${t("th_n")}</th><th class="num">%</th></tr></thead><tbody>${usage_rows}</tbody></table>
       </div>` : ''}
 
-      ${proj_rows ? `<details class="dp-collapsible" data-tier="premium" open>
+      ${proj_rows ? `<details class="dp-collapsible" data-tier="premium">
         <summary>${t("rent_section_top_projects")}</summary>
         <table class="dp-table"><thead><tr><th>${t("th_project")}</th><th class="num">${t("th_n")}</th><th class="num">${t("rent_th_med")}</th></tr></thead><tbody>${proj_rows}</tbody></table>
         ${listLinkFooter('top_projects', 'Открыть полный список топ-проектов по аренде')}
       </details>` : ''}
 
-      ${recent_rows ? `<details class="dp-collapsible" data-tier="premium" open>
+      ${recent_rows ? `<details class="dp-collapsible" data-tier="premium">
         <summary>${t("rent_section_recent")}</summary>
         <table class="dp-table"><thead><tr><th>${t("th_date")}</th><th>${t("th_project")}</th><th>${t("rent_th_subtype")}</th><th class="num">${t("th_sqm")}</th><th class="num">${t("th_aed")}</th><th>${t("rent_th_version")}</th></tr></thead><tbody>${recent_rows}</tbody></table>
         ${listLinkFooter('recent', 'Открыть последние договоры аренды')}

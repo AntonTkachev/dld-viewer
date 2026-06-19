@@ -64,12 +64,6 @@
   .about-stat .k { font-size:11px; color:#6b7280; text-transform:uppercase; letter-spacing:0.04em; margin-bottom:4px; }
   .about-stat .v { font-size:16px; font-weight:600; color:#0f172a; }
 
-  .subpages { background:#fff; border:1px solid #e5e7eb; border-radius:12px; padding:16px 20px; margin:0 0 18px; }
-  .subpages h2 { font-size:14px; font-weight:600; color:#6b7280; text-transform:uppercase; letter-spacing:0.04em; margin:0 0 10px; }
-  .subpages-list { display:flex; flex-wrap:wrap; gap:8px; }
-  .subpages-list a { padding:7px 12px; border:1px solid #e5e7eb; border-radius:8px; font-size:13px; text-decoration:none; color:#1d4ed8; background:#fff; }
-  .subpages-list a:hover { background:#eff6ff; border-color:#bfdbfe; }
-
   .dp-section-more { text-align:right; padding:8px 0 0; }
   .dp-section-more a { color:#1d4ed8; text-decoration:none; font-size:13px; font-weight:500; }
   .dp-section-more a:hover { text-decoration:underline; }
@@ -105,7 +99,7 @@
     <div id="detail-content" class="loading">आँकड़े लोड हो रहे हैं…</div>
   </div>
 
-  <nav class="subpages"><h2>और जानकारी</h2><div class="subpages-list"><a href="https://antontkachev.github.io/dld-viewer/hi/sales/al-barari/projects/">शीर्ष परियोजनाएं →</a><a href="https://antontkachev.github.io/dld-viewer/hi/sales/al-barari/deals/">सबसे बड़े सौदे →</a><a href="https://antontkachev.github.io/dld-viewer/hi/sales/al-barari/recent/">हाल →</a></div></nav>
+  
 
   <div class="nav">
     <a href="https://antontkachev.github.io/dld-viewer/hi/sales/">← सभी कम्युनिटी (मानचित्र)</a>
@@ -124,7 +118,7 @@ const PAGE_PERIOD   = "all";
 const PAGE_LANG     = "hi";
 const BASE_URL      = "https://antontkachev.github.io/dld-viewer/hi/sales/al-barari/";
 const DATA_URL      = "https://antontkachev.github.io/dld-viewer/sales/al-barari/data.json";
-const PERIOD_COPY   = {"all": {"h1": "Al Barari में रियल एस्टेट सौदे सर्व समय", "lede": "Al Barari में सर्व समय 3,891 रियल एस्टेट सौदे Dubai Land Department के अनुसार दर्ज हुए हैं। औसत संपत्ति मूल्य — 5.00 मिलियन AED। प्रति वर्ग मीटर कीमत — 11,105 AED। औसत क्षेत्रफल — 561 m²।", "n": 3891}, "1y": {"h1": "Al Barari में रियल एस्टेट सौदे पिछले 12 महीनों में", "lede": "Al Barari में पिछले 12 महीनों में 602 रियल एस्टेट सौदे Dubai Land Department के अनुसार दर्ज हुए हैं। औसत संपत्ति मूल्य — 4.44 मिलियन AED। प्रति वर्ग मीटर कीमत — 19,052 AED। औसत क्षेत्रफल — 180 m²।", "n": 602}, "3y": {"h1": "Al Barari में रियल एस्टेट सौदे पिछले 3 वर्षों में", "lede": "Al Barari में पिछले 3 वर्षों में 1,462 रियल एस्टेट सौदे Dubai Land Department के अनुसार दर्ज हुए हैं। औसत संपत्ति मूल्य — 5.18 मिलियन AED। प्रति वर्ग मीटर कीमत — 18,710 AED। औसत क्षेत्रफल — 240 m²।", "n": 1462}, "5y": {"h1": "Al Barari में रियल एस्टेट सौदे पिछले 5 वर्षों में", "lede": "Al Barari में पिछले 5 वर्षों में 2,315 रियल एस्टेट सौदे Dubai Land Department के अनुसार दर्ज हुए हैं। औसत संपत्ति मूल्य — 5.09 मिलियन AED। प्रति वर्ग मीटर कीमत — 15,488 AED। औसत क्षेत्रफल — 274 m²।", "n": 2315}, "10y": {"h1": "Al Barari में रियल एस्टेट सौदे पिछले 10 वर्षों में", "lede": "Al Barari में पिछले 10 वर्षों में 3,150 रियल एस्टेट सौदे Dubai Land Department के अनुसार दर्ज हुए हैं। औसत संपत्ति मूल्य — 4.76 मिलियन AED। प्रति वर्ग मीटर कीमत — 12,146 AED। औसत क्षेत्रफल — 442 m²।", "n": 3150}};
+const PERIOD_COPY   = {"all": {"h1": "Al Barari में रियल एस्टेट सौदे सर्व समय", "lede": "Al Barari में सर्व समय 3,891 रियल एस्टेट सौदे Dubai Land Department के अनुसार दर्ज हुए हैं। औसत संपत्ति मूल्य — 5.00 मिलियन AED। प्रति वर्ग मीटर कीमत — 11,105 AED। औसत क्षेत्रफल — 561 m²।", "n": 3891}, "1y": {"h1": "Al Barari में रियल एस्टेट सौदे पिछले 12 महीनों में", "lede": "Al Barari में पिछले 12 महीनों में 601 रियल एस्टेट सौदे Dubai Land Department के अनुसार दर्ज हुए हैं। औसत संपत्ति मूल्य — 4.43 मिलियन AED। प्रति वर्ग मीटर कीमत — 18,959 AED। औसत क्षेत्रफल — 180 m²।", "n": 601}, "3y": {"h1": "Al Barari में रियल एस्टेट सौदे पिछले 3 वर्षों में", "lede": "Al Barari में पिछले 3 वर्षों में 1,460 रियल एस्टेट सौदे Dubai Land Department के अनुसार दर्ज हुए हैं। औसत संपत्ति मूल्य — 5.18 मिलियन AED। प्रति वर्ग मीटर कीमत — 18,730 AED। औसत क्षेत्रफल — 240 m²।", "n": 1460}, "5y": {"h1": "Al Barari में रियल एस्टेट सौदे पिछले 5 वर्षों में", "lede": "Al Barari में पिछले 5 वर्षों में 2,314 रियल एस्टेट सौदे Dubai Land Department के अनुसार दर्ज हुए हैं। औसत संपत्ति मूल्य — 5.08 मिलियन AED। प्रति वर्ग मीटर कीमत — 15,488 AED। औसत क्षेत्रफल — 274 m²।", "n": 2314}, "10y": {"h1": "Al Barari में रियल एस्टेट सौदे पिछले 10 वर्षों में", "lede": "Al Barari में पिछले 10 वर्षों में 3,145 रियल एस्टेट सौदे Dubai Land Department के अनुसार दर्ज हुए हैं। औसत संपत्ति मूल्य — 4.76 मिलियन AED। प्रति वर्ग मीटर कीमत — 12,157 AED। औसत क्षेत्रफल — 442 m²।", "n": 3145}};
 
 // Activate the requested language so detail-panel.js's t() returns localized
 // strings. i18n.js exposes a top-level `currentLang` closure variable + a t()

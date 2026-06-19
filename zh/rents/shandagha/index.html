@@ -64,12 +64,6 @@
   .about-stat .k { font-size:11px; color:#6b7280; text-transform:uppercase; letter-spacing:0.04em; margin-bottom:4px; }
   .about-stat .v { font-size:16px; font-weight:600; color:#0f172a; }
 
-  .subpages { background:#fff; border:1px solid #e5e7eb; border-radius:12px; padding:16px 20px; margin:0 0 18px; }
-  .subpages h2 { font-size:14px; font-weight:600; color:#6b7280; text-transform:uppercase; letter-spacing:0.04em; margin:0 0 10px; }
-  .subpages-list { display:flex; flex-wrap:wrap; gap:8px; }
-  .subpages-list a { padding:7px 12px; border:1px solid #e5e7eb; border-radius:8px; font-size:13px; text-decoration:none; color:#1d4ed8; background:#fff; }
-  .subpages-list a:hover { background:#eff6ff; border-color:#bfdbfe; }
-
   .dp-section-more { text-align:right; padding:8px 0 0; }
   .dp-section-more a { color:#1d4ed8; text-decoration:none; font-size:13px; font-weight:500; }
   .dp-section-more a:hover { text-decoration:underline; }
@@ -105,7 +99,7 @@
     <div id="detail-content" class="loading">正在加载统计数据…</div>
   </div>
 
-  <nav class="subpages"><h2>更多内容</h2><div class="subpages-list"><a href="https://antontkachev.github.io/dld-viewer/zh/rents/shandagha/projects/">热门项目 →</a><a href="https://antontkachev.github.io/dld-viewer/zh/rents/shandagha/recent/">最新 →</a></div></nav>
+  
 
   <div class="nav">
     <a href="https://antontkachev.github.io/dld-viewer/zh/rents/">← 所有社区（地图）</a>
@@ -124,7 +118,7 @@ const PAGE_PERIOD   = "all";
 const PAGE_LANG     = "zh";
 const BASE_URL      = "https://antontkachev.github.io/dld-viewer/zh/rents/shandagha/";
 const DATA_URL      = "https://antontkachev.github.io/dld-viewer/rents/shandagha/data.json";
-const PERIOD_COPY   = {"all": {"h1": "Shandagha 房产租赁 全部时间", "lede": "根据迪拜土地局数据,Shandagha 全部时间共登记 876 份租赁合同。 租金 — 1,003 AED/m²/年。", "n": 876}, "1y": {"h1": "Shandagha 房产租赁 近 12 个月", "lede": "根据迪拜土地局数据,Shandagha 近 12 个月共登记 25 份租赁合同。 年租金中位数 — 63,248 AED。 租金 — 1,701 AED/m²/年。", "n": 25}, "3y": {"h1": "Shandagha 房产租赁 近 3 年", "lede": "根据迪拜土地局数据,Shandagha 近 3 年共登记 77 份租赁合同。 年租金中位数 — 72,394 AED。 租金 — 1,663 AED/m²/年。", "n": 77}, "5y": {"h1": "Shandagha 房产租赁 近 5 年", "lede": "根据迪拜土地局数据,Shandagha 近 5 年共登记 126 份租赁合同。 年租金中位数 — 64,518 AED。 租金 — 1,584 AED/m²/年。", "n": 126}, "10y": {"h1": "Shandagha 房产租赁 近 10 年", "lede": "根据迪拜土地局数据,Shandagha 近 10 年共登记 674 份租赁合同。 年租金中位数 — 49,733 AED。 租金 — 1,000 AED/m²/年。", "n": 674}};
+const PERIOD_COPY   = {"all": {"h1": "Shandagha 房产租赁 全部时间", "lede": "根据迪拜土地局数据,Shandagha 全部时间共登记 876 份租赁合同。 租金 — 1,003 AED/m²/年。", "n": 876}, "1y": {"h1": "Shandagha 房产租赁 近 12 个月", "lede": "根据迪拜土地局数据,Shandagha 近 12 个月共登记 25 份租赁合同。 年租金中位数 — 63,248 AED。 租金 — 1,701 AED/m²/年。", "n": 25}, "3y": {"h1": "Shandagha 房产租赁 近 3 年", "lede": "根据迪拜土地局数据,Shandagha 近 3 年共登记 77 份租赁合同。 年租金中位数 — 72,394 AED。 租金 — 1,663 AED/m²/年。", "n": 77}, "5y": {"h1": "Shandagha 房产租赁 近 5 年", "lede": "根据迪拜土地局数据,Shandagha 近 5 年共登记 124 份租赁合同。 年租金中位数 — 66,080 AED。 租金 — 1,587 AED/m²/年。", "n": 124}, "10y": {"h1": "Shandagha 房产租赁 近 10 年", "lede": "根据迪拜土地局数据,Shandagha 近 10 年共登记 672 份租赁合同。 年租金中位数 — 49,733 AED。 租金 — 1,000 AED/m²/年。", "n": 672}};
 
 // Activate the requested language so detail-panel.js's t() returns localized
 // strings. i18n.js exposes a top-level `currentLang` closure variable + a t()

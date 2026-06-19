@@ -64,12 +64,6 @@
   .about-stat .k { font-size:11px; color:#6b7280; text-transform:uppercase; letter-spacing:0.04em; margin-bottom:4px; }
   .about-stat .v { font-size:16px; font-weight:600; color:#0f172a; }
 
-  .subpages { background:#fff; border:1px solid #e5e7eb; border-radius:12px; padding:16px 20px; margin:0 0 18px; }
-  .subpages h2 { font-size:14px; font-weight:600; color:#6b7280; text-transform:uppercase; letter-spacing:0.04em; margin:0 0 10px; }
-  .subpages-list { display:flex; flex-wrap:wrap; gap:8px; }
-  .subpages-list a { padding:7px 12px; border:1px solid #e5e7eb; border-radius:8px; font-size:13px; text-decoration:none; color:#1d4ed8; background:#fff; }
-  .subpages-list a:hover { background:#eff6ff; border-color:#bfdbfe; }
-
   .dp-section-more { text-align:right; padding:8px 0 0; }
   .dp-section-more a { color:#1d4ed8; text-decoration:none; font-size:13px; font-weight:500; }
   .dp-section-more a:hover { text-decoration:underline; }
@@ -105,7 +99,7 @@
     <div id="detail-content" class="loading">Загрузка статистики…</div>
   </div>
 
-  <nav class="subpages"><h2>Подробнее по разделам</h2><div class="subpages-list"><a href="https://antontkachev.github.io/dld-viewer/rents/madinat-al-mataar/projects/">Топ проекты →</a><a href="https://antontkachev.github.io/dld-viewer/rents/madinat-al-mataar/recent/">Последние →</a></div></nav>
+  
 
   <div class="nav">
     <a href="https://antontkachev.github.io/dld-viewer/rents/">← Все районы (карта)</a>
@@ -124,7 +118,7 @@ const PAGE_PERIOD   = "10y";
 const PAGE_LANG     = "ru";
 const BASE_URL      = "https://antontkachev.github.io/dld-viewer/rents/madinat-al-mataar/";
 const DATA_URL      = "https://antontkachev.github.io/dld-viewer/rents/madinat-al-mataar/data.json";
-const PERIOD_COPY   = {"all": {"h1": "Аренда недвижимости в Madinat Al Mataar за всё время", "lede": "В районе Madinat Al Mataar за всё время зарегистрировано 3 533 договоров аренды по данным Dubai Land Department. Стоимость аренды — 1 361 AED/м²/год.", "n": 3533}, "1y": {"h1": "Аренда недвижимости в Madinat Al Mataar за 1 год", "lede": "В районе Madinat Al Mataar за 1 год зарегистрировано 438 договоров аренды по данным Dubai Land Department. Медианная годовая аренда — 92 080 AED. Стоимость аренды — 1 300 AED/м²/год.", "n": 438}, "3y": {"h1": "Аренда недвижимости в Madinat Al Mataar за 3 года", "lede": "В районе Madinat Al Mataar за 3 года зарегистрировано 1 268 договоров аренды по данным Dubai Land Department. Медианная годовая аренда — 100 000 AED. Стоимость аренды — 1 320 AED/м²/год.", "n": 1268}, "5y": {"h1": "Аренда недвижимости в Madinat Al Mataar за 5 лет", "lede": "В районе Madinat Al Mataar за 5 лет зарегистрировано 1 782 договоров аренды по данным Dubai Land Department. Медианная годовая аренда — 83 755 AED. Стоимость аренды — 1 250 AED/м²/год.", "n": 1782}, "10y": {"h1": "Аренда недвижимости в Madinat Al Mataar за 10 лет", "lede": "В районе Madinat Al Mataar за 10 лет зарегистрировано 3 491 договоров аренды по данным Dubai Land Department. Медианная годовая аренда — 104 850 AED. Стоимость аренды — 1 336 AED/м²/год.", "n": 3491}};
+const PERIOD_COPY   = {"all": {"h1": "Аренда недвижимости в Madinat Al Mataar за всё время", "lede": "В районе Madinat Al Mataar за всё время зарегистрировано 3 533 договоров аренды по данным Dubai Land Department. Стоимость аренды — 1 361 AED/м²/год.", "n": 3533}, "1y": {"h1": "Аренда недвижимости в Madinat Al Mataar за 1 год", "lede": "В районе Madinat Al Mataar за 1 год зарегистрировано 437 договоров аренды по данным Dubai Land Department. Медианная годовая аренда — 92 160 AED. Стоимость аренды — 1 300 AED/м²/год.", "n": 437}, "3y": {"h1": "Аренда недвижимости в Madinat Al Mataar за 3 года", "lede": "В районе Madinat Al Mataar за 3 года зарегистрировано 1 268 договоров аренды по данным Dubai Land Department. Медианная годовая аренда — 100 000 AED. Стоимость аренды — 1 320 AED/м²/год.", "n": 1268}, "5y": {"h1": "Аренда недвижимости в Madinat Al Mataar за 5 лет", "lede": "В районе Madinat Al Mataar за 5 лет зарегистрировано 1 781 договоров аренды по данным Dubai Land Department. Медианная годовая аренда — 83 790 AED. Стоимость аренды — 1 250 AED/м²/год.", "n": 1781}, "10y": {"h1": "Аренда недвижимости в Madinat Al Mataar за 10 лет", "lede": "В районе Madinat Al Mataar за 10 лет зарегистрировано 3 491 договоров аренды по данным Dubai Land Department. Медианная годовая аренда — 104 850 AED. Стоимость аренды — 1 336 AED/м²/год.", "n": 3491}};
 
 // Activate the requested language so detail-panel.js's t() returns localized
 // strings. i18n.js exposes a top-level `currentLang` closure variable + a t()

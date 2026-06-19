@@ -64,12 +64,6 @@
   .about-stat .k { font-size:11px; color:#6b7280; text-transform:uppercase; letter-spacing:0.04em; margin-bottom:4px; }
   .about-stat .v { font-size:16px; font-weight:600; color:#0f172a; }
 
-  .subpages { background:#fff; border:1px solid #e5e7eb; border-radius:12px; padding:16px 20px; margin:0 0 18px; }
-  .subpages h2 { font-size:14px; font-weight:600; color:#6b7280; text-transform:uppercase; letter-spacing:0.04em; margin:0 0 10px; }
-  .subpages-list { display:flex; flex-wrap:wrap; gap:8px; }
-  .subpages-list a { padding:7px 12px; border:1px solid #e5e7eb; border-radius:8px; font-size:13px; text-decoration:none; color:#1d4ed8; background:#fff; }
-  .subpages-list a:hover { background:#eff6ff; border-color:#bfdbfe; }
-
   .dp-section-more { text-align:right; padding:8px 0 0; }
   .dp-section-more a { color:#1d4ed8; text-decoration:none; font-size:13px; font-weight:500; }
   .dp-section-more a:hover { text-decoration:underline; }
@@ -105,7 +99,7 @@
     <div id="detail-content" class="loading">आँकड़े लोड हो रहे हैं…</div>
   </div>
 
-  <nav class="subpages"><h2>और जानकारी</h2><div class="subpages-list"><a href="https://antontkachev.github.io/dld-viewer/hi/sales/downtown-dubai/projects/">शीर्ष परियोजनाएं →</a><a href="https://antontkachev.github.io/dld-viewer/hi/sales/downtown-dubai/deals/">सबसे बड़े सौदे →</a><a href="https://antontkachev.github.io/dld-viewer/hi/sales/downtown-dubai/recent/">हाल →</a></div></nav>
+  
 
   <div class="nav">
     <a href="https://antontkachev.github.io/dld-viewer/hi/sales/">← सभी कम्युनिटी (मानचित्र)</a>
@@ -124,7 +118,7 @@ const PAGE_PERIOD   = "all";
 const PAGE_LANG     = "hi";
 const BASE_URL      = "https://antontkachev.github.io/dld-viewer/hi/sales/downtown-dubai/";
 const DATA_URL      = "https://antontkachev.github.io/dld-viewer/sales/downtown-dubai/data.json";
-const PERIOD_COPY   = {"all": {"h1": "DownTown Dubai में रियल एस्टेट सौदे सर्व समय", "lede": "DownTown Dubai में सर्व समय 71,803 रियल एस्टेट सौदे Dubai Land Department के अनुसार दर्ज हुए हैं। औसत संपत्ति मूल्य — 2.18 मिलियन AED। प्रति वर्ग मीटर कीमत — 21,617 AED। औसत क्षेत्रफल — 109 m²।", "n": 71803}, "1y": {"h1": "DownTown Dubai में रियल एस्टेट सौदे पिछले 12 महीनों में", "lede": "DownTown Dubai में पिछले 12 महीनों में 4,671 रियल एस्टेट सौदे Dubai Land Department के अनुसार दर्ज हुए हैं। औसत संपत्ति मूल्य — 2.71 मिलियन AED। प्रति वर्ग मीटर कीमत — 28,518 AED। औसत क्षेत्रफल — 109 m²।", "n": 4671}, "3y": {"h1": "DownTown Dubai में रियल एस्टेट सौदे पिछले 3 वर्षों में", "lede": "DownTown Dubai में पिछले 3 वर्षों में 16,698 रियल एस्टेट सौदे Dubai Land Department के अनुसार दर्ज हुए हैं। औसत संपत्ति मूल्य — 2.56 मिलियन AED। प्रति वर्ग मीटर कीमत — 27,019 AED। औसत क्षेत्रफल — 108 m²।", "n": 16698}, "5y": {"h1": "DownTown Dubai में रियल एस्टेट सौदे पिछले 5 वर्षों में", "lede": "DownTown Dubai में पिछले 5 वर्षों में 27,623 रियल एस्टेट सौदे Dubai Land Department के अनुसार दर्ज हुए हैं। औसत संपत्ति मूल्य — 2.46 मिलियन AED। प्रति वर्ग मीटर कीमत — 25,599 AED। औसत क्षेत्रफल — 108 m²।", "n": 27623}, "10y": {"h1": "DownTown Dubai में रियल एस्टेट सौदे पिछले 10 वर्षों में", "lede": "DownTown Dubai में पिछले 10 वर्षों में 40,206 रियल एस्टेट सौदे Dubai Land Department के अनुसार दर्ज हुए हैं। औसत संपत्ति मूल्य — 2.32 मिलियन AED। प्रति वर्ग मीटर कीमत — 23,123 AED। औसत क्षेत्रफल — 109 m²।", "n": 40206}};
+const PERIOD_COPY   = {"all": {"h1": "DownTown Dubai में रियल एस्टेट सौदे सर्व समय", "lede": "DownTown Dubai में सर्व समय 71,803 रियल एस्टेट सौदे Dubai Land Department के अनुसार दर्ज हुए हैं। औसत संपत्ति मूल्य — 2.18 मिलियन AED। प्रति वर्ग मीटर कीमत — 21,617 AED। औसत क्षेत्रफल — 109 m²।", "n": 71803}, "1y": {"h1": "DownTown Dubai में रियल एस्टेट सौदे पिछले 12 महीनों में", "lede": "DownTown Dubai में पिछले 12 महीनों में 4,697 रियल एस्टेट सौदे Dubai Land Department के अनुसार दर्ज हुए हैं। औसत संपत्ति मूल्य — 2.75 मिलियन AED। प्रति वर्ग मीटर कीमत — 28,535 AED। औसत क्षेत्रफल — 110 m²।", "n": 4697}, "3y": {"h1": "DownTown Dubai में रियल एस्टेट सौदे पिछले 3 वर्षों में", "lede": "DownTown Dubai में पिछले 3 वर्षों में 17,149 रियल एस्टेट सौदे Dubai Land Department के अनुसार दर्ज हुए हैं। औसत संपत्ति मूल्य — 2.58 मिलियन AED। प्रति वर्ग मीटर कीमत — 27,173 AED। औसत क्षेत्रफल — 108 m²।", "n": 17149}, "5y": {"h1": "DownTown Dubai में रियल एस्टेट सौदे पिछले 5 वर्षों में", "lede": "DownTown Dubai में पिछले 5 वर्षों में 28,125 रियल एस्टेट सौदे Dubai Land Department के अनुसार दर्ज हुए हैं। औसत संपत्ति मूल्य — 2.47 मिलियन AED। प्रति वर्ग मीटर कीमत — 25,770 AED। औसत क्षेत्रफल — 108 m²।", "n": 28125}, "10y": {"h1": "DownTown Dubai में रियल एस्टेट सौदे पिछले 10 वर्षों में", "lede": "DownTown Dubai में पिछले 10 वर्षों में 40,701 रियल एस्टेट सौदे Dubai Land Department के अनुसार दर्ज हुए हैं। औसत संपत्ति मूल्य — 2.33 मिलियन AED। प्रति वर्ग मीटर कीमत — 23,294 AED। औसत क्षेत्रफल — 109 m²।", "n": 40701}};
 
 // Activate the requested language so detail-panel.js's t() returns localized
 // strings. i18n.js exposes a top-level `currentLang` closure variable + a t()

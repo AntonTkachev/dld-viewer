@@ -64,12 +64,6 @@
   .about-stat .k { font-size:11px; color:#6b7280; text-transform:uppercase; letter-spacing:0.04em; margin-bottom:4px; }
   .about-stat .v { font-size:16px; font-weight:600; color:#0f172a; }
 
-  .subpages { background:#fff; border:1px solid #e5e7eb; border-radius:12px; padding:16px 20px; margin:0 0 18px; }
-  .subpages h2 { font-size:14px; font-weight:600; color:#6b7280; text-transform:uppercase; letter-spacing:0.04em; margin:0 0 10px; }
-  .subpages-list { display:flex; flex-wrap:wrap; gap:8px; }
-  .subpages-list a { padding:7px 12px; border:1px solid #e5e7eb; border-radius:8px; font-size:13px; text-decoration:none; color:#1d4ed8; background:#fff; }
-  .subpages-list a:hover { background:#eff6ff; border-color:#bfdbfe; }
-
   .dp-section-more { text-align:right; padding:8px 0 0; }
   .dp-section-more a { color:#1d4ed8; text-decoration:none; font-size:13px; font-weight:500; }
   .dp-section-more a:hover { text-decoration:underline; }
@@ -105,7 +99,7 @@
     <div id="detail-content" class="loading">Загрузка статистики…</div>
   </div>
 
-  <nav class="subpages"><h2>Подробнее по разделам</h2><div class="subpages-list"><a href="https://antontkachev.github.io/dld-viewer/sales/saih-shuaib-2/projects/">Топ проекты →</a><a href="https://antontkachev.github.io/dld-viewer/sales/saih-shuaib-2/deals/">Крупнейшие сделки →</a><a href="https://antontkachev.github.io/dld-viewer/sales/saih-shuaib-2/recent/">Последние →</a></div></nav>
+  
 
   <div class="nav">
     <a href="https://antontkachev.github.io/dld-viewer/sales/">← Все районы (карта)</a>
@@ -124,7 +118,7 @@ const PAGE_PERIOD   = "5y";
 const PAGE_LANG     = "ru";
 const BASE_URL      = "https://antontkachev.github.io/dld-viewer/sales/saih-shuaib-2/";
 const DATA_URL      = "https://antontkachev.github.io/dld-viewer/sales/saih-shuaib-2/data.json";
-const PERIOD_COPY   = {"all": {"h1": "Сделки с недвижимостью в Saih Shuaib 2 за всё время", "lede": "В районе Saih Shuaib 2 за всё время совершено 3 178 сделок с недвижимостью по данным Dubai Land Department. Медианная цена объекта — 825 000 AED. Цена за квадратный метр — 10 291 AED. Медианная площадь — 75 м².", "n": 3178}, "1y": {"h1": "Сделки с недвижимостью в Saih Shuaib 2 за 1 год", "lede": "В районе Saih Shuaib 2 за 1 год совершено 1 317 сделок с недвижимостью по данным Dubai Land Department. Медианная цена объекта — 635 411 AED. Цена за квадратный метр — 15 500 AED. Медианная площадь — 39 м².", "n": 1317}, "3y": {"h1": "Сделки с недвижимостью в Saih Shuaib 2 за 3 года", "lede": "В районе Saih Shuaib 2 за 3 года совершено 2 143 сделок с недвижимостью по данным Dubai Land Department. Медианная цена объекта — 650 999 AED. Цена за квадратный метр — 13 474 AED. Медианная площадь — 55 м².", "n": 2143}, "5y": {"h1": "Сделки с недвижимостью в Saih Shuaib 2 за 5 лет", "lede": "В районе Saih Shuaib 2 за 5 лет совершено 2 285 сделок с недвижимостью по данным Dubai Land Department. Медианная цена объекта — 700 000 AED. Цена за квадратный метр — 12 787 AED. Медианная площадь — 58 м².", "n": 2285}, "10y": {"h1": "Сделки с недвижимостью в Saih Shuaib 2 за 10 лет", "lede": "В районе Saih Shuaib 2 за 10 лет совершено 2 750 сделок с недвижимостью по данным Dubai Land Department. Медианная цена объекта — 752 669 AED. Цена за квадратный метр — 10 765 AED. Медианная площадь — 69 м².", "n": 2750}};
+const PERIOD_COPY   = {"all": {"h1": "Сделки с недвижимостью в Saih Shuaib 2 за всё время", "lede": "В районе Saih Shuaib 2 за всё время совершено 3 178 сделок с недвижимостью по данным Dubai Land Department. Медианная цена объекта — 825 000 AED. Цена за квадратный метр — 10 291 AED. Медианная площадь — 75 м².", "n": 3178}, "1y": {"h1": "Сделки с недвижимостью в Saih Shuaib 2 за 1 год", "lede": "В районе Saih Shuaib 2 за 1 год совершено 1 316 сделок с недвижимостью по данным Dubai Land Department. Медианная цена объекта — 635 402 AED. Цена за квадратный метр — 15 500 AED. Медианная площадь — 39 м².", "n": 1316}, "3y": {"h1": "Сделки с недвижимостью в Saih Shuaib 2 за 3 года", "lede": "В районе Saih Shuaib 2 за 3 года совершено 2 142 сделок с недвижимостью по данным Dubai Land Department. Медианная цена объекта — 650 999 AED. Цена за квадратный метр — 13 475 AED. Медианная площадь — 55 м².", "n": 2142}, "5y": {"h1": "Сделки с недвижимостью в Saih Shuaib 2 за 5 лет", "lede": "В районе Saih Shuaib 2 за 5 лет совершено 2 285 сделок с недвижимостью по данным Dubai Land Department. Медианная цена объекта — 700 000 AED. Цена за квадратный метр — 12 787 AED. Медианная площадь — 58 м².", "n": 2285}, "10y": {"h1": "Сделки с недвижимостью в Saih Shuaib 2 за 10 лет", "lede": "В районе Saih Shuaib 2 за 10 лет совершено 2 750 сделок с недвижимостью по данным Dubai Land Department. Медианная цена объекта — 752 669 AED. Цена за квадратный метр — 10 765 AED. Медианная площадь — 69 м².", "n": 2750}};
 
 // Activate the requested language so detail-panel.js's t() returns localized
 // strings. i18n.js exposes a top-level `currentLang` closure variable + a t()

@@ -64,12 +64,6 @@
   .about-stat .k { font-size:11px; color:#6b7280; text-transform:uppercase; letter-spacing:0.04em; margin-bottom:4px; }
   .about-stat .v { font-size:16px; font-weight:600; color:#0f172a; }
 
-  .subpages { background:#fff; border:1px solid #e5e7eb; border-radius:12px; padding:16px 20px; margin:0 0 18px; }
-  .subpages h2 { font-size:14px; font-weight:600; color:#6b7280; text-transform:uppercase; letter-spacing:0.04em; margin:0 0 10px; }
-  .subpages-list { display:flex; flex-wrap:wrap; gap:8px; }
-  .subpages-list a { padding:7px 12px; border:1px solid #e5e7eb; border-radius:8px; font-size:13px; text-decoration:none; color:#1d4ed8; background:#fff; }
-  .subpages-list a:hover { background:#eff6ff; border-color:#bfdbfe; }
-
   .dp-section-more { text-align:right; padding:8px 0 0; }
   .dp-section-more a { color:#1d4ed8; text-decoration:none; font-size:13px; font-weight:500; }
   .dp-section-more a:hover { text-decoration:underline; }
@@ -105,7 +99,7 @@
     <div id="detail-content" class="loading">Loading statistics…</div>
   </div>
 
-  <nav class="subpages"><h2>Explore further</h2><div class="subpages-list"><a href="https://antontkachev.github.io/dld-viewer/en/rents/abu-hail/projects/">Top projects →</a><a href="https://antontkachev.github.io/dld-viewer/en/rents/abu-hail/recent/">Recent →</a></div></nav>
+  
 
   <div class="nav">
     <a href="https://antontkachev.github.io/dld-viewer/en/rents/">← All districts (map)</a>
@@ -124,7 +118,7 @@ const PAGE_PERIOD   = "5y";
 const PAGE_LANG     = "en";
 const BASE_URL      = "https://antontkachev.github.io/dld-viewer/en/rents/abu-hail/";
 const DATA_URL      = "https://antontkachev.github.io/dld-viewer/rents/abu-hail/data.json";
-const PERIOD_COPY   = {"all": {"h1": "Real estate rentals in Abu Hail all-time", "lede": "In Abu Hail all-time, 29,497 rental contracts have been registered according to the Dubai Land Department. Rent per area — 587 AED/m²/year.", "n": 29497}, "1y": {"h1": "Real estate rentals in Abu Hail over 12 months", "lede": "In Abu Hail over 12 months, 6,099 rental contracts have been registered according to the Dubai Land Department. Median annual rent — 35,000 AED. Rent per area — 500 AED/m²/year.", "n": 6099}, "3y": {"h1": "Real estate rentals in Abu Hail over 3 years", "lede": "In Abu Hail over 3 years, 14,576 rental contracts have been registered according to the Dubai Land Department. Median annual rent — 20,000 AED. Rent per area — 667 AED/m²/year.", "n": 14576}, "5y": {"h1": "Real estate rentals in Abu Hail over 5 years", "lede": "In Abu Hail over 5 years, 20,590 rental contracts have been registered according to the Dubai Land Department. Median annual rent — 20,000 AED. Rent per area — 667 AED/m²/year.", "n": 20590}, "10y": {"h1": "Real estate rentals in Abu Hail over 10 years", "lede": "In Abu Hail over 10 years, 25,958 rental contracts have been registered according to the Dubai Land Department. Median annual rent — 29,000 AED. Rent per area — 658 AED/m²/year.", "n": 25958}};
+const PERIOD_COPY   = {"all": {"h1": "Real estate rentals in Abu Hail all-time", "lede": "In Abu Hail all-time, 29,497 rental contracts have been registered according to the Dubai Land Department. Rent per area — 587 AED/m²/year.", "n": 29497}, "1y": {"h1": "Real estate rentals in Abu Hail over 12 months", "lede": "In Abu Hail over 12 months, 6,074 rental contracts have been registered according to the Dubai Land Department. Median annual rent — 35,000 AED. Rent per area — 500 AED/m²/year.", "n": 6074}, "3y": {"h1": "Real estate rentals in Abu Hail over 3 years", "lede": "In Abu Hail over 3 years, 14,569 rental contracts have been registered according to the Dubai Land Department. Median annual rent — 20,000 AED. Rent per area — 667 AED/m²/year.", "n": 14569}, "5y": {"h1": "Real estate rentals in Abu Hail over 5 years", "lede": "In Abu Hail over 5 years, 20,590 rental contracts have been registered according to the Dubai Land Department. Median annual rent — 20,000 AED. Rent per area — 667 AED/m²/year.", "n": 20590}, "10y": {"h1": "Real estate rentals in Abu Hail over 10 years", "lede": "In Abu Hail over 10 years, 25,957 rental contracts have been registered according to the Dubai Land Department. Median annual rent — 29,000 AED. Rent per area — 658 AED/m²/year.", "n": 25957}};
 
 // Activate the requested language so detail-panel.js's t() returns localized
 // strings. i18n.js exposes a top-level `currentLang` closure variable + a t()

@@ -64,12 +64,6 @@
   .about-stat .k { font-size:11px; color:#6b7280; text-transform:uppercase; letter-spacing:0.04em; margin-bottom:4px; }
   .about-stat .v { font-size:16px; font-weight:600; color:#0f172a; }
 
-  .subpages { background:#fff; border:1px solid #e5e7eb; border-radius:12px; padding:16px 20px; margin:0 0 18px; }
-  .subpages h2 { font-size:14px; font-weight:600; color:#6b7280; text-transform:uppercase; letter-spacing:0.04em; margin:0 0 10px; }
-  .subpages-list { display:flex; flex-wrap:wrap; gap:8px; }
-  .subpages-list a { padding:7px 12px; border:1px solid #e5e7eb; border-radius:8px; font-size:13px; text-decoration:none; color:#1d4ed8; background:#fff; }
-  .subpages-list a:hover { background:#eff6ff; border-color:#bfdbfe; }
-
   .dp-section-more { text-align:right; padding:8px 0 0; }
   .dp-section-more a { color:#1d4ed8; text-decoration:none; font-size:13px; font-weight:500; }
   .dp-section-more a:hover { text-decoration:underline; }
@@ -105,7 +99,7 @@
     <div id="detail-content" class="loading">جاري تحميل الإحصاءات…</div>
   </div>
 
-  <nav class="subpages"><h2>مزيد من التفاصيل</h2><div class="subpages-list"><a href="https://antontkachev.github.io/dld-viewer/ar/sales/jumeirah-park/projects/">أهم المشاريع →</a><a href="https://antontkachev.github.io/dld-viewer/ar/sales/jumeirah-park/deals/">أكبر الصفقات →</a><a href="https://antontkachev.github.io/dld-viewer/ar/sales/jumeirah-park/recent/">الأحدث →</a></div></nav>
+  
 
   <div class="nav">
     <a href="https://antontkachev.github.io/dld-viewer/ar/sales/">← جميع الأحياء (الخريطة)</a>
@@ -124,7 +118,7 @@ const PAGE_PERIOD   = "5y";
 const PAGE_LANG     = "ar";
 const BASE_URL      = "https://antontkachev.github.io/dld-viewer/ar/sales/jumeirah-park/";
 const DATA_URL      = "https://antontkachev.github.io/dld-viewer/sales/jumeirah-park/data.json";
-const PERIOD_COPY   = {"all": {"h1": "صفقات العقارات في Jumeirah Park لكل الوقت", "lede": "في حي Jumeirah Park لكل الوقت تم تسجيل 10,736 صفقة عقارية وفقًا لبيانات دائرة الأراضي والأملاك بدبي. السعر الوسيط للعقار — 3.65 مليون درهم. السعر للمتر المربع — 5,493 درهم. المساحة الوسيطة — 680 م².", "n": 10736}, "1y": {"h1": "صفقات العقارات في Jumeirah Park خلال 12 شهرًا", "lede": "في حي Jumeirah Park خلال 12 شهرًا تم تسجيل 457 صفقة عقارية وفقًا لبيانات دائرة الأراضي والأملاك بدبي. السعر الوسيط للعقار — 6.30 مليون درهم. السعر للمتر المربع — 10,250 درهم. المساحة الوسيطة — 666 م².", "n": 457}, "3y": {"h1": "صفقات العقارات في Jumeirah Park خلال 3 سنوات", "lede": "في حي Jumeirah Park خلال 3 سنوات تم تسجيل 1,601 صفقة عقارية وفقًا لبيانات دائرة الأراضي والأملاك بدبي. السعر الوسيط للعقار — 5.56 مليون درهم. السعر للمتر المربع — 9,163 درهم. المساحة الوسيطة — 676 م².", "n": 1601}, "5y": {"h1": "صفقات العقارات في Jumeirah Park خلال 5 سنوات", "lede": "في حي Jumeirah Park خلال 5 سنوات تم تسجيل 2,805 صفقة عقارية وفقًا لبيانات دائرة الأراضي والأملاك بدبي. السعر الوسيط للعقار — 4.60 مليون درهم. السعر للمتر المربع — 7,487 درهم. المساحة الوسيطة — 677 م².", "n": 2805}, "10y": {"h1": "صفقات العقارات في Jumeirah Park خلال 10 سنوات", "lede": "في حي Jumeirah Park خلال 10 سنوات تم تسجيل 4,882 صفقة عقارية وفقًا لبيانات دائرة الأراضي والأملاك بدبي. السعر الوسيط للعقار — 3.80 مليون درهم. السعر للمتر المربع — 6,014 درهم. المساحة الوسيطة — 680 م².", "n": 4882}};
+const PERIOD_COPY   = {"all": {"h1": "صفقات العقارات في Jumeirah Park لكل الوقت", "lede": "في حي Jumeirah Park لكل الوقت تم تسجيل 10,736 صفقة عقارية وفقًا لبيانات دائرة الأراضي والأملاك بدبي. السعر الوسيط للعقار — 3.65 مليون درهم. السعر للمتر المربع — 5,493 درهم. المساحة الوسيطة — 680 م².", "n": 10736}, "1y": {"h1": "صفقات العقارات في Jumeirah Park خلال 12 شهرًا", "lede": "في حي Jumeirah Park خلال 12 شهرًا تم تسجيل 453 صفقة عقارية وفقًا لبيانات دائرة الأراضي والأملاك بدبي. السعر الوسيط للعقار — 6.30 مليون درهم. السعر للمتر المربع — 10,250 درهم. المساحة الوسيطة — 666 م².", "n": 453}, "3y": {"h1": "صفقات العقارات في Jumeirah Park خلال 3 سنوات", "lede": "في حي Jumeirah Park خلال 3 سنوات تم تسجيل 1,599 صفقة عقارية وفقًا لبيانات دائرة الأراضي والأملاك بدبي. السعر الوسيط للعقار — 5.56 مليون درهم. السعر للمتر المربع — 9,163 درهم. المساحة الوسيطة — 676 م².", "n": 1599}, "5y": {"h1": "صفقات العقارات في Jumeirah Park خلال 5 سنوات", "lede": "في حي Jumeirah Park خلال 5 سنوات تم تسجيل 2,805 صفقة عقارية وفقًا لبيانات دائرة الأراضي والأملاك بدبي. السعر الوسيط للعقار — 4.60 مليون درهم. السعر للمتر المربع — 7,487 درهم. المساحة الوسيطة — 677 م².", "n": 2805}, "10y": {"h1": "صفقات العقارات في Jumeirah Park خلال 10 سنوات", "lede": "في حي Jumeirah Park خلال 10 سنوات تم تسجيل 4,881 صفقة عقارية وفقًا لبيانات دائرة الأراضي والأملاك بدبي. السعر الوسيط للعقار — 3.80 مليون درهم. السعر للمتر المربع — 6,015 درهم. المساحة الوسيطة — 680 م².", "n": 4881}};
 
 // Activate the requested language so detail-panel.js's t() returns localized
 // strings. i18n.js exposes a top-level `currentLang` closure variable + a t()

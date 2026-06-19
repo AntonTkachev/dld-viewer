@@ -64,12 +64,6 @@
   .about-stat .k { font-size:11px; color:#6b7280; text-transform:uppercase; letter-spacing:0.04em; margin-bottom:4px; }
   .about-stat .v { font-size:16px; font-weight:600; color:#0f172a; }
 
-  .subpages { background:#fff; border:1px solid #e5e7eb; border-radius:12px; padding:16px 20px; margin:0 0 18px; }
-  .subpages h2 { font-size:14px; font-weight:600; color:#6b7280; text-transform:uppercase; letter-spacing:0.04em; margin:0 0 10px; }
-  .subpages-list { display:flex; flex-wrap:wrap; gap:8px; }
-  .subpages-list a { padding:7px 12px; border:1px solid #e5e7eb; border-radius:8px; font-size:13px; text-decoration:none; color:#1d4ed8; background:#fff; }
-  .subpages-list a:hover { background:#eff6ff; border-color:#bfdbfe; }
-
   .dp-section-more { text-align:right; padding:8px 0 0; }
   .dp-section-more a { color:#1d4ed8; text-decoration:none; font-size:13px; font-weight:500; }
   .dp-section-more a:hover { text-decoration:underline; }
@@ -105,7 +99,7 @@
     <div id="detail-content" class="loading">आँकड़े लोड हो रहे हैं…</div>
   </div>
 
-  <nav class="subpages"><h2>और जानकारी</h2><div class="subpages-list"><a href="https://antontkachev.github.io/dld-viewer/hi/sales/majan/projects/">शीर्ष परियोजनाएं →</a><a href="https://antontkachev.github.io/dld-viewer/hi/sales/majan/deals/">सबसे बड़े सौदे →</a><a href="https://antontkachev.github.io/dld-viewer/hi/sales/majan/recent/">हाल →</a></div></nav>
+  
 
   <div class="nav">
     <a href="https://antontkachev.github.io/dld-viewer/hi/sales/">← सभी कम्युनिटी (मानचित्र)</a>
@@ -124,7 +118,7 @@ const PAGE_PERIOD   = "5y";
 const PAGE_LANG     = "hi";
 const BASE_URL      = "https://antontkachev.github.io/dld-viewer/hi/sales/majan/";
 const DATA_URL      = "https://antontkachev.github.io/dld-viewer/sales/majan/data.json";
-const PERIOD_COPY   = {"all": {"h1": "Majan में रियल एस्टेट सौदे सर्व समय", "lede": "Majan में सर्व समय 12,438 रियल एस्टेट सौदे Dubai Land Department के अनुसार दर्ज हुए हैं। औसत संपत्ति मूल्य — 805,688 AED। प्रति वर्ग मीटर कीमत — 14,264 AED। औसत क्षेत्रफल — 69 m²।", "n": 12438}, "1y": {"h1": "Majan में रियल एस्टेट सौदे पिछले 12 महीनों में", "lede": "Majan में पिछले 12 महीनों में 7,012 रियल एस्टेट सौदे Dubai Land Department के अनुसार दर्ज हुए हैं। औसत संपत्ति मूल्य — 777,225 AED। प्रति वर्ग मीटर कीमत — 15,572 AED। औसत क्षेत्रफल — 57 m²।", "n": 7012}, "3y": {"h1": "Majan में रियल एस्टेट सौदे पिछले 3 वर्षों में", "lede": "Majan में पिछले 3 वर्षों में 11,110 रियल एस्टेट सौदे Dubai Land Department के अनुसार दर्ज हुए हैं। औसत संपत्ति मूल्य — 809,085 AED। प्रति वर्ग मीटर कीमत — 14,762 AED। औसत क्षेत्रफल — 68 m²।", "n": 11110}, "5y": {"h1": "Majan में रियल एस्टेट सौदे पिछले 5 वर्षों में", "lede": "Majan में पिछले 5 वर्षों में 11,487 रियल एस्टेट सौदे Dubai Land Department के अनुसार दर्ज हुए हैं। औसत संपत्ति मूल्य — 802,048 AED। प्रति वर्ग मीटर कीमत — 14,592 AED। औसत क्षेत्रफल — 68 m²।", "n": 11487}, "10y": {"h1": "Majan में रियल एस्टेट सौदे पिछले 10 वर्षों में", "lede": "Majan में पिछले 10 वर्षों में 11,980 रियल एस्टेट सौदे Dubai Land Department के अनुसार दर्ज हुए हैं। औसत संपत्ति मूल्य — 801,829 AED। प्रति वर्ग मीटर कीमत — 14,511 AED। औसत क्षेत्रफल — 69 m²।", "n": 11980}};
+const PERIOD_COPY   = {"all": {"h1": "Majan में रियल एस्टेट सौदे सर्व समय", "lede": "Majan में सर्व समय 12,438 रियल एस्टेट सौदे Dubai Land Department के अनुसार दर्ज हुए हैं। औसत संपत्ति मूल्य — 805,688 AED। प्रति वर्ग मीटर कीमत — 14,264 AED। औसत क्षेत्रफल — 69 m²।", "n": 12438}, "1y": {"h1": "Majan में रियल एस्टेट सौदे पिछले 12 महीनों में", "lede": "Majan में पिछले 12 महीनों में 7,004 रियल एस्टेट सौदे Dubai Land Department के अनुसार दर्ज हुए हैं। औसत संपत्ति मूल्य — 777,059 AED। प्रति वर्ग मीटर कीमत — 15,575 AED। औसत क्षेत्रफल — 57 m²।", "n": 7004}, "3y": {"h1": "Majan में रियल एस्टेट सौदे पिछले 3 वर्षों में", "lede": "Majan में पिछले 3 वर्षों में 11,109 रियल एस्टेट सौदे Dubai Land Department के अनुसार दर्ज हुए हैं। औसत संपत्ति मूल्य — 809,034 AED। प्रति वर्ग मीटर कीमत — 14,761 AED। औसत क्षेत्रफल — 68 m²।", "n": 11109}, "5y": {"h1": "Majan में रियल एस्टेट सौदे पिछले 5 वर्षों में", "lede": "Majan में पिछले 5 वर्षों में 11,487 रियल एस्टेट सौदे Dubai Land Department के अनुसार दर्ज हुए हैं। औसत संपत्ति मूल्य — 802,048 AED। प्रति वर्ग मीटर कीमत — 14,592 AED। औसत क्षेत्रफल — 68 m²।", "n": 11487}, "10y": {"h1": "Majan में रियल एस्टेट सौदे पिछले 10 वर्षों में", "lede": "Majan में पिछले 10 वर्षों में 11,972 रियल एस्टेट सौदे Dubai Land Department के अनुसार दर्ज हुए हैं। औसत संपत्ति मूल्य — 801,351 AED। प्रति वर्ग मीटर कीमत — 14,515 AED। औसत क्षेत्रफल — 69 m²।", "n": 11972}};
 
 // Activate the requested language so detail-panel.js's t() returns localized
 // strings. i18n.js exposes a top-level `currentLang` closure variable + a t()

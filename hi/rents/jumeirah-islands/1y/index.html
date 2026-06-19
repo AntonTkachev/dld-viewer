@@ -64,12 +64,6 @@
   .about-stat .k { font-size:11px; color:#6b7280; text-transform:uppercase; letter-spacing:0.04em; margin-bottom:4px; }
   .about-stat .v { font-size:16px; font-weight:600; color:#0f172a; }
 
-  .subpages { background:#fff; border:1px solid #e5e7eb; border-radius:12px; padding:16px 20px; margin:0 0 18px; }
-  .subpages h2 { font-size:14px; font-weight:600; color:#6b7280; text-transform:uppercase; letter-spacing:0.04em; margin:0 0 10px; }
-  .subpages-list { display:flex; flex-wrap:wrap; gap:8px; }
-  .subpages-list a { padding:7px 12px; border:1px solid #e5e7eb; border-radius:8px; font-size:13px; text-decoration:none; color:#1d4ed8; background:#fff; }
-  .subpages-list a:hover { background:#eff6ff; border-color:#bfdbfe; }
-
   .dp-section-more { text-align:right; padding:8px 0 0; }
   .dp-section-more a { color:#1d4ed8; text-decoration:none; font-size:13px; font-weight:500; }
   .dp-section-more a:hover { text-decoration:underline; }
@@ -105,7 +99,7 @@
     <div id="detail-content" class="loading">आँकड़े लोड हो रहे हैं…</div>
   </div>
 
-  <nav class="subpages"><h2>और जानकारी</h2><div class="subpages-list"><a href="https://antontkachev.github.io/dld-viewer/hi/rents/jumeirah-islands/projects/">शीर्ष परियोजनाएं →</a><a href="https://antontkachev.github.io/dld-viewer/hi/rents/jumeirah-islands/recent/">हाल →</a></div></nav>
+  
 
   <div class="nav">
     <a href="https://antontkachev.github.io/dld-viewer/hi/rents/">← सभी कम्युनिटी (मानचित्र)</a>
@@ -124,7 +118,7 @@ const PAGE_PERIOD   = "1y";
 const PAGE_LANG     = "hi";
 const BASE_URL      = "https://antontkachev.github.io/dld-viewer/hi/rents/jumeirah-islands/";
 const DATA_URL      = "https://antontkachev.github.io/dld-viewer/rents/jumeirah-islands/data.json";
-const PERIOD_COPY   = {"all": {"h1": "Jumeirah Islands में रियल एस्टेट किराया सर्व समय", "lede": "Jumeirah Islands में सर्व समय 5,343 किराया अनुबंध Dubai Land Department के अनुसार दर्ज हुए। किराया प्रति m² — 394 AED/m²/वर्ष।", "n": 5343}, "1y": {"h1": "Jumeirah Islands में रियल एस्टेट किराया पिछले 12 महीनों में", "lede": "Jumeirah Islands में पिछले 12 महीनों में 168 किराया अनुबंध Dubai Land Department के अनुसार दर्ज हुए। औसत वार्षिक किराया — 573,500 AED। किराया प्रति m² — 757 AED/m²/वर्ष।", "n": 168}, "3y": {"h1": "Jumeirah Islands में रियल एस्टेट किराया पिछले 3 वर्षों में", "lede": "Jumeirah Islands में पिछले 3 वर्षों में 589 किराया अनुबंध Dubai Land Department के अनुसार दर्ज हुए। औसत वार्षिक किराया — 460,000 AED। किराया प्रति m² — 609 AED/m²/वर्ष।", "n": 589}, "5y": {"h1": "Jumeirah Islands में रियल एस्टेट किराया पिछले 5 वर्षों में", "lede": "Jumeirah Islands में पिछले 5 वर्षों में 1,156 किराया अनुबंध Dubai Land Department के अनुसार दर्ज हुए। औसत वार्षिक किराया — 320,461 AED। किराया प्रति m² — 459 AED/m²/वर्ष।", "n": 1156}, "10y": {"h1": "Jumeirah Islands में रियल एस्टेट किराया पिछले 10 वर्षों में", "lede": "Jumeirah Islands में पिछले 10 वर्षों में 2,879 किराया अनुबंध Dubai Land Department के अनुसार दर्ज हुए। औसत वार्षिक किराया — 270,000 AED। किराया प्रति m² — 303 AED/m²/वर्ष।", "n": 2879}};
+const PERIOD_COPY   = {"all": {"h1": "Jumeirah Islands में रियल एस्टेट किराया सर्व समय", "lede": "Jumeirah Islands में सर्व समय 5,343 किराया अनुबंध Dubai Land Department के अनुसार दर्ज हुए। किराया प्रति m² — 394 AED/m²/वर्ष।", "n": 5343}, "1y": {"h1": "Jumeirah Islands में रियल एस्टेट किराया पिछले 12 महीनों में", "lede": "Jumeirah Islands में पिछले 12 महीनों में 168 किराया अनुबंध Dubai Land Department के अनुसार दर्ज हुए। औसत वार्षिक किराया — 573,500 AED। किराया प्रति m² — 757 AED/m²/वर्ष।", "n": 168}, "3y": {"h1": "Jumeirah Islands में रियल एस्टेट किराया पिछले 3 वर्षों में", "lede": "Jumeirah Islands में पिछले 3 वर्षों में 589 किराया अनुबंध Dubai Land Department के अनुसार दर्ज हुए। औसत वार्षिक किराया — 460,000 AED। किराया प्रति m² — 609 AED/m²/वर्ष।", "n": 589}, "5y": {"h1": "Jumeirah Islands में रियल एस्टेट किराया पिछले 5 वर्षों में", "lede": "Jumeirah Islands में पिछले 5 वर्षों में 1,156 किराया अनुबंध Dubai Land Department के अनुसार दर्ज हुए। औसत वार्षिक किराया — 320,461 AED। किराया प्रति m² — 459 AED/m²/वर्ष।", "n": 1156}, "10y": {"h1": "Jumeirah Islands में रियल एस्टेट किराया पिछले 10 वर्षों में", "lede": "Jumeirah Islands में पिछले 10 वर्षों में 2,878 किराया अनुबंध Dubai Land Department के अनुसार दर्ज हुए। औसत वार्षिक किराया — 270,000 AED। किराया प्रति m² — 303 AED/m²/वर्ष।", "n": 2878}};
 
 // Activate the requested language so detail-panel.js's t() returns localized
 // strings. i18n.js exposes a top-level `currentLang` closure variable + a t()

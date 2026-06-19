@@ -64,12 +64,6 @@
   .about-stat .k { font-size:11px; color:#6b7280; text-transform:uppercase; letter-spacing:0.04em; margin-bottom:4px; }
   .about-stat .v { font-size:16px; font-weight:600; color:#0f172a; }
 
-  .subpages { background:#fff; border:1px solid #e5e7eb; border-radius:12px; padding:16px 20px; margin:0 0 18px; }
-  .subpages h2 { font-size:14px; font-weight:600; color:#6b7280; text-transform:uppercase; letter-spacing:0.04em; margin:0 0 10px; }
-  .subpages-list { display:flex; flex-wrap:wrap; gap:8px; }
-  .subpages-list a { padding:7px 12px; border:1px solid #e5e7eb; border-radius:8px; font-size:13px; text-decoration:none; color:#1d4ed8; background:#fff; }
-  .subpages-list a:hover { background:#eff6ff; border-color:#bfdbfe; }
-
   .dp-section-more { text-align:right; padding:8px 0 0; }
   .dp-section-more a { color:#1d4ed8; text-decoration:none; font-size:13px; font-weight:500; }
   .dp-section-more a:hover { text-decoration:underline; }
@@ -105,7 +99,7 @@
     <div id="detail-content" class="loading">आँकड़े लोड हो रहे हैं…</div>
   </div>
 
-  <nav class="subpages"><h2>और जानकारी</h2><div class="subpages-list"><a href="https://antontkachev.github.io/dld-viewer/hi/sales/the-villa/projects/">शीर्ष परियोजनाएं →</a><a href="https://antontkachev.github.io/dld-viewer/hi/sales/the-villa/deals/">सबसे बड़े सौदे →</a><a href="https://antontkachev.github.io/dld-viewer/hi/sales/the-villa/recent/">हाल →</a></div></nav>
+  
 
   <div class="nav">
     <a href="https://antontkachev.github.io/dld-viewer/hi/sales/">← सभी कम्युनिटी (मानचित्र)</a>
@@ -124,7 +118,7 @@ const PAGE_PERIOD   = "5y";
 const PAGE_LANG     = "hi";
 const BASE_URL      = "https://antontkachev.github.io/dld-viewer/hi/sales/the-villa/";
 const DATA_URL      = "https://antontkachev.github.io/dld-viewer/sales/the-villa/data.json";
-const PERIOD_COPY   = {"all": {"h1": "The Villa में रियल एस्टेट सौदे सर्व समय", "lede": "The Villa में सर्व समय 7,959 रियल एस्टेट सौदे Dubai Land Department के अनुसार दर्ज हुए हैं। औसत संपत्ति मूल्य — 2.80 मिलियन AED। प्रति वर्ग मीटर कीमत — 4,022 AED। औसत क्षेत्रफल — 625 m²।", "n": 7959}, "1y": {"h1": "The Villa में रियल एस्टेट सौदे पिछले 12 महीनों में", "lede": "The Villa में पिछले 12 महीनों में 303 रियल एस्टेट सौदे Dubai Land Department के अनुसार दर्ज हुए हैं। औसत संपत्ति मूल्य — 6.00 मिलियन AED। प्रति वर्ग मीटर कीमत — 8,304 AED। औसत क्षेत्रफल — 627 m²।", "n": 303}, "3y": {"h1": "The Villa में रियल एस्टेट सौदे पिछले 3 वर्षों में", "lede": "The Villa में पिछले 3 वर्षों में 1,085 रियल एस्टेट सौदे Dubai Land Department के अनुसार दर्ज हुए हैं। औसत संपत्ति मूल्य — 5.16 मिलियन AED। प्रति वर्ग मीटर कीमत — 7,440 AED। औसत क्षेत्रफल — 630 m²।", "n": 1085}, "5y": {"h1": "The Villa में रियल एस्टेट सौदे पिछले 5 वर्षों में", "lede": "The Villa में पिछले 5 वर्षों में 1,776 रियल एस्टेट सौदे Dubai Land Department के अनुसार दर्ज हुए हैं। औसत संपत्ति मूल्य — 4.50 मिलियन AED। प्रति वर्ग मीटर कीमत — 6,350 AED। औसत क्षेत्रफल — 629 m²।", "n": 1776}, "10y": {"h1": "The Villa में रियल एस्टेट सौदे पिछले 10 वर्षों में", "lede": "The Villa में पिछले 10 वर्षों में 3,207 रियल एस्टेट सौदे Dubai Land Department के अनुसार दर्ज हुए हैं। औसत संपत्ति मूल्य — 3.67 मिलियन AED। प्रति वर्ग मीटर कीमत — 5,262 AED। औसत क्षेत्रफल — 627 m²।", "n": 3207}};
+const PERIOD_COPY   = {"all": {"h1": "The Villa में रियल एस्टेट सौदे सर्व समय", "lede": "The Villa में सर्व समय 7,959 रियल एस्टेट सौदे Dubai Land Department के अनुसार दर्ज हुए हैं। औसत संपत्ति मूल्य — 2.80 मिलियन AED। प्रति वर्ग मीटर कीमत — 4,022 AED। औसत क्षेत्रफल — 625 m²।", "n": 7959}, "1y": {"h1": "The Villa में रियल एस्टेट सौदे पिछले 12 महीनों में", "lede": "The Villa में पिछले 12 महीनों में 303 रियल एस्टेट सौदे Dubai Land Department के अनुसार दर्ज हुए हैं। औसत संपत्ति मूल्य — 6.00 मिलियन AED। प्रति वर्ग मीटर कीमत — 8,304 AED। औसत क्षेत्रफल — 627 m²।", "n": 303}, "3y": {"h1": "The Villa में रियल एस्टेट सौदे पिछले 3 वर्षों में", "lede": "The Villa में पिछले 3 वर्षों में 1,078 रियल एस्टेट सौदे Dubai Land Department के अनुसार दर्ज हुए हैं। औसत संपत्ति मूल्य — 5.20 मिलियन AED। प्रति वर्ग मीटर कीमत — 7,455 AED। औसत क्षेत्रफल — 633 m²।", "n": 1078}, "5y": {"h1": "The Villa में रियल एस्टेट सौदे पिछले 5 वर्षों में", "lede": "The Villa में पिछले 5 वर्षों में 1,776 रियल एस्टेट सौदे Dubai Land Department के अनुसार दर्ज हुए हैं। औसत संपत्ति मूल्य — 4.50 मिलियन AED। प्रति वर्ग मीटर कीमत — 6,350 AED। औसत क्षेत्रफल — 629 m²।", "n": 1776}, "10y": {"h1": "The Villa में रियल एस्टेट सौदे पिछले 10 वर्षों में", "lede": "The Villa में पिछले 10 वर्षों में 3,195 रियल एस्टेट सौदे Dubai Land Department के अनुसार दर्ज हुए हैं। औसत संपत्ति मूल्य — 3.67 मिलियन AED। प्रति वर्ग मीटर कीमत — 5,265 AED। औसत क्षेत्रफल — 627 m²।", "n": 3195}};
 
 // Activate the requested language so detail-panel.js's t() returns localized
 // strings. i18n.js exposes a top-level `currentLang` closure variable + a t()

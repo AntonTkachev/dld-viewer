@@ -64,12 +64,6 @@
   .about-stat .k { font-size:11px; color:#6b7280; text-transform:uppercase; letter-spacing:0.04em; margin-bottom:4px; }
   .about-stat .v { font-size:16px; font-weight:600; color:#0f172a; }
 
-  .subpages { background:#fff; border:1px solid #e5e7eb; border-radius:12px; padding:16px 20px; margin:0 0 18px; }
-  .subpages h2 { font-size:14px; font-weight:600; color:#6b7280; text-transform:uppercase; letter-spacing:0.04em; margin:0 0 10px; }
-  .subpages-list { display:flex; flex-wrap:wrap; gap:8px; }
-  .subpages-list a { padding:7px 12px; border:1px solid #e5e7eb; border-radius:8px; font-size:13px; text-decoration:none; color:#1d4ed8; background:#fff; }
-  .subpages-list a:hover { background:#eff6ff; border-color:#bfdbfe; }
-
   .dp-section-more { text-align:right; padding:8px 0 0; }
   .dp-section-more a { color:#1d4ed8; text-decoration:none; font-size:13px; font-weight:500; }
   .dp-section-more a:hover { text-decoration:underline; }
@@ -105,7 +99,7 @@
     <div id="detail-content" class="loading">جاري تحميل الإحصاءات…</div>
   </div>
 
-  <nav class="subpages"><h2>مزيد من التفاصيل</h2><div class="subpages-list"><a href="https://antontkachev.github.io/dld-viewer/ar/sales/ghadeer-al-tair/projects/">أهم المشاريع →</a><a href="https://antontkachev.github.io/dld-viewer/ar/sales/ghadeer-al-tair/deals/">أكبر الصفقات →</a><a href="https://antontkachev.github.io/dld-viewer/ar/sales/ghadeer-al-tair/recent/">الأحدث →</a></div></nav>
+  
 
   <div class="nav">
     <a href="https://antontkachev.github.io/dld-viewer/ar/sales/">← جميع الأحياء (الخريطة)</a>
@@ -124,7 +118,7 @@ const PAGE_PERIOD   = "3y";
 const PAGE_LANG     = "ar";
 const BASE_URL      = "https://antontkachev.github.io/dld-viewer/ar/sales/ghadeer-al-tair/";
 const DATA_URL      = "https://antontkachev.github.io/dld-viewer/sales/ghadeer-al-tair/data.json";
-const PERIOD_COPY   = {"all": {"h1": "صفقات العقارات في Ghadeer Al tair لكل الوقت", "lede": "في حي Ghadeer Al tair لكل الوقت تم تسجيل 1,889 صفقة عقارية وفقًا لبيانات دائرة الأراضي والأملاك بدبي. السعر الوسيط للعقار — 5.00 مليون درهم. السعر للمتر المربع — 5,888 درهم. المساحة الوسيطة — 850 م².", "n": 1889}, "1y": {"h1": "صفقات العقارات في Ghadeer Al tair خلال 12 شهرًا", "lede": "في حي Ghadeer Al tair خلال 12 شهرًا تم تسجيل 144 صفقة عقارية وفقًا لبيانات دائرة الأراضي والأملاك بدبي. السعر الوسيط للعقار — 13.09 مليون درهم. السعر للمتر المربع — 20,410 درهم. المساحة الوسيطة — 722 م².", "n": 144}, "3y": {"h1": "صفقات العقارات في Ghadeer Al tair خلال 3 سنوات", "lede": "في حي Ghadeer Al tair خلال 3 سنوات تم تسجيل 1,085 صفقة عقارية وفقًا لبيانات دائرة الأراضي والأملاك بدبي. السعر الوسيط للعقار — 13.19 مليون درهم. السعر للمتر المربع — 18,727 درهم. المساحة الوسيطة — 781 م².", "n": 1085}, "5y": {"h1": "صفقات العقارات في Ghadeer Al tair خلال 5 سنوات", "lede": "في حي Ghadeer Al tair خلال 5 سنوات تم تسجيل 1,179 صفقة عقارية وفقًا لبيانات دائرة الأراضي والأملاك بدبي. السعر الوسيط للعقار — 13.07 مليون درهم. السعر للمتر المربع — 18,161 درهم. المساحة الوسيطة — 784 م².", "n": 1179}, "10y": {"h1": "صفقات العقارات في Ghadeer Al tair خلال 10 سنوات", "lede": "في حي Ghadeer Al tair خلال 10 سنوات تم تسجيل 1,432 صفقة عقارية وفقًا لبيانات دائرة الأراضي والأملاك بدبي. السعر الوسيط للعقار — 12.11 مليون درهم. السعر للمتر المربع — 16,402 درهم. المساحة الوسيطة — 784 م².", "n": 1432}};
+const PERIOD_COPY   = {"all": {"h1": "صفقات العقارات في Ghadeer Al tair لكل الوقت", "lede": "في حي Ghadeer Al tair لكل الوقت تم تسجيل 1,889 صفقة عقارية وفقًا لبيانات دائرة الأراضي والأملاك بدبي. السعر الوسيط للعقار — 5.00 مليون درهم. السعر للمتر المربع — 5,888 درهم. المساحة الوسيطة — 850 م².", "n": 1889}, "1y": {"h1": "صفقات العقارات في Ghadeer Al tair خلال 12 شهرًا", "lede": "في حي Ghadeer Al tair خلال 12 شهرًا تم تسجيل 142 صفقة عقارية وفقًا لبيانات دائرة الأراضي والأملاك بدبي. السعر الوسيط للعقار — 13.09 مليون درهم. السعر للمتر المربع — 20,410 درهم. المساحة الوسيطة — 716 م².", "n": 142}, "3y": {"h1": "صفقات العقارات في Ghadeer Al tair خلال 3 سنوات", "lede": "في حي Ghadeer Al tair خلال 3 سنوات تم تسجيل 1,085 صفقة عقارية وفقًا لبيانات دائرة الأراضي والأملاك بدبي. السعر الوسيط للعقار — 13.19 مليون درهم. السعر للمتر المربع — 18,727 درهم. المساحة الوسيطة — 781 م².", "n": 1085}, "5y": {"h1": "صفقات العقارات في Ghadeer Al tair خلال 5 سنوات", "lede": "في حي Ghadeer Al tair خلال 5 سنوات تم تسجيل 1,179 صفقة عقارية وفقًا لبيانات دائرة الأراضي والأملاك بدبي. السعر الوسيط للعقار — 13.07 مليون درهم. السعر للمتر المربع — 18,161 درهم. المساحة الوسيطة — 784 م².", "n": 1179}, "10y": {"h1": "صفقات العقارات في Ghadeer Al tair خلال 10 سنوات", "lede": "في حي Ghadeer Al tair خلال 10 سنوات تم تسجيل 1,431 صفقة عقارية وفقًا لبيانات دائرة الأراضي والأملاك بدبي. السعر الوسيط للعقار — 12.12 مليون درهم. السعر للمتر المربع — 16,414 درهم. المساحة الوسيطة — 784 م².", "n": 1431}};
 
 // Activate the requested language so detail-panel.js's t() returns localized
 // strings. i18n.js exposes a top-level `currentLang` closure variable + a t()

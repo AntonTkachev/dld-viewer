@@ -64,12 +64,6 @@
   .about-stat .k { font-size:11px; color:#6b7280; text-transform:uppercase; letter-spacing:0.04em; margin-bottom:4px; }
   .about-stat .v { font-size:16px; font-weight:600; color:#0f172a; }
 
-  .subpages { background:#fff; border:1px solid #e5e7eb; border-radius:12px; padding:16px 20px; margin:0 0 18px; }
-  .subpages h2 { font-size:14px; font-weight:600; color:#6b7280; text-transform:uppercase; letter-spacing:0.04em; margin:0 0 10px; }
-  .subpages-list { display:flex; flex-wrap:wrap; gap:8px; }
-  .subpages-list a { padding:7px 12px; border:1px solid #e5e7eb; border-radius:8px; font-size:13px; text-decoration:none; color:#1d4ed8; background:#fff; }
-  .subpages-list a:hover { background:#eff6ff; border-color:#bfdbfe; }
-
   .dp-section-more { text-align:right; padding:8px 0 0; }
   .dp-section-more a { color:#1d4ed8; text-decoration:none; font-size:13px; font-weight:500; }
   .dp-section-more a:hover { text-decoration:underline; }
@@ -105,7 +99,7 @@
     <div id="detail-content" class="loading">Загрузка статистики…</div>
   </div>
 
-  <nav class="subpages"><h2>Подробнее по разделам</h2><div class="subpages-list"><a href="https://antontkachev.github.io/dld-viewer/rents/al-buteen/projects/">Топ проекты →</a><a href="https://antontkachev.github.io/dld-viewer/rents/al-buteen/recent/">Последние →</a></div></nav>
+  
 
   <div class="nav">
     <a href="https://antontkachev.github.io/dld-viewer/rents/">← Все районы (карта)</a>
@@ -124,7 +118,7 @@ const PAGE_PERIOD   = "all";
 const PAGE_LANG     = "ru";
 const BASE_URL      = "https://antontkachev.github.io/dld-viewer/rents/al-buteen/";
 const DATA_URL      = "https://antontkachev.github.io/dld-viewer/rents/al-buteen/data.json";
-const PERIOD_COPY   = {"all": {"h1": "Аренда недвижимости в Al Buteen за всё время", "lede": "В районе Al Buteen за всё время зарегистрировано 52 522 договоров аренды по данным Dubai Land Department. Стоимость аренды — 2 222 AED/м²/год.", "n": 52522}, "1y": {"h1": "Аренда недвижимости в Al Buteen за 1 год", "lede": "В районе Al Buteen за 1 год зарегистрировано 3 733 договоров аренды по данным Dubai Land Department. Медианная годовая аренда — 100 000 AED. Стоимость аренды — 2 659 AED/м²/год.", "n": 3733}, "3y": {"h1": "Аренда недвижимости в Al Buteen за 3 года", "lede": "В районе Al Buteen за 3 года зарегистрировано 12 468 договоров аренды по данным Dubai Land Department. Медианная годовая аренда — 92 610 AED. Стоимость аренды — 2 330 AED/м²/год.", "n": 12468}, "5y": {"h1": "Аренда недвижимости в Al Buteen за 5 лет", "lede": "В районе Al Buteen за 5 лет зарегистрировано 20 864 договоров аренды по данным Dubai Land Department. Медианная годовая аренда — 88 000 AED. Стоимость аренды — 2 233 AED/м²/год.", "n": 20864}, "10y": {"h1": "Аренда недвижимости в Al Buteen за 10 лет", "lede": "В районе Al Buteen за 10 лет зарегистрировано 38 725 договоров аренды по данным Dubai Land Department. Медианная годовая аренда — 90 000 AED. Стоимость аренды — 2 250 AED/м²/год.", "n": 38725}};
+const PERIOD_COPY   = {"all": {"h1": "Аренда недвижимости в Al Buteen за всё время", "lede": "В районе Al Buteen за всё время зарегистрировано 52 522 договоров аренды по данным Dubai Land Department. Стоимость аренды — 2 222 AED/м²/год.", "n": 52522}, "1y": {"h1": "Аренда недвижимости в Al Buteen за 1 год", "lede": "В районе Al Buteen за 1 год зарегистрировано 3 732 договоров аренды по данным Dubai Land Department. Медианная годовая аренда — 100 000 AED. Стоимость аренды — 2 660 AED/м²/год.", "n": 3732}, "3y": {"h1": "Аренда недвижимости в Al Buteen за 3 года", "lede": "В районе Al Buteen за 3 года зарегистрировано 12 467 договоров аренды по данным Dubai Land Department. Медианная годовая аренда — 92 610 AED. Стоимость аренды — 2 330 AED/м²/год.", "n": 12467}, "5y": {"h1": "Аренда недвижимости в Al Buteen за 5 лет", "lede": "В районе Al Buteen за 5 лет зарегистрировано 20 861 договоров аренды по данным Dubai Land Department. Медианная годовая аренда — 88 000 AED. Стоимость аренды — 2 232 AED/м²/год.", "n": 20861}, "10y": {"h1": "Аренда недвижимости в Al Buteen за 10 лет", "lede": "В районе Al Buteen за 10 лет зарегистрировано 38 719 договоров аренды по данным Dubai Land Department. Медианная годовая аренда — 90 000 AED. Стоимость аренды — 2 250 AED/м²/год.", "n": 38719}};
 
 // Activate the requested language so detail-panel.js's t() returns localized
 // strings. i18n.js exposes a top-level `currentLang` closure variable + a t()

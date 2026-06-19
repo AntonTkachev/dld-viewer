@@ -64,12 +64,6 @@
   .about-stat .k { font-size:11px; color:#6b7280; text-transform:uppercase; letter-spacing:0.04em; margin-bottom:4px; }
   .about-stat .v { font-size:16px; font-weight:600; color:#0f172a; }
 
-  .subpages { background:#fff; border:1px solid #e5e7eb; border-radius:12px; padding:16px 20px; margin:0 0 18px; }
-  .subpages h2 { font-size:14px; font-weight:600; color:#6b7280; text-transform:uppercase; letter-spacing:0.04em; margin:0 0 10px; }
-  .subpages-list { display:flex; flex-wrap:wrap; gap:8px; }
-  .subpages-list a { padding:7px 12px; border:1px solid #e5e7eb; border-radius:8px; font-size:13px; text-decoration:none; color:#1d4ed8; background:#fff; }
-  .subpages-list a:hover { background:#eff6ff; border-color:#bfdbfe; }
-
   .dp-section-more { text-align:right; padding:8px 0 0; }
   .dp-section-more a { color:#1d4ed8; text-decoration:none; font-size:13px; font-weight:500; }
   .dp-section-more a:hover { text-decoration:underline; }
@@ -105,7 +99,7 @@
     <div id="detail-content" class="loading">جاري تحميل الإحصاءات…</div>
   </div>
 
-  <nav class="subpages"><h2>مزيد من التفاصيل</h2><div class="subpages-list"><a href="https://antontkachev.github.io/dld-viewer/ar/sales/expo-city/projects/">أهم المشاريع →</a><a href="https://antontkachev.github.io/dld-viewer/ar/sales/expo-city/deals/">أكبر الصفقات →</a><a href="https://antontkachev.github.io/dld-viewer/ar/sales/expo-city/recent/">الأحدث →</a></div></nav>
+  
 
   <div class="nav">
     <a href="https://antontkachev.github.io/dld-viewer/ar/sales/">← جميع الأحياء (الخريطة)</a>
@@ -124,7 +118,7 @@ const PAGE_PERIOD   = "10y";
 const PAGE_LANG     = "ar";
 const BASE_URL      = "https://antontkachev.github.io/dld-viewer/ar/sales/expo-city/";
 const DATA_URL      = "https://antontkachev.github.io/dld-viewer/sales/expo-city/data.json";
-const PERIOD_COPY   = {"all": {"h1": "صفقات العقارات في EXPO CITY لكل الوقت", "lede": "في حي EXPO CITY لكل الوقت تم تسجيل 3,879 صفقة عقارية وفقًا لبيانات دائرة الأراضي والأملاك بدبي. السعر الوسيط للعقار — 2.20 مليون درهم. السعر للمتر المربع — 22,528 درهم. المساحة الوسيطة — 102 م².", "n": 3879}, "1y": {"h1": "صفقات العقارات في EXPO CITY خلال 12 شهرًا", "lede": "في حي EXPO CITY خلال 12 شهرًا تم تسجيل 1,510 صفقة عقارية وفقًا لبيانات دائرة الأراضي والأملاك بدبي. السعر الوسيط للعقار — 2.19 مليون درهم. السعر للمتر المربع — 23,075 درهم. المساحة الوسيطة — 102 م².", "n": 1510}, "3y": {"h1": "صفقات العقارات في EXPO CITY خلال 3 سنوات", "lede": "في حي EXPO CITY خلال 3 سنوات تم تسجيل 3,875 صفقة عقارية وفقًا لبيانات دائرة الأراضي والأملاك بدبي. السعر الوسيط للعقار — 2.20 مليون درهم. السعر للمتر المربع — 22,530 درهم. المساحة الوسيطة — 102 م².", "n": 3875}, "5y": {"h1": "صفقات العقارات في EXPO CITY خلال 5 سنوات", "lede": "في حي EXPO CITY خلال 5 سنوات تم تسجيل 3,875 صفقة عقارية وفقًا لبيانات دائرة الأراضي والأملاك بدبي. السعر الوسيط للعقار — 2.20 مليون درهم. السعر للمتر المربع — 22,530 درهم. المساحة الوسيطة — 102 م².", "n": 3875}, "10y": {"h1": "صفقات العقارات في EXPO CITY خلال 10 سنوات", "lede": "في حي EXPO CITY خلال 10 سنوات تم تسجيل 3,879 صفقة عقارية وفقًا لبيانات دائرة الأراضي والأملاك بدبي. السعر الوسيط للعقار — 2.20 مليون درهم. السعر للمتر المربع — 22,528 درهم. المساحة الوسيطة — 102 م².", "n": 3879}};
+const PERIOD_COPY   = {"all": {"h1": "صفقات العقارات في EXPO CITY لكل الوقت", "lede": "في حي EXPO CITY لكل الوقت تم تسجيل 3,879 صفقة عقارية وفقًا لبيانات دائرة الأراضي والأملاك بدبي. السعر الوسيط للعقار — 2.20 مليون درهم. السعر للمتر المربع — 22,528 درهم. المساحة الوسيطة — 102 م².", "n": 3879}, "1y": {"h1": "صفقات العقارات في EXPO CITY خلال 12 شهرًا", "lede": "في حي EXPO CITY خلال 12 شهرًا تم تسجيل 3,879 صفقة عقارية وفقًا لبيانات دائرة الأراضي والأملاك بدبي. السعر الوسيط للعقار — 2.20 مليون درهم. السعر للمتر المربع — 22,528 درهم. المساحة الوسيطة — 102 م².", "n": 3879}, "3y": {"h1": "صفقات العقارات في EXPO CITY خلال 3 سنوات", "lede": "في حي EXPO CITY خلال 3 سنوات تم تسجيل 3,879 صفقة عقارية وفقًا لبيانات دائرة الأراضي والأملاك بدبي. السعر الوسيط للعقار — 2.20 مليون درهم. السعر للمتر المربع — 22,528 درهم. المساحة الوسيطة — 102 م².", "n": 3879}, "5y": {"h1": "صفقات العقارات في EXPO CITY خلال 5 سنوات", "lede": "في حي EXPO CITY خلال 5 سنوات تم تسجيل 3,879 صفقة عقارية وفقًا لبيانات دائرة الأراضي والأملاك بدبي. السعر الوسيط للعقار — 2.20 مليون درهم. السعر للمتر المربع — 22,528 درهم. المساحة الوسيطة — 102 م².", "n": 3879}, "10y": {"h1": "صفقات العقارات في EXPO CITY خلال 10 سنوات", "lede": "في حي EXPO CITY خلال 10 سنوات تم تسجيل 3,879 صفقة عقارية وفقًا لبيانات دائرة الأراضي والأملاك بدبي. السعر الوسيط للعقار — 2.20 مليون درهم. السعر للمتر المربع — 22,528 درهم. المساحة الوسيطة — 102 م².", "n": 3879}};
 
 // Activate the requested language so detail-panel.js's t() returns localized
 // strings. i18n.js exposes a top-level `currentLang` closure variable + a t()

@@ -64,12 +64,6 @@
   .about-stat .k { font-size:11px; color:#6b7280; text-transform:uppercase; letter-spacing:0.04em; margin-bottom:4px; }
   .about-stat .v { font-size:16px; font-weight:600; color:#0f172a; }
 
-  .subpages { background:#fff; border:1px solid #e5e7eb; border-radius:12px; padding:16px 20px; margin:0 0 18px; }
-  .subpages h2 { font-size:14px; font-weight:600; color:#6b7280; text-transform:uppercase; letter-spacing:0.04em; margin:0 0 10px; }
-  .subpages-list { display:flex; flex-wrap:wrap; gap:8px; }
-  .subpages-list a { padding:7px 12px; border:1px solid #e5e7eb; border-radius:8px; font-size:13px; text-decoration:none; color:#1d4ed8; background:#fff; }
-  .subpages-list a:hover { background:#eff6ff; border-color:#bfdbfe; }
-
   .dp-section-more { text-align:right; padding:8px 0 0; }
   .dp-section-more a { color:#1d4ed8; text-decoration:none; font-size:13px; font-weight:500; }
   .dp-section-more a:hover { text-decoration:underline; }
@@ -105,7 +99,7 @@
     <div id="detail-content" class="loading">आँकड़े लोड हो रहे हैं…</div>
   </div>
 
-  <nav class="subpages"><h2>और जानकारी</h2><div class="subpages-list"><a href="https://antontkachev.github.io/dld-viewer/hi/sales/port-saeed/projects/">शीर्ष परियोजनाएं →</a><a href="https://antontkachev.github.io/dld-viewer/hi/sales/port-saeed/deals/">सबसे बड़े सौदे →</a><a href="https://antontkachev.github.io/dld-viewer/hi/sales/port-saeed/recent/">हाल →</a></div></nav>
+  
 
   <div class="nav">
     <a href="https://antontkachev.github.io/dld-viewer/hi/sales/">← सभी कम्युनिटी (मानचित्र)</a>
@@ -124,7 +118,7 @@ const PAGE_PERIOD   = "3y";
 const PAGE_LANG     = "hi";
 const BASE_URL      = "https://antontkachev.github.io/dld-viewer/hi/sales/port-saeed/";
 const DATA_URL      = "https://antontkachev.github.io/dld-viewer/sales/port-saeed/data.json";
-const PERIOD_COPY   = {"all": {"h1": "Port Saeed में रियल एस्टेट सौदे सर्व समय", "lede": "Port Saeed में सर्व समय 1,419 रियल एस्टेट सौदे Dubai Land Department के अनुसार दर्ज हुए हैं। औसत संपत्ति मूल्य — 1.94 मिलियन AED। प्रति वर्ग मीटर कीमत — 13,455 AED। औसत क्षेत्रफल — 122 m²।", "n": 1419}, "1y": {"h1": "Port Saeed में रियल एस्टेट सौदे पिछले 12 महीनों में", "lede": "Port Saeed में पिछले 12 महीनों में 34 रियल एस्टेट सौदे Dubai Land Department के अनुसार दर्ज हुए हैं। औसत संपत्ति मूल्य — 2.35 मिलियन AED। प्रति वर्ग मीटर कीमत — 16,854 AED। औसत क्षेत्रफल — 122 m²।", "n": 34}, "3y": {"h1": "Port Saeed में रियल एस्टेट सौदे पिछले 3 वर्षों में", "lede": "Port Saeed में पिछले 3 वर्षों में 95 रियल एस्टेट सौदे Dubai Land Department के अनुसार दर्ज हुए हैं। औसत संपत्ति मूल्य — 2.20 मिलियन AED। प्रति वर्ग मीटर कीमत — 18,193 AED। औसत क्षेत्रफल — 122 m²।", "n": 95}, "5y": {"h1": "Port Saeed में रियल एस्टेट सौदे पिछले 5 वर्षों में", "lede": "Port Saeed में पिछले 5 वर्षों में 154 रियल एस्टेट सौदे Dubai Land Department के अनुसार दर्ज हुए हैं। औसत संपत्ति मूल्य — 2.23 मिलियन AED। प्रति वर्ग मीटर कीमत — 17,366 AED। औसत क्षेत्रफल — 130 m²।", "n": 154}, "10y": {"h1": "Port Saeed में रियल एस्टेट सौदे पिछले 10 वर्षों में", "lede": "Port Saeed में पिछले 10 वर्षों में 359 रियल एस्टेट सौदे Dubai Land Department के अनुसार दर्ज हुए हैं। औसत संपत्ति मूल्य — 2.20 मिलियन AED। प्रति वर्ग मीटर कीमत — 17,606 AED। औसत क्षेत्रफल — 122 m²।", "n": 359}};
+const PERIOD_COPY   = {"all": {"h1": "Port Saeed में रियल एस्टेट सौदे सर्व समय", "lede": "Port Saeed में सर्व समय 1,419 रियल एस्टेट सौदे Dubai Land Department के अनुसार दर्ज हुए हैं। औसत संपत्ति मूल्य — 1.94 मिलियन AED। प्रति वर्ग मीटर कीमत — 13,455 AED। औसत क्षेत्रफल — 122 m²।", "n": 1419}, "1y": {"h1": "Port Saeed में रियल एस्टेट सौदे पिछले 12 महीनों में", "lede": "Port Saeed में पिछले 12 महीनों में 33 रियल एस्टेट सौदे Dubai Land Department के अनुसार दर्ज हुए हैं। औसत संपत्ति मूल्य — 2.30 मिलियन AED। प्रति वर्ग मीटर कीमत — 17,240 AED। औसत क्षेत्रफल — 122 m²।", "n": 33}, "3y": {"h1": "Port Saeed में रियल एस्टेट सौदे पिछले 3 वर्षों में", "lede": "Port Saeed में पिछले 3 वर्षों में 95 रियल एस्टेट सौदे Dubai Land Department के अनुसार दर्ज हुए हैं। औसत संपत्ति मूल्य — 2.20 मिलियन AED। प्रति वर्ग मीटर कीमत — 18,193 AED। औसत क्षेत्रफल — 122 m²।", "n": 95}, "5y": {"h1": "Port Saeed में रियल एस्टेट सौदे पिछले 5 वर्षों में", "lede": "Port Saeed में पिछले 5 वर्षों में 154 रियल एस्टेट सौदे Dubai Land Department के अनुसार दर्ज हुए हैं। औसत संपत्ति मूल्य — 2.23 मिलियन AED। प्रति वर्ग मीटर कीमत — 17,366 AED। औसत क्षेत्रफल — 130 m²।", "n": 154}, "10y": {"h1": "Port Saeed में रियल एस्टेट सौदे पिछले 10 वर्षों में", "lede": "Port Saeed में पिछले 10 वर्षों में 355 रियल एस्टेट सौदे Dubai Land Department के अनुसार दर्ज हुए हैं। औसत संपत्ति मूल्य — 2.21 मिलियन AED। प्रति वर्ग मीटर कीमत — 17,933 AED। औसत क्षेत्रफल — 122 m²।", "n": 355}};
 
 // Activate the requested language so detail-panel.js's t() returns localized
 // strings. i18n.js exposes a top-level `currentLang` closure variable + a t()

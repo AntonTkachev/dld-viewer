@@ -64,12 +64,6 @@
   .about-stat .k { font-size:11px; color:#6b7280; text-transform:uppercase; letter-spacing:0.04em; margin-bottom:4px; }
   .about-stat .v { font-size:16px; font-weight:600; color:#0f172a; }
 
-  .subpages { background:#fff; border:1px solid #e5e7eb; border-radius:12px; padding:16px 20px; margin:0 0 18px; }
-  .subpages h2 { font-size:14px; font-weight:600; color:#6b7280; text-transform:uppercase; letter-spacing:0.04em; margin:0 0 10px; }
-  .subpages-list { display:flex; flex-wrap:wrap; gap:8px; }
-  .subpages-list a { padding:7px 12px; border:1px solid #e5e7eb; border-radius:8px; font-size:13px; text-decoration:none; color:#1d4ed8; background:#fff; }
-  .subpages-list a:hover { background:#eff6ff; border-color:#bfdbfe; }
-
   .dp-section-more { text-align:right; padding:8px 0 0; }
   .dp-section-more a { color:#1d4ed8; text-decoration:none; font-size:13px; font-weight:500; }
   .dp-section-more a:hover { text-decoration:underline; }
@@ -105,7 +99,7 @@
     <div id="detail-content" class="loading">आँकड़े लोड हो रहे हैं…</div>
   </div>
 
-  <nav class="subpages"><h2>और जानकारी</h2><div class="subpages-list"><a href="https://antontkachev.github.io/dld-viewer/hi/sales/bukadra/projects/">शीर्ष परियोजनाएं →</a><a href="https://antontkachev.github.io/dld-viewer/hi/sales/bukadra/deals/">सबसे बड़े सौदे →</a><a href="https://antontkachev.github.io/dld-viewer/hi/sales/bukadra/recent/">हाल →</a></div></nav>
+  
 
   <div class="nav">
     <a href="https://antontkachev.github.io/dld-viewer/hi/sales/">← सभी कम्युनिटी (मानचित्र)</a>
@@ -124,7 +118,7 @@ const PAGE_PERIOD   = "5y";
 const PAGE_LANG     = "hi";
 const BASE_URL      = "https://antontkachev.github.io/dld-viewer/hi/sales/bukadra/";
 const DATA_URL      = "https://antontkachev.github.io/dld-viewer/sales/bukadra/data.json";
-const PERIOD_COPY   = {"all": {"h1": "Bukadra में रियल एस्टेट सौदे सर्व समय", "lede": "Bukadra में सर्व समय 10,155 रियल एस्टेट सौदे Dubai Land Department के अनुसार दर्ज हुए हैं। औसत संपत्ति मूल्य — 2.02 मिलियन AED। प्रति वर्ग मीटर कीमत — 26,102 AED। औसत क्षेत्रफल — 79 m²।", "n": 10155}, "1y": {"h1": "Bukadra में रियल एस्टेट सौदे पिछले 12 महीनों में", "lede": "Bukadra में पिछले 12 महीनों में 3,832 रियल एस्टेट सौदे Dubai Land Department के अनुसार दर्ज हुए हैं। औसत संपत्ति मूल्य — 2.11 मिलियन AED। प्रति वर्ग मीटर कीमत — 26,910 AED। औसत क्षेत्रफल — 79 m²।", "n": 3832}, "3y": {"h1": "Bukadra में रियल एस्टेट सौदे पिछले 3 वर्षों में", "lede": "Bukadra में पिछले 3 वर्षों में 10,042 रियल एस्टेट सौदे Dubai Land Department के अनुसार दर्ज हुए हैं। औसत संपत्ति मूल्य — 2.00 मिलियन AED। प्रति वर्ग मीटर कीमत — 26,102 AED। औसत क्षेत्रफल — 79 m²।", "n": 10042}, "5y": {"h1": "Bukadra में रियल एस्टेट सौदे पिछले 5 वर्षों में", "lede": "Bukadra में पिछले 5 वर्षों में 10,051 रियल एस्टेट सौदे Dubai Land Department के अनुसार दर्ज हुए हैं। औसत संपत्ति मूल्य — 2.00 मिलियन AED। प्रति वर्ग मीटर कीमत — 26,102 AED। औसत क्षेत्रफल — 79 m²।", "n": 10051}, "10y": {"h1": "Bukadra में रियल एस्टेट सौदे पिछले 10 वर्षों में", "lede": "Bukadra में पिछले 10 वर्षों में 10,090 रियल एस्टेट सौदे Dubai Land Department के अनुसार दर्ज हुए हैं। औसत संपत्ति मूल्य — 2.01 मिलियन AED। प्रति वर्ग मीटर कीमत — 26,102 AED। औसत क्षेत्रफल — 79 m²।", "n": 10090}};
+const PERIOD_COPY   = {"all": {"h1": "Bukadra में रियल एस्टेट सौदे सर्व समय", "lede": "Bukadra में सर्व समय 10,155 रियल एस्टेट सौदे Dubai Land Department के अनुसार दर्ज हुए हैं। औसत संपत्ति मूल्य — 2.02 मिलियन AED। प्रति वर्ग मीटर कीमत — 26,102 AED। औसत क्षेत्रफल — 79 m²।", "n": 10155}, "1y": {"h1": "Bukadra में रियल एस्टेट सौदे पिछले 12 महीनों में", "lede": "Bukadra में पिछले 12 महीनों में 3,830 रियल एस्टेट सौदे Dubai Land Department के अनुसार दर्ज हुए हैं। औसत संपत्ति मूल्य — 2.11 मिलियन AED। प्रति वर्ग मीटर कीमत — 26,910 AED। औसत क्षेत्रफल — 79 m²।", "n": 3830}, "3y": {"h1": "Bukadra में रियल एस्टेट सौदे पिछले 3 वर्षों में", "lede": "Bukadra में पिछले 3 वर्षों में 10,042 रियल एस्टेट सौदे Dubai Land Department के अनुसार दर्ज हुए हैं। औसत संपत्ति मूल्य — 2.00 मिलियन AED। प्रति वर्ग मीटर कीमत — 26,102 AED। औसत क्षेत्रफल — 79 m²।", "n": 10042}, "5y": {"h1": "Bukadra में रियल एस्टेट सौदे पिछले 5 वर्षों में", "lede": "Bukadra में पिछले 5 वर्षों में 10,051 रियल एस्टेट सौदे Dubai Land Department के अनुसार दर्ज हुए हैं। औसत संपत्ति मूल्य — 2.00 मिलियन AED। प्रति वर्ग मीटर कीमत — 26,102 AED। औसत क्षेत्रफल — 79 m²।", "n": 10051}, "10y": {"h1": "Bukadra में रियल एस्टेट सौदे पिछले 10 वर्षों में", "lede": "Bukadra में पिछले 10 वर्षों में 10,090 रियल एस्टेट सौदे Dubai Land Department के अनुसार दर्ज हुए हैं। औसत संपत्ति मूल्य — 2.01 मिलियन AED। प्रति वर्ग मीटर कीमत — 26,102 AED। औसत क्षेत्रफल — 79 m²।", "n": 10090}};
 
 // Activate the requested language so detail-panel.js's t() returns localized
 // strings. i18n.js exposes a top-level `currentLang` closure variable + a t()

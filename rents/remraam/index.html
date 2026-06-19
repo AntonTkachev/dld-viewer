@@ -64,12 +64,6 @@
   .about-stat .k { font-size:11px; color:#6b7280; text-transform:uppercase; letter-spacing:0.04em; margin-bottom:4px; }
   .about-stat .v { font-size:16px; font-weight:600; color:#0f172a; }
 
-  .subpages { background:#fff; border:1px solid #e5e7eb; border-radius:12px; padding:16px 20px; margin:0 0 18px; }
-  .subpages h2 { font-size:14px; font-weight:600; color:#6b7280; text-transform:uppercase; letter-spacing:0.04em; margin:0 0 10px; }
-  .subpages-list { display:flex; flex-wrap:wrap; gap:8px; }
-  .subpages-list a { padding:7px 12px; border:1px solid #e5e7eb; border-radius:8px; font-size:13px; text-decoration:none; color:#1d4ed8; background:#fff; }
-  .subpages-list a:hover { background:#eff6ff; border-color:#bfdbfe; }
-
   .dp-section-more { text-align:right; padding:8px 0 0; }
   .dp-section-more a { color:#1d4ed8; text-decoration:none; font-size:13px; font-weight:500; }
   .dp-section-more a:hover { text-decoration:underline; }
@@ -105,7 +99,7 @@
     <div id="detail-content" class="loading">Загрузка статистики…</div>
   </div>
 
-  <nav class="subpages"><h2>Подробнее по разделам</h2><div class="subpages-list"><a href="https://antontkachev.github.io/dld-viewer/rents/remraam/projects/">Топ проекты →</a><a href="https://antontkachev.github.io/dld-viewer/rents/remraam/recent/">Последние →</a></div></nav>
+  
 
   <div class="nav">
     <a href="https://antontkachev.github.io/dld-viewer/rents/">← Все районы (карта)</a>
@@ -124,7 +118,7 @@ const PAGE_PERIOD   = "all";
 const PAGE_LANG     = "ru";
 const BASE_URL      = "https://antontkachev.github.io/dld-viewer/rents/remraam/";
 const DATA_URL      = "https://antontkachev.github.io/dld-viewer/rents/remraam/data.json";
-const PERIOD_COPY   = {"all": {"h1": "Аренда недвижимости в Remraam за всё время", "lede": "В районе Remraam за всё время зарегистрировано 32 381 договоров аренды по данным Dubai Land Department. Стоимость аренды — 662 AED/м²/год.", "n": 32381}, "1y": {"h1": "Аренда недвижимости в Remraam за 1 год", "lede": "В районе Remraam за 1 год зарегистрировано 2 634 договоров аренды по данным Dubai Land Department. Медианная годовая аренда — 65 000 AED. Стоимость аренды — 829 AED/м²/год.", "n": 2634}, "3y": {"h1": "Аренда недвижимости в Remraam за 3 года", "lede": "В районе Remraam за 3 года зарегистрировано 9 125 договоров аренды по данным Dubai Land Department. Медианная годовая аренда — 61 740 AED. Стоимость аренды — 735 AED/м²/год.", "n": 9125}, "5y": {"h1": "Аренда недвижимости в Remraam за 5 лет", "lede": "В районе Remraam за 5 лет зарегистрировано 15 452 договоров аренды по данным Dubai Land Department. Медианная годовая аренда — 56 700 AED. Стоимость аренды — 646 AED/м²/год.", "n": 15452}, "10y": {"h1": "Аренда недвижимости в Remraam за 10 лет", "lede": "В районе Remraam за 10 лет зарегистрировано 28 231 договоров аренды по данным Dubai Land Department. Медианная годовая аренда — 57 750 AED. Стоимость аренды — 653 AED/м²/год.", "n": 28231}};
+const PERIOD_COPY   = {"all": {"h1": "Аренда недвижимости в Remraam за всё время", "lede": "В районе Remraam за всё время зарегистрировано 32 381 договоров аренды по данным Dubai Land Department. Стоимость аренды — 662 AED/м²/год.", "n": 32381}, "1y": {"h1": "Аренда недвижимости в Remraam за 1 год", "lede": "В районе Remraam за 1 год зарегистрировано 2 630 договоров аренды по данным Dubai Land Department. Медианная годовая аренда — 65 000 AED. Стоимость аренды — 830 AED/м²/год.", "n": 2630}, "3y": {"h1": "Аренда недвижимости в Remraam за 3 года", "lede": "В районе Remraam за 3 года зарегистрировано 9 120 договоров аренды по данным Dubai Land Department. Медианная годовая аренда — 61 740 AED. Стоимость аренды — 735 AED/м²/год.", "n": 9120}, "5y": {"h1": "Аренда недвижимости в Remraam за 5 лет", "lede": "В районе Remraam за 5 лет зарегистрировано 15 448 договоров аренды по данным Dubai Land Department. Медианная годовая аренда — 56 700 AED. Стоимость аренды — 646 AED/м²/год.", "n": 15448}, "10y": {"h1": "Аренда недвижимости в Remraam за 10 лет", "lede": "В районе Remraam за 10 лет зарегистрировано 28 220 договоров аренды по данным Dubai Land Department. Медианная годовая аренда — 57 750 AED. Стоимость аренды — 653 AED/м²/год.", "n": 28220}};
 
 // Activate the requested language so detail-panel.js's t() returns localized
 // strings. i18n.js exposes a top-level `currentLang` closure variable + a t()

@@ -64,12 +64,6 @@
   .about-stat .k { font-size:11px; color:#6b7280; text-transform:uppercase; letter-spacing:0.04em; margin-bottom:4px; }
   .about-stat .v { font-size:16px; font-weight:600; color:#0f172a; }
 
-  .subpages { background:#fff; border:1px solid #e5e7eb; border-radius:12px; padding:16px 20px; margin:0 0 18px; }
-  .subpages h2 { font-size:14px; font-weight:600; color:#6b7280; text-transform:uppercase; letter-spacing:0.04em; margin:0 0 10px; }
-  .subpages-list { display:flex; flex-wrap:wrap; gap:8px; }
-  .subpages-list a { padding:7px 12px; border:1px solid #e5e7eb; border-radius:8px; font-size:13px; text-decoration:none; color:#1d4ed8; background:#fff; }
-  .subpages-list a:hover { background:#eff6ff; border-color:#bfdbfe; }
-
   .dp-section-more { text-align:right; padding:8px 0 0; }
   .dp-section-more a { color:#1d4ed8; text-decoration:none; font-size:13px; font-weight:500; }
   .dp-section-more a:hover { text-decoration:underline; }
@@ -105,7 +99,7 @@
     <div id="detail-content" class="loading">Loading statistics…</div>
   </div>
 
-  <nav class="subpages"><h2>Explore further</h2><div class="subpages-list"><a href="https://antontkachev.github.io/dld-viewer/en/rents/al-warsan-third/projects/">Top projects →</a><a href="https://antontkachev.github.io/dld-viewer/en/rents/al-warsan-third/recent/">Recent →</a></div></nav>
+  
 
   <div class="nav">
     <a href="https://antontkachev.github.io/dld-viewer/en/rents/">← All districts (map)</a>
@@ -124,7 +118,7 @@ const PAGE_PERIOD   = "all";
 const PAGE_LANG     = "en";
 const BASE_URL      = "https://antontkachev.github.io/dld-viewer/en/rents/al-warsan-third/";
 const DATA_URL      = "https://antontkachev.github.io/dld-viewer/rents/al-warsan-third/data.json";
-const PERIOD_COPY   = {"all": {"h1": "Real estate rentals in Al Warsan Third all-time", "lede": "In Al Warsan Third all-time, 22,630 rental contracts have been registered according to the Dubai Land Department. Rent per area — 34,742 AED/m²/year.", "n": 22630}, "1y": {"h1": "Real estate rentals in Al Warsan Third over 12 months", "lede": "In Al Warsan Third over 12 months, 4,632 rental contracts have been registered according to the Dubai Land Department. Median annual rent — 2.62 M AED. Rent per area — 102,504 AED/m²/year.", "n": 4632}, "3y": {"h1": "Real estate rentals in Al Warsan Third over 3 years", "lede": "In Al Warsan Third over 3 years, 12,298 rental contracts have been registered according to the Dubai Land Department. Median annual rent — 1.43 M AED. Rent per area — 61,417 AED/m²/year.", "n": 12298}, "5y": {"h1": "Real estate rentals in Al Warsan Third over 5 years", "lede": "In Al Warsan Third over 5 years, 15,601 rental contracts have been registered according to the Dubai Land Department. Median annual rent — 693,600 AED. Rent per area — 58,304 AED/m²/year.", "n": 15601}, "10y": {"h1": "Real estate rentals in Al Warsan Third over 10 years", "lede": "In Al Warsan Third over 10 years, 20,867 rental contracts have been registered according to the Dubai Land Department. Median annual rent — 304,000 AED. Rent per area — 44,094 AED/m²/year.", "n": 20867}};
+const PERIOD_COPY   = {"all": {"h1": "Real estate rentals in Al Warsan Third all-time", "lede": "In Al Warsan Third all-time, 22,630 rental contracts have been registered according to the Dubai Land Department. Rent per area — 34,742 AED/m²/year.", "n": 22630}, "1y": {"h1": "Real estate rentals in Al Warsan Third over 12 months", "lede": "In Al Warsan Third over 12 months, 22,630 rental contracts have been registered according to the Dubai Land Department. Rent per area — 34,742 AED/m²/year.", "n": 22630}, "3y": {"h1": "Real estate rentals in Al Warsan Third over 3 years", "lede": "In Al Warsan Third over 3 years, 22,630 rental contracts have been registered according to the Dubai Land Department. Rent per area — 34,742 AED/m²/year.", "n": 22630}, "5y": {"h1": "Real estate rentals in Al Warsan Third over 5 years", "lede": "In Al Warsan Third over 5 years, 22,630 rental contracts have been registered according to the Dubai Land Department. Rent per area — 34,742 AED/m²/year.", "n": 22630}, "10y": {"h1": "Real estate rentals in Al Warsan Third over 10 years", "lede": "In Al Warsan Third over 10 years, 22,630 rental contracts have been registered according to the Dubai Land Department. Rent per area — 34,742 AED/m²/year.", "n": 22630}};
 
 // Activate the requested language so detail-panel.js's t() returns localized
 // strings. i18n.js exposes a top-level `currentLang` closure variable + a t()

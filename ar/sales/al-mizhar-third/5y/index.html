@@ -64,12 +64,6 @@
   .about-stat .k { font-size:11px; color:#6b7280; text-transform:uppercase; letter-spacing:0.04em; margin-bottom:4px; }
   .about-stat .v { font-size:16px; font-weight:600; color:#0f172a; }
 
-  .subpages { background:#fff; border:1px solid #e5e7eb; border-radius:12px; padding:16px 20px; margin:0 0 18px; }
-  .subpages h2 { font-size:14px; font-weight:600; color:#6b7280; text-transform:uppercase; letter-spacing:0.04em; margin:0 0 10px; }
-  .subpages-list { display:flex; flex-wrap:wrap; gap:8px; }
-  .subpages-list a { padding:7px 12px; border:1px solid #e5e7eb; border-radius:8px; font-size:13px; text-decoration:none; color:#1d4ed8; background:#fff; }
-  .subpages-list a:hover { background:#eff6ff; border-color:#bfdbfe; }
-
   .dp-section-more { text-align:right; padding:8px 0 0; }
   .dp-section-more a { color:#1d4ed8; text-decoration:none; font-size:13px; font-weight:500; }
   .dp-section-more a:hover { text-decoration:underline; }
@@ -105,7 +99,7 @@
     <div id="detail-content" class="loading">جاري تحميل الإحصاءات…</div>
   </div>
 
-  <nav class="subpages"><h2>مزيد من التفاصيل</h2><div class="subpages-list"><a href="https://antontkachev.github.io/dld-viewer/ar/sales/al-mizhar-third/projects/">أهم المشاريع →</a><a href="https://antontkachev.github.io/dld-viewer/ar/sales/al-mizhar-third/deals/">أكبر الصفقات →</a><a href="https://antontkachev.github.io/dld-viewer/ar/sales/al-mizhar-third/recent/">الأحدث →</a></div></nav>
+  
 
   <div class="nav">
     <a href="https://antontkachev.github.io/dld-viewer/ar/sales/">← جميع الأحياء (الخريطة)</a>
@@ -124,7 +118,7 @@ const PAGE_PERIOD   = "5y";
 const PAGE_LANG     = "ar";
 const BASE_URL      = "https://antontkachev.github.io/dld-viewer/ar/sales/al-mizhar-third/";
 const DATA_URL      = "https://antontkachev.github.io/dld-viewer/sales/al-mizhar-third/data.json";
-const PERIOD_COPY   = {"all": {"h1": "صفقات العقارات في Al Mizhar Third لكل الوقت", "lede": "في حي Al Mizhar Third لكل الوقت تم تسجيل 920 صفقة عقارية وفقًا لبيانات دائرة الأراضي والأملاك بدبي. السعر الوسيط للعقار — 750,000 درهم. السعر للمتر المربع — 664 درهم. المساحة الوسيطة — 1149 م².", "n": 920}, "1y": {"h1": "صفقات العقارات في Al Mizhar Third خلال 12 شهرًا", "lede": "في حي Al Mizhar Third خلال 12 شهرًا تم تسجيل 41 صفقة عقارية وفقًا لبيانات دائرة الأراضي والأملاك بدبي. السعر الوسيط للعقار — 300,000 درهم. السعر للمتر المربع — 269 درهم. المساحة الوسيطة — 1156 م².", "n": 41}, "3y": {"h1": "صفقات العقارات في Al Mizhar Third خلال 3 سنوات", "lede": "في حي Al Mizhar Third خلال 3 سنوات تم تسجيل 111 صفقة عقارية وفقًا لبيانات دائرة الأراضي والأملاك بدبي. السعر الوسيط للعقار — 640,000 درهم. السعر للمتر المربع — 466 درهم. المساحة الوسيطة — 1156 م².", "n": 111}, "5y": {"h1": "صفقات العقارات في Al Mizhar Third خلال 5 سنوات", "lede": "في حي Al Mizhar Third خلال 5 سنوات تم تسجيل 177 صفقة عقارية وفقًا لبيانات دائرة الأراضي والأملاك بدبي. السعر الوسيط للعقار — 1.00 مليون درهم. السعر للمتر المربع — 753 درهم. المساحة الوسيطة — 1156 م².", "n": 177}, "10y": {"h1": "صفقات العقارات في Al Mizhar Third خلال 10 سنوات", "lede": "في حي Al Mizhar Third خلال 10 سنوات تم تسجيل 334 صفقة عقارية وفقًا لبيانات دائرة الأراضي والأملاك بدبي. السعر الوسيط للعقار — 1.00 مليون درهم. السعر للمتر المربع — 777 درهم. المساحة الوسيطة — 1156 م².", "n": 334}};
+const PERIOD_COPY   = {"all": {"h1": "صفقات العقارات في Al Mizhar Third لكل الوقت", "lede": "في حي Al Mizhar Third لكل الوقت تم تسجيل 920 صفقة عقارية وفقًا لبيانات دائرة الأراضي والأملاك بدبي. السعر الوسيط للعقار — 750,000 درهم. السعر للمتر المربع — 664 درهم. المساحة الوسيطة — 1149 م².", "n": 920}, "1y": {"h1": "صفقات العقارات في Al Mizhar Third خلال 12 شهرًا", "lede": "في حي Al Mizhar Third خلال 12 شهرًا تم تسجيل 40 صفقة عقارية وفقًا لبيانات دائرة الأراضي والأملاك بدبي. السعر الوسيط للعقار — 300,000 درهم. السعر للمتر المربع — 269 درهم. المساحة الوسيطة — 1161 م².", "n": 40}, "3y": {"h1": "صفقات العقارات في Al Mizhar Third خلال 3 سنوات", "lede": "في حي Al Mizhar Third خلال 3 سنوات تم تسجيل 111 صفقة عقارية وفقًا لبيانات دائرة الأراضي والأملاك بدبي. السعر الوسيط للعقار — 640,000 درهم. السعر للمتر المربع — 466 درهم. المساحة الوسيطة — 1156 م².", "n": 111}, "5y": {"h1": "صفقات العقارات في Al Mizhar Third خلال 5 سنوات", "lede": "في حي Al Mizhar Third خلال 5 سنوات تم تسجيل 177 صفقة عقارية وفقًا لبيانات دائرة الأراضي والأملاك بدبي. السعر الوسيط للعقار — 1.00 مليون درهم. السعر للمتر المربع — 753 درهم. المساحة الوسيطة — 1156 م².", "n": 177}, "10y": {"h1": "صفقات العقارات في Al Mizhar Third خلال 10 سنوات", "lede": "في حي Al Mizhar Third خلال 10 سنوات تم تسجيل 334 صفقة عقارية وفقًا لبيانات دائرة الأراضي والأملاك بدبي. السعر الوسيط للعقار — 1.00 مليون درهم. السعر للمتر المربع — 777 درهم. المساحة الوسيطة — 1156 م².", "n": 334}};
 
 // Activate the requested language so detail-panel.js's t() returns localized
 // strings. i18n.js exposes a top-level `currentLang` closure variable + a t()

@@ -64,12 +64,6 @@
   .about-stat .k { font-size:11px; color:#6b7280; text-transform:uppercase; letter-spacing:0.04em; margin-bottom:4px; }
   .about-stat .v { font-size:16px; font-weight:600; color:#0f172a; }
 
-  .subpages { background:#fff; border:1px solid #e5e7eb; border-radius:12px; padding:16px 20px; margin:0 0 18px; }
-  .subpages h2 { font-size:14px; font-weight:600; color:#6b7280; text-transform:uppercase; letter-spacing:0.04em; margin:0 0 10px; }
-  .subpages-list { display:flex; flex-wrap:wrap; gap:8px; }
-  .subpages-list a { padding:7px 12px; border:1px solid #e5e7eb; border-radius:8px; font-size:13px; text-decoration:none; color:#1d4ed8; background:#fff; }
-  .subpages-list a:hover { background:#eff6ff; border-color:#bfdbfe; }
-
   .dp-section-more { text-align:right; padding:8px 0 0; }
   .dp-section-more a { color:#1d4ed8; text-decoration:none; font-size:13px; font-weight:500; }
   .dp-section-more a:hover { text-decoration:underline; }
@@ -105,7 +99,7 @@
     <div id="detail-content" class="loading">आँकड़े लोड हो रहे हैं…</div>
   </div>
 
-  <nav class="subpages"><h2>और जानकारी</h2><div class="subpages-list"><a href="https://antontkachev.github.io/dld-viewer/hi/sales/trade-center-second/projects/">शीर्ष परियोजनाएं →</a><a href="https://antontkachev.github.io/dld-viewer/hi/sales/trade-center-second/deals/">सबसे बड़े सौदे →</a><a href="https://antontkachev.github.io/dld-viewer/hi/sales/trade-center-second/recent/">हाल →</a></div></nav>
+  
 
   <div class="nav">
     <a href="https://antontkachev.github.io/dld-viewer/hi/sales/">← सभी कम्युनिटी (मानचित्र)</a>
@@ -124,7 +118,7 @@ const PAGE_PERIOD   = "5y";
 const PAGE_LANG     = "hi";
 const BASE_URL      = "https://antontkachev.github.io/dld-viewer/hi/sales/trade-center-second/";
 const DATA_URL      = "https://antontkachev.github.io/dld-viewer/sales/trade-center-second/data.json";
-const PERIOD_COPY   = {"all": {"h1": "Trade Center Second में रियल एस्टेट सौदे सर्व समय", "lede": "Trade Center Second में सर्व समय 2,205 रियल एस्टेट सौदे Dubai Land Department के अनुसार दर्ज हुए हैं। औसत संपत्ति मूल्य — 4.10 मिलियन AED। प्रति वर्ग मीटर कीमत — 18,126 AED। औसत क्षेत्रफल — 190 m²।", "n": 2205}, "1y": {"h1": "Trade Center Second में रियल एस्टेट सौदे पिछले 12 महीनों में", "lede": "Trade Center Second में पिछले 12 महीनों में 901 रियल एस्टेट सौदे Dubai Land Department के अनुसार दर्ज हुए हैं। औसत संपत्ति मूल्य — 6.20 मिलियन AED। प्रति वर्ग मीटर कीमत — 51,004 AED। औसत क्षेत्रफल — 128 m²।", "n": 901}, "3y": {"h1": "Trade Center Second में रियल एस्टेट सौदे पिछले 3 वर्षों में", "lede": "Trade Center Second में पिछले 3 वर्षों में 1,073 रियल एस्टेट सौदे Dubai Land Department के अनुसार दर्ज हुए हैं। औसत संपत्ति मूल्य — 5.57 मिलियन AED। प्रति वर्ग मीटर कीमत — 49,915 AED। औसत क्षेत्रफल — 138 m²।", "n": 1073}, "5y": {"h1": "Trade Center Second में रियल एस्टेट सौदे पिछले 5 वर्षों में", "lede": "Trade Center Second में पिछले 5 वर्षों में 1,168 रियल एस्टेट सौदे Dubai Land Department के अनुसार दर्ज हुए हैं। औसत संपत्ति मूल्य — 5.04 मिलियन AED। प्रति वर्ग मीटर कीमत — 49,328 AED। औसत क्षेत्रफल — 138 m²।", "n": 1168}, "10y": {"h1": "Trade Center Second में रियल एस्टेट सौदे पिछले 10 वर्षों में", "lede": "Trade Center Second में पिछले 10 वर्षों में 1,341 रियल एस्टेट सौदे Dubai Land Department के अनुसार दर्ज हुए हैं। औसत संपत्ति मूल्य — 4.63 मिलियन AED। प्रति वर्ग मीटर कीमत — 48,575 AED। औसत क्षेत्रफल — 148 m²।", "n": 1341}};
+const PERIOD_COPY   = {"all": {"h1": "Trade Center Second में रियल एस्टेट सौदे सर्व समय", "lede": "Trade Center Second में सर्व समय 2,205 रियल एस्टेट सौदे Dubai Land Department के अनुसार दर्ज हुए हैं। औसत संपत्ति मूल्य — 4.10 मिलियन AED। प्रति वर्ग मीटर कीमत — 18,126 AED। औसत क्षेत्रफल — 190 m²।", "n": 2205}, "1y": {"h1": "Trade Center Second में रियल एस्टेट सौदे पिछले 12 महीनों में", "lede": "Trade Center Second में पिछले 12 महीनों में 901 रियल एस्टेट सौदे Dubai Land Department के अनुसार दर्ज हुए हैं। औसत संपत्ति मूल्य — 6.20 मिलियन AED। प्रति वर्ग मीटर कीमत — 51,004 AED। औसत क्षेत्रफल — 128 m²।", "n": 901}, "3y": {"h1": "Trade Center Second में रियल एस्टेट सौदे पिछले 3 वर्षों में", "lede": "Trade Center Second में पिछले 3 वर्षों में 1,073 रियल एस्टेट सौदे Dubai Land Department के अनुसार दर्ज हुए हैं। औसत संपत्ति मूल्य — 5.57 मिलियन AED। प्रति वर्ग मीटर कीमत — 49,915 AED। औसत क्षेत्रफल — 138 m²।", "n": 1073}, "5y": {"h1": "Trade Center Second में रियल एस्टेट सौदे पिछले 5 वर्षों में", "lede": "Trade Center Second में पिछले 5 वर्षों में 1,168 रियल एस्टेट सौदे Dubai Land Department के अनुसार दर्ज हुए हैं। औसत संपत्ति मूल्य — 5.04 मिलियन AED। प्रति वर्ग मीटर कीमत — 49,328 AED। औसत क्षेत्रफल — 138 m²।", "n": 1168}, "10y": {"h1": "Trade Center Second में रियल एस्टेट सौदे पिछले 10 वर्षों में", "lede": "Trade Center Second में पिछले 10 वर्षों में 1,340 रियल एस्टेट सौदे Dubai Land Department के अनुसार दर्ज हुए हैं। औसत संपत्ति मूल्य — 4.63 मिलियन AED। प्रति वर्ग मीटर कीमत — 48,573 AED। औसत क्षेत्रफल — 148 m²।", "n": 1340}};
 
 // Activate the requested language so detail-panel.js's t() returns localized
 // strings. i18n.js exposes a top-level `currentLang` closure variable + a t()

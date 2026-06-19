@@ -64,12 +64,6 @@
   .about-stat .k { font-size:11px; color:#6b7280; text-transform:uppercase; letter-spacing:0.04em; margin-bottom:4px; }
   .about-stat .v { font-size:16px; font-weight:600; color:#0f172a; }
 
-  .subpages { background:#fff; border:1px solid #e5e7eb; border-radius:12px; padding:16px 20px; margin:0 0 18px; }
-  .subpages h2 { font-size:14px; font-weight:600; color:#6b7280; text-transform:uppercase; letter-spacing:0.04em; margin:0 0 10px; }
-  .subpages-list { display:flex; flex-wrap:wrap; gap:8px; }
-  .subpages-list a { padding:7px 12px; border:1px solid #e5e7eb; border-radius:8px; font-size:13px; text-decoration:none; color:#1d4ed8; background:#fff; }
-  .subpages-list a:hover { background:#eff6ff; border-color:#bfdbfe; }
-
   .dp-section-more { text-align:right; padding:8px 0 0; }
   .dp-section-more a { color:#1d4ed8; text-decoration:none; font-size:13px; font-weight:500; }
   .dp-section-more a:hover { text-decoration:underline; }
@@ -105,7 +99,7 @@
     <div id="detail-content" class="loading">جاري تحميل الإحصاءات…</div>
   </div>
 
-  <nav class="subpages"><h2>مزيد من التفاصيل</h2><div class="subpages-list"><a href="https://antontkachev.github.io/dld-viewer/ar/sales/jumeirah-islands/projects/">أهم المشاريع →</a><a href="https://antontkachev.github.io/dld-viewer/ar/sales/jumeirah-islands/deals/">أكبر الصفقات →</a><a href="https://antontkachev.github.io/dld-viewer/ar/sales/jumeirah-islands/recent/">الأحدث →</a></div></nav>
+  
 
   <div class="nav">
     <a href="https://antontkachev.github.io/dld-viewer/ar/sales/">← جميع الأحياء (الخريطة)</a>
@@ -124,7 +118,7 @@ const PAGE_PERIOD   = "5y";
 const PAGE_LANG     = "ar";
 const BASE_URL      = "https://antontkachev.github.io/dld-viewer/ar/sales/jumeirah-islands/";
 const DATA_URL      = "https://antontkachev.github.io/dld-viewer/sales/jumeirah-islands/data.json";
-const PERIOD_COPY   = {"all": {"h1": "صفقات العقارات في Jumeirah Islands لكل الوقت", "lede": "في حي Jumeirah Islands لكل الوقت تم تسجيل 6,432 صفقة عقارية وفقًا لبيانات دائرة الأراضي والأملاك بدبي. السعر الوسيط للعقار — 3.41 مليون درهم. السعر للمتر المربع — 6,784 درهم. المساحة الوسيطة — 933 م².", "n": 6432}, "1y": {"h1": "صفقات العقارات في Jumeirah Islands خلال 12 شهرًا", "lede": "في حي Jumeirah Islands خلال 12 شهرًا تم تسجيل 623 صفقة عقارية وفقًا لبيانات دائرة الأراضي والأملاك بدبي. السعر الوسيط للعقار — 3.27 مليون درهم. السعر للمتر المربع — 26,817 درهم. المساحة الوسيطة — 117 م².", "n": 623}, "3y": {"h1": "صفقات العقارات في Jumeirah Islands خلال 3 سنوات", "lede": "في حي Jumeirah Islands خلال 3 سنوات تم تسجيل 1,266 صفقة عقارية وفقًا لبيانات دائرة الأراضي والأملاك بدبي. السعر الوسيط للعقار — 4.01 مليون درهم. السعر للمتر المربع — 26,026 درهم. المساحة الوسيطة — 152 م².", "n": 1266}, "5y": {"h1": "صفقات العقارات في Jumeirah Islands خلال 5 سنوات", "lede": "في حي Jumeirah Islands خلال 5 سنوات تم تسجيل 1,740 صفقة عقارية وفقًا لبيانات دائرة الأراضي والأملاك بدبي. السعر الوسيط للعقار — 5.27 مليون درهم. السعر للمتر المربع — 20,971 درهم. المساحة الوسيطة — 818 م².", "n": 1740}, "10y": {"h1": "صفقات العقارات في Jumeirah Islands خلال 10 سنوات", "lede": "في حي Jumeirah Islands خلال 10 سنوات تم تسجيل 2,424 صفقة عقارية وفقًا لبيانات دائرة الأراضي والأملاك بدبي. السعر الوسيط للعقار — 4.80 مليون درهم. السعر للمتر المربع — 13,351 درهم. المساحة الوسيطة — 933 م².", "n": 2424}};
+const PERIOD_COPY   = {"all": {"h1": "صفقات العقارات في Jumeirah Islands لكل الوقت", "lede": "في حي Jumeirah Islands لكل الوقت تم تسجيل 6,432 صفقة عقارية وفقًا لبيانات دائرة الأراضي والأملاك بدبي. السعر الوسيط للعقار — 3.41 مليون درهم. السعر للمتر المربع — 6,784 درهم. المساحة الوسيطة — 933 م².", "n": 6432}, "1y": {"h1": "صفقات العقارات في Jumeirah Islands خلال 12 شهرًا", "lede": "في حي Jumeirah Islands خلال 12 شهرًا تم تسجيل 623 صفقة عقارية وفقًا لبيانات دائرة الأراضي والأملاك بدبي. السعر الوسيط للعقار — 3.27 مليون درهم. السعر للمتر المربع — 26,817 درهم. المساحة الوسيطة — 117 م².", "n": 623}, "3y": {"h1": "صفقات العقارات في Jumeirah Islands خلال 3 سنوات", "lede": "في حي Jumeirah Islands خلال 3 سنوات تم تسجيل 1,265 صفقة عقارية وفقًا لبيانات دائرة الأراضي والأملاك بدبي. السعر الوسيط للعقار — 4.00 مليون درهم. السعر للمتر المربع — 26,028 درهم. المساحة الوسيطة — 152 م².", "n": 1265}, "5y": {"h1": "صفقات العقارات في Jumeirah Islands خلال 5 سنوات", "lede": "في حي Jumeirah Islands خلال 5 سنوات تم تسجيل 1,740 صفقة عقارية وفقًا لبيانات دائرة الأراضي والأملاك بدبي. السعر الوسيط للعقار — 5.27 مليون درهم. السعر للمتر المربع — 20,971 درهم. المساحة الوسيطة — 818 م².", "n": 1740}, "10y": {"h1": "صفقات العقارات في Jumeirah Islands خلال 10 سنوات", "lede": "في حي Jumeirah Islands خلال 10 سنوات تم تسجيل 2,423 صفقة عقارية وفقًا لبيانات دائرة الأراضي والأملاك بدبي. السعر الوسيط للعقار — 4.80 مليون درهم. السعر للمتر المربع — 13,352 درهم. المساحة الوسيطة — 933 م².", "n": 2423}};
 
 // Activate the requested language so detail-panel.js's t() returns localized
 // strings. i18n.js exposes a top-level `currentLang` closure variable + a t()

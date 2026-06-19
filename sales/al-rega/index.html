@@ -64,12 +64,6 @@
   .about-stat .k { font-size:11px; color:#6b7280; text-transform:uppercase; letter-spacing:0.04em; margin-bottom:4px; }
   .about-stat .v { font-size:16px; font-weight:600; color:#0f172a; }
 
-  .subpages { background:#fff; border:1px solid #e5e7eb; border-radius:12px; padding:16px 20px; margin:0 0 18px; }
-  .subpages h2 { font-size:14px; font-weight:600; color:#6b7280; text-transform:uppercase; letter-spacing:0.04em; margin:0 0 10px; }
-  .subpages-list { display:flex; flex-wrap:wrap; gap:8px; }
-  .subpages-list a { padding:7px 12px; border:1px solid #e5e7eb; border-radius:8px; font-size:13px; text-decoration:none; color:#1d4ed8; background:#fff; }
-  .subpages-list a:hover { background:#eff6ff; border-color:#bfdbfe; }
-
   .dp-section-more { text-align:right; padding:8px 0 0; }
   .dp-section-more a { color:#1d4ed8; text-decoration:none; font-size:13px; font-weight:500; }
   .dp-section-more a:hover { text-decoration:underline; }
@@ -105,7 +99,7 @@
     <div id="detail-content" class="loading">Загрузка статистики…</div>
   </div>
 
-  <nav class="subpages"><h2>Подробнее по разделам</h2><div class="subpages-list"><a href="https://antontkachev.github.io/dld-viewer/sales/al-rega/projects/">Топ проекты →</a><a href="https://antontkachev.github.io/dld-viewer/sales/al-rega/deals/">Крупнейшие сделки →</a><a href="https://antontkachev.github.io/dld-viewer/sales/al-rega/recent/">Последние →</a></div></nav>
+  
 
   <div class="nav">
     <a href="https://antontkachev.github.io/dld-viewer/sales/">← Все районы (карта)</a>
@@ -124,7 +118,7 @@ const PAGE_PERIOD   = "all";
 const PAGE_LANG     = "ru";
 const BASE_URL      = "https://antontkachev.github.io/dld-viewer/sales/al-rega/";
 const DATA_URL      = "https://antontkachev.github.io/dld-viewer/sales/al-rega/data.json";
-const PERIOD_COPY   = {"all": {"h1": "Сделки с недвижимостью в Al Rega за всё время", "lede": "В районе Al Rega за всё время совершено 166 сделок с недвижимостью по данным Dubai Land Department. Медианная цена объекта — 17.50 млн AED. Цена за квадратный метр — 26 890 AED. Медианная площадь — 611 м².", "n": 166}, "1y": {"h1": "Сделки с недвижимостью в Al Rega за 1 год", "lede": "В районе Al Rega за 1 год совершено 6 сделок с недвижимостью по данным Dubai Land Department. Медианная цена объекта — 17.92 млн AED. Цена за квадратный метр — 28 261 AED. Медианная площадь — 584 м².", "n": 6}, "3y": {"h1": "Сделки с недвижимостью в Al Rega за 3 года", "lede": "В районе Al Rega за 3 года совершено 25 сделок с недвижимостью по данным Dubai Land Department. Медианная цена объекта — 27.00 млн AED. Цена за квадратный метр — 64 826 AED. Медианная площадь — 615 м².", "n": 25}, "5y": {"h1": "Сделки с недвижимостью в Al Rega за 5 лет", "lede": "В районе Al Rega за 5 лет совершено 38 сделок с недвижимостью по данным Dubai Land Department. Медианная цена объекта — 29.25 млн AED. Цена за квадратный метр — 62 155 AED. Медианная площадь — 643 м².", "n": 38}, "10y": {"h1": "Сделки с недвижимостью в Al Rega за 10 лет", "lede": "В районе Al Rega за 10 лет совершено 67 сделок с недвижимостью по данным Dubai Land Department. Медианная цена объекта — 34.40 млн AED. Цена за квадратный метр — 48 811 AED. Медианная площадь — 744 м².", "n": 67}};
+const PERIOD_COPY   = {"all": {"h1": "Сделки с недвижимостью в Al Rega за всё время", "lede": "В районе Al Rega за всё время совершено 166 сделок с недвижимостью по данным Dubai Land Department. Медианная цена объекта — 17.50 млн AED. Цена за квадратный метр — 26 890 AED. Медианная площадь — 611 м².", "n": 166}, "1y": {"h1": "Сделки с недвижимостью в Al Rega за 1 год", "lede": "В районе Al Rega за 1 год совершено 166 сделок с недвижимостью по данным Dubai Land Department. Медианная цена объекта — 17.50 млн AED. Цена за квадратный метр — 26 890 AED. Медианная площадь — 611 м².", "n": 166}, "3y": {"h1": "Сделки с недвижимостью в Al Rega за 3 года", "lede": "В районе Al Rega за 3 года совершено 166 сделок с недвижимостью по данным Dubai Land Department. Медианная цена объекта — 17.50 млн AED. Цена за квадратный метр — 26 890 AED. Медианная площадь — 611 м².", "n": 166}, "5y": {"h1": "Сделки с недвижимостью в Al Rega за 5 лет", "lede": "В районе Al Rega за 5 лет совершено 166 сделок с недвижимостью по данным Dubai Land Department. Медианная цена объекта — 17.50 млн AED. Цена за квадратный метр — 26 890 AED. Медианная площадь — 611 м².", "n": 166}, "10y": {"h1": "Сделки с недвижимостью в Al Rega за 10 лет", "lede": "В районе Al Rega за 10 лет совершено 166 сделок с недвижимостью по данным Dubai Land Department. Медианная цена объекта — 17.50 млн AED. Цена за квадратный метр — 26 890 AED. Медианная площадь — 611 м².", "n": 166}};
 
 // Activate the requested language so detail-panel.js's t() returns localized
 // strings. i18n.js exposes a top-level `currentLang` closure variable + a t()

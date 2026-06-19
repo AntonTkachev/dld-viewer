@@ -64,12 +64,6 @@
   .about-stat .k { font-size:11px; color:#6b7280; text-transform:uppercase; letter-spacing:0.04em; margin-bottom:4px; }
   .about-stat .v { font-size:16px; font-weight:600; color:#0f172a; }
 
-  .subpages { background:#fff; border:1px solid #e5e7eb; border-radius:12px; padding:16px 20px; margin:0 0 18px; }
-  .subpages h2 { font-size:14px; font-weight:600; color:#6b7280; text-transform:uppercase; letter-spacing:0.04em; margin:0 0 10px; }
-  .subpages-list { display:flex; flex-wrap:wrap; gap:8px; }
-  .subpages-list a { padding:7px 12px; border:1px solid #e5e7eb; border-radius:8px; font-size:13px; text-decoration:none; color:#1d4ed8; background:#fff; }
-  .subpages-list a:hover { background:#eff6ff; border-color:#bfdbfe; }
-
   .dp-section-more { text-align:right; padding:8px 0 0; }
   .dp-section-more a { color:#1d4ed8; text-decoration:none; font-size:13px; font-weight:500; }
   .dp-section-more a:hover { text-decoration:underline; }
@@ -105,7 +99,7 @@
     <div id="detail-content" class="loading">جاري تحميل الإحصاءات…</div>
   </div>
 
-  <nav class="subpages"><h2>مزيد من التفاصيل</h2><div class="subpages-list"><a href="https://antontkachev.github.io/dld-viewer/ar/rents/nad-al-shiba-fourth/projects/">أهم المشاريع →</a><a href="https://antontkachev.github.io/dld-viewer/ar/rents/nad-al-shiba-fourth/recent/">الأحدث →</a></div></nav>
+  
 
   <div class="nav">
     <a href="https://antontkachev.github.io/dld-viewer/ar/rents/">← جميع الأحياء (الخريطة)</a>
@@ -124,7 +118,7 @@ const PAGE_PERIOD   = "3y";
 const PAGE_LANG     = "ar";
 const BASE_URL      = "https://antontkachev.github.io/dld-viewer/ar/rents/nad-al-shiba-fourth/";
 const DATA_URL      = "https://antontkachev.github.io/dld-viewer/rents/nad-al-shiba-fourth/data.json";
-const PERIOD_COPY   = {"all": {"h1": "إيجار العقارات في Nad Al Shiba Fourth لكل الوقت", "lede": "في حي Nad Al Shiba Fourth لكل الوقت تم تسجيل 1,028 عقد إيجار وفقًا لبيانات دائرة الأراضي والأملاك بدبي. الإيجار للمتر — 466 درهم/م²/سنة.", "n": 1028}, "1y": {"h1": "إيجار العقارات في Nad Al Shiba Fourth خلال 12 شهرًا", "lede": "في حي Nad Al Shiba Fourth خلال 12 شهرًا تم تسجيل 99 عقد إيجار وفقًا لبيانات دائرة الأراضي والأملاك بدبي. الإيجار السنوي الوسيط — 325,500 درهم. الإيجار للمتر — 490 درهم/م²/سنة.", "n": 99}, "3y": {"h1": "إيجار العقارات في Nad Al Shiba Fourth خلال 3 سنوات", "lede": "في حي Nad Al Shiba Fourth خلال 3 سنوات تم تسجيل 371 عقد إيجار وفقًا لبيانات دائرة الأراضي والأملاك بدبي. الإيجار السنوي الوسيط — 320,863 درهم. الإيجار للمتر — 498 درهم/م²/سنة.", "n": 371}, "5y": {"h1": "إيجار العقارات في Nad Al Shiba Fourth خلال 5 سنوات", "lede": "في حي Nad Al Shiba Fourth خلال 5 سنوات تم تسجيل 603 عقد إيجار وفقًا لبيانات دائرة الأراضي والأملاك بدبي. الإيجار السنوي الوسيط — 297,000 درهم. الإيجار للمتر — 461 درهم/م²/سنة.", "n": 603}, "10y": {"h1": "إيجار العقارات في Nad Al Shiba Fourth خلال 10 سنوات", "lede": "في حي Nad Al Shiba Fourth خلال 10 سنوات تم تسجيل 964 عقد إيجار وفقًا لبيانات دائرة الأراضي والأملاك بدبي. الإيجار السنوي الوسيط — 240,000 درهم. الإيجار للمتر — 467 درهم/م²/سنة.", "n": 964}};
+const PERIOD_COPY   = {"all": {"h1": "إيجار العقارات في Nad Al Shiba Fourth لكل الوقت", "lede": "في حي Nad Al Shiba Fourth لكل الوقت تم تسجيل 1,028 عقد إيجار وفقًا لبيانات دائرة الأراضي والأملاك بدبي. الإيجار للمتر — 466 درهم/م²/سنة.", "n": 1028}, "1y": {"h1": "إيجار العقارات في Nad Al Shiba Fourth خلال 12 شهرًا", "lede": "في حي Nad Al Shiba Fourth خلال 12 شهرًا تم تسجيل 98 عقد إيجار وفقًا لبيانات دائرة الأراضي والأملاك بدبي. الإيجار السنوي الوسيط — 325,250 درهم. الإيجار للمتر — 496 درهم/م²/سنة.", "n": 98}, "3y": {"h1": "إيجار العقارات في Nad Al Shiba Fourth خلال 3 سنوات", "lede": "في حي Nad Al Shiba Fourth خلال 3 سنوات تم تسجيل 371 عقد إيجار وفقًا لبيانات دائرة الأراضي والأملاك بدبي. الإيجار السنوي الوسيط — 320,863 درهم. الإيجار للمتر — 498 درهم/م²/سنة.", "n": 371}, "5y": {"h1": "إيجار العقارات في Nad Al Shiba Fourth خلال 5 سنوات", "lede": "في حي Nad Al Shiba Fourth خلال 5 سنوات تم تسجيل 603 عقد إيجار وفقًا لبيانات دائرة الأراضي والأملاك بدبي. الإيجار السنوي الوسيط — 297,000 درهم. الإيجار للمتر — 461 درهم/م²/سنة.", "n": 603}, "10y": {"h1": "إيجار العقارات في Nad Al Shiba Fourth خلال 10 سنوات", "lede": "في حي Nad Al Shiba Fourth خلال 10 سنوات تم تسجيل 964 عقد إيجار وفقًا لبيانات دائرة الأراضي والأملاك بدبي. الإيجار السنوي الوسيط — 240,000 درهم. الإيجار للمتر — 467 درهم/م²/سنة.", "n": 964}};
 
 // Activate the requested language so detail-panel.js's t() returns localized
 // strings. i18n.js exposes a top-level `currentLang` closure variable + a t()
