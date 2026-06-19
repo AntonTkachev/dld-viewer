@@ -1,0 +1,10 @@
+# Cloudflare Pages redirects.
+#
+# Currently empty — every public URL maps directly to a built HTML file
+# (see _config.yml for what's NOT deployed). When we add Worker-gated
+# endpoints (e.g. /api/data/* for the premium gate), they go here.
+#
+# Syntax: <source> <destination> <status>
+# Example: /old-path /new-path 301
+
+# placeholder — keep file present so CF Pages picks it up after edits
