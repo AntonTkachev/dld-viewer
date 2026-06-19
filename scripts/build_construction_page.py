@@ -148,8 +148,12 @@ def parse_year(s):
 
 
 def load_projects():
-    with gzip.open(SRC, 'rt') as f:
-        rows = list(csv.DictReader(f))
+    # Use the shared enricher so the construction page and the map merger
+    # see the same derived statuses. Each row gets __derived_status +
+    # __overdue computed against Ejari rentals.
+    sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+    from _rera_enrich import load_enriched_rows
+    rows = load_enriched_rows()
     area_slugs = load_area_slugs()
     aliases = load_aliases()
     dev_map = aliases['developers']
@@ -198,7 +202,9 @@ def load_projects():
             'as':    slug,
             'dev':   dev,
             'mdev':  mdev,
-            'st':    (r.get('project_status') or '').strip(),
+            # `st` carries the DERIVED status, not the raw RERA value. See
+            # _rera_enrich for the rules. Raw RERA is not exposed.
+            'st':    r['__derived_status'],
             'pct':   parse_int(r.get('percent_completed')),
             'u':     parse_int(r.get('no_of_units')),
             'b':     parse_int(r.get('no_of_buildings')),
@@ -215,6 +221,12 @@ def load_projects():
             row['dev_orig'] = dev_ar
         if pn_en and pn_en != pn_ar:
             row['pn_orig'] = pn_ar
+        # `overdue: true` only on ACTIVE rows whose completion_date is in
+        # the past with no Ejari signal. This is a fact anyone with the
+        # public RERA CSV could compute (completion < today) so it doesn't
+        # leak the Ejari mechanism.
+        if r['__overdue']:
+            row['overdue'] = True
         out.append(row)
     dev_cov = (dev_hit / dev_total * 100) if dev_total else 0
     pn_cov  = (pn_hit  / pn_total  * 100) if pn_total  else 0
@@ -265,6 +277,7 @@ COPY = {
         sort_col_dev='Застройщик', sort_col_end='Сдача',
         st_FINISHED='Сдан', st_ACTIVE='Строится', st_NOT_STARTED='Не начат',
         st_PENDING='Ожидание', st_CONDITIONAL_ACTIVATING='Условно активен', st_FRIEZED='Заморожен',
+        st_OVERDUE='Просрочен',
         per_page='На странице', prev='←', next='→',
         empty_results='Ничего не найдено — измени фильтры.',
         no_units='—', no_data='—',
@@ -293,6 +306,7 @@ COPY = {
         sort_col_dev='Developer', sort_col_end='Completion',
         st_FINISHED='Finished', st_ACTIVE='Active', st_NOT_STARTED='Not started',
         st_PENDING='Pending', st_CONDITIONAL_ACTIVATING='Cond. active', st_FRIEZED='Frozen',
+        st_OVERDUE='Overdue',
         per_page='Per page', prev='←', next='→',
         empty_results='No matches — adjust the filters.',
         no_units='—', no_data='—',
@@ -321,6 +335,7 @@ COPY = {
         sort_col_dev='المطور', sort_col_end='التسليم',
         st_FINISHED='مكتمل', st_ACTIVE='نشط', st_NOT_STARTED='لم يبدأ',
         st_PENDING='معلق', st_CONDITIONAL_ACTIVATING='نشط مشروط', st_FRIEZED='مجمد',
+        st_OVERDUE='متأخر',
         per_page='لكل صفحة', prev='→', next='←',
         empty_results='لا توجد نتائج — عدّل المرشحات.',
         no_units='—', no_data='—',
@@ -349,6 +364,7 @@ COPY = {
         sort_col_dev='डेवलपर', sort_col_end='सम्पन्न',
         st_FINISHED='सम्पन्न', st_ACTIVE='सक्रिय', st_NOT_STARTED='शुरू नहीं',
         st_PENDING='लंबित', st_CONDITIONAL_ACTIVATING='सशर्त सक्रिय', st_FRIEZED='फ्रोजन',
+        st_OVERDUE='विलंबित',
         per_page='प्रति पेज', prev='←', next='→',
         empty_results='कुछ नहीं मिला।',
         no_units='—', no_data='—',
@@ -377,6 +393,7 @@ COPY = {
         sort_col_dev='开发商', sort_col_end='完工',
         st_FINISHED='已完成', st_ACTIVE='在建', st_NOT_STARTED='未启动',
         st_PENDING='待定', st_CONDITIONAL_ACTIVATING='有条件激活', st_FRIEZED='冻结',
+        st_OVERDUE='逾期',
         per_page='每页', prev='←', next='→',
         empty_results='无结果。',
         no_units='—', no_data='—',
@@ -507,6 +524,7 @@ def render_page(lang, projects_count, hero, this_year):
   .stbadge{{display:inline-block;padding:2px 7px;border-radius:12px;font-size:11px;font-weight:600}}
   .stbadge-FINISHED{{background:#ecfdf5;color:#047857}}
   .stbadge-ACTIVE{{background:#dbeafe;color:#1d4ed8}}
+  .stbadge-OVERDUE{{background:#fee2e2;color:#991b1b}}
   .stbadge-NOT_STARTED{{background:#fef3c7;color:#92400e}}
   .stbadge-PENDING{{background:#fff7ed;color:#c2410c}}
   .stbadge-CONDITIONAL_ACTIVATING{{background:#f1f5f9;color:#475569}}
@@ -590,9 +608,13 @@ const HERO = {json.dumps(hero_blob, ensure_ascii=False)};
 const LANG = {json.dumps(lang)};
 const BASE_URL = {json.dumps(BASE_URL)};
 const LANG_PREFIX = {json.dumps(prefix)};
-const IN_FLIGHT_STATES = ["ACTIVE","NOT_STARTED","PENDING","CONDITIONAL_ACTIVATING"];
-const STATUS_ORDER = ["ACTIVE","PENDING","NOT_STARTED","CONDITIONAL_ACTIVATING","FINISHED","FRIEZED"];
-const STATUS_COLORS = {{ACTIVE:"#1d4ed8", PENDING:"#c2410c", NOT_STARTED:"#92400e", CONDITIONAL_ACTIVATING:"#475569", FINISHED:"#047857", FRIEZED:"#991b1b"}};
+const IN_FLIGHT_STATES = ["ACTIVE","OVERDUE","NOT_STARTED","PENDING","CONDITIONAL_ACTIVATING"];
+// OVERDUE is a virtual status — `st` in the data is still ACTIVE, but
+// when `overdue:true` we render the row as if its status were OVERDUE
+// (red pill, separate filter chip). Effective status function below.
+const STATUS_ORDER = ["ACTIVE","OVERDUE","PENDING","NOT_STARTED","CONDITIONAL_ACTIVATING","FINISHED","FRIEZED"];
+const STATUS_COLORS = {{ACTIVE:"#1d4ed8", OVERDUE:"#991b1b", PENDING:"#c2410c", NOT_STARTED:"#92400e", CONDITIONAL_ACTIVATING:"#475569", FINISHED:"#047857", FRIEZED:"#991b1b"}};
+function effectiveStatus(p) {{ return p.overdue ? "OVERDUE" : p.st; }}
 const NUM_FMT = new Intl.NumberFormat({{ru:"ru-RU",en:"en-US",ar:"ar-AE",hi:"hi-IN",zh:"zh-CN"}}[LANG] || "en-US");
 const fmt = (n) => NUM_FMT.format(n||0);
 const _h = (s) => String(s||"").replace(/[&<>"'`]/g, c => ({{'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":"&#39;","`":"&#96;"}})[c]);
@@ -635,7 +657,7 @@ function applyFilters() {{
   const area = STATE.area.trim().toLowerCase();
   const sf = STATE.statusFilter;
   STATE.filtered = STATE.data.filter(p => {{
-    if (sf.size > 0 && !sf.has(p.st)) return false;
+    if (sf.size > 0 && !sf.has(effectiveStatus(p))) return false;
     if (area && (p.a || "").toLowerCase() !== area) return false;
     if (q) {{
       const hay = (p.pn + " " + p.mp + " " + p.dev + " " + p.a).toLowerCase();
@@ -676,9 +698,12 @@ function renderCharts() {{
   destroyCharts();
   const arr = STATE.filtered;
 
-  // 1) Status donut
+  // 1) Status donut — uses effectiveStatus so OVERDUE shows as its own slice.
   const statusCounts = {{}};
-  for (const p of arr) statusCounts[p.st] = (statusCounts[p.st] || 0) + 1;
+  for (const p of arr) {{
+    const es = effectiveStatus(p);
+    statusCounts[es] = (statusCounts[es] || 0) + 1;
+  }}
   const stKeys = STATUS_ORDER.filter(k => statusCounts[k]);
   const stLabels = stKeys.map(statusLabel);
   const stValues = stKeys.map(k => statusCounts[k]);
@@ -693,8 +718,9 @@ function renderCharts() {{
     }}));
   }}
 
-  // 2) Active completion year bar
-  const inflightArr = arr.filter(p => IN_FLIGHT_STATES.includes(p.st) && p.ey);
+  // 2) Active completion year bar — counts only true in-flight (excludes
+  //    OVERDUE, since their year is already in the past).
+  const inflightArr = arr.filter(p => IN_FLIGHT_STATES.includes(effectiveStatus(p)) && effectiveStatus(p) !== "OVERDUE" && p.ey);
   const yearCounts = {{}};
   for (const p of inflightArr) yearCounts[p.ey] = (yearCounts[p.ey] || 0) + 1;
   const years = Object.keys(yearCounts).map(Number).sort();
@@ -770,7 +796,8 @@ function renderBody() {{
   tbody.innerHTML = slice.map(p => {{
     const areaHref = safeAreaHref(p.as, p.a);
     const areaCell = areaHref ? `<a href="${{areaHref}}">${{_h(p.a)}}</a>` : _h(p.a || COPY.no_data);
-    const stCell = `<span class="stbadge stbadge-${{p.st}}">${{_h(statusLabel(p.st))}}</span>`;
+    const es = effectiveStatus(p);
+    const stCell = `<span class="stbadge stbadge-${{es}}">${{_h(statusLabel(es))}}</span>`;
     const pctCell = `<div class="pct-bar"><span style="width:${{p.pct||0}}%"></span></div><span class="pct-num">${{p.pct||0}}%</span>`;
     const unitsCell = p.u > 0 ? fmt(p.u) : _h(COPY.no_units);
     // Project name cell: same alias treatment as developer — show English
