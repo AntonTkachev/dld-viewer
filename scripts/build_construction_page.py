@@ -56,6 +56,48 @@ def load_aliases():
     }
 
 
+def load_project_name_en_by_number():
+    """Map RERA project_number → DLD transactions project_name_en.
+
+    Both sides come from DLD but RERA stores only Arabic project names
+    while the transactions parquet carries both. project_number is the
+    shared key — TX has it as a float-string ('2117.00') vs RERA's int
+    string ('2117'), normalize the trailing zeros.
+
+    Returns: {number_str: english_name}
+    """
+    try:
+        import duckdb
+    except ImportError:
+        print('  duckdb missing — skipping project_name_en join '
+              '(install with: pip install duckdb)', file=sys.stderr)
+        return {}
+    parquet = os.path.join(ROOT, 'data', 'tx.parquet')
+    if not os.path.exists(parquet):
+        print('  data/tx.parquet missing — skipping project_name_en join', file=sys.stderr)
+        return {}
+    con = duckdb.connect()
+    rows = con.execute("""
+        SELECT REGEXP_REPLACE(project_number, '\\.0+$', '') AS num,
+               project_name_en
+        FROM read_parquet(?)
+        WHERE project_name_en IS NOT NULL AND project_name_en <> ''
+          AND project_number IS NOT NULL
+        GROUP BY 1, 2
+    """, [parquet]).fetchall()
+    # If a project_number has multiple distinct names_en (rare — sometimes
+    # different unit-level spellings), keep the LONGEST one; it tends to
+    # be the most descriptive ("DAMAC HILLS (2) - BASSWOOD" vs "BASSWOOD").
+    out = {}
+    for num, name in rows:
+        name = (name or '').strip()
+        if not num or not name:
+            continue
+        if num not in out or len(name) > len(out[num]):
+            out[num] = name
+    return out
+
+
 def slugify(s):
     s = unicodedata.normalize('NFKD', s or '').encode('ascii', 'ignore').decode()
     s = re.sub(r'[^a-z0-9]+', '-', s.lower()).strip('-')
@@ -112,10 +154,12 @@ def load_projects():
     aliases = load_aliases()
     dev_map = aliases['developers']
     cls_map = aliases['project_classifications']
+    pn_by_number = load_project_name_en_by_number()
 
     # Track alias hit rates so the build summary tells the user how much
     # Arabic remains — useful when deciding whether to extend the alias file.
     dev_hit = dev_total = 0
+    pn_hit = pn_total = 0
     out = []
     for r in rows:
         area = (r.get('area_name_en') or '').strip()
@@ -127,9 +171,6 @@ def load_projects():
 
         dev_ar = (r.get('developer_name') or '').strip()
         dev_en = dev_map.get(dev_ar)
-        # `dev` is the displayed name (English when verified, otherwise the
-        # original Arabic). `dev_ar` keeps the original so the page can show
-        # it as a tooltip / secondary line for context.
         dev = dev_en or dev_ar
         if dev_ar: dev_total += 1
         if dev_en: dev_hit += 1
@@ -140,8 +181,18 @@ def load_projects():
         cls_ar = (r.get('project_classification_ar') or '').strip()
         cls = cls_map.get(cls_ar) or cls_ar
 
+        # Project name: prefer the DLD-tx-side English (joined on
+        # project_number — see load_project_name_en_by_number). Fall back
+        # to the Arabic project_name from RERA when no join hit.
+        pn_ar = (r.get('project_name') or '').strip()
+        proj_num = (r.get('project_number') or '').strip()
+        pn_en = pn_by_number.get(proj_num)
+        pn = pn_en or pn_ar
+        if pn_ar: pn_total += 1
+        if pn_en: pn_hit += 1
+
         row = {
-            'pn':    (r.get('project_name') or '').strip(),
+            'pn':    pn,
             'mp':    (r.get('master_project_en') or '').strip(),
             'a':     area,
             'as':    slug,
@@ -157,14 +208,18 @@ def load_projects():
             'ey':    end_year,
             'cls':   cls,
         }
-        # `dev_orig` is only written when the alias changed the displayed
-        # name — keeps the JSON file slim (otherwise the field equals `dev`
-        # and just bloats every row).
+        # *_orig fields are emitted only when an alias actually changed the
+        # displayed value — keeps the JSON slim and signals to the UI
+        # which cells deserve the "ᵃʳ" tooltip flag.
         if dev_en and dev_en != dev_ar:
             row['dev_orig'] = dev_ar
+        if pn_en and pn_en != pn_ar:
+            row['pn_orig'] = pn_ar
         out.append(row)
-    coverage = (dev_hit / dev_total * 100) if dev_total else 0
-    print(f'  developer alias coverage: {dev_hit:,}/{dev_total:,} ({coverage:.1f}%)', file=sys.stderr)
+    dev_cov = (dev_hit / dev_total * 100) if dev_total else 0
+    pn_cov  = (pn_hit  / pn_total  * 100) if pn_total  else 0
+    print(f'  developer alias coverage: {dev_hit:,}/{dev_total:,} ({dev_cov:.1f}%)', file=sys.stderr)
+    print(f'  project_name (en via tx join): {pn_hit:,}/{pn_total:,} ({pn_cov:.1f}%)', file=sys.stderr)
     return out
 
 
@@ -497,11 +552,6 @@ def render_page(lang, projects_count, hero, this_year):
       <button id="prev-btn" type="button">{c["prev"]}</button>
       <span class="page-info" id="page-info"></span>
       <button id="next-btn" type="button">{c["next"]}</button>
-      <span class="pp-lbl">{c["per_page"]}:</span>
-      <select id="pp">
-        <option value="25">25</option><option value="50" selected>50</option>
-        <option value="100">100</option><option value="200">200</option>
-      </select>
     </div>
   </div>
 
@@ -551,7 +601,7 @@ const STATE = {{
   sortKey: "u",       // default sort by units desc — biggest pipelines first
   sortDir: "desc",
   page: 1,
-  perPage: 50,
+  perPage: 10,
   data: [],           // loaded from data.json
   filtered: [],
   charts: [],
@@ -701,7 +751,12 @@ function renderBody() {{
     const stCell = `<span class="stbadge stbadge-${{p.st}}">${{_h(statusLabel(p.st))}}</span>`;
     const pctCell = `<div class="pct-bar"><span style="width:${{p.pct||0}}%"></span></div><span class="pct-num">${{p.pct||0}}%</span>`;
     const unitsCell = p.u > 0 ? fmt(p.u) : _h(COPY.no_units);
-    const projName = _h(p.pn || COPY.no_data);
+    // Project name cell: same alias treatment as developer — show English
+    // when joined from DLD transactions, tooltip with the Arabic original.
+    const projNameInner = _h(p.pn || COPY.no_data);
+    const projName = p.pn_orig
+      ? `<span title="${{_h(p.pn_orig)}}" class="aliased">${{projNameInner}}<span class="alias-dot" aria-hidden="true">ᵃʳ</span></span>`
+      : projNameInner;
     const subBits = [];
     if (p.b) subBits.push(p.b + " bld");
     if (p.v) subBits.push(p.v + " villa");
@@ -794,10 +849,6 @@ function bind() {{
   }});
   document.getElementById("prev-btn").addEventListener("click", () => {{ if (STATE.page > 1) {{ STATE.page--; renderBody(); renderPager(); }} }});
   document.getElementById("next-btn").addEventListener("click", () => {{ STATE.page++; renderBody(); renderPager(); }});
-  document.getElementById("pp").addEventListener("change", e => {{
-    STATE.perPage = parseInt(e.target.value, 10) || 50;
-    STATE.page = 1; renderBody(); renderPager();
-  }});
 }}
 
 async function boot() {{
