@@ -26,29 +26,9 @@ MIN_OBS = 10
 
 PERIODS = [('1y', 365), ('3y', 365*3), ('5y', 365*5), ('10y', 365*10)]
 
-ROLLUP_SQL = """
-CASE
-  WHEN master_project_en LIKE 'DUBAI HILLS - %'              THEN 'Dubai Hills Estate'
-  WHEN master_project_en = 'DUBAI HILLS'                     THEN 'Dubai Hills Estate'
-  WHEN master_project_en LIKE 'Lakes - %'                    THEN 'Emirates Living'
-  WHEN master_project_en = 'Jumeirah Golf Estates - Phase B' THEN 'Jumeirah Golf Estates'
-  WHEN master_project_en = 'International City Phase 2'      THEN 'International City Phase 3'
-  WHEN master_project_en IN ('Liwan1', 'Liwan2')             THEN 'Liwan'
-  ELSE master_project_en
-END
-"""
-# Split sub-communities OUT of their master before the rollup —
-# DLD records Springs under master "Emirates Living" and Jumeirah Heights
-# under master "Jumeirah Islands"; locally they're own communities.
-SPLIT_SQL = """
-CASE
-  WHEN project_name_en LIKE 'Emirates Living - Springs%' THEN 'Springs'
-  WHEN project_name_en LIKE 'JUMEIRAH HEIGHTS%'          THEN 'Jumeirah Heights'
-  WHEN master_project_en LIKE 'Meadows%'                 THEN 'Meadows'
-END
-"""
-NAME_EXPR = f"COALESCE(NULLIF(({SPLIT_SQL}), ''), NULLIF(({ROLLUP_SQL}), ''), area_name_en)"
-KEY_EXPR  = f"lower({NAME_EXPR})"
+sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+from _curated_sql import build_curated_sql
+KEY_EXPR, NAME_EXPR, _ = build_curated_sql()
 
 con = duckdb.connect()
 

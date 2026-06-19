@@ -1,0 +1,450 @@
+{
+  "version": 1,
+  "_doc": "Curated polygon overrides — see docs/polygon_overrides_design.md. Splits DLD admin communities (area_name_en) into smaller polygons by master_project_en, mirroring how investmentmap.ai / Bayut / property buyers actually think about Dubai (Marina vs JBR vs Dubai Harbour, not 'Marsa Dubai').",
+
+  "splits": [
+    {
+      "_comment": "Marsa Dubai — the canonical case. 137k tx blob → 4 distinct waterfront communities buyers know by name.",
+      "area_name_en": "Marsa Dubai",
+      "keep_remainder": true,
+      "remainder_name": "Marsa Dubai (other)",
+      "sub_polygons": [
+        {
+          "name": "Dubai Marina",
+          "name_ar": "دبي مارينا",
+          "osm_polygon": "Dubai Marina",
+          "master_projects": ["Dubai Marina"]
+        },
+        {
+          "name": "JBR (Jumeirah Beach Residence)",
+          "name_ar": "جميرا بيتش ريزيدنس",
+          "osm_polygon": "Jumeirah Beach Residence",
+          "master_projects": ["Jumeriah Beach Residence  - JBR"]
+        },
+        {
+          "name": "Dubai Harbour",
+          "name_ar": "دبي هاربر",
+          "osm_polygon": "Dubai Harbour",
+          "master_projects": ["Dubai Harbour"]
+        },
+        {
+          "name": "Bluewaters Island",
+          "name_ar": "جزيرة بلوواترز",
+          "osm_polygon": "Bluewaters",
+          "master_projects": ["Bluewaters Island"]
+        }
+      ]
+    },
+
+    {
+      "_comment": "Hadaeq SMBR — admin name nobody uses; collapses entirely into Dubai Hills + MBR District 7. The DUBAI HILLS - MAPLE/SIDRA/GOLF/... master_projects all roll up into one 'Dubai Hills' polygon (matches the 'don't see Maple 3 as a separate community' principle).",
+      "area_name_en": "Hadaeq Sheikh Mohammed Bin Rashid",
+      "keep_remainder": true,
+      "remainder_name": "Hadaeq SMBR (other)",
+      "sub_polygons": [
+        {
+          "name": "Dubai Hills",
+          "name_ar": "دبي هيلز",
+          "osm_polygon": "Dubai Hills",
+          "master_project_sql": "master_project_en IN ('Dubai Hills Estate', 'DUBAI HILLS') OR master_project_en LIKE 'DUBAI HILLS - %'"
+        },
+        {
+          "name": "MBR City District 7",
+          "name_ar": "دستركت 7 مدينة محمد بن راشد",
+          "osm_polygon": "MBR City District 7",
+          "master_project_sql": "master_project_en = 'HADAEQ SHEIKH MOHAMMED BIN RASHID - DISRICT 7'"
+        }
+      ]
+    },
+
+    {
+      "_comment": "Al Hebiah Fifth — Remraam was getting double-counted via Remraam 2/3/4 sub-polygons in OSM. DAMAC Lagoons is a major new dev users search for. The Oasis is Emaar's new master.",
+      "area_name_en": "Al Hebiah Fifth",
+      "keep_remainder": true,
+      "remainder_name": "Al Hebiah Fifth (other)",
+      "sub_polygons": [
+        {
+          "name": "Remraam",
+          "name_ar": "رمرام",
+          "osm_polygon": "Remraam",
+          "master_projects": ["Remraam"]
+        },
+        {
+          "name": "DAMAC Lagoons",
+          "name_ar": "داماك لاجونز",
+          "osm_polygon": "DAMAC Lagoons",
+          "master_projects": ["DAMAC Lagoons"]
+        },
+        {
+          "name": "The Oasis",
+          "name_ar": "ذا أويسز",
+          "osm_polygon": "The Oasis",
+          "master_projects": ["The Oasis"]
+        }
+      ]
+    },
+
+    {
+      "_comment": "Al Thanyah Fifth — covers JLT, Jumeirah Park, Jumeirah Islands, Jumeirah Heights. DMCC Master Community = JLT (80k tx). All four are distinct, well-known communities to buyers.",
+      "area_name_en": "Al Thanyah Fifth",
+      "keep_remainder": true,
+      "remainder_name": "Al Thanyah Fifth (other)",
+      "sub_polygons": [
+        {
+          "name": "JLT (Jumeirah Lake Towers)",
+          "name_ar": "أبراج بحيرات جميرا",
+          "osm_polygon": "Jumeirah Lakes Towers",
+          "master_project_sql": "master_project_en IN ('DMCC Master Community', 'DMCC-EZ2')"
+        },
+        {
+          "name": "Jumeirah Park",
+          "name_ar": "جميرا بارك",
+          "osm_polygon": "Jumeirah Park",
+          "master_projects": ["Jumeirah Park"]
+        },
+        {
+          "_comment": "Jumeirah Heights is a sub-development inside the Jumeirah Islands master_project. We give Heights priority by stripping its rows out of Islands' filter.",
+          "name": "Jumeirah Islands",
+          "name_ar": "جزر جميرا",
+          "osm_polygon": "Jumeirah Islands",
+          "master_project_sql": "master_project_en = 'Jumeirah Islands' AND (project_name_en NOT LIKE 'JUMEIRAH HEIGHTS%' OR project_name_en IS NULL)"
+        },
+        {
+          "name": "Jumeirah Heights",
+          "name_ar": "جميرا هايتس",
+          "osm_polygon": "Jumeirah Heights",
+          "master_project_sql": "project_name_en LIKE 'JUMEIRAH HEIGHTS%'"
+        }
+      ]
+    },
+
+    {
+      "_comment": "Al Merkadh — admin shell; the real communities are Sobha Hartland (17k), Meydan One (17k), MBR District 1 (5k). Used to require fuzzy match into 442-polygon OSM noise; now clean.",
+      "area_name_en": "Al Merkadh",
+      "keep_remainder": true,
+      "remainder_name": "Al Merkadh (other)",
+      "sub_polygons": [
+        {
+          "name": "Sobha Hartland",
+          "name_ar": "صبحا هارتلاند",
+          "osm_polygon": "Sobha Hartland",
+          "master_project_sql": "master_project_en ILIKE '%sobha hartland%'"
+        },
+        {
+          "name": "Meydan One",
+          "name_ar": "ميدان وان",
+          "osm_polygon": "Meydan One",
+          "master_projects": ["Meydan One Community"]
+        },
+        {
+          "name": "MBR City District 1",
+          "name_ar": "دستركت 1 مدينة محمد بن راشد",
+          "osm_polygon": "MBR City District 1",
+          "master_project_sql": "master_project_en LIKE 'Mohammed Bin Rashid AL Maktoum City -District -1%'"
+        }
+      ]
+    },
+
+    {
+      "_comment": "Wadi Al Safa 5 — 62k tx blob, Arabian Ranches family. DLRC (33k) has no OSM polygon → DM-fallback.",
+      "area_name_en": "Wadi Al Safa 5",
+      "keep_remainder": true,
+      "remainder_name": "Wadi Al Safa 5 (other)",
+      "sub_polygons": [
+        {
+          "name": "Dubai Land Residence Complex",
+          "name_ar": "مجمع دبي لاند السكني",
+          "osm_polygon": "Dubai Land Residence Complex",
+          "master_projects": ["Dubai Land Residence Complex"]
+        },
+        {
+          "name": "Arabian Ranches 3",
+          "name_ar": "أرابيان رانش 3",
+          "osm_polygon": "Arabian Ranches 3",
+          "master_projects": ["Arabian Ranches 3"]
+        },
+        {
+          "name": "The Villa",
+          "name_ar": "ذا فيلا",
+          "osm_polygon": "The Villa",
+          "master_projects": ["The Villa"]
+        }
+      ]
+    },
+
+    {
+      "_comment": "Wadi Al Safa 7 — Arabian Ranches II (5.7k), Sustainable City (1.6k), Rukan (3.7k), Al Waha (1k). '800 Villas' goes into remainder.",
+      "area_name_en": "Wadi Al Safa 7",
+      "keep_remainder": true,
+      "remainder_name": "Wadi Al Safa 7 (other)",
+      "sub_polygons": [
+        {
+          "name": "Arabian Ranches 2",
+          "name_ar": "أرابيان رانش 2",
+          "osm_polygon": "Arabian Ranches II",
+          "master_projects": ["Arabian Ranches II"]
+        },
+        {
+          "name": "Sustainable City",
+          "name_ar": "المدينة المستدامة",
+          "osm_polygon": "Dubai Sustainable City",
+          "master_projects": ["THE SUSTAINABLE CITY"]
+        },
+        {
+          "name": "Rukan",
+          "name_ar": "ركان",
+          "osm_polygon": "Rukan",
+          "master_projects": ["Rukan"]
+        },
+        {
+          "name": "Al Waha Villas",
+          "name_ar": "فلل الواحة",
+          "osm_polygon": "Al Waha Villas",
+          "master_projects": ["Al Waha Villas"]
+        }
+      ]
+    },
+
+    {
+      "_comment": "Wadi Al Safa 3 — Majan (12k), Living Legends (4.5k), MBR District 11 (3.9k, OSM-miss → DM fallback), Al Barari (3.8k).",
+      "area_name_en": "Wadi Al Safa 3",
+      "keep_remainder": true,
+      "remainder_name": "Wadi Al Safa 3 (other)",
+      "sub_polygons": [
+        {
+          "name": "Majan",
+          "name_ar": "ماجان",
+          "osm_polygon": "Majan",
+          "master_projects": ["Majan"]
+        },
+        {
+          "name": "Living Legends",
+          "name_ar": "ليفينج ليجندز",
+          "osm_polygon": "Living Legends, Dubai",
+          "master_projects": ["Living Legends"]
+        },
+        {
+          "name": "MBR City District 11",
+          "name_ar": "دستركت 11 مدينة محمد بن راشد",
+          "osm_polygon": "Mohammed Bin Rashid City District 11",
+          "master_projects": ["Mohammed Bin Rashid AL Maktoum District 11"]
+        },
+        {
+          "name": "Al Barari",
+          "name_ar": "البراري",
+          "osm_polygon": "Al Barari",
+          "master_projects": ["Al Barari"]
+        }
+      ]
+    },
+
+    {
+      "_comment": "Al Wasl — City Walk (9.4k) + Dubai Water Canal (3.4k). City Walk is the main attraction; without splitting it disappears into the admin blob.",
+      "area_name_en": "Al Wasl",
+      "keep_remainder": true,
+      "remainder_name": "Al Wasl (other)",
+      "sub_polygons": [
+        {
+          "name": "City Walk",
+          "name_ar": "سيتي ووك",
+          "osm_polygon": "City Walk",
+          "master_projects": ["City Walk"]
+        },
+        {
+          "name": "Dubai Water Canal",
+          "name_ar": "قناة دبي المائية",
+          "osm_polygon": "Dubai Water Canal",
+          "master_projects": ["Dubai Water Canal"]
+        }
+      ]
+    },
+
+    {
+      "_comment": "Al Hebiah Fourth — Dubai Sports City (41k) + Tilal Al Ghaf (6.7k). 99% clean two-way split, no remainder needed.",
+      "area_name_en": "Al Hebiah Fourth",
+      "keep_remainder": false,
+      "sub_polygons": [
+        {
+          "name": "Dubai Sports City",
+          "name_ar": "دبي سبورتس سيتي",
+          "osm_polygon": "Dubai Sports City",
+          "master_projects": ["Dubai Sports City"]
+        },
+        {
+          "name": "Tilal Al Ghaf",
+          "name_ar": "تلال الغاف",
+          "osm_polygon": "Tilal Al Ghaf",
+          "master_projects": ["TILAL AL GHAF"]
+        }
+      ]
+    },
+
+    {
+      "_comment": "Al Thanyah Third — The Greens (26k) + The Lakes (all 'Lakes - …' variants, ~5k total). Both are well-known communities.",
+      "area_name_en": "Al Thanyah Third",
+      "keep_remainder": true,
+      "remainder_name": "Al Thanyah Third (other)",
+      "sub_polygons": [
+        {
+          "name": "The Greens",
+          "name_ar": "ذا جرينز",
+          "osm_polygon": "The Greens",
+          "master_projects": ["The Greens"]
+        },
+        {
+          "name": "The Lakes",
+          "name_ar": "ذا ليكس",
+          "osm_polygon": "The Lakes",
+          "master_project_sql": "master_project_en LIKE 'Lakes - %'"
+        }
+      ]
+    },
+
+    {
+      "_comment": "Jabal Ali First — covers Al Furjan (34k), Discovery Gardens (19k), Wasl Gate (5k), Jabal Ali Village (1.2k). DMCC overlap with Al Thanyah Fifth is allowed: small bleed.",
+      "area_name_en": "Jabal Ali First",
+      "keep_remainder": true,
+      "remainder_name": "Jabal Ali First (other)",
+      "sub_polygons": [
+        {
+          "name": "Al Furjan",
+          "name_ar": "الفرجان",
+          "osm_polygon": "Al Furjan",
+          "master_projects": ["Al Furjan"]
+        },
+        {
+          "name": "Discovery Gardens",
+          "name_ar": "ديسكفري جاردنز",
+          "osm_polygon": "Discovery gardens",
+          "master_projects": ["Discovery Gardens"]
+        },
+        {
+          "name": "Wasl Gate",
+          "name_ar": "وصل جيت",
+          "osm_polygon": "Wasl Gate",
+          "master_projects": ["Wasl Gate"]
+        },
+        {
+          "name": "Jebel Ali Village",
+          "name_ar": "قرية جبل علي",
+          "osm_polygon": "Jebel Ali Village",
+          "master_projects": ["Jabal Ali Village"]
+        }
+      ]
+    },
+
+    {
+      "_comment": "Madinat Al Mataar — admin shell of Dubai South. 3 clean splits: Dubai World Central (21k, the airport/logistics zone), Dubai South Residential (15k), Expo City (4k).",
+      "area_name_en": "Madinat Al Mataar",
+      "keep_remainder": false,
+      "sub_polygons": [
+        {
+          "name": "Dubai South Residential",
+          "name_ar": "دبي ساوث السكنية",
+          "osm_polygon": "Dubai South Residential District",
+          "master_projects": ["Dubai South Residential District"]
+        },
+        {
+          "name": "Dubai World Central",
+          "name_ar": "دبي وورلد سنترال",
+          "osm_polygon": "Dubai South",
+          "master_projects": ["Dubai World Central"]
+        },
+        {
+          "name": "Expo City Dubai",
+          "name_ar": "إكسبو سيتي دبي",
+          "osm_polygon": "Expo 2020 District",
+          "master_projects": ["EXPO CITY"]
+        }
+      ]
+    },
+
+    {
+      "_comment": "Al Yelayiss 1 — master_project is NULL for all rows here, but project_name encodes Mira Oasis (REEM-MIRA … 8.5k tx) and Cherrywoods (821). The split keys off project_name_en patterns. DM spells it 'AL YALAYIS' (no e in middle).",
+      "area_name_en": "Al Yelayiss 1",
+      "area_name_dm": "AL YALAYIS 1",
+      "keep_remainder": true,
+      "remainder_name": "Al Yelayiss 1 (other)",
+      "sub_polygons": [
+        {
+          "name": "Mira Oasis",
+          "name_ar": "ميرا واحة",
+          "osm_polygon": "Mira Oasis",
+          "master_project_sql": "project_name_en ILIKE 'REEM%MIRA%' OR project_name_en ILIKE '%MIRA OASIS%'"
+        },
+        {
+          "name": "Cherrywoods",
+          "name_ar": "تشيري وودز",
+          "osm_polygon": "Cherrywoods",
+          "master_project_sql": "project_name_en ILIKE 'Cherrywoods%'"
+        }
+      ]
+    },
+
+    {
+      "_comment": "Jumeirah First — La Mer (3.6k), Pearl Jumeira (895). Both are coastal mid-Jumeirah dev zones. Master_project values are clean. DM spells it 'JUMEIRA FIRST' (no h).",
+      "area_name_en": "Jumeirah First",
+      "area_name_dm": "JUMEIRA FIRST",
+      "keep_remainder": true,
+      "remainder_name": "Jumeirah First (other)",
+      "sub_polygons": [
+        {
+          "name": "La Mer",
+          "name_ar": "لا مير",
+          "osm_polygon": "La Mer",
+          "master_projects": ["LA MER"]
+        },
+        {
+          "name": "Pearl Jumeira",
+          "name_ar": "بيرل جميرا",
+          "osm_polygon": "Pearl Jumeira",
+          "master_projects": ["Pearl Jumeira"]
+        }
+      ]
+    },
+
+    {
+      "_comment": "Al Thanayah Fourth — DLD's admin name for Emirates Living. Springs and Meadows live INSIDE via project_name_en pattern, not master_project. Hands-on case to validate project_name_en splitting works. Note: DM spells it 'AL THANYAH FOURTH' (no second 'a' in Thanyah) — area_name_dm overrides the geometry-lookup spelling.",
+      "area_name_en": "Al Thanayah Fourth",
+      "area_name_dm": "AL THANYAH  FOURTH",
+      "keep_remainder": true,
+      "remainder_name": "Emirates Living (other)",
+      "sub_polygons": [
+        {
+          "name": "Emirates Hills",
+          "name_ar": "تلال الإمارات",
+          "osm_polygon": "Emirates Hills",
+          "master_projects": ["Emirates Hills"]
+        },
+        {
+          "_comment": "OSM has Springs 1..15 as separate phase polygons but no unified 'The Springs'. We union them at build time so the polygon appears at its true ~3km community scale, not as one small phase.",
+          "name": "The Springs",
+          "name_ar": "ذا سبرنغز",
+          "osm_polygons_pattern": "^(The )?Springs ?\\d+$",
+          "master_project_sql": "project_name_en LIKE 'Emirates Living - Springs%'"
+        },
+        {
+          "name": "The Meadows",
+          "name_ar": "ذا ميدوز",
+          "osm_polygons_pattern": "^(The )?Meadows ?\\d+$",
+          "master_project_sql": "project_name_en LIKE 'Emirates Living - Meadows%' OR master_project_en LIKE 'Meadows%'"
+        }
+      ]
+    }
+  ],
+
+  "_todo_splits": [
+    "Madinat Al Mataar → Dubai World Central + Dubai South Residential + Expo City",
+    "Al Yelayiss 2 → Town Square Dubai (collapse Mira 1..5)",
+    "Al Hebiah Fourth → Dubai Sports City + Tilal Al Ghaf",
+    "Al Hebiah First → Motor City + Mudon",
+    "Wadi Al Safa 5 → Dubai Land Residence Complex + Arabian Ranches 3 + The Villa",
+    "Wadi Al Safa 7 → Arabian Ranches 2 + Sustainable City + Rukan",
+    "Wadi Al Safa 3 → Majan + Al Barari + Living Legends + MBR District 11",
+    "Jabal Ali First → Al Furjan + Discovery Gardens + Wasl Gate + JVT",
+    "Me'aisem First → IMPZ + Jumeirah Golf Estates",
+    "Al Thanyah Third → The Greens + The Lakes (use existing SPLIT_SQL for Lakes - %)",
+    "Al Yelayiss 1 → Mira Oasis (split off Reem)",
+    "Jumeirah First → La Mer + Pearl Jumeira"
+  ]
+}
