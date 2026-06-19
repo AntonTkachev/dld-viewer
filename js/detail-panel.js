@@ -98,6 +98,12 @@
     S.activeCharts = [];
     S.timelineCharts = [];
     S.rentTimelineCharts = [];
+    S.roomBreakdownChart = null;
+    // Modal chart lives outside activeCharts; clean up too so a stale handle
+    // doesn't survive a re-mount.
+    if (S.modalChart) { S.modalChart.destroy(); S.modalChart = null; }
+    const ml = document.getElementById('dp-chart-modal');
+    if (ml) ml.classList.remove('open');
   }
   function destroyTimelineCharts() {
     for (const c of S.timelineCharts) {
@@ -168,10 +174,10 @@
   function renderStatsSale(a) {
     const s = computeStatsSale(a);
     return `
-        <div class="dp-stat"><div class="k">${t("sc_trans")}</div><div class="v">${fmtInt(s.n)}</div></div>
-        <div class="dp-stat"><div class="k">${t("sc_volume")}</div><div class="v">${fmtAedDP(s.total)}</div></div>
-        <div class="dp-stat"><div class="k">${t("sc_median_price")}</div><div class="v">${s.med ? fmtAedDP(s.med) : '—'}</div></div>
-        <div class="dp-stat"><div class="k">${t("sc_price_psqm")}</div><div class="v">${s.med_ppsqm ? fmtInt(s.med_ppsqm)+' AED' : '—'}</div></div>
+        <div class="dp-stat dp-stat--avg"><div class="k">${t("sc_median_price")}</div><div class="v">${s.med ? fmtAedDP(s.med) : '—'}</div></div>
+        <div class="dp-stat dp-stat--count"><div class="k">${t("sc_trans")}</div><div class="v">${fmtInt(s.n)}</div></div>
+        <div class="dp-stat dp-stat--vol"><div class="k">${t("sc_volume")}</div><div class="v">${fmtAedDP(s.total)}</div></div>
+        <div class="dp-stat dp-stat--ppsqm"><div class="k">${t("sc_price_psqm")}</div><div class="v">${s.med_ppsqm ? fmtInt(s.med_ppsqm)+' AED' : '—'}</div></div>
     `;
   }
   function computeStatsRent(r) {
@@ -212,33 +218,189 @@
     }).join('');
   }
   function renderRoomBreakdown(a) {
+    // Has any room-typed data at all? If not, skip the section entirely.
     const bu = a.by_rooms_unit || {};
-    const rows = ROOM_BREAKDOWN
-      .filter(k => bu[k] && bu[k].n > 0)
-      .map(k => {
-        const r = bu[k];
-        return `<tr>
-          <td>${roomBreakdownIcon(k)} ${roomLabel(k)}</td>
-          <td class="num">${fmtInt(r.n)}</td>
-          <td class="num">${r.med ? fmtAedDP(r.med) : '—'}</td>
-          <td class="num">${r.ppsqm ? fmtInt(r.ppsqm) : '—'}</td>
-        </tr>`;
-      }).join('');
-    if (!rows) return '';
+    const tbr = a.timeline_by_rooms || {};
+    const anyData = ROOM_BREAKDOWN.some(k => (bu[k] && bu[k].n > 0) || (tbr[k] && tbr[k].length));
+    if (!anyData) return '';
+    // Legend chip per room — click to toggle that room category in the bar
+    // chart. Active state is read from S.roomBreakdownHidden (a Set of keys
+    // the user has hidden).
+    const chips = ROOM_BREAKDOWN.map(k => {
+      const total = (bu[k] && bu[k].n) || 0;
+      if (total === 0) return '';  // Don't list categories that never appear
+      const hidden = (S.roomBreakdownHidden && S.roomBreakdownHidden.has(k));
+      const color  = ROOM_COLORS[k] || '#94a3b8';
+      const style  = hidden
+        ? `background:#f1f5f9;border-color:#cbd5e1;color:#94a3b8`
+        : `background:${color};border-color:${color};color:#fff`;
+      return `<button class="rb-chip" type="button" data-dp-toggle-room="${_h(k)}" style="${style}" aria-pressed="${hidden ? 'false' : 'true'}">${roomBreakdownIcon(k)} ${roomLabel(k)}<span class="rb-chip-n">${fmtInt(total)}</span></button>`;
+    }).join('');
     return `
       <div class="dp-section">
         <h3>${t('rooms_breakdown_title')}</h3>
-        <table class="dp-table">
-          <thead><tr>
-            <th>${t('th_rooms_type')}</th>
-            <th class="num">${t('th_count')}</th>
-            <th class="num">${t('th_med_aed')}</th>
-            <th class="num">${t('th_aed_psqm')}</th>
-          </tr></thead>
-          <tbody>${rows}</tbody>
-        </table>
+        <div class="rb-legend" id="dp-rb-legend">${chips}</div>
+        <div class="dp-chart" style="height:240px">
+          <button class="chart-expand-btn" type="button" data-dp-expand-rooms="1" title="${t('chart_expand')}" aria-label="${t('chart_expand')}">⛶</button>
+          <canvas id="ch-room-breakdown"></canvas>
+        </div>
       </div>
     `;
+  }
+  function _roomBreakdownSeries(a) {
+    // Build per-room time-bucketed counts using the existing period slice.
+    // Group monthly points into 12-bucket bins so the bars stay readable
+    // even on long timelines (2002 → today = ~280 months).
+    const tbr = a.timeline_by_rooms || {};
+    const used = ROOM_BREAKDOWN.filter(k => tbr[k] && tbr[k].length);
+    if (!used.length) return null;
+    // Take the union of period-sliced "d" labels across rooms. Easiest: pull
+    // the slice of a representative timeline (full union would dedupe), then
+    // map each room onto it.
+    const refSlice = periodSlice(tbr[used[0]]);
+    const refLabels = refSlice.map(p => p.d);  // YYYY-MM strings
+    // Build a {d → {room → n}} matrix.
+    const matrix = new Map();
+    for (const d of refLabels) matrix.set(d, {});
+    for (const k of used) {
+      const slice = periodSlice(tbr[k]);
+      for (const row of slice) {
+        const cell = matrix.get(row.d);
+        if (cell) cell[k] = (cell[k] || 0) + (row.n || 0);
+      }
+    }
+    // Bucket adaptive: aim for ~24 bars max. 1y→monthly, 3y→quarterly,
+    // 5y→quarterly, 10y/all→half-year.
+    const months = refLabels.length;
+    const bucketSize = months <= 24 ? 1 : months <= 48 ? 3 : months <= 96 ? 6 : 12;
+    const buckets = [];
+    for (let i = 0; i < refLabels.length; i += bucketSize) {
+      const slab = refLabels.slice(i, i + bucketSize);
+      const label = bucketSize === 1
+        ? slab[0].slice(2)  // "YY-MM"
+        : slab[0].slice(0,7) + '…' + slab[slab.length-1].slice(2,7);  // YYYY-MM…YY-MM
+      const totals = {};
+      for (const d of slab) {
+        const cell = matrix.get(d) || {};
+        for (const k of used) totals[k] = (totals[k] || 0) + (cell[k] || 0);
+      }
+      buckets.push({ label, totals });
+    }
+    return { labels: buckets.map(b => b.label), buckets, used };
+  }
+  function renderRoomBreakdownChart(a) {
+    const ctx = document.getElementById('ch-room-breakdown');
+    if (!ctx) return;
+    const ser = _roomBreakdownSeries(a);
+    if (!ser) return;
+    const hidden = S.roomBreakdownHidden || new Set();
+    // S.chartData augmentation so the expand modal can rebuild from same data.
+    S.roomChartData = ser;
+    const datasets = ser.used.map(k => ({
+      label: roomLabel(k),
+      data: ser.buckets.map(b => b.totals[k] || 0),
+      backgroundColor: ROOM_COLORS[k] || '#94a3b8',
+      borderWidth: 0,
+      stack: 'rooms',
+      hidden: hidden.has(k),
+      _roomKey: k,
+    }));
+    const ch = new Chart(ctx, {
+      type: 'bar',
+      data: { labels: ser.labels, datasets },
+      options: {
+        responsive: true, maintainAspectRatio: false,
+        interaction: { intersect: false, mode: 'index' },
+        plugins: {
+          legend: { display: false },  // Custom chip legend above the chart.
+          tooltip: { callbacks: { label: c => ' ' + c.dataset.label + ': ' + fmtInt(c.parsed.y) } },
+        },
+        scales: {
+          x: { stacked: true, ticks: { font: { size: 10 }, maxRotation: 0, autoSkip: true, maxTicksLimit: 14 } },
+          y: { stacked: true, ticks: { font: { size: 10 } }, beginAtZero: true },
+        },
+      },
+    });
+    S.activeCharts.push(ch);
+    S.roomBreakdownChart = ch;
+  }
+  function refreshRoomBreakdown() {
+    if (!S.sale) return;
+    const legend = S.container && S.container.querySelector('#dp-rb-legend');
+    if (legend) {
+      // Re-render legend chips (active/hidden state).
+      const tmp = document.createElement('div');
+      tmp.innerHTML = renderRoomBreakdown(S.sale);
+      const fresh = tmp.querySelector('#dp-rb-legend');
+      if (fresh) legend.innerHTML = fresh.innerHTML;
+    }
+    // Re-render the chart in place: destroy old, create new with updated
+    // dataset.hidden flags pulled from S.roomBreakdownHidden.
+    if (S.roomBreakdownChart) {
+      const idx = S.activeCharts.indexOf(S.roomBreakdownChart);
+      if (idx >= 0) S.activeCharts.splice(idx, 1);
+      S.roomBreakdownChart.destroy();
+      S.roomBreakdownChart = null;
+    }
+    renderRoomBreakdownChart(S.sale);
+  }
+  function openRoomChartModal() {
+    // Reuse the modal shell — render a stacked bar version of the same data
+    // but with all room categories + a totals overlay line for context.
+    if (!S.roomChartData) return;
+    const ser = S.roomChartData;
+    const hidden = S.roomBreakdownHidden || new Set();
+    const el = _modalDOM();
+    el.querySelector('#dp-cm-title').textContent = t('rooms_breakdown_title');
+    // Compute a simple total per bucket for the overlay sparkline trendline.
+    const totals = ser.buckets.map(b => Object.values(b.totals).reduce((s,v)=>s+v,0));
+    const trend = linearTrend(totals);
+    const trendLine = trend ? totals.map((_, i) => Math.max(0, trend.intercept + trend.slope * i)) : null;
+    const grand = totals.reduce((s,v)=>s+v,0);
+    const badges = [];
+    badges.push(`<span class="cm-badge muted">Σ ${fmtInt(grand)}</span>`);
+    if (trend) badges.push(`<span class="cm-badge ${trend.slope>=0?'pos':'neg'}">${t('ch_trend')}: ${trend.slope>=0?'↑':'↓'} ${Math.abs(trend.slope).toFixed(1)}/bin</span>`);
+    el.querySelector('#dp-cm-badges').innerHTML = badges.join('');
+    if (S.modalChart) { S.modalChart.destroy(); S.modalChart = null; }
+    const ctx = el.querySelector('#dp-cm-canvas');
+    const datasets = ser.used.map(k => ({
+      type: 'bar',
+      label: roomLabel(k),
+      data: ser.buckets.map(b => b.totals[k] || 0),
+      backgroundColor: ROOM_COLORS[k] || '#94a3b8',
+      borderWidth: 0,
+      stack: 'rooms',
+      hidden: hidden.has(k),
+    }));
+    if (trendLine) {
+      datasets.push({
+        type: 'line',
+        label: t('ch_trend'),
+        data: trendLine,
+        borderColor: '#0f172a',
+        borderWidth: 1.5,
+        borderDash: [5,4],
+        pointRadius: 0,
+        fill: false,
+        order: 0,
+      });
+    }
+    S.modalChart = new Chart(ctx, {
+      data: { labels: ser.labels, datasets },
+      options: {
+        responsive: true, maintainAspectRatio: false,
+        interaction: { intersect: false, mode: 'index' },
+        plugins: {
+          legend: { display: true, position: 'bottom', labels: { boxWidth: 14, font: { size: 11 } } },
+          tooltip: { callbacks: { label: c => ' ' + c.dataset.label + ': ' + fmtInt(c.parsed.y) } },
+        },
+        scales: {
+          x: { stacked: true, ticks: { font: { size: 11 }, maxRotation: 0, autoSkip: true, maxTicksLimit: 20 } },
+          y: { stacked: true, ticks: { font: { size: 11 } }, beginAtZero: true },
+        },
+      },
+    });
+    el.classList.add('open');
   }
 
   // ─── Tab content ───────────────────────────────────────────────
@@ -262,15 +424,24 @@
         <div style="display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px">
           <div>
             <div style="font-size:11px;color:#666;margin-bottom:2px">${t("sp_subsection_count")}</div>
-            <div class="dp-chart" style="height:180px"><canvas id="ch-timeline-count"></canvas></div>
+            <div class="dp-chart" style="height:180px">
+              <button class="chart-expand-btn" type="button" data-dp-expand="count" title="${t('chart_expand')}" aria-label="${t('chart_expand')}">⛶</button>
+              <canvas id="ch-timeline-count"></canvas>
+            </div>
           </div>
           <div>
             <div style="font-size:11px;color:#666;margin-bottom:2px">${t("sp_subsection_volume")}</div>
-            <div class="dp-chart" style="height:180px"><canvas id="ch-timeline-volume"></canvas></div>
+            <div class="dp-chart" style="height:180px">
+              <button class="chart-expand-btn" type="button" data-dp-expand="volume" title="${t('chart_expand')}" aria-label="${t('chart_expand')}">⛶</button>
+              <canvas id="ch-timeline-volume"></canvas>
+            </div>
           </div>
           <div>
             <div style="font-size:11px;color:#666;margin-bottom:2px">${t("sp_subsection_avg")}</div>
-            <div class="dp-chart" style="height:180px"><canvas id="ch-timeline-avg"></canvas></div>
+            <div class="dp-chart" style="height:180px">
+              <button class="chart-expand-btn" type="button" data-dp-expand="avg" title="${t('chart_expand')}" aria-label="${t('chart_expand')}">⛶</button>
+              <canvas id="ch-timeline-avg"></canvas>
+            </div>
           </div>
         </div>
       </div>
@@ -391,16 +562,73 @@
   }
 
   // ─── Chart rendering ───────────────────────────────────────────
+  function rgba(hex, alpha) {
+    const m = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(hex);
+    if (!m) return `rgba(29,78,216,${alpha})`;
+    return `rgba(${parseInt(m[1],16)},${parseInt(m[2],16)},${parseInt(m[3],16)},${alpha})`;
+  }
+  // Trailing simple moving average. Returns NaN for indices < window-1 so the
+  // line just doesn't render there (Chart.js skips NaN/null cleanly).
+  function movingAverage(arr, w) {
+    const out = new Array(arr.length).fill(NaN);
+    let s = 0, c = 0;
+    for (let i = 0; i < arr.length; i++) {
+      s += arr[i]; c++;
+      if (c > w) { s -= arr[i-w]; c--; }
+      if (i >= w - 1) out[i] = s / w;
+    }
+    return out;
+  }
+  function rollingStddev(arr, ma, w) {
+    const out = new Array(arr.length).fill(NaN);
+    for (let i = w - 1; i < arr.length; i++) {
+      let v = 0;
+      for (let j = i - w + 1; j <= i; j++) v += (arr[j] - ma[i]) ** 2;
+      out[i] = Math.sqrt(v / w);
+    }
+    return out;
+  }
+  // OLS slope+intercept of (i, arr[i]) — for the trendline. Skips NaN/0-len.
+  function linearTrend(arr) {
+    const xs = [], ys = [];
+    for (let i = 0; i < arr.length; i++) {
+      if (Number.isFinite(arr[i])) { xs.push(i); ys.push(arr[i]); }
+    }
+    if (xs.length < 2) return null;
+    const n = xs.length;
+    const mx = xs.reduce((a,b)=>a+b,0)/n;
+    const my = ys.reduce((a,b)=>a+b,0)/n;
+    let num=0, den=0;
+    for (let k=0; k<n; k++) { num += (xs[k]-mx)*(ys[k]-my); den += (xs[k]-mx)**2; }
+    if (den === 0) return null;
+    const slope = num/den;
+    const intercept = my - slope*mx;
+    return { slope, intercept };
+  }
+  // Year-over-year % change of last vs same month a year ago. Labels are
+  // "YYYY-MM"-shaped → compare by index 12 back.
+  function yoyPercent(arr) {
+    if (arr.length < 13) return null;
+    const last = arr[arr.length - 1];
+    const prev = arr[arr.length - 13];
+    if (!prev) return null;
+    return ((last - prev) / prev) * 100;
+  }
   function renderTimelineCharts(a) {
     const series = periodSlice(roomTimelineFor(a));
     const labels = series.map(p => p.d.length === 10 ? p.d.slice(5) : p.d);
     const color  = ROOM_COLORS[S.roomFilter] || '#1d4ed8';
-    const rgba = (hex, alpha) => {
-      const m = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(hex);
-      if (!m) return 'rgba(29,78,216,.12)';
-      return `rgba(${parseInt(m[1],16)},${parseInt(m[2],16)},${parseInt(m[3],16)},${alpha})`;
-    };
     const bg = rgba(color, .14);
+    // Stash each metric's series + labels so the expand-modal can rebuild
+    // an enriched chart from the same data without re-fetching.
+    S.chartData = {
+      labels: labels.slice(),
+      fullLabels: series.map(p => p.d),
+      count:  { values: series.map(p => p.n),                                    fmtY: v => v,        fmtTip: v => fmtInt(v) + ' ' + t('ch_count').toLowerCase(), label: t('sp_subsection_count') },
+      volume: { values: series.map(p => p.vol || 0),                             fmtY: fmtAxisAed,    fmtTip: fmtAedDP,                                                label: t('sp_subsection_volume') },
+      avg:    { values: series.map(p => p.n ? Math.round(p.vol / p.n) : 0),      fmtY: fmtAxisAed,    fmtTip: fmtAedDP,                                                label: t('sp_subsection_avg') },
+      color,
+    };
     const mkChart = (id, data, fmtY, tooltipFmt) => {
       const ctx = document.getElementById(id);
       if (!ctx) return;
@@ -420,9 +648,161 @@
       S.activeCharts.push(ch);
       S.timelineCharts.push(ch);
     };
-    mkChart('ch-timeline-count',  series.map(p => p.n),                          v => v, v => v + ' ' + t('ch_count').toLowerCase());
-    mkChart('ch-timeline-volume', series.map(p => p.vol||0),                     fmtAxisAed, fmtAedDP);
-    mkChart('ch-timeline-avg',    series.map(p => p.n ? Math.round(p.vol/p.n) : 0), fmtAxisAed, fmtAedDP);
+    mkChart('ch-timeline-count',  S.chartData.count.values,  S.chartData.count.fmtY,  S.chartData.count.fmtTip);
+    mkChart('ch-timeline-volume', S.chartData.volume.values, S.chartData.volume.fmtY, S.chartData.volume.fmtTip);
+    mkChart('ch-timeline-avg',    S.chartData.avg.values,    S.chartData.avg.fmtY,    S.chartData.avg.fmtTip);
+  }
+
+  // ─── Chart expand modal — "Bloomberg-lite" overlay ──────────────
+  // Indicators packed onto the enlarged chart:
+  //   1. Channel band  : SMA(window) ± 1.5σ — shaded gray. Visual at-a-glance
+  //      "normal range"; periods poking out are the outliers.
+  //   2. Moving average: dashed gray line through the band's centre.
+  //   3. Segment fill  : actual line fills to the MA — green when above,
+  //      red when below. Reads like a heat-map for momentum.
+  //   4. Trendline     : OLS linear regression over the visible period. Tells
+  //      the user whether the market in this district is structurally
+  //      heading up or down once short-term noise is smoothed out.
+  //   5. Median rule   : horizontal line at the period's median. Useful as
+  //      a "fair value" reference vs. recent moves.
+  //   6. Header badges : YoY %, vs-MA spread, volatility (σ/μ).
+  function _maWindow(n) {
+    // Pick a smoothing window proportional to the series length, capped to
+    // keep the band readable. 6 months is a sane minimum for monthly DLD data.
+    if (n <= 18) return 3;
+    if (n <= 48) return 6;
+    return 12;
+  }
+  function _modalDOM() {
+    let el = document.getElementById('dp-chart-modal');
+    if (el) return el;
+    el = document.createElement('div');
+    el.id = 'dp-chart-modal';
+    el.className = 'chart-modal';
+    el.setAttribute('role','dialog');
+    el.setAttribute('aria-modal','true');
+    el.innerHTML = `
+      <div class="chart-modal-inner">
+        <div class="chart-modal-head">
+          <h3 id="dp-cm-title">…</h3>
+          <div class="chart-modal-badges" id="dp-cm-badges"></div>
+          <button class="chart-modal-close" id="dp-cm-close" type="button" aria-label="Close">✕</button>
+        </div>
+        <div class="chart-modal-body"><canvas id="dp-cm-canvas"></canvas></div>
+      </div>`;
+    document.body.appendChild(el);
+    return el;
+  }
+  function _closeChartModal() {
+    const el = document.getElementById('dp-chart-modal');
+    if (!el) return;
+    if (S.modalChart) { S.modalChart.destroy(); S.modalChart = null; }
+    el.classList.remove('open');
+  }
+  function openChartModal(metric) {
+    const cd = S.chartData;
+    if (!cd || !cd[metric]) return;
+    const m = cd[metric];
+    const labels = cd.labels.slice();
+    const data = m.values.slice();
+    if (data.length < 2) return;  // not enough to plot anything meaningful
+
+    const w = _maWindow(data.length);
+    const ma = movingAverage(data, w);
+    const sd = rollingStddev(data, ma, w);
+    const upper = ma.map((v, i) => Number.isFinite(v) ? v + 1.5 * sd[i] : NaN);
+    const lower = ma.map((v, i) => Number.isFinite(v) ? v - 1.5 * sd[i] : NaN);
+    const trend = linearTrend(data);
+    const trendLine = trend ? data.map((_, i) => trend.intercept + trend.slope * i) : null;
+    const median = (() => {
+      const arr = data.filter(v => Number.isFinite(v) && v > 0).sort((a,b)=>a-b);
+      if (!arr.length) return null;
+      const mid = Math.floor(arr.length/2);
+      return arr.length % 2 ? arr[mid] : (arr[mid-1]+arr[mid])/2;
+    })();
+    const yoy = yoyPercent(data);
+    const lastVal = data[data.length - 1];
+    const lastMa = ma[ma.length - 1];
+    const lastSpread = Number.isFinite(lastMa) && lastMa ? ((lastVal - lastMa) / lastMa) * 100 : null;
+    const meanVal = data.reduce((a,b)=>a+b,0)/data.length;
+    const stdAll = Math.sqrt(data.reduce((s,v)=>s+(v-meanVal)**2,0)/data.length);
+    const vol = meanVal ? (stdAll / meanVal) * 100 : null;
+
+    const color = cd.color || '#1d4ed8';
+    const grnLine = 'rgba(34,197,94,1)';
+    const redLine = 'rgba(239,68,68,1)';
+    const grnFill = 'rgba(34,197,94,0.16)';
+    const redFill = 'rgba(239,68,68,0.18)';
+
+    const el = _modalDOM();
+    el.querySelector('#dp-cm-title').textContent = m.label;
+    const badges = [];
+    if (yoy != null)        badges.push(`<span class="cm-badge ${yoy>=0?'pos':'neg'}">YoY: ${(yoy>=0?'+':'')}${yoy.toFixed(1)}%</span>`);
+    if (lastSpread != null) badges.push(`<span class="cm-badge ${lastSpread>=0?'pos':'neg'}">vs MA${w}: ${(lastSpread>=0?'+':'')}${lastSpread.toFixed(1)}%</span>`);
+    if (vol != null)        badges.push(`<span class="cm-badge muted">σ/μ: ${vol.toFixed(0)}%</span>`);
+    if (trend)              badges.push(`<span class="cm-badge ${trend.slope>=0?'pos':'neg'}">${t('ch_trend')}: ${trend.slope>=0?'↑':'↓'}</span>`);
+    badges.push(`<span class="cm-badge muted">n=${data.length}</span>`);
+    el.querySelector('#dp-cm-badges').innerHTML = badges.join('');
+
+    if (S.modalChart) { S.modalChart.destroy(); S.modalChart = null; }
+    const ctx = el.querySelector('#dp-cm-canvas');
+    S.modalChart = new Chart(ctx, {
+      type: 'line',
+      data: {
+        labels,
+        datasets: [
+          // 0 — lower band anchor (invisible line; gives the fill an anchor).
+          { label: 'lower', data: lower, borderWidth: 0, pointRadius: 0, fill: false, order: 6 },
+          // 1 — upper band, fills back to dataset 0 → the shaded channel.
+          { label: t('ch_channel'), data: upper, borderColor: 'rgba(148,163,184,0.55)', borderWidth: 1, borderDash:[3,3], pointRadius: 0, fill: '-1', backgroundColor: 'rgba(148,163,184,0.10)', order: 5 },
+          // 2 — moving average centerline.
+          { label: t('ch_ma') + ` (${w})`, data: ma, borderColor: '#64748b', borderWidth: 1.5, borderDash: [6,4], pointRadius: 0, fill: false, order: 4 },
+          // 3 — trendline (OLS).
+          ...(trendLine ? [{ label: t('ch_trend'), data: trendLine, borderColor: '#0f172a', borderWidth: 1.2, borderDash:[2,3], pointRadius: 0, fill: false, order: 3 }] : []),
+          // 4 — median horizontal.
+          ...(median != null ? [{ label: t('ch_median'), data: data.map(()=>median), borderColor: 'rgba(29,78,216,0.55)', borderWidth: 1, borderDash:[1,2], pointRadius: 0, fill: false, order: 2 }] : []),
+          // 5 — actual line + green/red fill-to-MA momentum heatmap.
+          {
+            label: m.label,
+            data,
+            borderColor: color,
+            borderWidth: 2.5,
+            pointRadius: 2.2,
+            pointHoverRadius: 4,
+            // Fill to MA dataset (always at absolute index 2) with conditional
+            // above/below coloring — green when actual > MA, red when below.
+            fill: { target: 2, above: grnFill, below: redFill },
+            // segment.borderColor: greens up-swings, reds down-swings.
+            segment: {
+              borderColor: ctx => {
+                const i = ctx.p0DataIndex;
+                if (i >= ma.length - 1) return color;
+                const v0 = data[i], v1 = data[i+1];
+                if (!Number.isFinite(ma[i+1])) return color;
+                if (v1 > ma[i+1]) return grnLine;
+                if (v1 < ma[i+1]) return redLine;
+                return color;
+              },
+            },
+            order: 1,
+          },
+        ],
+      },
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        interaction: { intersect: false, mode: 'index' },
+        plugins: {
+          legend: { display: true, position: 'bottom', labels: { boxWidth: 14, font: { size: 11 }, filter: (item) => item.text !== 'lower' } },
+          tooltip: { callbacks: { label: c => ' ' + (c.dataset.label || '') + ': ' + m.fmtTip(c.parsed.y) } },
+        },
+        scales: {
+          y: { ticks: { font: { size: 11 }, callback: m.fmtY }, beginAtZero: true },
+          x: { ticks: { font: { size: 11 }, maxRotation: 0, autoSkip: true, maxTicksLimit: 14 } },
+        },
+      },
+    });
+    el.classList.add('open');
   }
   function renderOffplanChart(a) {
     const ctxO = document.getElementById('ch-offplan');
@@ -439,6 +819,7 @@
   }
   function renderSaleCharts(a) {
     renderTimelineCharts(a);
+    try { renderRoomBreakdownChart(a); } catch(e) { console.error('rooms chart:', e); }
     try { renderOffplanChart(a); } catch(e) { console.error('offplan chart:', e); }
   }
   function renderRentCharts(r) {
@@ -517,6 +898,41 @@
         }
         return;
       }
+      // Chart expand button → open enriched modal chart.
+      const expandBtn = e.target.closest('[data-dp-expand]');
+      if (expandBtn && S.container && S.container.contains(expandBtn)) {
+        e.preventDefault();
+        openChartModal(expandBtn.dataset.dpExpand);
+        return;
+      }
+      // Room-breakdown expand button → stacked bar in modal.
+      const expandRoomBtn = e.target.closest('[data-dp-expand-rooms]');
+      if (expandRoomBtn && S.container && S.container.contains(expandRoomBtn)) {
+        e.preventDefault();
+        openRoomChartModal();
+        return;
+      }
+      // Room-breakdown legend chip → toggle category in/out of the chart.
+      const rbToggle = e.target.closest('[data-dp-toggle-room]');
+      if (rbToggle && S.container && S.container.contains(rbToggle)) {
+        const k = rbToggle.dataset.dpToggleRoom;
+        if (!S.roomBreakdownHidden) S.roomBreakdownHidden = new Set();
+        if (S.roomBreakdownHidden.has(k)) S.roomBreakdownHidden.delete(k);
+        else S.roomBreakdownHidden.add(k);
+        refreshRoomBreakdown();
+        return;
+      }
+      // Close modal: explicit ✕ button OR click on the dim backdrop.
+      if (e.target.id === 'dp-cm-close' || e.target.id === 'dp-chart-modal') {
+        _closeChartModal();
+        return;
+      }
+    });
+    document.addEventListener('keydown', (e) => {
+      if (e.key === 'Escape') {
+        const el = document.getElementById('dp-chart-modal');
+        if (el && el.classList.contains('open')) _closeChartModal();
+      }
     });
   }
   function refreshSale() {
@@ -529,6 +945,7 @@
     if (stEl) stEl.innerHTML = renderStatsSale(S.sale);
     destroyTimelineCharts();
     renderTimelineCharts(S.sale);
+    refreshRoomBreakdown();
   }
   function refreshRent() {
     if (!S.rent) return;
@@ -554,6 +971,7 @@
     S.mode            = mode || 'both';
     S.period          = (initialPeriod && PERIODS.find(p => p.k === initialPeriod)) ? initialPeriod : 'all';
     S.roomFilter      = 'all';
+    S.roomBreakdownHidden = new Set();
     S.periodHref      = (typeof periodHref === 'function') ? periodHref : null;
     S.onPeriodChange  = (typeof onPeriodChange === 'function') ? onPeriodChange : null;
     S.listLinks       = arguments[0].listLinks || null;

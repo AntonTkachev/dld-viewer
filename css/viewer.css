@@ -61,10 +61,17 @@
   .dp-section{margin:14px 0 18px}
   .dp-section h3{margin:0 0 8px;font-size:12.5px;font-weight:600;color:#555;text-transform:uppercase;letter-spacing:.04em}
   .dp-stats{display:grid;grid-template-columns:repeat(2,1fr);gap:8px;margin-bottom:6px}
-  .dp-stat{background:#f7fafc;border-radius:6px;padding:8px 10px;border:1px solid #edf0f4}
+  .dp-stat{background:#f7fafc;border-radius:6px;padding:8px 10px;border:1px solid #edf0f4;border-left:3px solid #cbd5e1}
   .dp-stat .k{font-size:11px;color:#777;line-height:1.2}
   .dp-stat .v{font-size:15px;font-weight:600;line-height:1.3;margin-top:2px;font-variant-numeric:tabular-nums}
   .dp-stat .sub{font-size:10.5px;color:#999;margin-top:1px}
+  /* Each card's left-border tint signals which chart it pairs with. Hues
+     are intentionally muted — same family as ROOM_COLORS so the panel
+     stays "neutral" overall, not rainbow. */
+  .dp-stat.dp-stat--avg   {border-left-color:#1d4ed8}
+  .dp-stat.dp-stat--count {border-left-color:#475569}
+  .dp-stat.dp-stat--vol   {border-left-color:#9a6418}
+  .dp-stat.dp-stat--ppsqm {border-left-color:#0e7c66}
   .dp-trend-up{color:#0a7f00}
   .dp-trend-down{color:#cc4040}
   .dp-trend-flat{color:#666}
@@ -86,9 +93,20 @@
   .chart-modal{position:fixed;inset:0;background:rgba(15,23,42,.62);display:none;align-items:center;justify-content:center;z-index:9000;padding:24px}
   .chart-modal.open{display:flex}
   .chart-modal-inner{background:#fff;border-radius:8px;width:100%;max-width:1400px;height:100%;max-height:90vh;display:flex;flex-direction:column;box-shadow:0 8px 40px rgba(0,0,0,.3)}
-  .chart-modal-head{display:flex;align-items:center;justify-content:space-between;padding:12px 16px;border-bottom:1px solid #e1e6ec}
-  .chart-modal-head h3{margin:0;font-size:15px;font-weight:600}
-  .chart-modal-close{background:#fff;border:1px solid #d6dde6;border-radius:6px;padding:4px 10px;font-size:13px;cursor:pointer}
+  /* Room-breakdown legend — chip per room category, click to toggle. */
+  .rb-legend{display:flex;flex-wrap:wrap;gap:5px;margin:4px 0 10px}
+  .rb-chip{font-family:inherit;cursor:pointer;border-radius:14px;border:1px solid;padding:4px 10px;font-size:11.5px;font-weight:600;display:inline-flex;align-items:center;gap:5px;line-height:1.2;transition:opacity .12s}
+  .rb-chip:hover{opacity:.85}
+  .rb-chip[aria-pressed="false"]{text-decoration:line-through}
+  .rb-chip .rb-chip-n{font-weight:500;opacity:.7;margin-left:3px;font-size:10.5px;font-variant-numeric:tabular-nums}
+  .chart-modal-head{display:flex;align-items:center;gap:12px;padding:12px 16px;border-bottom:1px solid #e1e6ec;flex-wrap:wrap}
+  .chart-modal-head h3{margin:0;font-size:15px;font-weight:600;flex-shrink:0}
+  .chart-modal-badges{display:flex;flex-wrap:wrap;gap:6px;flex:1 1 auto;align-items:center}
+  .chart-modal-badges .cm-badge{display:inline-flex;align-items:center;padding:3px 9px;border-radius:12px;font-size:11.5px;font-weight:600;font-variant-numeric:tabular-nums;background:#f1f5f9;color:#334155;border:1px solid #e2e8f0;line-height:1.2}
+  .chart-modal-badges .cm-badge.pos{background:#ecfdf5;color:#047857;border-color:#a7f3d0}
+  .chart-modal-badges .cm-badge.neg{background:#fef2f2;color:#b91c1c;border-color:#fecaca}
+  .chart-modal-badges .cm-badge.muted{background:#f8fafc;color:#475569;border-color:#e2e8f0}
+  .chart-modal-close{background:#fff;border:1px solid #d6dde6;border-radius:6px;padding:4px 10px;font-size:13px;cursor:pointer;flex-shrink:0}
   .chart-modal-body{flex:1;padding:16px;position:relative;min-height:0}
   .chart-modal-body canvas{width:100%!important;height:100%!important}
   .dp-collapsible{margin:8px 0 4px;border-top:1px solid #eef0f3;padding-top:8px}
