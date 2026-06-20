@@ -27755,9 +27755,9 @@
     ]
    },
    "properties": {
-    "name": "Al Yufrah 2",
-    "name_ar": "اليفره 2",
-    "key": "al yufrah 2",
+    "name": "DAMAC Hills 2",
+    "name_ar": "داماك هيلز 2",
+    "key": "damac hills 2",
     "source": "dm-community",
     "parent_area_name_en": null,
     "comm_num": 919,
@@ -30457,9 +30457,9 @@
     ]
    },
    "properties": {
-    "name": "Saih Shuaib 3",
-    "name_ar": "سيح شعيب 3",
-    "key": "saih shuaib 3",
+    "name": "Dubai Industrial City",
+    "name_ar": "مدينة دبي الصناعية",
+    "key": "dubai industrial city",
     "source": "dm-community",
     "parent_area_name_en": null,
     "comm_num": 532,
@@ -91613,9 +91613,9 @@
     ]
    },
    "properties": {
-    "name": "Saih Shuaib 4",
-    "name_ar": "سيح شعيب 4",
-    "key": "saih shuaib 4",
+    "name": "Dubai Industrial City",
+    "name_ar": "مدينة دبي الصناعية",
+    "key": "dubai industrial city",
     "source": "dm-community",
     "parent_area_name_en": null,
     "comm_num": 533,
@@ -109252,9 +109252,9 @@
     ]
    },
    "properties": {
-    "name": "Al Hebiah Second",
-    "name_ar": "الحبيه الثانية",
-    "key": "al hebiah second",
+    "name": "Dubai Studio City",
+    "name_ar": "مدينة دبي للاستوديوهات",
+    "key": "dubai studio city",
     "source": "dm-community",
     "parent_area_name_en": null,
     "comm_num": 675,
@@ -128825,9 +128825,9 @@
     ]
    },
    "properties": {
-    "name": "Al Hebiah Sixth",
-    "name_ar": "الحبيه السادسة",
-    "key": "al hebiah sixth",
+    "name": "Mudon",
+    "name_ar": "مدن",
+    "key": "mudon",
     "source": "dm-community",
     "parent_area_name_en": null,
     "comm_num": 677,
@@ -129090,9 +129090,9 @@
     ]
    },
    "properties": {
-    "name": "Hessyan First",
-    "name_ar": "حصيان الأولى",
-    "key": "hessyan first",
+    "name": "Badra",
+    "name_ar": "بدرة",
+    "key": "badra",
     "source": "dm-community",
     "parent_area_name_en": null,
     "comm_num": 511,
