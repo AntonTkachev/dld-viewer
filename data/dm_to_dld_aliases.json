@@ -169,6 +169,42 @@
       "dm_name": "AL KIFAF",
       "display_name": "Wasl 1",
       "display_name_ar": "وصل 1"
+    },
+    {
+      "_comment": "Al Hebiah Second → 97% Dubai Studio City (5,102 sales). Remainder ~148 Arabian Ranches Polo Homes — leakage acceptable.",
+      "dm_name": "AL HEBIAH SECOND",
+      "display_name": "Dubai Studio City",
+      "display_name_ar": "مدينة دبي للاستوديوهات"
+    },
+    {
+      "_comment": "Al Hebiah Sixth → 100% Mudon (4,211 sales). Mudon also has a slice in Al Hebiah Third (1,858) — see _needs_split.",
+      "dm_name": "AL HEBIAH SIXTH",
+      "display_name": "Mudon",
+      "display_name_ar": "مدن"
+    },
+    {
+      "_comment": "Hessyan First → 91% Badra (440 sales). Small remainder Dubai Water Front + Veneto leak — acceptable.",
+      "dm_name": "HESSYAN FIRST",
+      "display_name": "Badra",
+      "display_name_ar": "بدرة"
+    },
+    {
+      "_comment": "Al Yufrah 2 → 100% DAMAC HILLS 2 (5,448 sales). DAMAC Hills 2 spans 3 admin shells: Madinat Hind 4 + Al Yufrah 2 + Al Yufrah 3 (also aliased separately).",
+      "dm_name": "AL YUFRAH 2",
+      "display_name": "DAMAC Hills 2",
+      "display_name_ar": "داماك هيلز 2"
+    },
+    {
+      "_comment": "Saih Shuaib 3 → 100% Dubai Industrial City (166 sales). Industrial City spans Saih Shuaib 3 + 4.",
+      "dm_name": "SAIH SHUAIB 3",
+      "display_name": "Dubai Industrial City",
+      "display_name_ar": "مدينة دبي الصناعية"
+    },
+    {
+      "_comment": "Saih Shuaib 4 → 100% Dubai Industrial City (534 sales).",
+      "dm_name": "SAIH SHUAIB 4",
+      "display_name": "Dubai Industrial City",
+      "display_name_ar": "مدينة دبي الصناعية"
     }
   ],
 

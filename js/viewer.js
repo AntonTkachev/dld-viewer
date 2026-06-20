@@ -620,10 +620,18 @@ function setView(view, opts) {
   }
   currentView = view;
   document.body.classList.toggle('view-table', view === 'table');
+  if (typeof _refreshViewSwitchLabel === 'function') _refreshViewSwitchLabel();
   if (view === 'table') {
     renderTable();
+    // Split layout: map shrinks from 100% to 50% (or vice versa on map view).
+    // Leaflet needs a tick to recompute tile coverage after the container size
+    // changes. Skipping this leaves the right half of the map blank until the
+    // next user pan/zoom.
+    if (typeof map !== 'undefined' && map.invalidateSize) {
+      setTimeout(() => map.invalidateSize(), 50);
+    }
   } else if (typeof map !== 'undefined' && map.invalidateSize) {
-    // Map was display:none — needs a resize tick after un-hiding
+    // Going map-only: map expands back to full width.
     setTimeout(() => map.invalidateSize(), 50);
   }
   if (typeof renderMaskList === 'function') renderMaskList();
@@ -726,7 +734,7 @@ function _tableSort(rows, col, dir) {
   });
 }
 
-const PAGE_SIZE = 50;
+const PAGE_SIZE = 25;
 
 function _renderTvPages() {
   const el = document.getElementById('tv-pages');
@@ -865,8 +873,25 @@ function renderTable() {
   const start = (state.page - 1) * PAGE_SIZE;
   const pageRows = rows.slice(start, start + PAGE_SIZE);
 
-  const cols = mask.tableColumns.map(c => `<col${c.width ? ' style="width:' + c.width + '"' : ''}>`).join('');
-  const ths = mask.tableColumns.map(c => {
+  // Per-numeric-column max on the current page (excluding the Dubai rollup).
+  // Drives the inline magnitude bar width inside numeric cells — turns
+  // empty whitespace into a quick at-a-glance comparator.
+  const colMax = new Map();
+  for (const c of mask.tableColumns) {
+    if (c.type !== 'int' && c.type !== 'aed_big') continue;
+    let m = 0;
+    for (const r of pageRows) {
+      const v = _tableValue(c, r);
+      if (typeof v === 'number' && !isNaN(v) && v > m) m = v;
+    }
+    colMax.set(_tableColIdent(c), m);
+  }
+
+  // Rank column prepended to colgroup + thead + every row.
+  const rankCol = `<col style="width:48px">`;
+  const cols = rankCol + mask.tableColumns.map(c => `<col${c.width ? ' style="width:' + c.width + '"' : ''}>`).join('');
+  const rankTh = `<th class="rank">#</th>`;
+  const ths = rankTh + mask.tableColumns.map(c => {
     const ident = _tableColIdent(c);
     const sortedCls = (ident === state.sortKey) ? (' sorted-' + state.sortDir) : '';
     const numCls = (c.type !== 'str') ? 'num' : '';
@@ -887,8 +912,8 @@ function renderTable() {
     // glance which districts have no polygon on the map.
     // txt comes from _tableFmt; for non-numeric ('str') columns it's raw
     // polygon `name` / `name_ar` which originate from OSM/GEOJSON, so escape.
-    const cellHtml = (c.type === 'str') ? _h(txt) : txt;
     if (c.key === 'name') {
+      const cellHtml = _h(String(txt));
       const areaKey = isDubai ? '__dubai__' : (rec && rec._k);
       const hasPolygon = isDubai || (areaKey && _FEAT_BY_KEY.has(areaKey));
       if (areaKey && hasPolygon) {
@@ -896,18 +921,44 @@ function renderTable() {
       }
       return `<td${cls ? ' class="' + cls + ' tv-no-polygon"' : ' class="tv-no-polygon"'} title="${_h(t('tv_no_polygon'))}">${cellHtml}</td>`;
     }
-    return `<td${cls ? ' class="' + cls + '"' : ''}>${cellHtml}</td>`;
+    if (!isNum) {
+      return `<td${cls ? ' class="' + cls + '"' : ''}>${_h(String(txt))}</td>`;
+    }
+    // Magnitude bar (right-anchored) for int/aed_big columns. pct gets a chip
+    // via .pos/.neg class instead; yrs stays as plain text — low precision
+    // bars on 2-digit values add noise without signal.
+    let barHtml = '';
+    if (!isDubai && (c.type === 'int' || c.type === 'aed_big')) {
+      const max = colMax.get(_tableColIdent(c)) || 0;
+      if (max > 0 && typeof v === 'number' && !isNaN(v) && v > 0) {
+        const pct = Math.max(0, Math.min(100, (v / max) * 100));
+        if (pct >= 1) barHtml = `<span class="bar" style="width:${pct.toFixed(1)}%"></span>`;
+      }
+    }
+    return `<td${cls ? ' class="' + cls + '"' : ''}>${barHtml}<span class="v">${txt}</span></td>`;
   };
+
+  // Rank cell — global rank within the filtered+sorted list (1-based, with
+  // page offset). Dubai rollup is outside the rank stream → "Σ".
+  const rankCell = (i, isDubai) => isDubai
+    ? `<td class="rank">Σ</td>`
+    : `<td class="rank">${start + i + 1}</td>`;
 
   // Dubai rollup pinned at the top of page 1 (and ONLY there) so the
   // city-wide reference number is visible without polluting later pages.
   let dubaiHtml = '';
   if (state.page === 1 && data[dubaiKey] && matches(data[dubaiKey])) {
-    dubaiHtml = '<tr class="dubai-row">' + mask.tableColumns.map(c => renderCell(c, data[dubaiKey], true)).join('') + '</tr>';
+    dubaiHtml = `<tr class="dubai-row clickable" data-key="${_h(dubaiKey)}">` + rankCell(0, true) + mask.tableColumns.map(c => renderCell(c, data[dubaiKey], true)).join('') + '</tr>';
   }
   const bodyHtml = pageRows.length
-    ? pageRows.map(rec => '<tr>' + mask.tableColumns.map(c => renderCell(c, rec, false)).join('') + '</tr>').join('')
-    : `<tr><td colspan="${mask.tableColumns.length}" class="tv-empty">${t('search_empty')}</td></tr>`;
+    ? pageRows.map((rec, i) => {
+        const areaKey = rec._k || '';
+        const hasPoly = areaKey && _FEAT_BY_KEY.has(areaKey);
+        const trCls = hasPoly ? 'clickable' : '';
+        const dataAttr = areaKey ? ` data-key="${_h(areaKey)}"` : '';
+        return `<tr${trCls ? ' class="' + trCls + '"' : ''}${dataAttr}>` + rankCell(i, false) + mask.tableColumns.map(c => renderCell(c, rec, false)).join('') + '</tr>';
+      }).join('')
+    : `<tr><td colspan="${mask.tableColumns.length + 1}" class="tv-empty">${t('search_empty')}</td></tr>`;
 
   const tbl = document.getElementById('tv-table');
   if (!tbl) return;
@@ -918,7 +969,7 @@ function renderTable() {
 
   _renderTvPager(state.page, totalPages, total);
 
-  tbl.querySelectorAll('th').forEach(th => {
+  tbl.querySelectorAll('th[data-col]').forEach(th => {
     th.addEventListener('click', () => {
       const k = th.dataset.col;
       if (state.sortKey === k) state.sortDir = state.sortDir === 'asc' ? 'desc' : 'asc';
@@ -927,12 +978,21 @@ function renderTable() {
       renderTable();
     });
   });
-  tbl.querySelectorAll('.tv-district-link').forEach(a => {
-    a.addEventListener('click', e => {
+  // Row-level click: anywhere in a row with [data-key] flies the map (in split
+  // layout) or navigates (mobile fallback). Delegation keeps a single listener
+  // even after sort/pagination rerenders.
+  const tbody = tbl.querySelector('tbody');
+  if (tbody && !tbody._wired) {
+    tbody._wired = true;
+    tbody.addEventListener('click', e => {
+      const tr = e.target.closest('tr.clickable');
+      if (!tr) return;
+      const key = tr.getAttribute('data-key');
+      if (!key) return;
       e.preventDefault();
-      _openDistrictFromTable(a.dataset.key);
+      _openDistrictFromTable(key);
     });
-  });
+  }
 }
 
 // Close the table view, switch to map, and zoom + open the polygon popup
@@ -965,7 +1025,29 @@ function _openDistrictByKey(areaKey) {
 
 function _openDistrictFromTable(areaKey) {
   if (!areaKey) return;
-  window.openDistrictByKey(areaKey);
+  // Narrow viewport: split layout collapses to table-only (CSS @media). Map
+  // is hidden, so fly-to is invisible — fall back to per-district navigation.
+  if (window.matchMedia && window.matchMedia('(max-width:900px)').matches) {
+    window.openDistrictByKey(areaKey);
+    return;
+  }
+  // Dubai rollup row → fit to the full city extent.
+  if (areaKey === '__dubai__') {
+    if (typeof map !== 'undefined' && map.fitBounds && typeof GEOJSON !== 'undefined' && typeof L !== 'undefined') {
+      map.fitBounds(L.geoJSON(GEOJSON).getBounds(), {padding:[20,20]});
+    }
+    if (typeof _setSelected === 'function') _setSelected(null);
+    return;
+  }
+  // Split mode: reuse the search-box selection flow (flies the map, opens the
+  // polygon popup with the standard stats panel). If no polygon exists for
+  // this key, fall back to navigation.
+  const feat = (typeof _featureForAreaKey === 'function') ? _featureForAreaKey(areaKey) : null;
+  if (feat && typeof _onSearchSelect === 'function') {
+    _onSearchSelect(feat);
+  } else {
+    window.openDistrictByKey(areaKey);
+  }
 }
 
 function _periodLabel(mask, p) {
@@ -1042,18 +1124,8 @@ function renderMaskList() {
     });
     list.appendChild(row);
   }
-  // ── View toggle (Map / Table) ──────────────────────────────────────────
-  const viewRow = document.createElement('div');
-  viewRow.className = 'mp-mask-view';
-  viewRow.innerHTML = `
-    <span class="mp-mask-view-k">${t('view_label')}</span>
-    <button type="button" class="mp-mask-view-btn${currentView==='map'?' active':''}" data-view="map">${t('view_map')}</button>
-    <button type="button" class="mp-mask-view-btn${currentView==='table'?' active':''}" data-view="table">${t('view_table')}</button>
-  `;
-  viewRow.querySelectorAll('.mp-mask-view-btn').forEach(b => {
-    b.addEventListener('click', () => setView(b.dataset.view));
-  });
-  list.appendChild(viewRow);
+  // View toggle now lives as a single fixed-position #view-switch button in
+  // the top-right corner (see index.html + _wireViewSwitch below).
 }
 
 // Wire table-view controls (script is in <body> end, so DOM exists)
@@ -1067,9 +1139,17 @@ function renderMaskList() {
       renderTable();
     });
   }
-  const backBtn = document.getElementById('tv-back-map');
-  if (backBtn) backBtn.addEventListener('click', () => setView('map'));
+  const viewSwitch = document.getElementById('view-switch');
+  if (viewSwitch) {
+    viewSwitch.addEventListener('click', () => setView(currentView === 'map' ? 'table' : 'map'));
+  }
 })();
+function _refreshViewSwitchLabel() {
+  const btn = document.getElementById('view-switch');
+  if (!btn) return;
+  btn.innerHTML = currentView === 'map' ? `▦ ${t('view_table')}` : `⌖ ${t('view_map')}`;
+}
+_refreshViewSwitchLabel();
 
 // ===================== LOCATION LEVELS =====================
 // Each feature is tagged with `_level` = depth of its containment chain:
@@ -1228,6 +1308,9 @@ function _onSearchSelect(feat){
     }
     if (layer && layer.openPopup) layer.openPopup(center);
   }, 550);
+  // Persistent selection outline so the user can locate the district on the
+  // map after the flyTo completes (table-row click flow, mainly).
+  if (typeof _setSelected === 'function') _setSelected(feat);
 }
 
 let choro;
@@ -1261,15 +1344,19 @@ function _refreshOverlay(mask) {
     items.push({ f, label, num });
   }
   if (!items.length) return;
-  const nums = items.map(i => i.num);
-  const minM = Math.min(...nums), maxM = Math.max(...nums);
-  const range = (maxM - minM) || 1;
+  // Clip the top at the 90th percentile so a couple of extreme outliers don't
+  // compress everyone else into tiny badges. Growth had 1-2 districts at
+  // +50%/-30% pinning most others into 0..0.3 normalised — barely visible.
+  const sorted = items.map(i => i.num).slice().sort((a, b) => a - b);
+  const lo = sorted[0];
+  const hi = sorted[Math.min(sorted.length - 1, Math.floor(sorted.length * 0.90))];
+  const range = (hi - lo) || 1;
   const zoomFactor = 1 + Math.max(0, zoom - 10) * 0.20;
 
   overlayLayer = L.layerGroup();
   for (const item of items) {
     const f = item.f;
-    let norm = (item.num - minM) / range;          // 0..1
+    let norm = Math.max(0, Math.min(1, (item.num - lo) / range));  // 0..1, outliers clipped
     if (mask.invertRamp) norm = 1 - norm;          // payback: fewer years → bigger badge
     const fontSize = Math.round((4 + norm * 4) * zoomFactor * 10) / 10;
     const color = _overlayColorFor(item.label);
@@ -1361,18 +1448,43 @@ function _openSmallestPopup(latlng) {
   if (f) _openFeaturePopup(f, latlng);
 }
 
-// Hover highlight follows the smallest polygon under the cursor — so user sees
-// which polygon they'd open before clicking. rAF-throttled (~60fps).
+// Two layers of polygon outline:
+//   hover    — transient, black 2px, follows the cursor
+//   selected — persistent, brand-blue 3.5px, marks the last user pick (table
+//              row, search box, map click). Stays until next pick.
+// Hover wins visually when both apply (immediate cursor feedback), then the
+// selected style is restored when the cursor leaves.
 let _hoveredFeat = null;
+let _selectedFeat = null;
 let _hoverRaf = 0;
+const _STYLE_HOVER    = {weight: 2,   color: '#000'};
+const _STYLE_SELECTED = {weight: 3.5, color: '#1d4ed8'};
+
+function _restoreStyle(f) {
+  if (!f || !f._layer) return;
+  if (f === _hoveredFeat)        f._layer.setStyle(_STYLE_HOVER);
+  else if (f === _selectedFeat)  f._layer.setStyle(_STYLE_SELECTED);
+  else if (choro)                choro.resetStyle(f._layer);
+}
+
 function _setHover(f) {
   if (f === _hoveredFeat) return;
-  if (_hoveredFeat && _hoveredFeat._layer && choro) {
-    choro.resetStyle(_hoveredFeat._layer);
-  }
+  const prev = _hoveredFeat;
   _hoveredFeat = f;
-  if (f && f._layer) f._layer.setStyle({weight: 2, color: '#000'});
+  _restoreStyle(prev);
+  if (f && f._layer) f._layer.setStyle(_STYLE_HOVER);
 }
+
+function _setSelected(f) {
+  if (f === _selectedFeat) return;
+  const prev = _selectedFeat;
+  _selectedFeat = f;
+  _restoreStyle(prev);
+  // Only paint selected when cursor isn't on top — hover wins for the
+  // immediate-feedback layer.
+  if (f && f._layer && f !== _hoveredFeat) f._layer.setStyle(_STYLE_SELECTED);
+}
+
 map.on('mousemove', (e) => {
   if (_hoverRaf) return;
   _hoverRaf = requestAnimationFrame(() => {

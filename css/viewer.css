@@ -204,29 +204,45 @@
   .mp-mask-view-btn{font-family:inherit;font-weight:600;padding:3px 10px;border-radius:12px;border:1px solid #d6dde6;background:#fff;color:#374151;cursor:pointer;font-size:11px;transition:background .12s,border-color .12s,color .12s}
   .mp-mask-view-btn:hover:not(.active){background:#f1f5fb;border-color:#9bb6e2}
   .mp-mask-view-btn.active{background:#0f172a;border-color:#0f172a;color:#fff;cursor:default}
-  /* Full-screen table view */
-  #table-view{display:none;position:fixed;inset:0;background:#fff;flex-direction:column;z-index:5}
+  /* Split layout — table on right half, map on left half. */
+  #table-view{display:none;position:fixed;top:0;bottom:0;right:0;width:50%;background:#fff;flex-direction:column;z-index:5;border-left:1px solid #d6dde6;box-shadow:-2px 0 8px rgba(15,23,42,0.04)}
   body.view-table #table-view{display:flex}
-  body.view-table #map{display:none}
-  body.view-table #mp-panel,
+  body.view-table #map{right:50%}
   body.view-table #legend{display:none !important}
-  .tv-toolbar{display:flex;align-items:center;flex-wrap:wrap;gap:10px 14px;padding:10px 16px;border-bottom:1px solid #e5e7eb;flex-shrink:0;background:#fff}
+  /* Keep Places + Language dropdowns from the top map panel (user wants
+     POI layers + language switch reachable in split view). Hide the rest
+     — Search/Metric/Levels are redundant or out-of-context here. */
+  body.view-table #mp-search,
+  body.view-table #mp-mask,
+  body.view-table #mp-level{display:none}
+  body.view-table #mp-panel{left:25%}
+  body.view-table #view-switch{right:calc(50% + 14px)}
+  /* Narrow viewport (mobile/tablet portrait) — fall back to full-width
+     table, hide the map. Split is only useful when both halves are wide
+     enough to be legible. */
+  @media (max-width: 900px) {
+    #table-view{width:auto;left:0;border-left:0;box-shadow:none}
+    body.view-table #map{display:none;right:0}
+    body.view-table #mp-panel{display:none !important}
+    body.view-table #view-switch{right:14px}
+  }
+  .tv-toolbar{display:flex;align-items:center;flex-wrap:wrap;gap:8px 12px;padding:9px 14px;border-bottom:1px solid #e5e7eb;flex-shrink:0;background:#fff}
   .tv-pages{display:flex;gap:4px;flex-wrap:wrap}
-  .tv-page-pill{padding:5px 12px;border-radius:14px;border:1px solid #d6dde6;background:#fff;color:#374151;font-size:12.5px;font-weight:600;cursor:pointer;text-decoration:none;font-family:inherit;transition:background .12s,border-color .12s,color .12s}
+  .tv-page-pill{padding:4px 11px;border-radius:14px;border:1px solid #d6dde6;background:#fff;color:#374151;font-size:12px;font-weight:600;cursor:pointer;text-decoration:none;font-family:inherit;transition:background .12s,border-color .12s,color .12s}
   .tv-page-pill:hover:not(.active){background:#f1f5fb;border-color:#9bb6e2}
   .tv-page-pill.active{background:#0f172a;border-color:#0f172a;color:#fff;cursor:default}
-  .tv-periods{display:flex;gap:4px;flex-wrap:wrap;align-items:center}
+  .tv-periods{display:flex;gap:3px;flex-wrap:wrap;align-items:center}
   .tv-periods-k{font-size:11px;color:#888;margin-right:2px}
-  .tv-period-chip{background:#fff;border:1px solid #d6dde6;color:#374151;padding:3px 10px;border-radius:12px;font-size:11.5px;font-weight:500;cursor:pointer;font-family:inherit;transition:background .12s,border-color .12s,color .12s}
+  .tv-period-chip{background:#fff;border:1px solid #d6dde6;color:#374151;padding:3px 9px;border-radius:12px;font-size:11.5px;font-weight:500;cursor:pointer;font-family:inherit;transition:background .12s,border-color .12s,color .12s}
   .tv-period-chip:hover:not(.active){background:#f1f5fb;border-color:#9bb6e2}
   .tv-period-chip.active{background:#1d4ed8;border-color:#1d4ed8;color:#fff;cursor:default}
-  #tv-search{flex:0 1 260px;padding:6px 10px;border:1px solid #d6dde6;border-radius:6px;font-size:13px;font-family:inherit}
+  #tv-search{flex:0 1 240px;padding:5px 10px;border:1px solid #d6dde6;border-radius:6px;font-size:12.5px;font-family:inherit}
   #tv-search:focus{outline:none;border-color:#1d4ed8;box-shadow:0 0 0 2px rgba(29,78,216,0.15)}
-  .tv-count{font-size:12px;color:#888;font-variant-numeric:tabular-nums}
-  #tv-back-map{margin-left:auto;background:#1d4ed8;color:#fff;border:0;border-radius:6px;padding:7px 14px;font-size:12.5px;font-weight:600;cursor:pointer;font-family:inherit}
-  #tv-back-map:hover{background:#1641aa}
-  .tv-pager{display:flex;align-items:center;justify-content:center;gap:4px;padding:10px;border-top:1px solid #e5e7eb;flex-shrink:0;background:#fff;font-size:12px}
-  .tv-pager-btn{background:#fff;border:1px solid #d6dde6;color:#374151;padding:4px 10px;border-radius:4px;cursor:pointer;font-family:inherit;font-size:12px;min-width:34px;font-variant-numeric:tabular-nums}
+  .tv-count{font-size:11.5px;color:#888;font-variant-numeric:tabular-nums}
+  #view-switch{position:fixed;top:14px;right:14px;z-index:1200;background:#1d4ed8;color:#fff;border:0;border-radius:6px;padding:7px 14px;font-size:12.5px;font-weight:600;cursor:pointer;font-family:inherit;box-shadow:0 2px 6px rgba(0,0,0,.15)}
+  #view-switch:hover{background:#1641aa}
+  .tv-pager{display:flex;align-items:center;justify-content:center;gap:3px;padding:8px;border-top:1px solid #e5e7eb;flex-shrink:0;background:#fff;font-size:12px}
+  .tv-pager-btn{background:#fff;border:1px solid #d6dde6;color:#374151;padding:3px 9px;border-radius:4px;cursor:pointer;font-family:inherit;font-size:12px;min-width:30px;font-variant-numeric:tabular-nums}
   .tv-pager-btn:hover:not(.disabled):not(.active){background:#f1f5fb;border-color:#9bb6e2}
   .tv-pager-btn.active{background:#0f172a;border-color:#0f172a;color:#fff;cursor:default}
   .tv-pager-btn.disabled{opacity:.4;cursor:default;pointer-events:none}
@@ -234,21 +250,35 @@
   .tv-pager-ellipsis{color:#999;padding:0 2px}
   .tv-scroll{overflow:auto;flex:1}
   #tv-table{width:100%;border-collapse:collapse;font-size:13px;font-family:inherit;table-layout:fixed}
-  #tv-table th,#tv-table td{padding:7px 12px;border-bottom:1px solid #eef0f3;text-align:left;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-  #tv-table th{position:sticky;top:0;background:#f8fafc;font-weight:600;color:#0f172a;cursor:pointer;user-select:none;border-bottom:1px solid #d6dde6;z-index:1}
+  #tv-table th,#tv-table td{padding:4px 12px;text-align:left;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;line-height:1.45}
+  #tv-table td{border-bottom:1px solid #eef0f3}
+  #tv-table th{position:sticky;top:0;background:#f8fafc;font-weight:700;color:#475569;cursor:pointer;user-select:none;border-bottom:1px solid #cfd6e0;z-index:1;font-size:10.5px;text-transform:uppercase;letter-spacing:.04em;padding:8px 12px}
   #tv-table th:hover{background:#eef3fc}
-  #tv-table th.sorted-asc::after{content:' ▲';opacity:0.6;font-size:10px}
-  #tv-table th.sorted-desc::after{content:' ▼';opacity:0.6;font-size:10px}
-  #tv-table td.num{text-align:right;font-variant-numeric:tabular-nums}
-  #tv-table td.pos{color:#0a7f00}
-  #tv-table td.neg{color:#cc4040}
-  #tv-table tbody tr:hover{background:#f9fafb}
-  #tv-table tbody tr.dubai-row{background:#fff7ec;font-weight:600}
-  #tv-table tbody tr.dubai-row:hover{background:#fdeacd}
+  #tv-table th.sorted-asc,#tv-table th.sorted-desc{color:#1d4ed8}
+  #tv-table th.sorted-asc::after{content:' ▲';opacity:.75;font-size:9px}
+  #tv-table th.sorted-desc::after{content:' ▼';opacity:.75;font-size:9px}
+  #tv-table th.rank{cursor:default;text-align:right;color:#94a3b8;padding-right:8px}
+  #tv-table th.rank:hover{background:#f8fafc}
+  #tv-table td.num{text-align:right;font-variant-numeric:tabular-nums;position:relative;color:#0f172a}
+  #tv-table td.num .bar{position:absolute;right:0;top:3px;bottom:3px;background:rgba(29,78,216,0.07);pointer-events:none;border-radius:2px 0 0 2px}
+  #tv-table td.num .v{position:relative}
+  #tv-table td.rank{color:#94a3b8;font-size:11.5px;font-variant-numeric:tabular-nums;text-align:right;padding-right:8px}
+  #tv-table td.pos,#tv-table td.neg{color:inherit}
+  #tv-table td.pos .v,#tv-table td.neg .v{display:inline-block;padding:1px 7px;border-radius:10px;font-weight:600;font-size:12px;font-variant-numeric:tabular-nums}
+  #tv-table td.pos .v{background:#dcfce7;color:#15803d}
+  #tv-table td.neg .v{background:#fee2e2;color:#b91c1c}
+  #tv-table tbody tr:nth-child(even) td{background:#fbfbfd}
+  #tv-table tbody tr:hover td{background:#eef3fc}
+  #tv-table tbody tr.dubai-row td{background:#fff7ec;font-weight:600;border-bottom:1px solid #f0c971}
+  #tv-table tbody tr.dubai-row:hover td{background:#fdeacd}
+  #tv-table tbody tr.dubai-row td.rank{color:#b8590a;font-weight:700;font-size:13px}
   .tv-district-link{color:#1d4ed8;text-decoration:none;cursor:pointer;font-weight:500}
   .tv-district-link:hover{text-decoration:underline}
-  #tv-table td.tv-no-polygon{color:#94a3b8;font-style:italic}
+  #tv-table td.tv-no-polygon{color:#94a3b8}
   .tv-empty{padding:30px;text-align:center;color:#888;font-size:13px}
+  /* Whole row is a fly-to trigger when there's a polygon to focus. */
+  #tv-table tbody tr.clickable{cursor:pointer}
+  #tv-table tbody tr.clickable:hover td{background:#eef3fc}
   /* Choropleth overlay labels (growth %, payback years) */
   .choro-overlay{background:transparent;border:0}
   .choro-overlay-text{display:inline-block;background:rgba(255,255,255,0.85);color:#1f2933;font-size:11px;font-weight:700;padding:0 2px;border-radius:2px;white-space:nowrap;transform:translate(-50%,-50%);box-shadow:0 1px 1px rgba(0,0,0,0.14);font-variant-numeric:tabular-nums;line-height:1.2;cursor:pointer;transition:background 0.12s}
