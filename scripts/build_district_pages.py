@@ -1101,8 +1101,17 @@ def build_list_page(template, name, slug, mode, prefix, list_type, rec, about_ht
 def main():
     with open(SRC, encoding='utf-8') as f:
         text = f.read()
-    agg  = extract_const(text, 'AGGREGATES')
-    rent = extract_const(text, 'RENT_AGGREGATES')
+    # AGGREGATES / RENT_AGGREGATES used to be grepped out of the 14 MB
+    # inline literal in index.html. After the choropleth-shard refactor
+    # (sales aggregates moved from inline `const` to `<script src=…>`
+    # pointing at a thin /transactions/data/choropleth.js), the inline
+    # no longer carries the full per-district detail this script needs
+    # to build per-district pages. Read from the canonical on-disk JSON
+    # instead — same shape, just bypasses the HTML.
+    with open(os.path.join(ROOT, '_data_sale_aggregates.json'), encoding='utf-8') as f:
+        agg = json.load(f)
+    with open(os.path.join(ROOT, '_data_rent_aggregates.json'), encoding='utf-8') as f:
+        rent = json.load(f)
     tx_periods, rents_periods = load_period_aggregates()
     with open(TPL, encoding='utf-8') as f:
         template = f.read()
