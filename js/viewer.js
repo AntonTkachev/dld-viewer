@@ -467,6 +467,19 @@ const MASKS = {
     periods: ['1y','3y','5y','10y','all'], defaultPeriod: 'all',
     data: {
       // Same overlay pattern as sales — _RENTS_P['all'] adds the split keys.
+      //
+      // RENT_AGGREGATES used to be inlined in index.html (`const RENT_AGGREGATES
+      // = {…}`, 2.9 MB). It now ships as a separate /rents/data/choropleth.js
+      // via a `<script src>` tag — same global symbol, but the typeof guard
+      // catches a 404 (botched deploy / CSP block / corporate proxy) so the
+      // page falls back to period-only data instead of throwing ReferenceError.
+      //
+      // RENT_AGGREGATES is the THIN choropleth shard: only {name, n,
+      // med_annual, med_ppsqm} per district. Full per-district detail
+      // (timeline, top_projects, recent, by_subtype, by_usage) lives in
+      // /rents/<slug>/data.json and is fetched by the detail page, not here.
+      // If you need a field beyond those 4 on the main map, you also have
+      // to add it to scripts/build_rent_aggregates.py's `thin` projection.
       all:   Object.assign({},
               (typeof RENT_AGGREGATES !== 'undefined') ? RENT_AGGREGATES : {},
               _RENTS_P['all'] || {}),
