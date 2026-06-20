@@ -617,18 +617,23 @@ def lang_prefix(lang):
 
 
 def base_url(mode, slug, lang):
-    """Absolute district URL — used for canonical, hreflang, JSON-LD,
-    and the in-page anchors that need to work on live (GH Pages serves
-    the app under /dld-viewer/, so root-relative paths 404)."""
+    """Absolute district URL — used for canonical, hreflang, JSON-LD, og:url.
+    Must be absolute for SEO (Google needs full URLs)."""
     return f'{BASE_URL}{lang_prefix(lang)}/{"sales" if mode == "sale" else "rents"}/{slug}/'
+
+
+def base_path(mode, slug, lang):
+    """Root-relative version of base_url — for runtime JS constants and
+    in-page anchors. Works on any origin (localhost, dxbcompass.com,
+    file://) without rebuild."""
+    return f'{lang_prefix(lang)}/{"sales" if mode == "sale" else "rents"}/{slug}/'
 
 
 def data_url(mode, slug):
     """Data JSON is language-independent — one file shared across langs.
-    Lives under the RU canonical path. Absolute URL for the same reason
-    as base_url() — fetched at runtime from the browser, needs to resolve
-    on live."""
-    return f'{BASE_URL}/{"sales" if mode == "sale" else "rents"}/{slug}/data.json'
+    Lives under the RU canonical path. Root-relative so fetch() works on
+    any origin without rebuild."""
+    return f'/{"sales" if mode == "sale" else "rents"}/{slug}/data.json'
 
 
 # Free vs paid tier split — see docs/data_tiers.md.
@@ -1065,12 +1070,12 @@ def build_list_page(template, name, slug, mode, prefix, list_type, rec, about_ht
     html = template
     html = html.replace('<html lang="ru">', f'<html lang="{html_lang}" dir="{html_dir}">')
     html = html.replace('<!--__SEO_HEAD__-->', seo_head)
-    html = html.replace('__ASSET_BASE__', BASE_URL)
+    html = html.replace('__ASSET_BASE__', '')
     html = html.replace('__BREADCRUMB_DUBAI__', html_escape(bread_district))
-    html = html.replace('__MODE_INDEX_URL__', f'{BASE_URL}{lang_prefix(lang)}/{prefix}/')
-    html = html.replace('__DUBAI_HOME_URL__', f'{BASE_URL}{lang_prefix(lang)}/sales/')
+    html = html.replace('__MODE_INDEX_URL__', f'{lang_prefix(lang)}/{prefix}/')
+    html = html.replace('__DUBAI_HOME_URL__', f'{lang_prefix(lang)}/sales/')
     html = html.replace('__MODE_BREADCRUMB__', html_escape(bread_mode))
-    html = html.replace('__DISTRICT_URL__', base_url(mode, slug, lang))
+    html = html.replace('__DISTRICT_URL__', base_path(mode, slug, lang))
     html = html.replace('__DISTRICT_NAME__', html_escape(name))
     html = html.replace('__LIST_BREADCRUMB__', html_escape(c[breadcrumb_key]))
     html = html.replace('__H1__', html_escape(h1))
@@ -1153,7 +1158,7 @@ def main():
                     with open(json_path, 'w', encoding='utf-8') as f:
                         json.dump(bundle, f, ensure_ascii=False, separators=(',', ':'))
 
-                bu = base_url(mode, slug, lang)
+                bu = base_path(mode, slug, lang)
                 data_u = data_url(mode, slug)
                 mode_dir = os.path.join(out_root(lang), prefix, slug)
                 os.makedirs(mode_dir, exist_ok=True)
@@ -1190,10 +1195,10 @@ def main():
                                         f'<html lang="{html_lang}" dir="{html_dir}">')
                     html = html.replace('<!--__SEO_HEAD__-->',
                                         build_seo_head(mode, name, slug, copy_now['n'], period_code, lang))
-                    html = html.replace('__ASSET_BASE__', BASE_URL)
+                    html = html.replace('__ASSET_BASE__', '')
                     html = html.replace('__BREADCRUMB_DUBAI__', html_escape(c['breadcrumb_dubai']))
-                    html = html.replace('__MODE_INDEX_URL__', f'{BASE_URL}{lang_prefix(lang)}/{prefix}/')
-                    html = html.replace('__DUBAI_HOME_URL__', f'{BASE_URL}{lang_prefix(lang)}/sales/')
+                    html = html.replace('__MODE_INDEX_URL__', f'{lang_prefix(lang)}/{prefix}/')
+                    html = html.replace('__DUBAI_HOME_URL__', f'{lang_prefix(lang)}/sales/')
                     html = html.replace('__MODE_BREADCRUMB__', html_escape(bread_mode))
                     html = html.replace('__DISTRICT_URL__', bu)
                     html = html.replace('<!--__MODE_SWITCHER__-->', mode_switcher)
