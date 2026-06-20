@@ -37,7 +37,7 @@ ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 SRC  = os.path.join(ROOT, 'data', 'dld_projects.csv.gz')
 GEOJSON = os.path.join(ROOT, 'data', 'curated_polygons.geojson')
 ALIASES = os.path.join(ROOT, 'data', 'rera_arabic_aliases.json')
-BASE_URL = 'https://antontkachev.github.io/dld-viewer'
+BASE_URL = 'https://dxbcompass.com'
 LANGUAGES = ('ru', 'en', 'ar', 'hi', 'zh')
 
 IN_FLIGHT_STATES = {'ACTIVE', 'NOT_STARTED', 'PENDING', 'CONDITIONAL_ACTIVATING'}

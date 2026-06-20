@@ -11,4 +11,4 @@ the repo root. (Don't push such a build — Google needs absolute canonicals.)
 """
 import os
 
-BASE_URL = os.environ.get('SITE_BASE_URL', 'https://antontkachev.github.io/dld-viewer')
+BASE_URL = os.environ.get('SITE_BASE_URL', 'https://dxbcompass.com')
