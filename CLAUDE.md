@@ -112,8 +112,85 @@ Raw downloads live outside the repo (`~/Downloads/...`) because they're large (~
   ```
 - Current state: 107/274 named OSM schools matched, ~126 KHDA-only have no OSM coordinates. The remaining 167 unmatched OSM-named schools are a mix of (a) arabic-only-name madrasas (KHDA names are English only), (b) genuinely missing from KHDA (kindergartens, special-needs centres), (c) small private schools KHDA listed under a different legal-entity name we can't fuzzy-match safely.
 
-## Source / API reference
+## Data sources — full catalog
 
-- Portal: <https://data.dubai/en/l/470061> (TX), <https://data.dubai/en/l/468586> (Rents)
+Every dataset behind the site, with portal URL, dataset id (when applicable), pull script, and output file. This is the contract between raw upstream and our processed `data/` folder. If you add a new source, append a row here AND ship a `scripts/*_pull.*` script alongside it — that's how this codebase stays bootstrappable from a fresh clone.
+
+### Dubai Pulse / data.dubai (DLD + DM)
+
+All five datasets below share one public API:
 - Listing API: `https://data.dubai/o/dda/data-services/dataset-download?datasetId=<id>&page=1&pageSize=200&sortDir=desc`
-- Returns JSON with `data.metadata[].file_folder` + `files[].file_url` (presigned S3, 600s TTL — `dld_download.sh` refreshes per round).
+- Returns JSON with `data.metadata[].file_folder` + `files[].file_url` (presigned S3, 600s TTL — `dld_download.sh` re-fetches per round for multi-GB jobs).
+- API is open: no auth, no rate-limit headers, no user-agent gating. The portal pages themselves require login for the download button but the listing API does not.
+
+| Dataset | id | Portal | Pull script | Output | Size | Refresh |
+|---|---:|---|---|---|---:|---|
+| Transactions (sales / mortgages / gifts) | 470061 | <https://data.dubai/en/l/470061> | `scripts/dld_tx_pull.sh` → `scripts/dld_to_parquet.sh ~/Downloads/dld_transactions data/tx.parquet` | `data/tx.parquet` (also raw CSVs in `~/Downloads/dld_transactions/`) | 60 MB | weekly (irregular cadence — see fact #7) |
+| Rent contracts (Ejari) | 468586 | <https://data.dubai/en/l/468586> | `scripts/dld_rents_pull.sh` → `scripts/dld_to_parquet.sh ~/Downloads/dld_rent_contracts data/rents.parquet` | `data/rents.parquet` | 287 MB | weekly |
+| Real Estate Projects (RERA register) | 467654 | <https://data.dubai/en/l/467654> | `scripts/dld_projects_pull.py` | `data/dld_projects.csv.gz` | 451 KB | weekly |
+| Communities (DM GIS NET admin polygons) | 461494 | <https://data.dubai/en/l/461494> | `scripts/dld_communities_pull.sh` → `scripts/dld_communities_to_geojson.py` | `data/dld_communities.kml` + `data/dld_communities.geojson` | 2.3 MB / 3.4 MB | rarely (boundaries are stable) |
+| Building Summary Information (DM Building Control completion certificates) | 459523 | <https://data.dubai/en/l/459523> | `scripts/dld_buildings_pull.sh` → `scripts/dld_buildings_to_signal.py` | `data/dld_buildings_signal.json` (slim 1.8 MB digest; raw 207 MB CSV stays in `~/Downloads/dld_buildings/`) | 1.8 MB | monthly |
+
+**Cross-checking RERA against DM Buildings + Ejari:** `scripts/_rera_enrich.py` derives a cleaned `__derived_status` per RERA project. Rule: if ≥50% of a project's buildings are status="New" in DM Building Control → silently reclassify ACTIVE → FINISHED. Fallback: Ejari rentals ≥5/12mo or ≥30 total. Mechanism stays server-side (data.json doesn't expose the join), so the construction page and map badges show a cleaner pipeline than RERA alone.
+
+Related Dubai Pulse datasets we've **looked at but don't pull yet** (potential pipelines):
+- 725256 Completed Buildings, 725270 Completed Buildings by Urban/Rural — statistical aggregates, not project-level, lower ROI than 459523.
+
+### KHDA (Knowledge & Human Development Authority)
+
+KHDA publishes **no API or CSV** — only server-rendered ASP.NET pages with every card embedded inline.
+
+| Source | URL | Pull script | Output |
+|---|---|---|---|
+| K-12 schools directory | <https://web.khda.gov.ae/en/Education-Directory/Schools> | `scripts/khda_scrape.py` | `data/khda_schools.csv` |
+| Higher Education directory | <https://web.khda.gov.ae/en/Education-Directory/Higher-Education-Institutions-Directory> | `scripts/khda_scrape.py` (same script handles both) | `data/khda_universities.csv` |
+
+Orchestrator: `scripts/khda_refresh.sh` — scrape → OSM merge → `build_pages` chain.
+
+### OpenStreetMap (Overpass API)
+
+POI seeds for the map's layers (schools / universities / medical / mosques / metro / malls). Overpass endpoint: <https://overpass-api.de/api/interpreter> (we use the standard public instance; the queries are tiny, no rate limit issues).
+
+| Layer | Overpass tag(s) | Pull script | Output |
+|---|---|---|---|
+| Schools | `amenity=school` (Dubai bbox) | `scripts/osm_schools_pull.py` | `data/osm_schools.json` |
+| Universities & colleges | `amenity=university\|college` (Dubai bbox, same script as schools) | `scripts/osm_schools_pull.py` | `data/osm_universities.json` |
+| Medical | `amenity=hospital\|clinic\|doctors` (Dubai bbox) | `scripts/osm_medical_pull.py` | `data/osm_medical.json` |
+| Malls + souqs | `shop=mall` + `amenity=marketplace` (souq-tagged) | `scripts/osm_malls_pull.py` | `data/osm_malls.json` |
+| Sub-communities (Springs/Meadows phases etc.) | named `landuse=residential` / `place=residential` polygons | `scripts/osm_subcommunities_pull.py` | `data/osm_subcommunities.json` |
+
+**TODO — currently inlined directly into `index.html` with no source pull script:**
+- `METRO_STATIONS` — Dubai Metro Red/Green stations with lat/lon. Likely Overpass `railway=station` + manual line-color tagging. Need: `scripts/osm_metro_pull.py`.
+- `MOSQUES` — `amenity=place_of_worship religion=muslim`. Need: `scripts/osm_mosques_pull.py`.
+
+### Manually curated (no pull script — checked into the repo)
+
+| File | Purpose | Edit notes |
+|---|---|---|
+| `data/polygon_overrides.json` | Hand-curated split rules for the 16 master-projects that need to be visually broken out from their DLD admin parent (Marina out of Marsa Dubai, Sports City out of Al Hebiah Fourth, etc.) | See `docs/polygon_overrides_design.md` for the schema |
+| `data/dm_to_dld_aliases.json` | DM admin spelling ↔ DLD spelling mappings + display-name overrides (Burj Khalifa → Downtown Dubai, NAKHLAT JUMEIRA → Palm Jumeirah) | 13 entries, all manually verified |
+| `data/rera_arabic_aliases.json` | Arabic → English mappings for the top 44 RERA developers + 3 project classifications. Project name English mapping is done via tx.parquet join, not aliases | See `_skipped` section for known gaps |
+
+### Derived (no pull script — generated from other sources)
+
+| File | Source(s) | Generator |
+|---|---|---|
+| `data/curated_polygons.geojson` | `dld_communities.geojson` + `polygon_overrides.json` + `osm_subcommunities.json` + `dm_to_dld_aliases.json` | `scripts/build_curated_polygons.py` |
+
+## Refresh playbook
+
+Per-source manual refresh:
+```bash
+./scripts/dld_check_new.sh        # checks tx + rents — prints "Up to date" or "NEWER"
+./scripts/dld_refresh.sh          # downloads + parquetizes tx + rents if newer
+python3 scripts/dld_projects_pull.py   # RERA register
+./scripts/dld_buildings_pull.sh && python3 scripts/dld_buildings_to_signal.py   # DM Buildings
+./scripts/dld_communities_pull.sh && python3 scripts/dld_communities_to_geojson.py   # DM admin polygons
+./scripts/khda_refresh.sh         # KHDA schools + universities
+python3 scripts/osm_schools_pull.py
+python3 scripts/osm_medical_pull.py
+python3 scripts/osm_malls_pull.py
+python3 scripts/osm_subcommunities_pull.py
+```
+
+A unified `scripts/refresh_all.sh` is on the TODO list — see project memory.
