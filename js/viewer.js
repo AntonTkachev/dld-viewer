@@ -190,12 +190,21 @@ function _districtModePrefix(mask) {
   // Per-district pages exist only for sales + rents. growth/payback land on /sales/.
   return (mask === 'rents') ? 'rents' : 'sales';
 }
-function _districtHrefForKey(key, name, legacyKey) {
+function _districtHrefForKey(key, name, legacyKey, masterKey) {
   if (!key || key === '__dubai__') return _langUrlPrefix() + '/';
   // Slug MUST match the build script (scripts/build_district_pages.py), which
   // slugifies the DLD record's `name`. OSM polygon labels often differ —
   // "Jabal Ali Industrial 2" (OSM) vs "Jabal Ali Industrial Second" (DLD) —
   // so always prefer the AGGREGATES/RENT_AGGREGATES name when it exists.
+  //
+  // Mode-aware lookup. Earlier this function tried AGGREGATES first regardless
+  // of mode, so clicking a polygon while in rents mode could resolve via the
+  // SALES aggregate (since AGGREGATES has more areas than RENT_AGGREGATES —
+  // rent builder drops areas with <5 contracts) and route to /rents/<slug>/
+  // even when no rent page existed. Now we look up in the matching aggregate
+  // first; if empty there, fall through to the other and route to that mode
+  // instead. World Islands (51 sales, 1 rent) used to land on /rents/world-islands/
+  // 404; now it lands on /sales/world-islands/ even when clicked from rents view.
   //
   // _isStub guards: AGGREGATES entries created at boot for split sub-zones
   // (JBR, "Marsa Dubai (other)", "Wadi Al Safa 5 (other)") have no matching
@@ -203,21 +212,37 @@ function _districtHrefForKey(key, name, legacyKey) {
   // the legacy admin-parent key, which DOES have a real district page.
   // See _stubSplitAggregates above for where stubs get marked.
   const hasReal = (a, k) => a && a[k] && a[k].name && !a[k]._isStub;
-  let display = null;
-  if (typeof AGGREGATES !== 'undefined' && hasReal(AGGREGATES, key)) {
-    display = AGGREGATES[key].name;
-  } else if (typeof RENT_AGGREGATES !== 'undefined' && hasReal(RENT_AGGREGATES, key)) {
-    display = RENT_AGGREGATES[key].name;
-  } else if (legacyKey && typeof AGGREGATES !== 'undefined' && hasReal(AGGREGATES, legacyKey)) {
-    display = AGGREGATES[legacyKey].name;
-  } else if (legacyKey && typeof RENT_AGGREGATES !== 'undefined' && hasReal(RENT_AGGREGATES, legacyKey)) {
-    display = RENT_AGGREGATES[legacyKey].name;
-  } else {
-    display = name || key;
-  }
-  const slug = _slugify(display);
   const mode = _districtModePrefix(typeof currentMask !== 'undefined' ? currentMask : 'sales');
-  return _langUrlPrefix() + '/' + mode + '/' + slug + '/';
+  const PRIMARY   = (mode === 'rents' && typeof RENT_AGGREGATES !== 'undefined') ? RENT_AGGREGATES : (typeof AGGREGATES !== 'undefined' ? AGGREGATES : null);
+  const SECONDARY = (mode === 'rents' && typeof AGGREGATES      !== 'undefined') ? AGGREGATES      : (typeof RENT_AGGREGATES !== 'undefined' ? RENT_AGGREGATES : null);
+  // Probe lookup order:
+  //   1. polygon `key` (the polygon's own name)
+  //   2. polygon `masterKey` (the rolled-up master_project AGGREGATES key —
+  //      set in merge_curated_polygons_into_viewer.py for splits like
+  //      "Expo City Dubai" → 'expo city')
+  //   3. polygon `legacyKey` (admin parent — last-resort for "(other)"
+  //      remainders, display-aliases, sub-zones without master filters)
+  // First try inside the primary aggregate (matches current mode); if all
+  // three miss, switch to the secondary and route to its mode instead.
+  const probes = [key, masterKey, legacyKey].filter(Boolean);
+  let display = null, finalMode = mode;
+  for (const probe of probes) {
+    if (hasReal(PRIMARY, probe)) { display = PRIMARY[probe].name; break; }
+  }
+  if (!display) {
+    for (const probe of probes) {
+      if (hasReal(SECONDARY, probe)) {
+        display = SECONDARY[probe].name;
+        // Switch the URL to the mode whose aggregate matched, so we never
+        // route to a /<mode>/<slug>/ page that doesn't exist for that mode.
+        finalMode = (SECONDARY === AGGREGATES) ? 'sales' : 'rents';
+        break;
+      }
+    }
+  }
+  if (!display) display = name || key;
+  const slug = _slugify(display);
+  return _langUrlPrefix() + '/' + finalMode + '/' + slug + '/';
 }
 // Open a district: navigate to the SEO page at /<lang>/<mode>/<slug>/.
 window.openDistrictByKey = function(key) {
@@ -226,9 +251,10 @@ window.openDistrictByKey = function(key) {
 window.openDubai = function() { /* Dubai-wide overview moved off the slide-out panel; no-op for now. */ };
 function openDistrict(props) {
   if (!props) return;
-  // _districtHrefForKey handles the AGGREGATES[realKey] vs AGGREGATES[legacyKey]
-  // fallback internally — see comment there. We just pass everything through.
-  const href = _districtHrefForKey(props.real_area_key, props.name, props.legacy_area_key);
+  // _districtHrefForKey is mode-aware and now also accepts master_project_key
+  // for split polygons whose data lives under a master_project AGGREGATES
+  // bucket rather than the polygon name.
+  const href = _districtHrefForKey(props.real_area_key, props.name, props.legacy_area_key, props.master_project_key);
   if (href) window.location.href = href;
 }
 
@@ -249,7 +275,21 @@ L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
 }).addTo(map);
 
 // ===================== CHOROPLETH =====================
-const RAMP = ['#440154','#3b528b','#21918c','#5ec962','#fde725'];
+const RAMP_VIRIDIS = ['#440154','#3b528b','#21918c','#5ec962','#fde725'];
+const RAMP_BLUE    = ['#eaf2fb','#b8d0f0','#7da4e2','#3f73d4','#1d4ed8'];
+const RAMP_GREEN   = ['#ebf6ee','#b6dcc2','#7bc090','#3a9a55','#188a37'];
+const _PALETTE_KEY = 'dxbc_choro_palette';
+const _PALETTES = {viridis: RAMP_VIRIDIS, blue: RAMP_BLUE, green: RAMP_GREEN};
+const _PALETTE_ORDER = ['viridis', 'blue', 'green'];
+let _paletteName = _PALETTES[localStorage.getItem(_PALETTE_KEY)] ? localStorage.getItem(_PALETTE_KEY) : 'viridis';
+let RAMP = _PALETTES[_paletteName];
+window.togglePalette = function() {
+  const next = _PALETTE_ORDER[(_PALETTE_ORDER.indexOf(_paletteName) + 1) % _PALETTE_ORDER.length];
+  _paletteName = next;
+  RAMP = _PALETTES[next];
+  localStorage.setItem(_PALETTE_KEY, next);
+  if (typeof renderChoro === 'function') renderChoro();
+};
 const METRIC_FMT = {
   count: v => v.toLocaleString('ru-RU'),
   total_aed: v => v >= 1e9 ? (v/1e9).toFixed(2)+' '+t('abbr_b') : v >= 1e6 ? (v/1e6).toFixed(2)+' '+t('abbr_m') : v.toLocaleString(),
@@ -1191,11 +1231,25 @@ function _onSearchSelect(feat){
 }
 
 let choro;
+// font-size = base + magnitude bonus + zoom bonus; color by sign of label
+// (works for "+12%" / "-3%" — growth) or neutral for unsigned (payback "5.2")
+function _overlayStyleFor(label, zoom) {
+  const s = String(label);
+  const num = Math.abs(parseFloat(s.replace(/[^0-9.\-]/g, '')) || 0);
+  const sign = s[0] === '+' ? 'pos' : (s[0] === '-' ? 'neg' : 'neu');
+  const magBonus   = Math.min(num, 40) / 10;             // 0..4
+  const zoomFactor = 1 + Math.max(0, zoom - 10) * 0.20;  // x1.0 at z10, x2.0 at z15
+  const fontSize   = Math.round((4 + magBonus) * zoomFactor * 10) / 10;
+  const color = sign === 'pos' ? '#0a7f00' : sign === 'neg' ? '#b91c1c' : '#1f2933';
+  return { fontSize, color };
+}
+
 let overlayLayer = null;
 function _refreshOverlay(mask) {
   if (overlayLayer) { map.removeLayer(overlayLayer); overlayLayer = null; }
   if (!mask || typeof mask.overlay !== 'function') return;
   const data = mask.data[currentMaskPeriod] || {};
+  const zoom = map.getZoom();
   overlayLayer = L.layerGroup();
   for (const f of GEOJSON.features) {
     if (f._level !== undefined && f._level < minLevel) continue;
@@ -1206,16 +1260,35 @@ function _refreshOverlay(mask) {
     const label = mask.overlay(rec);
     if (label === null || label === undefined || label === '') continue;
     const bb = _bbox(f.geometry);
+    const st = _overlayStyleFor(label, zoom);
     const icon = L.divIcon({
       className: 'choro-overlay',
-      html: `<span class="choro-overlay-text">${label}</span>`,
+      html: `<span class="choro-overlay-text" style="font-size:${st.fontSize}px;color:${st.color}">${label}</span>`,
       iconSize: [0, 0],
       iconAnchor: [0, 0],
     });
-    L.marker([bb.cy, bb.cx], { icon, interactive: false, keyboard: false }).addTo(overlayLayer);
+    const marker = L.marker([bb.cy, bb.cx], { icon, interactive: true, keyboard: false, bubblingMouseEvents: false });
+    // Route badge click to THIS feature's polygon — bypasses the under-the-cursor
+    // routing that would otherwise hit the parent for narrow districts like JBR.
+    marker.on('click', function(e) {
+      L.DomEvent.stopPropagation(e);
+      if (f._layer && typeof f._layer.openPopup === 'function') {
+        f._layer.openPopup(marker.getLatLng());
+      }
+    });
+    // Mirror polygon hover highlight so the user still gets visual feedback
+    // when hovering over the badge.
+    marker.on('mouseover', () => { if (f._layer) f._layer.setStyle({weight:2,color:'#000'}); });
+    marker.on('mouseout',  () => { if (f._layer && choro) choro.resetStyle(f._layer); });
+    marker.addTo(overlayLayer);
   }
   overlayLayer.addTo(map);
 }
+
+map.on('zoomend', () => {
+  const m = MASKS[currentMask];
+  if (m && typeof m.overlay === 'function') _refreshOverlay(m);
+});
 
 function renderChoro(){
   const mask = MASKS[currentMask] || MASKS.sales;
@@ -1249,7 +1322,7 @@ function renderChoro(){
         const newDev = p._new_dev_count || 0;
         const newDevRow = newDev ? `<div class="stat"><span class="k">${t("new_buildings")} <span class="src-tag src-osm">OSM</span></span><span class="v">${newDev|0}</span></div>` : '';
         const detailsBtn = p.real_area_key
-          ? `<div style="margin-top:8px"><a href="${_h(_safeUrl(_districtHrefForKey(p.real_area_key, p.name, p.legacy_area_key)))}" style="background:#0366d6;color:#fff;text-decoration:none;padding:6px 12px;border-radius:4px;font-size:12px;font-weight:600;display:inline-block">${t("pp_open")}</a></div>`
+          ? `<div style="margin-top:8px"><a href="${_h(_safeUrl(_districtHrefForKey(p.real_area_key, p.name, p.legacy_area_key, p.master_project_key)))}" style="background:#0366d6;color:#fff;text-decoration:none;padding:6px 12px;border-radius:4px;font-size:12px;font-weight:600;display:inline-block">${t("pp_open")}</a></div>`
           : '';
         let bodyRows;
         if (typeof m.popupRows === 'function') {
@@ -1281,6 +1354,10 @@ function renderChoro(){
         mouseover:e=>e.target.setStyle({weight:2,color:'#000'}),
         mouseout:e=>choro.resetStyle(e.target),
       });
+      // Stored so overlay badges can route clicks back to THEIR feature's
+      // polygon (badges sit at bbox centroid, which may fall outside the
+      // actual polygon or under a parent — see JBR / Dubai Hills).
+      f._layer = layer;
     },
   }).addTo(map);
   choro.bringToBack();
@@ -1291,7 +1368,8 @@ function renderChoro(){
   const lo = vs.length ? Math.min(...vs) : 0;
   const hi = vs.length ? Math.max(...vs) : 0;
   const all = [lo, ...breaks, hi];
-  let html = `<div style="font-weight:600;margin-bottom:4px">${title}</div>`;
+  const paletteName = _paletteName.charAt(0).toUpperCase() + _paletteName.slice(1);
+  let html = `<div style="display:flex;justify-content:space-between;align-items:center;gap:10px;margin-bottom:4px"><span style="font-weight:600">${title}</span><button type="button" onclick="togglePalette()" title="Сменить палитру (A/B-тест)" style="border:1px solid #d1d5db;background:#fff;border-radius:4px;padding:1px 7px;cursor:pointer;font-size:11px;color:#374151;line-height:1.4">🎨 ${paletteName}</button></div>`;
   for(let i=0;i<RAMP.length;i++) {
     const cIdx = mask.invertRamp ? (RAMP.length - 1 - i) : i;
     html += `<div class="row"><span class="sw" style="background:${RAMP[cIdx]}"></span>${fmt(all[i])} – ${fmt(all[i+1])}</div>`;
