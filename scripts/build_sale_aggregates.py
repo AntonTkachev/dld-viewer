@@ -587,25 +587,69 @@ print(f'  areas: {len(areas)}', file=sys.stderr)
 print(f'  __dubai__: n={dubai["n"]:,} total={dubai["total"]:,} med={dubai["med"]:,} trend={dubai["trend_pct"]}%', file=sys.stderr)
 print(f'  key: master_project_en → fallback area_name_en (no manual remap)', file=sys.stderr)
 
-# ─── Inline into index.html so the dev-preview + every per-district
-# page picks up the fresh aggregates on the next build_pages run. The
-# const literal is the canonical store; the JSON file is just for
-# diff/inspection (gitignored). Replace the single line beginning
-# `const AGGREGATES = `.
+# Thin choropleth shard — only the fields viewer.js reads when rendering
+# the main map (pluck() + _districtHrefForKey name lookup + Springs/Meadows
+# parent override). Full per-district detail (timeline, top_deals, recent,
+# room-bucket breakdowns) stays in /_data_sale_aggregates.json (gitignored)
+# and the per-district /sales/<slug>/data.json. Keeping main-page payload
+# tiny means a scraper wanting the full dataset must issue one request per
+# district (where the Cloudflare rate-limit rule can mitigate).
+#
+# Emitted as a JS file with `const AGGREGATES = {...}` so the browser can
+# pick it up via `<script src>` in the same global lexical scope viewer.js
+# reads from. The index.html patch below cuts the 7.7 MB inline literal
+# out and stitches in a script tag instead.
+CHOROPLETH_JS = os.path.join(ROOT, 'transactions/data/choropleth.js')
+thin = {
+    k: {
+        'name':      v.get('name'),
+        'n':         v.get('n', 0),
+        'total':     v.get('total', 0),
+        'med':       v.get('med', 0),
+        'med_ppsqm': v.get('med_ppsqm', 0),
+    }
+    for k, v in out.items()
+}
+with open(CHOROPLETH_JS, 'w', encoding='utf-8') as f:
+    f.write('const AGGREGATES = ')
+    json.dump(thin, f, ensure_ascii=False, separators=(',', ':'))
+    f.write(';\n')
+print(f'wrote {CHOROPLETH_JS}', file=sys.stderr)
+print(f'  entries: {len(thin)}, size: {os.path.getsize(CHOROPLETH_JS):,} bytes', file=sys.stderr)
+
+# ─── Splice into index.html. Previously this inlined the full 7.7 MB
+# `const AGGREGATES = {...};` literal directly into the page. That made
+# every visitor download the entire dataset on first paint and reduced
+# scraping to a single request. We now emit the thin shard above as a
+# separate JS file and replace the inline literal with a `<script src>`
+# tag, so the heavy lifting happens out-of-band, browser caching kicks
+# in, and main-page payload drops by ~7.6 MB.
+#
+# The AGGREGATES line sits inside an existing classic `<script>` block
+# (next to GEOJSON / RENT_AGGREGATES / POIS), so we have to close that
+# block, load the external script, and reopen — classic scripts share
+# the global lexical scope, so subsequent `const RENT_AGGREGATES = …`
+# still works as before.
 HTML = os.path.join(ROOT, 'index.html')
-print(f'patching {HTML}: const AGGREGATES = ...', file=sys.stderr)
+print(f'patching {HTML}: const AGGREGATES → <script src>', file=sys.stderr)
 with open(HTML, encoding='utf-8') as f:
     lines = f.readlines()
-literal = 'const AGGREGATES = ' + json.dumps(out, ensure_ascii=False, separators=(',', ':')) + ';\n'
-patched = False
+CHOROPLETH_TAG = '<script src="/transactions/data/choropleth.js"></script>\n'
+splice = '</script>\n' + CHOROPLETH_TAG + '<script>\n'
+state = None
 for i, ln in enumerate(lines):
     if ln.startswith('const AGGREGATES = '):
-        lines[i] = literal
-        patched = True
-        print(f'  patched line {i+1} ({len(literal):,} bytes)', file=sys.stderr)
+        lines[i] = splice
+        state = 'replaced'
+        print(f'  replaced line {i+1} (was {len(ln):,} bytes)', file=sys.stderr)
         break
-if not patched:
-    print('  ERROR: const AGGREGATES line not found', file=sys.stderr)
+    if ln == CHOROPLETH_TAG:
+        state = 'already-patched'
+        print(f'  line {i+1} already references choropleth.js — no-op', file=sys.stderr)
+        break
+if state is None:
+    print('  ERROR: index.html does not contain `const AGGREGATES = …` or the choropleth script tag', file=sys.stderr)
     sys.exit(1)
-with open(HTML, 'w', encoding='utf-8') as f:
-    f.writelines(lines)
+if state == 'replaced':
+    with open(HTML, 'w', encoding='utf-8') as f:
+        f.writelines(lines)
