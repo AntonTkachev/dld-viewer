@@ -42,11 +42,11 @@ PAGES = {
         initial_period='all',
         og_image='/og/sales.png',
         title=dict(
-            ru='Сделки с недвижимостью в Дубае по районам — Deedmap',
-            en='Real estate transactions in Dubai by district — Deedmap',
-            ar='صفقات العقارات في دبي حسب الحي — Deedmap',
-            hi='जिले के अनुसार दुबई में रियल एस्टेट लेन-देन — Deedmap',
-            zh='迪拜各社区房产交易 — Deedmap',
+            ru='Сделки с недвижимостью в Дубае по районам — DXBCompass',
+            en='Real estate transactions in Dubai by district — DXBCompass',
+            ar='صفقات العقارات في دبي حسب الحي — DXBCompass',
+            hi='जिले के अनुसार दुबई में रियल एस्टेट लेन-देन — DXBCompass',
+            zh='迪拜各社区房产交易 — DXBCompass',
         ),
         desc=dict(
             ru='Интерактивная карта сделок Dubai Land Department: количество сделок, '
@@ -85,11 +85,11 @@ PAGES = {
         initial_period='all',
         og_image='/og/rents.png',
         title=dict(
-            ru='Аренда недвижимости в Дубае по районам — Deedmap',
-            en='Rental contracts in Dubai by district — Deedmap',
-            ar='عقود إيجار العقارات في دبي حسب الحي — Deedmap',
-            hi='जिले के अनुसार दुबई में किराये के अनुबंध — Deedmap',
-            zh='迪拜各社区房产租赁合同 — Deedmap',
+            ru='Аренда недвижимости в Дубае по районам — DXBCompass',
+            en='Rental contracts in Dubai by district — DXBCompass',
+            ar='عقود إيجار العقارات في دبي حسب الحي — DXBCompass',
+            hi='जिले के अनुसार दुबई में किराये के अनुबंध — DXBCompass',
+            zh='迪拜各社区房产租赁合同 — DXBCompass',
         ),
         desc=dict(
             ru='Интерактивная карта договоров аренды Dubai Land Department: количество '
@@ -126,11 +126,11 @@ PAGES = {
         initial_period='5y',
         og_image='/og/growth.png',
         title=dict(
-            ru='Рост цен на недвижимость в Дубае по районам — Deedmap',
-            en='Real estate price growth in Dubai by district — Deedmap',
-            ar='نمو أسعار العقارات في دبي حسب الحي — Deedmap',
-            hi='जिले के अनुसार दुबई में रियल एस्टेट मूल्य वृद्धि — Deedmap',
-            zh='迪拜各社区房产价格涨幅 — Deedmap',
+            ru='Рост цен на недвижимость в Дубае по районам — DXBCompass',
+            en='Real estate price growth in Dubai by district — DXBCompass',
+            ar='نمو أسعار العقارات في دبي حسب الحي — DXBCompass',
+            hi='जिले के अनुसार दुबई में रियल एस्टेट मूल्य वृद्धि — DXBCompass',
+            zh='迪拜各社区房产价格涨幅 — DXBCompass',
         ),
         desc=dict(
             ru='Интерактивная карта роста медианной цены AED/м² по районам Дубая: '
@@ -168,11 +168,11 @@ PAGES = {
         initial_period='1br',
         og_image='/og/payback.png',
         title=dict(
-            ru='Окупаемость аренды в Дубае по районам — Deedmap',
-            en='Rental payback in Dubai by district — Deedmap',
-            ar='استرداد الإيجار في دبي حسب الحي — Deedmap',
-            hi='जिले के अनुसार दुबई में किराये की पेबैक — Deedmap',
-            zh='迪拜各社区租金回本年限 — Deedmap',
+            ru='Окупаемость аренды в Дубае по районам — DXBCompass',
+            en='Rental payback in Dubai by district — DXBCompass',
+            ar='استرداد الإيجار في دبي حسب الحي — DXBCompass',
+            hi='जिले के अनुसार दुबई में किराये की पेबैक — DXBCompass',
+            zh='迪拜各社区租金回本年限 — DXBCompass',
         ),
         desc=dict(
             ru='Карта показывает за сколько лет годовая аренда окупит покупку. '
@@ -217,11 +217,11 @@ TABLE_DESC_PREFIX = {
 
 # Per-language "map → table" title suffix swap. Keys are (pattern_in_title, replacement).
 TABLE_TITLE_SWAP = {
-    'ru': ('— Deedmap', '— Deedmap • Таблица'),
-    'en': ('— Deedmap', '— Deedmap • Table'),
-    'ar': ('— Deedmap', '— Deedmap • جدول'),
-    'hi': ('— Deedmap', '— Deedmap • तालिका'),
-    'zh': ('— Deedmap', '— Deedmap • 表格'),
+    'ru': ('— DXBCompass', '— DXBCompass • Таблица'),
+    'en': ('— DXBCompass', '— DXBCompass • Table'),
+    'ar': ('— DXBCompass', '— DXBCompass • جدول'),
+    'hi': ('— DXBCompass', '— DXBCompass • तालिका'),
+    'zh': ('— DXBCompass', '— DXBCompass • 表格'),
 }
 
 # Direction tag for <html>: Arabic is RTL.
@@ -291,7 +291,7 @@ def build(page_key, cfg, view, lang):
         '@context': 'https://schema.org', '@type': 'Dataset',
         'name': dataset_name, 'alternateName': dataset_name_en,
         'description': desc, 'inLanguage': lang, 'url': canonical,
-        'creator': {'@type': 'Organization', 'name': 'Deedmap'},
+        'creator': {'@type': 'Organization', 'name': 'DXBCompass'},
         'license': 'https://www.dubaipulse.gov.ae/terms',
         'isAccessibleForFree': True,
         'spatialCoverage': {'@type': 'Place', 'name': 'Dubai, UAE'},
@@ -389,10 +389,10 @@ for key, cfg in PAGES.items():
 # which breaks BreadcrumbList "Dubai" links and any direct typing /ar/.
 # RU root (/) already has the master index.html, so only non-RU need stubs.
 LANG_STUB = {
-    'en': dict(dir='ltr', title='Deedmap — Dubai real estate data', label='Open the Dubai map →'),
-    'ar': dict(dir='rtl', title='Deedmap — بيانات عقارات دبي', label='افتح خريطة دبي ←'),
-    'hi': dict(dir='ltr', title='Deedmap — दुबई रियल एस्टेट डेटा', label='दुबई का मानचित्र खोलें →'),
-    'zh': dict(dir='ltr', title='Deedmap — 迪拜房产数据', label='打开迪拜地图 →'),
+    'en': dict(dir='ltr', title='DXBCompass — Dubai real estate data', label='Open the Dubai map →'),
+    'ar': dict(dir='rtl', title='DXBCompass — بيانات عقارات دبي', label='افتح خريطة دبي ←'),
+    'hi': dict(dir='ltr', title='DXBCompass — दुबई रियल एस्टेट डेटा', label='दुबई का मानचित्र खोलें →'),
+    'zh': dict(dir='ltr', title='DXBCompass — 迪拜房产数据', label='打开迪拜地图 →'),
 }
 for l, s in LANG_STUB.items():
     target = f'{BASE_URL}/{l}/sales/'
