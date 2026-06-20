@@ -4630,9 +4630,9 @@
     ]
    },
    "properties": {
-    "name": "Al Khairan First",
-    "name_ar": "الخيران الأولى",
-    "key": "al khairan first",
+    "name": "Dubai Creek Harbour",
+    "name_ar": "مرسى خور دبي",
+    "key": "dubai creek harbour",
     "source": "dm-community",
     "parent_area_name_en": null,
     "comm_num": 415,
@@ -11450,9 +11450,9 @@
     ]
    },
    "properties": {
-    "name": "Al Barsha South Fourth",
-    "name_ar": "البرشاء جنوب الرابعة",
-    "key": "al barsha south fourth",
+    "name": "Jumeirah Village Circle",
+    "name_ar": "قرية جميرا الدائرية",
+    "key": "jumeirah village circle",
     "source": "dm-community",
     "parent_area_name_en": null,
     "comm_num": 681,
@@ -11627,9 +11627,9 @@
     ]
    },
    "properties": {
-    "name": "Al Kifaf",
-    "name_ar": "الكفاف",
-    "key": "al kifaf",
+    "name": "Wasl 1",
+    "name_ar": "وصل 1",
+    "key": "wasl 1",
     "source": "dm-community",
     "parent_area_name_en": null,
     "comm_num": 324,
@@ -14007,9 +14007,9 @@
     ]
    },
    "properties": {
-    "name": "Al Barshaa South Second",
-    "name_ar": "البرشاء جنوب الثانية",
-    "key": "al barshaa south second",
+    "name": "Dubai Science Park",
+    "name_ar": "مجمع دبي للعلوم",
+    "key": "dubai science park",
     "source": "dm-community",
     "parent_area_name_en": null,
     "comm_num": 672,
@@ -47492,9 +47492,9 @@
     ]
    },
    "properties": {
-    "name": "Al Barsha South Fifth",
-    "name_ar": "البرشاء جنوب الخامسة",
-    "key": "al barsha south fifth",
+    "name": "Jumeirah Village Triangle",
+    "name_ar": "مثلث قرية جميرا",
+    "key": "jumeirah village triangle",
     "source": "dm-community",
     "parent_area_name_en": null,
     "comm_num": 684,
@@ -97404,9 +97404,9 @@
     ]
    },
    "properties": {
-    "name": "Saih Shuaib 1",
-    "name_ar": "سيح شعيب 1",
-    "key": "saih shuaib 1",
+    "name": "Jebel Ali Hills",
+    "name_ar": "تلال جبل علي",
+    "key": "jebel ali hills",
     "source": "dm-community",
     "parent_area_name_en": null,
     "comm_num": 513,
@@ -107390,9 +107390,9 @@
     ]
    },
    "properties": {
-    "name": "Nadd Hessa",
-    "name_ar": "ند حصه",
-    "key": "nadd hessa",
+    "name": "Silicon Oasis",
+    "name_ar": "واحة دبي للسيليكون",
+    "key": "silicon oasis",
     "source": "dm-community",
     "parent_area_name_en": null,
     "comm_num": 626,
@@ -110076,9 +110076,9 @@
     ]
    },
    "properties": {
-    "name": "Al Thanyah First",
-    "name_ar": "الثنيه الأولى",
-    "key": "al thanyah first",
+    "name": "Barsha Heights",
+    "name_ar": "مرتفعات البرشاء",
+    "key": "barsha heights",
     "source": "dm-community",
     "parent_area_name_en": null,
     "comm_num": 383,
@@ -131652,9 +131652,9 @@
     ]
    },
    "properties": {
-    "name": "Al Yufrah 1",
-    "name_ar": "اليفره 1",
-    "key": "al yufrah 1",
+    "name": "The Valley",
+    "name_ar": "ذا فالي",
+    "key": "the valley",
     "source": "dm-community",
     "parent_area_name_en": null,
     "comm_num": 915,
@@ -185160,9 +185160,9 @@
     ]
    },
    "properties": {
-    "name": "Wadi Al Safa 6",
-    "name_ar": "وادي الصفا 6",
-    "key": "wadi al safa 6",
+    "name": "Arabian Ranches 1",
+    "name_ar": "المرابع العربية 1",
+    "key": "arabian ranches 1",
     "source": "dm-community",
     "parent_area_name_en": null,
     "comm_num": 664,
@@ -191494,9 +191494,9 @@
     ]
    },
    "properties": {
-    "name": "Al Barshaa South Third",
-    "name_ar": "البرشاء جنوب الثالثة",
-    "key": "al barshaa south third",
+    "name": "Arjan",
+    "name_ar": "أرجان",
+    "key": "arjan",
     "source": "dm-community",
     "parent_area_name_en": null,
     "comm_num": 673,
