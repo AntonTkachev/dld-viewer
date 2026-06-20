@@ -5,7 +5,7 @@ Period: YTD 2026 (Jan 1 → 2026-05-21, what parquet has).
 Sector → community remap applied at read time so polygons referencing
 community-style keys (e.g. 'dubai marina') still find data.
 """
-import duckdb, json, sys, os
+import duckdb, json, sys, os, re, hashlib
 
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 OUT = os.path.join(ROOT, '_data_sale_aggregates.json')
@@ -612,10 +612,32 @@ thin = {
 }
 with open(CHOROPLETH_JS, 'w', encoding='utf-8') as f:
     f.write('const AGGREGATES = ')
-    json.dump(thin, f, ensure_ascii=False, separators=(',', ':'))
+    # sort_keys for deterministic byte-output: the content hash below feeds
+    # the index.html cachebust, and DuckDB's row order is not stable across
+    # runs. Without sort_keys, the hash flips on every build even when the
+    # actual data hasn't changed → useless cache invalidation.
+    json.dump(thin, f, ensure_ascii=False, separators=(',', ':'), sort_keys=True)
     f.write(';\n')
+# Content hash → ?v= query string in index.html. Without this, a new
+# polygon key added to choropleth.js (alias batch / split) reaches the
+# browser AFTER the new index.html (which references the new key from
+# GEOJSON), causing greyed-out districts until Cloudflare's 600 s edge
+# cache + browser cache both expire. Same bug we hit with growth/payback
+# last sprint.
+#
+# Hash deliberately excludes the `name` field: DLD parquet has multiple
+# capitalizations per district (e.g. "DAMAC HILLS 2" vs "DAMAC Hills 2")
+# and the SQL aggregator picks "any" — non-deterministic across runs.
+# Cache-busting on display-name flips is useless: it'd invalidate the
+# cache on every deploy regardless of whether real data changed. The
+# hash should only bump when keys/numbers actually change.
+hash_payload = json.dumps(
+    {k: {f: x for f, x in v.items() if f != 'name'} for k, v in thin.items()},
+    sort_keys=True, separators=(',', ':'),
+).encode('utf-8')
+CHOROPLETH_HASH = hashlib.sha256(hash_payload).hexdigest()[:8]
 print(f'wrote {CHOROPLETH_JS}', file=sys.stderr)
-print(f'  entries: {len(thin)}, size: {os.path.getsize(CHOROPLETH_JS):,} bytes', file=sys.stderr)
+print(f'  entries: {len(thin)}, size: {os.path.getsize(CHOROPLETH_JS):,} bytes, hash: {CHOROPLETH_HASH}', file=sys.stderr)
 
 # ─── Splice into index.html. Previously this inlined the full 7.7 MB
 # `const AGGREGATES = {...};` literal directly into the page. That made
@@ -631,25 +653,32 @@ print(f'  entries: {len(thin)}, size: {os.path.getsize(CHOROPLETH_JS):,} bytes',
 # the global lexical scope, so subsequent `const RENT_AGGREGATES = …`
 # still works as before.
 HTML = os.path.join(ROOT, 'index.html')
-print(f'patching {HTML}: const AGGREGATES → <script src>', file=sys.stderr)
+print(f'patching {HTML}: const AGGREGATES → <script src ?v={CHOROPLETH_HASH}>', file=sys.stderr)
 with open(HTML, encoding='utf-8') as f:
     lines = f.readlines()
-CHOROPLETH_TAG = '<script src="/transactions/data/choropleth.js"></script>\n'
-splice = '</script>\n' + CHOROPLETH_TAG + '<script>\n'
+choropleth_tag = f'<script src="/transactions/data/choropleth.js?v={CHOROPLETH_HASH}"></script>\n'
+splice = '</script>\n' + choropleth_tag + '<script>\n'
+# Idempotency: match any past hash via regex, replace with the current one.
+CHOROPLETH_TAG_RE = re.compile(r'^<script src="/transactions/data/choropleth\.js(\?v=[a-f0-9]+)?"></script>\s*$')
 state = None
 for i, ln in enumerate(lines):
     if ln.startswith('const AGGREGATES = '):
         lines[i] = splice
         state = 'replaced'
-        print(f'  replaced line {i+1} (was {len(ln):,} bytes)', file=sys.stderr)
+        print(f'  replaced inline literal at line {i+1} (was {len(ln):,} bytes)', file=sys.stderr)
         break
-    if ln == CHOROPLETH_TAG:
-        state = 'already-patched'
-        print(f'  line {i+1} already references choropleth.js — no-op', file=sys.stderr)
+    if CHOROPLETH_TAG_RE.match(ln):
+        if ln == choropleth_tag:
+            state = 'already-current'
+            print(f'  line {i+1} already references current hash — no-op', file=sys.stderr)
+        else:
+            lines[i] = choropleth_tag
+            state = 'hash-bumped'
+            print(f'  line {i+1} hash refreshed → {CHOROPLETH_HASH}', file=sys.stderr)
         break
 if state is None:
     print('  ERROR: index.html does not contain `const AGGREGATES = …` or the choropleth script tag', file=sys.stderr)
     sys.exit(1)
-if state == 'replaced':
+if state != 'already-current':
     with open(HTML, 'w', encoding='utf-8') as f:
         f.writelines(lines)
