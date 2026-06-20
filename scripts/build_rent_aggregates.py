@@ -14,7 +14,7 @@ Output schema (per lowercased area key + __dubai__ + __period__):
 REMAP (parquet admin sector → community-style key the polygons reference) is
 applied at SQL read time so the same keys work as in AGGREGATES (sale).
 """
-import duckdb, json, sys, os
+import duckdb, json, sys, os, re, hashlib
 from datetime import date
 
 ROOT  = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
@@ -334,19 +334,77 @@ print(f'  __dubai__: n={dubai["n"]:,} new={dubai["new"]:,} renewed={dubai["renew
       f'med={dubai["med_annual"]:,} trend={dubai["trend_pct"]}%', file=sys.stderr)
 print(f'  key: master_project_en → fallback area_name_en (no manual remap)', file=sys.stderr)
 
-# Inline into index.html, mirroring build_sale_aggregates.py.
+# ─── Thin choropleth shard ──────────────────────────────────────
+# Mirrors build_sale_aggregates.py's `transactions/data/choropleth.js`.
+# Only the fields viewer.js reads from RENT_AGGREGATES on the main map
+# (pluck() + _districtHrefForKey name lookup): {name, n, med_annual,
+# med_ppsqm}. Full per-district detail (timeline, top_projects, recent,
+# by_subtype, by_usage) stays in /_data_rent_aggregates.json (gitignored)
+# and /rents/<slug>/data.json. Scraping full detail now needs ~300
+# per-district fetches where the Cloudflare rate limit can bite —
+# instead of a single 2.9 MB read from the inlined HTML literal.
+#
+# Emitted as a JS file with `const RENT_AGGREGATES = {...}` so the
+# browser picks it up via `<script src>` in the same global lexical
+# scope viewer.js reads from. Index.html patch below cuts the 2.9 MB
+# inline literal and stitches in a script tag instead.
+CHOROPLETH_JS = os.path.join(ROOT, 'rents/data/choropleth.js')
+thin = {
+    k: {
+        'name':       v.get('name'),
+        'n':          v.get('n', 0),
+        'med_annual': v.get('med_annual', 0),
+        'med_ppsqm':  v.get('med_ppsqm', 0),
+    }
+    for k, v in out.items()
+}
+with open(CHOROPLETH_JS, 'w', encoding='utf-8') as f:
+    f.write('const RENT_AGGREGATES = ')
+    # sort_keys for deterministic byte-output; cache-bust below relies
+    # on stable hash across builds with no parquet change.
+    json.dump(thin, f, ensure_ascii=False, separators=(',', ':'), sort_keys=True)
+    f.write(';\n')
+# Hash excludes the `name` field deliberately: DLD parquet has multiple
+# capitalizations per district and the SQL aggregator picks any. Hash
+# should only bump on real key/number change, not display-name flips.
+hash_payload = json.dumps(
+    {k: {f: x for f, x in v.items() if f != 'name'} for k, v in thin.items()},
+    sort_keys=True, separators=(',', ':'),
+).encode('utf-8')
+CHOROPLETH_HASH = hashlib.sha256(hash_payload).hexdigest()[:8]
+print(f'wrote {CHOROPLETH_JS}', file=sys.stderr)
+print(f'  entries: {len(thin)}, size: {os.path.getsize(CHOROPLETH_JS):,} bytes, hash: {CHOROPLETH_HASH}', file=sys.stderr)
+
+# ─── Splice into index.html ─────────────────────────────────────
 HTML = os.path.join(ROOT, 'index.html')
-print(f'patching {HTML}: const RENT_AGGREGATES = ...', file=sys.stderr)
+print(f'patching {HTML}: const RENT_AGGREGATES → <script src ?v={CHOROPLETH_HASH}>', file=sys.stderr)
 with open(HTML, encoding='utf-8') as f:
     lines = f.readlines()
-literal = 'const RENT_AGGREGATES = ' + json.dumps(out, ensure_ascii=False, separators=(',', ':')) + ';\n'
+choropleth_tag = f'<script src="/rents/data/choropleth.js?v={CHOROPLETH_HASH}"></script>\n'
+splice = '</script>\n' + choropleth_tag + '<script>\n'
+# Idempotent: match any past 8-char hash via regex, replace with current.
+# {8} pins length so a hand-edited longer hex string doesn't silently
+# get clobbered.
+CHOROPLETH_TAG_RE = re.compile(r'^<script src="/rents/data/choropleth\.js(\?v=[a-f0-9]{8})?"></script>\s*$')
+state = None
 for i, ln in enumerate(lines):
     if ln.startswith('const RENT_AGGREGATES = '):
-        lines[i] = literal
-        print(f'  patched line {i+1} ({len(literal):,} bytes)', file=sys.stderr)
+        lines[i] = splice
+        state = 'replaced'
+        print(f'  replaced inline literal at line {i+1} (was {len(ln):,} bytes)', file=sys.stderr)
         break
-else:
-    print('  ERROR: const RENT_AGGREGATES line not found', file=sys.stderr)
+    if CHOROPLETH_TAG_RE.match(ln):
+        if ln == choropleth_tag:
+            state = 'already-current'
+            print(f'  line {i+1} already references current hash — no-op', file=sys.stderr)
+        else:
+            lines[i] = choropleth_tag
+            state = 'hash-bumped'
+            print(f'  line {i+1} hash refreshed → {CHOROPLETH_HASH}', file=sys.stderr)
+        break
+if state is None:
+    print('  ERROR: index.html does not contain `const RENT_AGGREGATES = …` or the choropleth script tag', file=sys.stderr)
     sys.exit(1)
-with open(HTML, 'w', encoding='utf-8') as f:
-    f.writelines(lines)
+if state != 'already-current':
+    with open(HTML, 'w', encoding='utf-8') as f:
+        f.writelines(lines)

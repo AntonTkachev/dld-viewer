@@ -659,7 +659,7 @@ with open(HTML, encoding='utf-8') as f:
 choropleth_tag = f'<script src="/transactions/data/choropleth.js?v={CHOROPLETH_HASH}"></script>\n'
 splice = '</script>\n' + choropleth_tag + '<script>\n'
 # Idempotency: match any past hash via regex, replace with the current one.
-CHOROPLETH_TAG_RE = re.compile(r'^<script src="/transactions/data/choropleth\.js(\?v=[a-f0-9]+)?"></script>\s*$')
+CHOROPLETH_TAG_RE = re.compile(r'^<script src="/transactions/data/choropleth\.js(\?v=[a-f0-9]{8})?"></script>\s*$')
 state = None
 for i, ln in enumerate(lines):
     if ln.startswith('const AGGREGATES = '):
