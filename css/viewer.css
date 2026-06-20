@@ -37,9 +37,8 @@
   /* Status chip inside the aggregate popup */
   .pj-status-chip{display:inline-block;padding:1px 7px;border-radius:9px;font-size:11px;font-weight:600;line-height:1.5;white-space:nowrap}
   /* Placeholder "Open all" button — wired in a later page */
-  .pj-open-all{width:100%;background:#e6f7e6;color:#0a7f00;border:1px solid #b6dfb6;border-radius:5px;padding:6px 10px;font-size:12px;font-weight:600;font-family:inherit;cursor:pointer;transition:background .12s,border-color .12s}
-  .pj-open-all:hover:not(:disabled){background:#d3eed3;border-color:#92cc92}
-  .pj-open-all:disabled{background:#f4f4f4;color:#9aa;border-color:#ddd;cursor:not-allowed}
+  .pj-open-all{display:block;text-align:center;text-decoration:none;width:100%;box-sizing:border-box;background:#e6f7e6;color:#0a7f00;border:1px solid #b6dfb6;border-radius:5px;padding:6px 10px;font-size:12px;font-weight:600;font-family:inherit;cursor:pointer;transition:background .12s,border-color .12s}
+  .pj-open-all:hover{background:#d3eed3;border-color:#92cc92;text-decoration:none}
   .rating{display:inline-block;padding:1px 6px;border-radius:3px;font-size:11px;font-weight:600;color:#fff}
   .rating.Outstanding{background:#0a7f00}
   .rating.Verygood{background:#3aaf2f}

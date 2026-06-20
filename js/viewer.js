@@ -1620,7 +1620,14 @@ for (const d of PROJECTS) {
     const geoNote = d.geocode_kind === 'area'
       ? `<div class="muted" style="margin-top:6px;font-size:11px;color:#888">${t('pj_geocode_area')}</div>`
       : '';
-    const openAll = `<div style="margin-top:8px"><button class="pj-open-all" disabled title="${_h(t('pj_open_all_soon'))}">${t('pj_open_all')} (${d.total|0}) →</button></div>`;
+    // Deep-link to /construction/?q=<district name>. The page reads ?q=
+    // on load, drops it into the search box, and the existing filter
+    // pipeline narrows the table + all four charts to just this district.
+    // Uses the master-project name (d.name) as the search term since
+    // that's what the page's master / area / project fields match.
+    const constructionHref = (typeof _langUrlPrefix === 'function' ? _langUrlPrefix() : '')
+      + '/construction/?q=' + encodeURIComponent(d.name);
+    const openAll = `<div style="margin-top:8px"><a class="pj-open-all" href="${constructionHref}">${t('pj_open_all')} (${d.total|0}) →</a></div>`;
 
     return `
       <h3>🏗️ ${_h(d.name)} <span class="src-tag" style="background:#e6f7e6;color:#0a7f00">RERA</span></h3>

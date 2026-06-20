@@ -117,6 +117,16 @@ def main() -> int:
     from _rera_enrich import load_enriched_rows
     rera_rows = load_enriched_rows()
 
+    # Arabic → English developer aliases (manually verified; same source as
+    # /construction/). Applied at merge time so the map popup shows
+    # readable names without round-tripping through the page's alias file.
+    ALIASES_PATH = ROOT / 'data' / 'rera_arabic_aliases.json'
+    dev_aliases = {}
+    if ALIASES_PATH.exists():
+        with open(ALIASES_PATH, encoding='utf-8') as f:
+            dev_aliases = (json.load(f).get('developers') or {})
+        print(f'Developer aliases loaded: {len(dev_aliases)}')
+
     # Bucket rows by the resolved polygon key (master preferred, area fallback).
     by_poly = defaultdict(list)
     no_poly_master = Counter()
@@ -159,8 +169,11 @@ def main() -> int:
         display = (masters.most_common(1)[0][0] if masters
                    else areas.most_common(1)[0][0] if areas
                    else rows[0]['__poly_display'])
-        # Top developers (excluding empty)
-        devs = Counter(r['developer_name'] for r in rows if r['developer_name']).most_common(5)
+        # Top developers (excluding empty). Apply the same Arabic→English
+        # alias map the construction page uses, so the popup reads as a
+        # cleaner exhibit. Aliases hit ~89% of records by frequency.
+        devs_raw = Counter(r['developer_name'] for r in rows if r['developer_name']).most_common(5)
+        devs = [[dev_aliases.get(name, name), count] for name, count in devs_raw]
         # In-flight percent_completed average (skip 0 to avoid bias from
         # NOT_STARTED rows that all sit at 0%). Use derived status here too
         # — otherwise the average includes the projects we just reclassified
