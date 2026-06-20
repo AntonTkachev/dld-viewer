@@ -254,31 +254,58 @@
     const tbr = a.timeline_by_rooms || {};
     const used = ROOM_BREAKDOWN.filter(k => tbr[k] && tbr[k].length);
     if (!used.length) return null;
-    // Take the union of period-sliced "d" labels across rooms. Easiest: pull
-    // the slice of a representative timeline (full union would dedupe), then
-    // map each room onto it.
-    const refSlice = periodSlice(tbr[used[0]]);
-    const refLabels = refSlice.map(p => p.d);  // YYYY-MM strings
-    // Build a {d → {room → n}} matrix.
+    // Build the UNION of period-sliced "d" labels across every used room.
+    // Earlier we keyed the chart's x-axis off the first non-empty category
+    // (`tbr[used[0]]`) — that clipped categories with deeper history (e.g.
+    // Palm Jabal Ali's `other` plot sales going back to 2007) down to
+    // whichever recent slice the unit categories happened to cover.
+    const labelSet = new Set();
+    const slicesByRoom = {};
+    for (const k of used) {
+      const slice = periodSlice(tbr[k]);
+      slicesByRoom[k] = slice;
+      for (const row of slice) labelSet.add(row.d);
+    }
+    const sparseLabels = Array.from(labelSet).sort();
+    // Densify into the full calendar-month range. Without this, sparse
+    // history (e.g. Palm Jabal Ali: 2007-10, 2008-09, 2009-04, 2012-04…)
+    // would land in the same fixed-size bucket and bars would lie about
+    // span — a 6-entry bucket can cover 10 calendar years.
+    function monthIndex(d) {
+      const [y, m] = d.split('-').map(Number);
+      return y * 12 + (m - 1);
+    }
+    function indexToYM(idx) {
+      return `${Math.floor(idx / 12)}-${String((idx % 12) + 1).padStart(2,'0')}`;
+    }
+    const startIdx = monthIndex(sparseLabels[0]);
+    const endIdx = monthIndex(sparseLabels[sparseLabels.length - 1]);
+    const refLabels = [];
+    for (let i = startIdx; i <= endIdx; i++) refLabels.push(indexToYM(i));
     const matrix = new Map();
     for (const d of refLabels) matrix.set(d, {});
     for (const k of used) {
-      const slice = periodSlice(tbr[k]);
-      for (const row of slice) {
+      for (const row of slicesByRoom[k]) {
         const cell = matrix.get(row.d);
         if (cell) cell[k] = (cell[k] || 0) + (row.n || 0);
       }
     }
     // Bucket adaptive: aim for ~24 bars max. 1y→monthly, 3y→quarterly,
-    // 5y→quarterly, 10y/all→half-year.
+    // 5y→quarterly, 10y/all→half-year, anything beyond → yearly.
     const months = refLabels.length;
-    const bucketSize = months <= 24 ? 1 : months <= 48 ? 3 : months <= 96 ? 6 : 12;
+    const bucketSize = months <= 24 ? 1
+                     : months <= 48 ? 3
+                     : months <= 96 ? 6
+                     : months <= 144 ? 12
+                     : 24;
     const buckets = [];
     for (let i = 0; i < refLabels.length; i += bucketSize) {
       const slab = refLabels.slice(i, i + bucketSize);
       const label = bucketSize === 1
         ? slab[0].slice(2)  // "YY-MM"
-        : slab[0].slice(0,7) + '…' + slab[slab.length-1].slice(2,7);  // YYYY-MM…YY-MM
+        : bucketSize === 12
+          ? slab[0].slice(0, 4)  // single year
+          : slab[0].slice(0,7) + '…' + slab[slab.length-1].slice(2,7);
       const totals = {};
       for (const d of slab) {
         const cell = matrix.get(d) || {};
