@@ -1,24 +1,36 @@
 """Shared RERA enrichment — derives the "real" project status from the
-RERA register cross-referenced against Ejari rentals.
+RERA register cross-referenced against Dubai Municipality Buildings and
+Ejari rentals.
 
 Why a separate module
-  RERA `project_status` is unreliable for a non-trivial slice (~30% of
-  overdue ACTIVE projects are already built and rented out, but the
-  developer never updated the status). Both the construction landing
-  page and the map's per-district badges should reflect the same cleaned
-  view, so the derivation lives here and both call into it. Keeping the
-  logic server-side also means data.json doesn't expose the raw signal
-  (rent counts, join behaviour) to scrapers — only the conclusion.
+  RERA `project_status` is unreliable for a non-trivial slice — many
+  "ACTIVE" projects have already been completed but the developer never
+  updated the register. Two independent DLD signals help us recover the
+  truth without manual web research:
+
+  • Dubai Municipality Buildings (dataset 459523) — Building Control's
+    own completion-certificate register. If ANY building under a RERA
+    project_no carries status="New", the project has delivered phases.
+  • Ejari rentals (dataset 468586) — if tenants are renting in a
+    building, the building exists. Doesn't cover villas / owner-occupied
+    units, hence the need for the Buildings signal too.
+
+Both the construction landing page and the map's per-district badges
+call into this module so they agree on what's actually in flight. Keeping
+the logic server-side also means data.json doesn't expose the raw
+signals (rent counts, building tallies) — only the conclusion.
 
 Derivation rules (apply in order, first match wins):
-  1. RERA status == 'FINISHED'      → FINISHED         (trust)
+  1. RERA status == 'FINISHED'                       → FINISHED  (trust)
   2. RERA status == 'ACTIVE'  AND
-     ≥ EJARI_RECENT_THRESHOLD contracts in the last 12 months
-     OR ≥ EJARI_TOTAL_THRESHOLD total contracts ever
-                                    → FINISHED         (silent override)
+     ≥ BLDG_NEW_RATIO of buildings carry status='New'
+                                                     → FINISHED  (silent)
   3. RERA status == 'ACTIVE'  AND
-     completion_date in the past    → ACTIVE + overdue=True
-  4. anything else                  → pass through
+     ≥ EJARI_RECENT_THRESHOLD contracts last 12 mo
+     OR ≥ EJARI_TOTAL_THRESHOLD contracts ever       → FINISHED  (silent)
+  4. RERA status == 'ACTIVE'  AND
+     completion_date in the past                     → ACTIVE + overdue
+  5. anything else                                   → pass through
 
 The "silent override" intentionally produces no marker on the row —
 the row looks like any other FINISHED record from the outside. Overdue
@@ -29,14 +41,24 @@ doesn't leak our mechanism.
 """
 import csv
 import gzip
+import json
 import os
 from datetime import date, timedelta
 
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 RERA_CSV = os.path.join(ROOT, 'data', 'dld_projects.csv.gz')
 RENTS_PQ = os.path.join(ROOT, 'data', 'rents.parquet')
+BLDG_SIGNAL = os.path.join(ROOT, 'data', 'dld_buildings_signal.json')
 
-# Thresholds tuned empirically (see Ejari cross-check analysis 2026-06):
+# Buildings threshold — half the project's registered buildings must
+# carry the "New" completion-certificate status to count as delivered.
+# Rationale: phased developments often have early phases certified while
+# late phases are still under construction. 50% is the inflection point
+# at which buyers can realistically occupy units, so the "ACTIVE"
+# marketing label becomes misleading.
+BLDG_NEW_RATIO = 0.5
+
+# Ejari thresholds (see 2026-06 cross-check):
 #   Recent ≥ 5: filters out incidental project_number collisions on
 #               mixed-use buildings. Real built developments easily clear
 #               this — the median of confirmed-stale projects in the
@@ -46,6 +68,18 @@ RENTS_PQ = os.path.join(ROOT, 'data', 'rents.parquet')
 #                clearly built, just not active in the rental market.
 EJARI_RECENT_THRESHOLD = 5
 EJARI_TOTAL_THRESHOLD = 30
+
+
+def _load_buildings_signal():
+    """{project_no: {"new": int, "total": int}} — buildings completed per
+    RERA project_number. Empty when the precompute hasn't been generated."""
+    if not os.path.exists(BLDG_SIGNAL):
+        print('  [enrich] data/dld_buildings_signal.json missing — '
+              'skipping Buildings override layer (run scripts/dld_buildings_to_signal.py)',
+              flush=True)
+        return {}
+    with open(BLDG_SIGNAL) as f:
+        return json.load(f)
 
 
 def _load_ejari_signal():
@@ -82,18 +116,24 @@ def _is_overdue(completion_date_str: str) -> bool:
 
 
 def derive_status(rera_status: str, completion_date: str, project_number: str,
-                  ejari: dict) -> tuple[str, bool]:
+                  bldg: dict, ejari: dict) -> tuple[str, bool]:
     """Return (derived_status, overdue_flag). See module docstring for rules."""
     if rera_status == 'FINISHED':
         return 'FINISHED', False
     if rera_status == 'ACTIVE':
+        # Buildings signal first — DM Building Control's completion
+        # certificates are the closest thing to ground truth and cover all
+        # property types including villas (Ejari doesn't).
+        b = bldg.get(project_number)
+        if b and b['total'] > 0 and b['new'] / b['total'] >= BLDG_NEW_RATIO:
+            return 'FINISHED', False
+        # Ejari fallback — catches projects whose buildings haven't been
+        # linked to project_no in the DM register but where tenants are
+        # already signing contracts.
         sig = ejari.get(project_number)
         if sig:
             recent, total = sig
             if recent >= EJARI_RECENT_THRESHOLD or total >= EJARI_TOTAL_THRESHOLD:
-                # Ejari says people are renting here → it's built. Silent
-                # override; downstream consumers see FINISHED with no hint
-                # that we did anything.
                 return 'FINISHED', False
         if _is_overdue(completion_date):
             return 'ACTIVE', True
@@ -108,10 +148,14 @@ def load_enriched_rows():
     Each yielded dict is the original CSV row plus two derived keys:
       __derived_status  — string, the cleaned-up project_status
       __overdue         — bool, True iff RERA was ACTIVE + past completion
-                          + no Ejari signal
+                          + no Buildings/Ejari signal
 
     Stats are printed to stderr so build logs surface the override count.
     """
+    bldg = _load_buildings_signal()
+    if bldg:
+        print(f'  [enrich] Buildings signal loaded for {len(bldg):,} project_numbers '
+              '(DM Buildings dataset 459523)', flush=True)
     ejari = _load_ejari_signal()
     if ejari:
         print(f'  [enrich] Ejari signal loaded for {len(ejari):,} project_numbers', flush=True)
@@ -126,6 +170,7 @@ def load_enriched_rows():
                 r.get('project_status', ''),
                 r.get('completion_date', ''),
                 num,
+                bldg,
                 ejari,
             )
             if derived != r.get('project_status'):
