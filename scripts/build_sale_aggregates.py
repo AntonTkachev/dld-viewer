@@ -600,6 +600,12 @@ print(f'  key: master_project_en → fallback area_name_en (no manual remap)', f
 # reads from. The index.html patch below cuts the 7.7 MB inline literal
 # out and stitches in a script tag instead.
 CHOROPLETH_JS = os.path.join(ROOT, 'transactions/data/choropleth.js')
+# Defensive symmetry with build_rent_aggregates.py: filter out entries
+# without a `name` so any future metadata marker (rent script writes
+# `__period__` for date-range stamps) doesn't leak as a {"name":null}
+# row in the shard. Currently the sale aggregator emits only real
+# districts + `__dubai__` (which has name='DUBAI'), so this is a no-op
+# today — kept as a guard against future drift.
 thin = {
     k: {
         'name':      v.get('name'),
@@ -609,6 +615,7 @@ thin = {
         'med_ppsqm': v.get('med_ppsqm', 0),
     }
     for k, v in out.items()
+    if v.get('name') is not None
 }
 with open(CHOROPLETH_JS, 'w', encoding='utf-8') as f:
     f.write('const AGGREGATES = ')
