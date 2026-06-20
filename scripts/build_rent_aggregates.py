@@ -349,6 +349,12 @@ print(f'  key: master_project_en → fallback area_name_en (no manual remap)', f
 # scope viewer.js reads from. Index.html patch below cuts the 2.9 MB
 # inline literal and stitches in a script tag instead.
 CHOROPLETH_JS = os.path.join(ROOT, 'rents/data/choropleth.js')
+# Skip non-district markers: `__period__` is a {min, max} date-range
+# stamp, not a polygon — projecting it through .get('name', 0) leaks a
+# `{"name":null,"n":0,...}` row into the shard. `__dubai__` IS a real
+# city-wide aggregate (has `name='DUBAI'` and real numbers) so it stays.
+# The `name is not None` predicate filters out any future metadata
+# additions of the same shape without needing a hardcoded blocklist.
 thin = {
     k: {
         'name':       v.get('name'),
@@ -357,6 +363,7 @@ thin = {
         'med_ppsqm':  v.get('med_ppsqm', 0),
     }
     for k, v in out.items()
+    if v.get('name') is not None
 }
 with open(CHOROPLETH_JS, 'w', encoding='utf-8') as f:
     f.write('const RENT_AGGREGATES = ')
