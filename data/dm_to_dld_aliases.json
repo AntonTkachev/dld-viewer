@@ -100,6 +100,75 @@
       "dm_name": "MADINAT HIND 4",
       "display_name": "DAMAC Hills 2",
       "display_name_ar": "داماك هيلز 2"
+    },
+    {
+      "_comment": "Al Barsha South Fourth admin → 99.99% are JVC (90,891 sales). Single biggest admin-shell community in the file.",
+      "dm_name": "AL BARSHA SOUTH FOURTH",
+      "display_name": "Jumeirah Village Circle",
+      "display_name_ar": "قرية جميرا الدائرية"
+    },
+    {
+      "_comment": "Nadd Hessa admin → 99.99% are Silicon Oasis (27,427 sales).",
+      "dm_name": "NADD HESSA",
+      "display_name": "Silicon Oasis",
+      "display_name_ar": "واحة دبي للسيليكون"
+    },
+    {
+      "_comment": "Al Kheeran First (DM) = Al Khairan First (DLD). 99.95% Dubai Creek Harbour (25,757 sales). DM uses 'KHEERAN' spelling; DLD uses 'KHAIRAN'.",
+      "dm_name": "AL KHEERAN FIRST",
+      "dld_area_name_en": "Al Khairan First",
+      "display_name": "Dubai Creek Harbour",
+      "display_name_ar": "مرسى خور دبي"
+    },
+    {
+      "_comment": "Al Barsha South Third (DM, single 'a') = Al Barshaa South Third (DLD, double 'a'). 99% Arjan (24,040 sales).",
+      "dm_name": "AL BARSHA SOUTH THIRD",
+      "dld_area_name_en": "Al Barshaa South Third",
+      "display_name": "Arjan",
+      "display_name_ar": "أرجان"
+    },
+    {
+      "_comment": "Al Barsha South Fifth admin → 99.98% Jumeirah Village Triangle (19,301 sales).",
+      "dm_name": "AL BARSHA SOUTH FIFTH",
+      "display_name": "Jumeirah Village Triangle",
+      "display_name_ar": "مثلث قرية جميرا"
+    },
+    {
+      "_comment": "Al Barsha South Second (DM, single 'a') = Al Barshaa South Second (DLD, double 'a'). 99% Dubai Science Park (11,181 sales).",
+      "dm_name": "AL BARSHA SOUTH SECOND",
+      "dld_area_name_en": "Al Barshaa South Second",
+      "display_name": "Dubai Science Park",
+      "display_name_ar": "مجمع دبي للعلوم"
+    },
+    {
+      "_comment": "Wadi Al Safa 6 → 99.96% Arabian Ranches 1 (10,423 sales). DLD's master_project spelling is 'Arabian Ranches - 1' with hyphen; we drop the hyphen for the display name.",
+      "dm_name": "WADI AL SAFA 6",
+      "display_name": "Arabian Ranches 1",
+      "display_name_ar": "المرابع العربية 1"
+    },
+    {
+      "_comment": "Al Yufrah 1 → 99% The Valley (9,607 sales).",
+      "dm_name": "AL YUFRAH 1",
+      "display_name": "The Valley",
+      "display_name_ar": "ذا فالي"
+    },
+    {
+      "_comment": "Al Thanyah First → 99.95% Barsha Heights (6,464 sales). DM uses 'AL THANYAH FIRST'.",
+      "dm_name": "AL THANYAH FIRST",
+      "display_name": "Barsha Heights",
+      "display_name_ar": "مرتفعات البرشاء"
+    },
+    {
+      "_comment": "Saih Shuaib 1 → 92% Jebel Ali Hills (4,194 sales). DLD's master_project is uppercase 'JABEL ALI HILLS'.",
+      "dm_name": "SAIH SHUAIB 1",
+      "display_name": "Jebel Ali Hills",
+      "display_name_ar": "تلال جبل علي"
+    },
+    {
+      "_comment": "Al Kifaf → 99% Wasl 1 (3,406 sales).",
+      "dm_name": "AL KIFAF",
+      "display_name": "Wasl 1",
+      "display_name_ar": "وصل 1"
     }
   ],
 
@@ -109,5 +178,12 @@
     "AL MURAR — DLD has only 'Al-Murar Qadeem' (59) / 'Al-Murar Jadeed' (29); skipping till verified",
     "AL HATHMAH → AL Athbah — different places",
     "MEREIYEEL, AL O'SHOOSH, AL WOHOOSH, HEFAIR, MARGAB, ENKHALI — peripheral, ≤50 tx if anything"
+  ],
+
+  "_needs_split_not_alias": [
+    "AL HEBIAH THIRD — 89% DAMAC Hills (16,418) + 10% Mudon (1,858). Split into DAMAC Hills + Mudon sub-polygons.",
+    "ME'AISEM FIRST — 81% IMPZ (21,241) + 19% Jumeirah Golf Estates (4,910). Split.",
+    "MADINAT DUBAI AL MELAHEYAH — 69% Dubai Maritime City (9,800) + 31% Mina Rashid (4,419). Split. Maritime City has no OSM polygon (would use split-dm-fallback).",
+    "WADI AL SAFA 2 — 70% Liwan (8,836) + 21% Falcon City (2,697) + 8% master-NULL (1,028). Split into Liwan + Falcon City + remainder."
   ]
 }
