@@ -529,7 +529,7 @@ def build_seo_ld(cat, n, lang, h1_plain, lede_plain):
         'inLanguage': lang,
         'url': canonical,
         'about': {'@type': 'Place', 'name': 'Dubai, UAE'},
-        'isPartOf': {'@type': 'WebSite', 'name': 'Deedmap', 'url': f'{BASE_URL}/'},
+        'isPartOf': {'@type': 'WebSite', 'name': 'DXBCompass', 'url': f'{BASE_URL}/'},
         'mainEntity': {
             '@type': 'ItemList',
             'name': h1_plain,
