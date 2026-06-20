@@ -13,13 +13,26 @@ TX  = os.path.join(ROOT, 'data/tx.parquet')
 DATE_FROM = '1995-01-01'   # full parquet history (ignore Hijri-converted noise)
 DATE_TO   = '2026-12-31'
 
-# Key = master_project_en (community, e.g. "Dubai Marina", "Motor City")
-# falling back to area_name_en (admin sector, e.g. "Naif") when no master is set.
-# DLD already encodes the community split natively — no manual REMAP needed.
+# Key + display name come from _curated_sql.build_curated_sql() — the SAME
+# CASE expression used by build_transactions_map.py / build_rents_map.py.
+# That means AGGREGATES is keyed identically to the per-period choropleth
+# data, so the polygon click resolves to a real bucket every time.
 #
-# ROLLUP: DLD also splits some communities into sub-master_projects
-# (e.g. "DUBAI HILLS - MAPLE 1/2/3, SIDRA 1/2/3..."). We fold those back
-# into the parent community here. See CLAUDE.md "Sub-master rollup".
+# Without this, splits driven by project_name_en patterns (Springs/Meadows
+# inside Emirates Living, City Walk/Dubai Water Canal inside Al Wasl, etc.)
+# wouldn't get their own AGGREGATES entry — all rows would land in the
+# admin parent (which has ~zero, since most rows have a master_project_en
+# value). Clicking "The Springs" (11K sales by reality) used to land on
+# /sales/al-thanayah-fourth/ showing n=2.
+#
+# ROLLUP fallback: for rows no split catches, fold sub-master_projects
+# (e.g. "DUBAI HILLS - MAPLE 1/2/3, SIDRA 1/2/3...") into the parent
+# community. We splice this into the ELSE branch of the curated CASE,
+# replacing the default `lower(area_name_en)` fallback so non-split
+# rollups still work (Dubai Hills Estate, ICP3, Liwan, …).
+sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+from _curated_sql import build_curated_sql
+_KEY_RAW, _NAME_RAW, _ = build_curated_sql()
 ROLLUP_SQL = """
 CASE
   WHEN master_project_en LIKE 'DUBAI HILLS - %'              THEN 'Dubai Hills Estate'
@@ -31,8 +44,14 @@ CASE
   ELSE master_project_en
 END
 """
-NAME_EXPR = f"COALESCE(NULLIF(({ROLLUP_SQL}), ''), area_name_en)"
-KEY_EXPR  = f"lower({NAME_EXPR})"
+NAME_EXPR = _NAME_RAW.replace(
+    'ELSE area_name_en',
+    f"ELSE COALESCE(NULLIF(({ROLLUP_SQL}), ''), area_name_en)"
+)
+KEY_EXPR = _KEY_RAW.replace(
+    'ELSE lower(area_name_en)',
+    f"ELSE lower(COALESCE(NULLIF(({ROLLUP_SQL}), ''), area_name_en))"
+)
 
 con = duckdb.connect()
 

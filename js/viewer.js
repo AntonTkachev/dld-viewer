@@ -1231,17 +1231,11 @@ function _onSearchSelect(feat){
 }
 
 let choro;
-// font-size = base + magnitude bonus + zoom bonus; color by sign of label
-// (works for "+12%" / "-3%" — growth) or neutral for unsigned (payback "5.2")
-function _overlayStyleFor(label, zoom) {
+// Color by sign of label ("+12%" green, "-3%" red, unsigned neutral)
+function _overlayColorFor(label) {
   const s = String(label);
-  const num = Math.abs(parseFloat(s.replace(/[^0-9.\-]/g, '')) || 0);
   const sign = s[0] === '+' ? 'pos' : (s[0] === '-' ? 'neg' : 'neu');
-  const magBonus   = Math.min(num, 40) / 10;             // 0..4
-  const zoomFactor = 1 + Math.max(0, zoom - 10) * 0.20;  // x1.0 at z10, x2.0 at z15
-  const fontSize   = Math.round((4 + magBonus) * zoomFactor * 10) / 10;
-  const color = sign === 'pos' ? '#0a7f00' : sign === 'neg' ? '#b91c1c' : '#1f2933';
-  return { fontSize, color };
+  return sign === 'pos' ? '#0a7f00' : sign === 'neg' ? '#b91c1c' : '#1f2933';
 }
 
 let overlayLayer = null;
@@ -1250,7 +1244,11 @@ function _refreshOverlay(mask) {
   if (!mask || typeof mask.overlay !== 'function') return;
   const data = mask.data[currentMaskPeriod] || {};
   const zoom = map.getZoom();
-  overlayLayer = L.layerGroup();
+
+  // First pass: collect items with magnitudes so we can normalize per-metric.
+  // Without this, low-range metrics (payback: 5..20 years) get uniformly tiny
+  // badges while wide-range metrics (growth: ±50%) get full dynamic range.
+  const items = [];
   for (const f of GEOJSON.features) {
     if (f._level !== undefined && f._level < minLevel) continue;
     const key = f.properties.real_area_key;
@@ -1259,11 +1257,26 @@ function _refreshOverlay(mask) {
     if (!rec) continue;
     const label = mask.overlay(rec);
     if (label === null || label === undefined || label === '') continue;
+    const num = Math.abs(parseFloat(String(label).replace(/[^0-9.\-]/g, '')) || 0);
+    items.push({ f, label, num });
+  }
+  if (!items.length) return;
+  const nums = items.map(i => i.num);
+  const minM = Math.min(...nums), maxM = Math.max(...nums);
+  const range = (maxM - minM) || 1;
+  const zoomFactor = 1 + Math.max(0, zoom - 10) * 0.20;
+
+  overlayLayer = L.layerGroup();
+  for (const item of items) {
+    const f = item.f;
+    let norm = (item.num - minM) / range;          // 0..1
+    if (mask.invertRamp) norm = 1 - norm;          // payback: fewer years → bigger badge
+    const fontSize = Math.round((4 + norm * 4) * zoomFactor * 10) / 10;
+    const color = _overlayColorFor(item.label);
     const bb = _bbox(f.geometry);
-    const st = _overlayStyleFor(label, zoom);
     const icon = L.divIcon({
       className: 'choro-overlay',
-      html: `<span class="choro-overlay-text" style="font-size:${st.fontSize}px;color:${st.color}">${label}</span>`,
+      html: `<span class="choro-overlay-text" style="font-size:${fontSize}px;color:${color}">${item.label}</span>`,
       iconSize: [0, 0],
       iconAnchor: [0, 0],
     });
@@ -1272,14 +1285,10 @@ function _refreshOverlay(mask) {
     // routing that would otherwise hit the parent for narrow districts like JBR.
     marker.on('click', function(e) {
       L.DomEvent.stopPropagation(e);
-      if (f._layer && typeof f._layer.openPopup === 'function') {
-        f._layer.openPopup(marker.getLatLng());
-      }
+      _openFeaturePopup(f, marker.getLatLng());
     });
-    // Mirror polygon hover highlight so the user still gets visual feedback
-    // when hovering over the badge.
-    marker.on('mouseover', () => { if (f._layer) f._layer.setStyle({weight:2,color:'#000'}); });
-    marker.on('mouseout',  () => { if (f._layer && choro) choro.resetStyle(f._layer); });
+    // Hover-highlight is handled by the map-level mousemove handler — native
+    // DOM bubbling carries the event to the map even when over the badge.
     marker.addTo(overlayLayer);
   }
   overlayLayer.addTo(map);
@@ -1289,6 +1298,89 @@ map.on('zoomend', () => {
   const m = MASKS[currentMask];
   if (m && typeof m.overlay === 'function') _refreshOverlay(m);
 });
+
+// Build popup HTML for any feature; extracted from onEachFeature so we can
+// open popups manually regardless of which polygon Leaflet's hit-testing picks.
+function _featurePopupHtml(f) {
+  const p = f.properties;
+  const m = MASKS[currentMask] || MASKS.sales;
+  const sourceLabel = ({'osm-admin':'OSM admin_level=10','osm-place':'OSM place='+_h(p.kind||''),'osm-residential':'OSM landuse=residential'})[p.source] || 'OSM';
+  const newDev = p._new_dev_count || 0;
+  const newDevRow = newDev ? `<div class="stat"><span class="k">${t("new_buildings")} <span class="src-tag src-osm">OSM</span></span><span class="v">${newDev|0}</span></div>` : '';
+  const detailsBtn = p.real_area_key
+    ? `<div style="margin-top:8px"><a href="${_h(_safeUrl(_districtHrefForKey(p.real_area_key, p.name, p.legacy_area_key, p.master_project_key)))}" style="background:#0366d6;color:#fff;text-decoration:none;padding:6px 12px;border-radius:4px;font-size:12px;font-weight:600;display:inline-block">${t("pp_open")}</a></div>`
+    : '';
+  let bodyRows;
+  if (typeof m.popupRows === 'function') {
+    const rendered = m.popupRows(p, t);
+    bodyRows = rendered
+      ? `${rendered}${newDevRow}${detailsBtn}`
+      : `${newDevRow}<div class="muted" style="font-size:11px;color:#888;padding:4px 0">${t("no_dld_data")}</div>`;
+  } else {
+    const volumeRow = m.showVolume ? `<div class="stat"><span class="k">${t("pp_volume")}</span><span class="v">${(p.real_total_aed||0)>=1e9?((p.real_total_aed/1e9).toFixed(2)+' '+t('abbr_b')):((p.real_total_aed/1e6).toFixed(1)+' '+t('abbr_m'))}</span></div>` : '';
+    bodyRows = p.real_count ? `
+      <div class="stat"><span class="k">${t(m.popupCountKey || "pp_trans_ytd")} <span class="src-tag" style="background:#e6f7e6;color:#0a7f00">DLD</span>${p.real_match_kind==='parent'?' <span class="src-tag" style="background:#fff5e6;color:#7a4c00">parent: '+_h(p.real_parent_name||'')+'</span>':''}</span><span class="v">${p.real_count.toLocaleString('ru-RU')}</span></div>
+      ${volumeRow}
+      <div class="stat"><span class="k">${t("pp_median")}</span><span class="v">${((p.real_med_price||0)/1e6).toFixed(2)} ${t('abbr_m')}</span></div>
+      <div class="stat"><span class="k">${t("pp_median_psqm")}</span><span class="v">${(p.real_med_ppsqm||0).toLocaleString('ru-RU')}</span></div>
+      ${newDevRow}
+      ${detailsBtn}
+    ` : `
+      ${newDevRow}
+      <div class="muted" style="font-size:11px;color:#888;padding:4px 0">${t("no_dld_data")}</div>
+    `;
+  }
+  return `
+    <h3>${p.name ? _h(p.name) : '—'} <span class="src-tag src-osm">${sourceLabel}</span></h3>
+    <div class="muted" style="margin-bottom:6px;color:#888">${_h(p.name_ar||'')}</div>
+    ${bodyRows}
+  `;
+}
+
+function _openFeaturePopup(f, latlng) {
+  L.popup().setLatLng(latlng).setContent(_featurePopupHtml(f)).openOn(map);
+}
+
+// Click anywhere on a polygon → open the SMALLEST visible polygon that contains
+// the click point. Bypasses Leaflet's z-order-only routing; works for narrow or
+// nested districts whose centroid sits outside their own shape (JBR, Dubai Hills).
+function _findSmallestAt(latlng) {
+  const pt = [latlng.lng, latlng.lat];
+  let smallest = null;
+  for (const f of GEOJSON.features) {
+    if (f._level !== undefined && f._level < minLevel) continue;
+    if (!f._layer) continue;
+    if (!_featContains(f, pt)) continue;
+    if (!smallest || f._bboxArea < smallest._bboxArea) smallest = f;
+  }
+  return smallest;
+}
+
+function _openSmallestPopup(latlng) {
+  const f = _findSmallestAt(latlng);
+  if (f) _openFeaturePopup(f, latlng);
+}
+
+// Hover highlight follows the smallest polygon under the cursor — so user sees
+// which polygon they'd open before clicking. rAF-throttled (~60fps).
+let _hoveredFeat = null;
+let _hoverRaf = 0;
+function _setHover(f) {
+  if (f === _hoveredFeat) return;
+  if (_hoveredFeat && _hoveredFeat._layer && choro) {
+    choro.resetStyle(_hoveredFeat._layer);
+  }
+  _hoveredFeat = f;
+  if (f && f._layer) f._layer.setStyle({weight: 2, color: '#000'});
+}
+map.on('mousemove', (e) => {
+  if (_hoverRaf) return;
+  _hoverRaf = requestAnimationFrame(() => {
+    _hoverRaf = 0;
+    _setHover(_findSmallestAt(e.latlng));
+  });
+});
+map.on('mouseout', () => _setHover(null));
 
 function renderChoro(){
   const mask = MASKS[currentMask] || MASKS.sales;
@@ -1315,48 +1407,14 @@ function renderChoro(){
       return {weight:0.6,color:'#1f2933',fillColor:RAMP[idx],fillOpacity:0.7};
     },
     onEachFeature: (f, layer) => {
-      const p = f.properties;
-      layer.bindPopup(() => {
-        const m = MASKS[currentMask] || MASKS.sales;
-        const sourceLabel = ({'osm-admin':'OSM admin_level=10','osm-place':'OSM place='+_h(p.kind||''),'osm-residential':'OSM landuse=residential'})[p.source] || 'OSM';
-        const newDev = p._new_dev_count || 0;
-        const newDevRow = newDev ? `<div class="stat"><span class="k">${t("new_buildings")} <span class="src-tag src-osm">OSM</span></span><span class="v">${newDev|0}</span></div>` : '';
-        const detailsBtn = p.real_area_key
-          ? `<div style="margin-top:8px"><a href="${_h(_safeUrl(_districtHrefForKey(p.real_area_key, p.name, p.legacy_area_key, p.master_project_key)))}" style="background:#0366d6;color:#fff;text-decoration:none;padding:6px 12px;border-radius:4px;font-size:12px;font-weight:600;display:inline-block">${t("pp_open")}</a></div>`
-          : '';
-        let bodyRows;
-        if (typeof m.popupRows === 'function') {
-          const rendered = m.popupRows(p, t);
-          bodyRows = rendered
-            ? `${rendered}${newDevRow}${detailsBtn}`
-            : `${newDevRow}<div class="muted" style="font-size:11px;color:#888;padding:4px 0">${t("no_dld_data")}</div>`;
-        } else {
-          const volumeRow = m.showVolume ? `<div class="stat"><span class="k">${t("pp_volume")}</span><span class="v">${(p.real_total_aed||0)>=1e9?((p.real_total_aed/1e9).toFixed(2)+' '+t('abbr_b')):((p.real_total_aed/1e6).toFixed(1)+' '+t('abbr_m'))}</span></div>` : '';
-          bodyRows = p.real_count ? `
-            <div class="stat"><span class="k">${t(m.popupCountKey || "pp_trans_ytd")} <span class="src-tag" style="background:#e6f7e6;color:#0a7f00">DLD</span>${p.real_match_kind==='parent'?' <span class="src-tag" style="background:#fff5e6;color:#7a4c00">parent: '+_h(p.real_parent_name||'')+'</span>':''}</span><span class="v">${p.real_count.toLocaleString('ru-RU')}</span></div>
-            ${volumeRow}
-            <div class="stat"><span class="k">${t("pp_median")}</span><span class="v">${((p.real_med_price||0)/1e6).toFixed(2)} ${t('abbr_m')}</span></div>
-            <div class="stat"><span class="k">${t("pp_median_psqm")}</span><span class="v">${(p.real_med_ppsqm||0).toLocaleString('ru-RU')}</span></div>
-            ${newDevRow}
-            ${detailsBtn}
-          ` : `
-            ${newDevRow}
-            <div class="muted" style="font-size:11px;color:#888;padding:4px 0">${t("no_dld_data")}</div>
-          `;
-        }
-        return `
-          <h3>${p.name ? _h(p.name) : '—'} <span class="src-tag src-osm">${sourceLabel}</span></h3>
-          <div class="muted" style="margin-bottom:6px;color:#888">${_h(p.name_ar||'')}</div>
-          ${bodyRows}
-        `;
+      layer.on('click', (e) => {
+        L.DomEvent.stopPropagation(e);
+        _openSmallestPopup(e.latlng);
       });
-      layer.on({
-        mouseover:e=>e.target.setStyle({weight:2,color:'#000'}),
-        mouseout:e=>choro.resetStyle(e.target),
-      });
-      // Stored so overlay badges can route clicks back to THEIR feature's
-      // polygon (badges sit at bbox centroid, which may fall outside the
-      // actual polygon or under a parent — see JBR / Dubai Hills).
+      // Stored so overlay badges can open THEIR feature's popup directly
+      // (badges sit at bbox centroid, which may fall outside the actual
+      // polygon or under a parent — see JBR / Dubai Hills).
+      // Hover-highlight is handled at the map level (see _setHover).
       f._layer = layer;
     },
   }).addTo(map);

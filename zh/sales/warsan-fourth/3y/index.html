@@ -93,7 +93,7 @@
   </div>
   <p class="lede" id="d-lede">根据迪拜土地局数据,Warsan Fourth 近 3 年共登记 4,595 笔房产交易。 中位房产价格 — 602,777 AED。 每平方米价格 — 9,188 AED。 中位面积 — 69 m²。</p>
 
-  <section class="about"><h2>关于 Warsan Fourth</h2><p>Warsan Fourth 是迪拜的一个社区。约 0% 的交易为在建项目的期房 (Off-Plan)。 最常见的户型 — 其他(7 笔交易)。 另登记 1,351 份租赁合同 — 该社区既适合购置也适合长期居住。</p><div class="about-grid"><div class="about-stat"><div class="k">总交易数</div><div class="v">7</div></div><div class="about-stat"><div class="k">中位价格</div><div class="v">2.47 百万 AED</div></div><div class="about-stat"><div class="k">每平方米价格</div><div class="v">987 AED</div></div><div class="about-stat"><div class="k">租赁合同</div><div class="v">1,351</div></div></div></section>
+  <section class="about"><h2>关于 Warsan Fourth</h2><p>Warsan Fourth 是迪拜的一个社区。所有交易均为公寓;该社区没有别墅或联排别墅。 约 33% 的交易为在建项目的期房 (Off-Plan)。 最常见的户型 — 1 卧(2,303 笔交易)。 最活跃的项目之一 — Al Jawzaa。 另登记 68,981 份租赁合同 — 该社区既适合购置也适合长期居住。</p><div class="about-grid"><div class="about-stat"><div class="k">总交易数</div><div class="v">5,476</div></div><div class="about-stat"><div class="k">中位价格</div><div class="v">592,659 AED</div></div><div class="about-stat"><div class="k">每平方米价格</div><div class="v">8,624 AED</div></div><div class="about-stat"><div class="k">租赁合同</div><div class="v">68,981</div></div></div></section>
 
   <div class="panel">
     <div id="detail-content" class="loading">正在加载统计数据…</div>
@@ -118,7 +118,7 @@ const PAGE_PERIOD   = "3y";
 const PAGE_LANG     = "zh";
 const BASE_URL      = "/zh/sales/warsan-fourth/";
 const DATA_URL      = "/sales/warsan-fourth/data.json";
-const PERIOD_COPY   = {"all": {"h1": "Warsan Fourth 房产交易 全部时间", "lede": "根据迪拜土地局数据,Warsan Fourth 全部时间共登记 7 笔房产交易。 中位房产价格 — 2.47 百万 AED。 每平方米价格 — 987 AED。 中位面积 — 2500 m²。", "n": 7}, "1y": {"h1": "Warsan Fourth 房产交易 近 12 个月", "lede": "根据迪拜土地局数据,Warsan Fourth 近 12 个月共登记 2,171 笔房产交易。 中位房产价格 — 665,000 AED。 每平方米价格 — 10,763 AED。 中位面积 — 67 m²。", "n": 2171}, "3y": {"h1": "Warsan Fourth 房产交易 近 3 年", "lede": "根据迪拜土地局数据,Warsan Fourth 近 3 年共登记 4,595 笔房产交易。 中位房产价格 — 602,777 AED。 每平方米价格 — 9,188 AED。 中位面积 — 69 m²。", "n": 4595}, "5y": {"h1": "Warsan Fourth 房产交易 近 5 年", "lede": "根据迪拜土地局数据,Warsan Fourth 近 5 年共登记 5,131 笔房产交易。 中位房产价格 — 590,000 AED。 每平方米价格 — 8,848 AED。 中位面积 — 70 m²。", "n": 5131}, "10y": {"h1": "Warsan Fourth 房产交易 近 10 年", "lede": "根据迪拜土地局数据,Warsan Fourth 近 10 年共登记 6,076 笔房产交易。 中位房产价格 — 570,000 AED。 每平方米价格 — 8,525 AED。 中位面积 — 69 m²。", "n": 6076}};
+const PERIOD_COPY   = {"all": {"h1": "Warsan Fourth 房产交易 全部时间", "lede": "根据迪拜土地局数据,Warsan Fourth 全部时间共登记 5,476 笔房产交易。 中位房产价格 — 592,659 AED。 每平方米价格 — 8,624 AED。 中位面积 — 68 m²。", "n": 5476}, "1y": {"h1": "Warsan Fourth 房产交易 近 12 个月", "lede": "根据迪拜土地局数据,Warsan Fourth 近 12 个月共登记 2,171 笔房产交易。 中位房产价格 — 665,000 AED。 每平方米价格 — 10,763 AED。 中位面积 — 67 m²。", "n": 2171}, "3y": {"h1": "Warsan Fourth 房产交易 近 3 年", "lede": "根据迪拜土地局数据,Warsan Fourth 近 3 年共登记 4,595 笔房产交易。 中位房产价格 — 602,777 AED。 每平方米价格 — 9,188 AED。 中位面积 — 69 m²。", "n": 4595}, "5y": {"h1": "Warsan Fourth 房产交易 近 5 年", "lede": "根据迪拜土地局数据,Warsan Fourth 近 5 年共登记 5,131 笔房产交易。 中位房产价格 — 590,000 AED。 每平方米价格 — 8,848 AED。 中位面积 — 70 m²。", "n": 5131}, "10y": {"h1": "Warsan Fourth 房产交易 近 10 年", "lede": "根据迪拜土地局数据,Warsan Fourth 近 10 年共登记 6,076 笔房产交易。 中位房产价格 — 570,000 AED。 每平方米价格 — 8,525 AED。 中位面积 — 69 m²。", "n": 6076}};
 
 // Activate the requested language so detail-panel.js's t() returns localized
 // strings. i18n.js exposes a top-level `currentLang` closure variable + a t()
