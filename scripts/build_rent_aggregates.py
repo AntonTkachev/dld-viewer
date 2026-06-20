@@ -14,21 +14,24 @@ Output schema (per lowercased area key + __dubai__ + __period__):
 REMAP (parquet admin sector → community-style key the polygons reference) is
 applied at SQL read time so the same keys work as in AGGREGATES (sale).
 """
-import duckdb, json, sys
+import duckdb, json, sys, os
 from datetime import date
 
-OUT = '/Users/anton/IdeaProjects/dld_viewer/_data_rent_aggregates.json'
-RENTS = '/Users/anton/IdeaProjects/dld_viewer/data/rents.parquet'
+ROOT  = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+OUT   = os.path.join(ROOT, '_data_rent_aggregates.json')
+RENTS = os.path.join(ROOT, 'data/rents.parquet')
 DATE_FROM = '2001-01-01'      # parquet starts 2001-02-15
 DATE_TO   = '2030-12-31'      # include forward-dated leases
 TODAY     = date.today().isoformat()
 
-# Key = master_project_en (community) → area_name_en (admin sector) fallback.
-# DLD encodes the community split natively in master_project_en.
-#
-# ROLLUP: DLD splits some communities into sub-master_projects
-# (e.g. "DUBAI HILLS - MAPLE 1/2/3"). Fold them back into the parent.
-# See CLAUDE.md "Sub-master rollup".
+# Key + display name come from _curated_sql.build_curated_sql() — see the
+# extended comment in build_sale_aggregates.py for the why. Same fix here:
+# without it, project_name_sql-driven splits (Springs/Meadows/City Walk/…)
+# never get their own RENT_AGGREGATES bucket and the polygon click falls
+# through to a near-empty admin parent.
+sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+from _curated_sql import build_curated_sql
+_KEY_RAW, _NAME_RAW, _ = build_curated_sql()
 ROLLUP_SQL = """
 CASE
   WHEN master_project_en LIKE 'DUBAI HILLS - %'              THEN 'Dubai Hills Estate'
@@ -40,8 +43,14 @@ CASE
   ELSE master_project_en
 END
 """
-NAME_EXPR = f"COALESCE(NULLIF(({ROLLUP_SQL}), ''), area_name_en)"
-KEY_EXPR  = f"lower({NAME_EXPR})"
+NAME_EXPR = _NAME_RAW.replace(
+    'ELSE area_name_en',
+    f"ELSE COALESCE(NULLIF(({ROLLUP_SQL}), ''), area_name_en)"
+)
+KEY_EXPR = _KEY_RAW.replace(
+    'ELSE lower(area_name_en)',
+    f"ELSE lower(COALESCE(NULLIF(({ROLLUP_SQL}), ''), area_name_en))"
+)
 
 con = duckdb.connect()
 print(f'period: {DATE_FROM} → {DATE_TO} (today={TODAY})', file=sys.stderr)
@@ -324,3 +333,20 @@ print(f'  areas: {len(areas)}', file=sys.stderr)
 print(f'  __dubai__: n={dubai["n"]:,} new={dubai["new"]:,} renewed={dubai["renewed"]:,} '
       f'med={dubai["med_annual"]:,} trend={dubai["trend_pct"]}%', file=sys.stderr)
 print(f'  key: master_project_en → fallback area_name_en (no manual remap)', file=sys.stderr)
+
+# Inline into index.html, mirroring build_sale_aggregates.py.
+HTML = os.path.join(ROOT, 'index.html')
+print(f'patching {HTML}: const RENT_AGGREGATES = ...', file=sys.stderr)
+with open(HTML, encoding='utf-8') as f:
+    lines = f.readlines()
+literal = 'const RENT_AGGREGATES = ' + json.dumps(out, ensure_ascii=False, separators=(',', ':')) + ';\n'
+for i, ln in enumerate(lines):
+    if ln.startswith('const RENT_AGGREGATES = '):
+        lines[i] = literal
+        print(f'  patched line {i+1} ({len(literal):,} bytes)', file=sys.stderr)
+        break
+else:
+    print('  ERROR: const RENT_AGGREGATES line not found', file=sys.stderr)
+    sys.exit(1)
+with open(HTML, 'w', encoding='utf-8') as f:
+    f.writelines(lines)
