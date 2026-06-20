@@ -501,6 +501,14 @@
             </div>
             <div class="dp-donut-foot">${listLinkFooter('recent', t('open_full_recent'))}</div>
           </div>
+          <div class="dp-donut-card">
+            <div class="dp-donut-title">${t("donut_payment_title")}</div>
+            <div class="dp-chart dp-donut" style="height:160px">
+              <button class="chart-expand-btn" type="button" data-dp-expand-donut="payment" title="${t('chart_expand')}" aria-label="${t('chart_expand')}">⛶</button>
+              <canvas id="ch-donut-payment"></canvas>
+            </div>
+            <div class="dp-donut-foot">${t('donut_payment_hint')}</div>
+          </div>
         </div>
       </div>
     `;
@@ -943,6 +951,25 @@
       fmt: v => fmtInt(v) + ' ' + t('ch_count').toLowerCase(),
     };
   }
+  // Cash vs financed share. `payment` is computed server-side in
+  // build_sale_aggregates.py as a population-level ratio: per-area
+  // count of Mortgage Registration filings divided into the per-area
+  // sales count. The row-level "did THIS specific sale finance?" join
+  // was too brittle for off-plan (whose mortgage filings happen at
+  // handover years after the sale row), so we use the area-aggregate
+  // share instead. Matches the UAE headline number (~16-20% financed).
+  function _paymentData(a) {
+    const p = a.payment || {};
+    const cash = p.cash || 0;
+    const fin  = p.financed || 0;
+    if (!(cash + fin)) return null;
+    return {
+      labels: [t('donut_payment_cash'), t('donut_payment_financed')],
+      values: [cash, fin],
+      colors: ['#0ea5e9', '#f59e0b'],
+      fmt: v => fmtInt(v) + ' ' + t('ch_count').toLowerCase(),
+    };
+  }
   function _renderDonut(canvasId, d, opts) {
     const ctx = document.getElementById(canvasId);
     if (!ctx) return null;
@@ -977,11 +1004,13 @@
       projects: _projectsDonutData(a),
       deals:    _dealsByYearData(a),
       recent:   _recentByRoomData(a),
+      payment:  _paymentData(a),
     };
     _renderDonut('ch-offplan',           S.donutData.offplan);
     _renderDonut('ch-donut-projects',    S.donutData.projects);
     _renderDonut('ch-donut-deals',       S.donutData.deals);
     _renderDonut('ch-donut-recent',      S.donutData.recent);
+    _renderDonut('ch-donut-payment',     S.donutData.payment);
   }
   // Big-mode donut: legend on the side + a summary "leader" badge in the
   // header, so the modal reads like a quick analytic exhibit.
@@ -993,6 +1022,7 @@
       projects: 'donut_proj_title_full',
       deals:    'donut_deals_title_full',
       recent:   'donut_recent_title_full',
+      payment:  'donut_payment_title_full',
     }[kind];
     const el = _modalDOM();
     el.querySelector('#dp-cm-title').textContent = t(titleKey);

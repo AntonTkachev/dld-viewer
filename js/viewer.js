@@ -242,7 +242,7 @@ document.body.insertAdjacentHTML('beforeend',
   + '<line x1="0" y1="0" x2="0" y2="8" stroke="#94a3b8" stroke-width="1.4"/>'
   + '</pattern></defs></svg>');
 
-const map = L.map('map').setView([25.12, 55.25], 10);
+const map = L.map('map', { zoomControl: false }).setView([25.12, 55.25], 10);
 L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
   attribution: '© OpenStreetMap contributors',
   maxZoom: 19,
