@@ -436,6 +436,47 @@ def render_page(lang, projects_count, hero, this_year):
     title = fmt(c['title'])
     meta  = fmt(c['meta'])
     lede  = fmt(c['lede'])
+    # JSON-LD: tell Google this is a Dataset (project register from RERA)
+    # and dump a BreadcrumbList so the SERP shows the path. Numbers are
+    # snapshot-time and the Dataset description repeats meta — Google
+    # de-dupes, but the structured data helps it understand the page is
+    # an analytical exhibit, not a marketing landing.
+    dataset_ld = {
+        '@context': 'https://schema.org',
+        '@type':    'Dataset',
+        'name':     title,
+        'description': meta,
+        'inLanguage':  lang,
+        'url':         canon,
+        'creator':     {'@type': 'Organization', 'name': 'DXBCompass'},
+        'license':     'https://www.dubaipulse.gov.ae/terms',
+        'isAccessibleForFree': True,
+        'spatialCoverage': {'@type': 'Place', 'name': 'Dubai, UAE'},
+        'variableMeasured': [
+            'project_status', 'percent_completed',
+            'no_of_units', 'developer_name',
+            'master_project_en', 'area_name_en', 'completion_date',
+        ],
+        'distribution': {
+            '@type': 'DataDownload',
+            'encodingFormat': 'application/json',
+            'contentUrl': BASE_URL + '/construction/data.json',
+        },
+    }
+    breadcrumb_ld = {
+        '@context': 'https://schema.org',
+        '@type':    'BreadcrumbList',
+        'itemListElement': [
+            {'@type': 'ListItem', 'position': 1, 'name': c['breadcrumb_dubai'],
+             'item': BASE_URL + prefix + '/'},
+            {'@type': 'ListItem', 'position': 2, 'name': c['section'],
+             'item': canon},
+        ],
+    }
+    json_ld = (
+        '<script type="application/ld+json">' + json.dumps(dataset_ld,    ensure_ascii=False) + '</script>\n'
+        '<script type="application/ld+json">' + json.dumps(breadcrumb_ld, ensure_ascii=False) + '</script>'
+    )
     # Inline a slim copy hash so the page JS can look up labels without an
     # extra fetch. Keys mirror COPY entries used at render time.
     page_copy = {k: v for k, v in c.items() if k not in {'html_lang', 'dir_'}}
@@ -461,6 +502,9 @@ def render_page(lang, projects_count, hero, this_year):
 <meta property="og:type" content="website">
 <meta property="og:title" content="{title}">
 <meta property="og:description" content="{meta}">
+<meta property="og:url" content="{canon}">
+<meta name="robots" content="index,follow">
+{json_ld}
 <link rel="icon" type="image/svg+xml" href="{BASE_URL}/favicon.svg">
 <link rel="stylesheet" href="{BASE_URL}/css/viewer.css">
 <script async src="https://www.googletagmanager.com/gtag/js?id=G-5G3EY3Y2KG"></script>

@@ -67,17 +67,13 @@ def iter_index_files():
                 yield from walk(sub)
 
 
-def snapshot_lastmod():
-    """Single global lastmod derived from the DLD snapshot freshness.
-    Falls back to today if tx.parquet isn't on disk yet."""
-    candidates = [
-        os.path.join(ROOT, 'data', 'tx.parquet'),
-        os.path.join(ROOT, 'data', 'rents.parquet'),
-    ]
-    mtimes = [os.path.getmtime(p) for p in candidates if os.path.exists(p)]
-    if mtimes:
-        return datetime.fromtimestamp(max(mtimes), tz=timezone.utc).strftime('%Y-%m-%d')
-    return datetime.now(timezone.utc).strftime('%Y-%m-%d')
+def file_lastmod(abs_path):
+    """Per-file lastmod from filesystem mtime. Replaces the old global-
+    lastmod-from-tx.parquet approach — that meant a content-only rebuild
+    (e.g. tweaking detail-panel.js or adding the /construction/ page)
+    didn't move any URL's lastmod forward, so Google never re-crawled the
+    changed pages. Per-file mtime is what crawlers actually want."""
+    return datetime.fromtimestamp(os.path.getmtime(abs_path), tz=timezone.utc).strftime('%Y-%m-%d')
 
 
 def url_for(rel):
@@ -89,7 +85,8 @@ def url_for(rel):
 
 def main():
     seen = set()
-    urls = []
+    entries = []  # (url, lastmod) — keep both so we can sort by URL while
+                  # preserving the per-file lastmod alignment.
     for rel in iter_index_files():
         if is_noindex_stub(rel):
             continue
@@ -97,14 +94,16 @@ def main():
         if url in seen:
             continue
         seen.add(url)
-        urls.append(url)
+        # rel is `<dir>` (relative); the index.html that produced it lives
+        # at `<dir>/index.html` under ROOT.
+        abs_path = ROOT if rel == '.' else os.path.join(ROOT, rel, 'index.html')
+        entries.append((url, file_lastmod(abs_path)))
 
-    urls.sort()
-    lastmod = snapshot_lastmod()
+    entries.sort(key=lambda e: e[0])
 
     lines = ['<?xml version="1.0" encoding="UTF-8"?>',
              '<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">']
-    for url in urls:
+    for url, lastmod in entries:
         lines.append(
             '  <url>'
             f'<loc>{escape(url)}</loc>'
@@ -116,11 +115,19 @@ def main():
     out = os.path.join(ROOT, 'sitemap.xml')
     with open(out, 'w', encoding='utf-8') as f:
         f.write('\n'.join(lines) + '\n')
-    print(f'sitemap.xml: {len(urls)} URLs  ({os.path.getsize(out) // 1024} KB)  lastmod={lastmod}',
+    # Report the freshest lastmod so the user sees "yes, the recent rebuild
+    # is reflected in the sitemap". Also dump per-day URL counts so a stale
+    # section sticks out.
+    from collections import Counter
+    by_date = Counter(lm for _, lm in entries)
+    latest = max(by_date) if by_date else 'n/a'
+    print(f'sitemap.xml: {len(entries)} URLs  ({os.path.getsize(out) // 1024} KB)  latest lastmod={latest}',
           file=sys.stderr)
+    for d, c in sorted(by_date.items()):
+        print(f'  {d}: {c:,} URLs', file=sys.stderr)
 
-    if len(urls) > 50000:
-        print(f'WARNING: {len(urls)} URLs exceeds sitemap 50K cap — '
+    if len(entries) > 50000:
+        print(f'WARNING: {len(entries)} URLs exceeds sitemap 50K cap — '
               'split into sitemapindex.xml.', file=sys.stderr)
 
     # robots.txt — point crawlers at the sitemap.
