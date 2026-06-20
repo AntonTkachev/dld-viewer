@@ -430,8 +430,23 @@ const MASKS = {
     // For `all`, layer the per-period build over AGGREGATES so newly split
     // sub-community keys (springs / meadows / jumeirah heights) appear on
     // top of the legacy aggregate.
+    //
+    // AGGREGATES used to be inlined in index.html (`const AGGREGATES = {…}`).
+    // It now ships as a separate /transactions/data/choropleth.js via a
+    // `<script src>` tag — same global symbol, but if the external script
+    // 404s (botched deploy / corporate proxy / CSP block / CDN transient),
+    // the bare reference would throw ReferenceError here and bring the
+    // whole page-init crashing down. The typeof guard makes the page fall
+    // back to period-only data instead of going white.
+    //
+    // AGGREGATES is the THIN choropleth shard: only {name, n, total, med,
+    // med_ppsqm} per district. Full per-district detail (timeline,
+    // top_deals, recent, room-bucket breakdowns) lives in
+    // /sales/<slug>/data.json and is fetched by the detail page, not here.
+    // If you need a field beyond those 5 on the main map, you also have
+    // to add it to scripts/build_sale_aggregates.py's `thin` projection.
     data: {
-      all:   Object.assign({}, AGGREGATES, _TX_P['all'] || {}),
+      all:   Object.assign({}, (typeof AGGREGATES !== 'undefined' ? AGGREGATES : {}), _TX_P['all'] || {}),
       '1y':  _TX_P['1y']  || {},
       '3y':  _TX_P['3y']  || {},
       '5y':  _TX_P['5y']  || {},
