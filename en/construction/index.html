@@ -454,6 +454,24 @@ function bind() {
   document.getElementById("next-btn").addEventListener("click", () => { STATE.page++; renderBody(); renderPager(); });
 }
 
+// Read ?q=… on load and pre-fill the search box. Used by deep-links from
+// the map's construction-layer popup ("Open all 18 →" on Motor City marker
+// lands here with ?q=Motor+City already applied). Also clears the default
+// status filter so the user sees the whole pipeline, not just in-flight.
+function applyUrlParams() {
+  const params = new URLSearchParams(window.location.search);
+  const q = params.get("q");
+  if (q) {
+    STATE.search = q;
+    // Drop the default in-flight filter so finished + active are all shown
+    // — the user came in via a specific district lookup, not a survey of
+    // what's currently building.
+    STATE.statusFilter = new Set();
+    const searchEl = document.getElementById("search");
+    if (searchEl) searchEl.value = q;
+  }
+}
+
 async function boot() {
   // Always fetch from the canonical RU path — same origin, no CORS, and
   // it skips the symlink-from-/<lang>/ path entirely (GH Pages doesn't
@@ -463,6 +481,7 @@ async function boot() {
   renderHero();
   renderStatusChips();
   renderAreaSelect();
+  applyUrlParams();
   applyFilters();
   bind();
   rerender();
