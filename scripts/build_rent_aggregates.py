@@ -65,7 +65,31 @@ SELECT {KEY_EXPR} AS k,
        contract_reg_type_en AS rt,
        COALESCE(NULLIF(project_name_en,''), '')     AS proj,
        TRY_CAST(annual_amount AS DOUBLE) AS amt,
-       TRY_CAST(actual_area   AS DOUBLE) AS sqm
+       TRY_CAST(actual_area   AS DOUBLE) AS sqm,
+       -- Room bucket parsed from Ejari's freeform sub-type ("1bed room+Hall",
+       -- "2 bed rooms+hall", "Studio", "Penthouse", …). Mapped to the same
+       -- studio/1br/2br/3br/4br+/other vocabulary as sales' by_rooms_unit so
+       -- renderRoomChips/renderRoomBreakdown can be reused 1:1 across modes.
+       CASE
+         WHEN ejari_property_sub_type_en ILIKE '%studio%'    THEN 'studio'
+         WHEN ejari_property_sub_type_en ILIKE 'penthouse%'  THEN '4br+'
+         WHEN ejari_property_sub_type_en ILIKE '1%bed%'      THEN '1br'
+         WHEN ejari_property_sub_type_en ILIKE '2%bed%'      THEN '2br'
+         WHEN ejari_property_sub_type_en ILIKE '3%bed%'      THEN '3br'
+         WHEN ejari_property_sub_type_en ILIKE '4%bed%'      THEN '4br+'
+         WHEN ejari_property_sub_type_en ILIKE '5%bed%'      THEN '4br+'
+         WHEN ejari_property_sub_type_en ILIKE '6%bed%'      THEN '4br+'
+         ELSE 'other'
+       END AS rooms,
+       -- Person / Authority. "Authority" in Ejari = legal entity tenant
+       -- (corporate, govt., institutional). Useful B2B vs B2C signal.
+       COALESCE(NULLIF(tenant_type_en,''), 'Unknown') AS tenant,
+       -- Contract length in months. Distinguishes hospitality (1-3mo) from
+       -- residential (12mo) from long-term office (24-36mo).
+       CASE WHEN contract_end_date IS NOT NULL
+            THEN DATE_DIFF('day', CAST(contract_start_date AS DATE),
+                                  CAST(contract_end_date AS DATE)) / 30.0
+            ELSE NULL END AS dur_months
 FROM '{RENTS}'
 WHERE area_name_en IS NOT NULL
   AND contract_start_date BETWEEN '{DATE_FROM}' AND '{DATE_TO}'
@@ -90,10 +114,38 @@ SELECT k, ANY_VALUE(area_orig) AS name,
        ROUND(QUANTILE_CONT(amt,0.75)  FILTER (WHERE amt > 0)) AS p75,
        ROUND(QUANTILE_CONT(amt,0.90)  FILTER (WHERE amt > 0)) AS p90,
        ROUND(MEDIAN(sqm)              FILTER (WHERE sqm > 0), 1) AS med_sqm,
-       ROUND(MEDIAN(amt/sqm)          FILTER (WHERE amt > 0 AND sqm > 0)) AS med_ppsqm
+       ROUND(MEDIAN(amt/sqm)          FILTER (WHERE amt > 0 AND sqm > 0)) AS med_ppsqm,
+       ROUND(MEDIAN(dur_months)       FILTER (WHERE dur_months > 0), 1) AS med_dur_months
 FROM r GROUP BY k
 """)
 print(f'  areas: {len(totals)}', file=sys.stderr)
+
+# ─── by_rooms_unit (sales-parity) ────────────────────────────────
+print('by_rooms_unit (Studio/1BR/2BR/3BR/4BR+/other)...', file=sys.stderr)
+rooms_agg = q("""
+SELECT k, rooms,
+       COUNT(*) AS n,
+       ROUND(MEDIAN(amt)     FILTER (WHERE amt > 0)) AS med,
+       ROUND(MEDIAN(sqm)     FILTER (WHERE sqm > 0), 1) AS med_sqm,
+       ROUND(MEDIAN(amt/sqm) FILTER (WHERE amt > 0 AND sqm > 0)) AS med_ppsqm
+FROM r GROUP BY k, rooms
+""")
+
+# Monthly timeline per room — fuel for renderRoomBreakdown / renderRoomChips.
+# Mirrors sales' timeline_by_rooms shape: { '1br': [{d,n,med,vol,ppsqm}, ...], … }
+print('timeline_by_rooms (monthly per room bucket)...', file=sys.stderr)
+tl_rooms = q("""
+SELECT k, rooms, substr(d, 1, 7) AS d,
+       COUNT(*) AS n,
+       ROUND(MEDIAN(amt)     FILTER (WHERE amt > 0))                 AS med,
+       ROUND(SUM(amt))                                               AS vol,
+       ROUND(MEDIAN(amt/sqm) FILTER (WHERE amt > 0 AND sqm > 0))     AS ppsqm
+FROM r GROUP BY k, rooms, substr(d, 1, 7) ORDER BY k, rooms, d
+""")
+
+# ─── by_tenant_type (Person / Authority / Unknown) ───────────────
+print('by_tenant_type (Person vs Authority)...', file=sys.stderr)
+tenant = q("SELECT k, tenant AS t, COUNT(*) AS n FROM r GROUP BY k, tenant")
 
 # ─── by_subtype ──────────────────────────────────────────────────
 print('by_subtype (Flat / Villa / Other…)...', file=sys.stderr)
@@ -162,8 +214,12 @@ for _, row in totals.iterrows():
         'p90':         safe_int(row['p90']),
         'med_sqm':     safe_float(row['med_sqm']),
         'med_ppsqm':   safe_int(row['med_ppsqm']),
+        'med_dur_months': safe_float(row['med_dur_months']),
         'by_subtype':  {},
         'by_usage':    {},
+        'by_rooms_unit':    {},
+        'timeline_by_rooms':{},
+        'by_tenant':   {},
         'top_projects':[],
         'recent':      [],
         'timeline':    [],
@@ -184,6 +240,33 @@ for _, row in usage.iterrows():
     k = row['k']
     if k not in out: continue
     out[k]['by_usage'][row['u']] = safe_int(row['n'])
+
+for _, row in rooms_agg.iterrows():
+    k = row['k']
+    if k not in out: continue
+    out[k]['by_rooms_unit'][row['rooms']] = {
+        'n':         safe_int(row['n']),
+        'med':       safe_int(row['med']),
+        'med_sqm':   safe_float(row['med_sqm']),
+        'med_ppsqm': safe_int(row['med_ppsqm']),
+    }
+
+for _, row in tl_rooms.iterrows():
+    k = row['k']
+    if k not in out: continue
+    rk = row['rooms']
+    out[k]['timeline_by_rooms'].setdefault(rk, []).append({
+        'd':     row['d'],
+        'n':     safe_int(row['n']),
+        'med':   safe_int(row['med']),
+        'vol':   safe_int(row['vol']),
+        'ppsqm': safe_int(row['ppsqm']),
+    })
+
+for _, row in tenant.iterrows():
+    k = row['k']
+    if k not in out: continue
+    out[k]['by_tenant'][row['t']] = safe_int(row['n'])
 
 for _, row in top_proj.iterrows():
     k = row['k']

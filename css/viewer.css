@@ -84,6 +84,10 @@
   .dp-stat.dp-stat--count {border-left-color:#475569}
   .dp-stat.dp-stat--vol   {border-left-color:#9a6418}
   .dp-stat.dp-stat--ppsqm {border-left-color:#0e7c66}
+  /* Rent median stat embeds an Annual ↔ Monthly toggle in the top-right. */
+  .dp-stat.dp-stat-toggle{position:relative}
+  .dp-unit-toggle{position:absolute;top:6px;right:6px;font-size:10.5px;line-height:1;padding:3px 7px;border:1px solid #cbd5e1;border-radius:999px;background:#fff;color:#475569;cursor:pointer;font-weight:600}
+  .dp-unit-toggle:hover{background:#f1f5f9;border-color:#94a3b8;color:#0f172a}
   .dp-trend-up{color:#0a7f00}
   .dp-trend-down{color:#cc4040}
   .dp-trend-flat{color:#666}
