@@ -1,4 +1,17 @@
   html,body{margin:0;height:100%;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Helvetica,Arial,sans-serif;color:#1a1a1a;background:#0d1117}
+  /* Language banner — soft nudge for non-RU browsers on the Russian root.
+     Position:fixed overlay; map sits underneath unchanged. When visible,
+     bump #mp-panel + #view-switch down so they don't collide. */
+  #lang-banner{position:fixed;top:0;left:0;right:0;z-index:1300;background:#fef3c7;border-bottom:1px solid #fbbf24;padding:8px 16px;display:flex;align-items:center;gap:12px;font-size:13px;font-family:inherit;color:#78350f;box-shadow:0 1px 4px rgba(0,0,0,.06)}
+  #lang-banner[hidden]{display:none}
+  #lang-banner .lb-text{flex:1;line-height:1.3}
+  #lang-banner .lb-cta{background:#1d4ed8;color:#fff;padding:5px 12px;border-radius:5px;text-decoration:none;font-weight:600;font-size:12.5px;white-space:nowrap}
+  #lang-banner .lb-cta:hover{background:#1641aa}
+  #lang-banner .lb-x{background:none;border:0;color:#92400e;font-size:18px;cursor:pointer;padding:0 4px;line-height:1;font-family:inherit}
+  #lang-banner .lb-x:hover{color:#451a03}
+  body.has-lang-banner #mp-panel{top:52px}
+  body.has-lang-banner #view-switch{top:54px}
+  @media (max-width:480px){#lang-banner{font-size:12px;padding:7px 12px;gap:8px}#lang-banner .lb-cta{padding:4px 10px;font-size:11.5px}}
   #map{position:absolute;left:0;right:0;top:0;bottom:0}
   .legend{position:absolute;bottom:18px;right:18px;background:rgba(255,255,255,.97);padding:10px 12px;border-radius:8px;box-shadow:0 4px 14px rgba(0,0,0,.25);z-index:1000;font-size:12px}
   .legend .row{display:flex;align-items:center;gap:8px;margin:2px 0}
@@ -253,6 +266,9 @@
   #tv-table th,#tv-table td{padding:4px 12px;text-align:left;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;line-height:1.45}
   #tv-table td{border-bottom:1px solid #eef0f3}
   #tv-table th{position:sticky;top:0;background:#f8fafc;font-weight:700;color:#475569;cursor:pointer;user-select:none;border-bottom:1px solid #cfd6e0;z-index:1;font-size:10.5px;text-transform:uppercase;letter-spacing:.04em;padding:8px 12px}
+  /* Growth/Payback have longer header labels — shrink them one step so
+     "Цена сейчас (м²)" / "Окупаемость (лет)" don't get truncated. */
+  #tv-table.mask-growth th, #tv-table.mask-payback th{font-size:9.5px;letter-spacing:.03em;padding:8px 10px}
   #tv-table th:hover{background:#eef3fc}
   #tv-table th.sorted-asc,#tv-table th.sorted-desc{color:#1d4ed8}
   #tv-table th.sorted-asc::after{content:' ▲';opacity:.75;font-size:9px}
@@ -260,7 +276,7 @@
   #tv-table th.rank{cursor:default;text-align:right;color:#94a3b8;padding-right:8px}
   #tv-table th.rank:hover{background:#f8fafc}
   #tv-table td.num{text-align:right;font-variant-numeric:tabular-nums;position:relative;color:#0f172a}
-  #tv-table td.num .bar{position:absolute;right:0;top:3px;bottom:3px;background:rgba(29,78,216,0.07);pointer-events:none;border-radius:2px 0 0 2px}
+  #tv-table td.num .bar{position:absolute;right:0;top:3px;bottom:3px;background:rgba(71,85,105,0.18);pointer-events:none;border-radius:2px 0 0 2px}
   #tv-table td.num .v{position:relative}
   #tv-table td.rank{color:#94a3b8;font-size:11.5px;font-variant-numeric:tabular-nums;text-align:right;padding-right:8px}
   #tv-table td.pos,#tv-table td.neg{color:inherit}
