@@ -39,9 +39,25 @@ IN_FLIGHT_STATES = {'ACTIVE', 'NOT_STARTED', 'PENDING', 'CONDITIONAL_ACTIVATING'
 # Manual aliases for cases where the RERA-side name doesn't match the
 # GEOJSON polygon name. RERA-normalized → polygon-normalized.
 MASTER_ALIASES = {
-    'palm jabal ali':       'palm jebel ali',
-    'nad al sheba gardens': 'nad al sheba',
+    'palm jabal ali':                                              'palm jebel ali',
+    'nad al sheba gardens':                                        'nad al sheba',
+    'town square':                                                 'town square dubai',
+    'dubai hills estate':                                          'dubai hills',
+    'jumeirah lakes towers':                                       'jlt jumeirah lake towers',
+    'meydan one community':                                        'meydan one',
+    'dubai south residential district':                            'dubai south residential',
+    'mohammed bin rashid al maktoum district 11':                  'mbr city district 11',
+    'mohammed bin rashid al maktoum city district 1 community':    'mbr city district 1',
 }
+# Prefix rollups for fragmented master_project values that DLD splits
+# across many siblings. Same problem as the ROLLUP_SQL CASE in
+# build_{sale,rent}_aggregates.py — Dubai Hills is recorded as
+# 'DUBAI HILLS - SIDRA 1/2/3', 'MAPLE 3', 'GOLF PLACE', etc. (13 variants
+# at the time of writing), and they all belong to the same Dubai Hills
+# polygon. Match by normalized prefix; first hit wins.
+MASTER_PREFIX_ROLLUPS = [
+    ('dubai hills', 'dubai hills'),  # catches all 'DUBAI HILLS - *' siblings + bare 'DUBAI HILLS'
+]
 AREA_ALIASES = {
     'world islands':         'the world',
 }
@@ -88,7 +104,7 @@ def build_polygon_index() -> dict:
     return out
 
 
-def lookup(polys: dict, raw: str, aliases: dict):
+def lookup(polys: dict, raw: str, aliases: dict, prefix_rollups=None):
     if not raw:
         return None
     n = norm(raw)
@@ -97,6 +113,13 @@ def lookup(polys: dict, raw: str, aliases: dict):
     a = aliases.get(n)
     if a and a in polys:
         return a, polys[a]
+    # Prefix rollup — last resort for fragmented masters like the 13
+    # 'DUBAI HILLS - X' siblings. Skip exact-match prefixes so a true
+    # 'Dubai Hills' name still resolves via the polys/alias paths first.
+    if prefix_rollups:
+        for prefix, target in prefix_rollups:
+            if n != prefix and n.startswith(prefix) and target in polys:
+                return target, polys[target]
     return None
 
 
@@ -135,7 +158,7 @@ def main() -> int:
 
     for r in rera_rows:
         total_rows += 1
-        hit = lookup(polys, r['master_project_en'], MASTER_ALIASES)
+        hit = lookup(polys, r['master_project_en'], MASTER_ALIASES, MASTER_PREFIX_ROLLUPS)
         geocode = 'master'
         if hit is None:
             hit = lookup(polys, r['area_name_en'], AREA_ALIASES)
