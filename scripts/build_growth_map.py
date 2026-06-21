@@ -34,6 +34,12 @@ con = duckdb.connect()
 
 now_from = (TODAY - timedelta(days=NOW_DAYS)).isoformat()
 now_to   = TODAY.isoformat()
+# Land plots are excluded from every window — their ppsqm is land value, not
+# housing value, so mixing them into the same MEDIAN as Unit/Villa/Building
+# creates nonsense growth numbers in districts that transition from plot
+# sales (e.g. Al Yelayiss 5: 994 → 15,533 AED/m² because some plots are
+# more central than others — not because anyone built anything).
+PROPERTY_TYPE_FILTER = "(property_type_en IS NULL OR property_type_en != 'Land')"
 now_rows = con.execute(f"""
 SELECT {KEY_EXPR} AS k,
        ANY_VALUE({NAME_EXPR}) AS name,
@@ -42,6 +48,7 @@ SELECT {KEY_EXPR} AS k,
              FILTER (WHERE TRY_CAST(meter_sale_price AS DOUBLE) > 0)) AS med_ppsqm
 FROM '{TX}'
 WHERE area_name_en IS NOT NULL
+  AND {PROPERTY_TYPE_FILTER}
   AND instance_date BETWEEN '{now_from}' AND '{now_to}'
 GROUP BY k
 """).fetchdf()
@@ -63,6 +70,7 @@ WITH first_dt AS (
   SELECT {KEY_EXPR} AS k, MIN(CAST(instance_date AS DATE)) AS first_dt
   FROM '{TX}'
   WHERE area_name_en IS NOT NULL
+    AND {PROPERTY_TYPE_FILTER}
     AND instance_date IS NOT NULL
     AND TRY_CAST(meter_sale_price AS DOUBLE) > 0
   GROUP BY k
@@ -77,6 +85,7 @@ FROM (
   FROM '{TX}' t1
   JOIN first_dt fd ON {KEY_EXPR} = fd.k
   WHERE t1.area_name_en IS NOT NULL
+    AND (t1.property_type_en IS NULL OR t1.property_type_en != 'Land')
     AND CAST(t1.instance_date AS DATE) BETWEEN fd.first_dt
                                           AND fd.first_dt + INTERVAL 365 DAY
 ) t
@@ -108,6 +117,7 @@ for code, days in PERIODS:
                  FILTER (WHERE TRY_CAST(meter_sale_price AS DOUBLE) > 0)) AS med_ppsqm
     FROM '{TX}'
     WHERE area_name_en IS NOT NULL
+        AND {PROPERTY_TYPE_FILTER}
         AND instance_date BETWEEN '{base_from}' AND '{base_to}'
     GROUP BY k
     HAVING COUNT(*) >= {MIN_OBS}
@@ -158,13 +168,15 @@ for code, days in PERIODS:
             'fallback_yrs': round(years_back, 1),
         }
 
-    # Dubai rollup
+    # Dubai rollup (same Land filter as per-polygon queries so the rollup is
+    # consistent with what each polygon contributes).
     d_then = con.execute(f"""
     SELECT COUNT(*) AS n,
            ROUND(MEDIAN(TRY_CAST(meter_sale_price AS DOUBLE))
                  FILTER (WHERE TRY_CAST(meter_sale_price AS DOUBLE) > 0)) AS med
     FROM '{TX}'
     WHERE area_name_en IS NOT NULL
+      AND {PROPERTY_TYPE_FILTER}
       AND instance_date BETWEEN '{base_from}' AND '{base_to}'
     """).fetchdf().iloc[0]
     d_now = con.execute(f"""
@@ -173,6 +185,7 @@ for code, days in PERIODS:
                  FILTER (WHERE TRY_CAST(meter_sale_price AS DOUBLE) > 0)) AS med
     FROM '{TX}'
     WHERE area_name_en IS NOT NULL
+      AND {PROPERTY_TYPE_FILTER}
       AND instance_date BETWEEN '{now_from}' AND '{now_to}'
     """).fetchdf().iloc[0]
     if d_then['n'] >= MIN_OBS and d_now['n'] >= MIN_OBS and d_then['med'] and d_now['med']:
