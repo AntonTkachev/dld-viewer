@@ -84,6 +84,12 @@ setTimeout(() => {
   } catch (e) { /* sandbox / file:// edge — ignore */ }
   applyLang(_bootLang);
 
+  // Inline hint above the table — explains the dual click behavior
+  // (name = navigate to district page, row = fly to on map). Text is
+  // translated and only set on boot (lang switch in table view is hidden).
+  const tvHintEl = document.getElementById('tv-hint');
+  if (tvHintEl) tvHintEl.textContent = t('tv_hint');
+
   // Lang switcher (middle panel) — navigate to /<newlang>/<mask>/[table/]
   // instead of just re-rendering labels in place. Preserves ?layers=… so
   // active POI overlays survive a language switch.
@@ -950,7 +956,12 @@ function renderTable() {
       const areaKey = isDubai ? '__dubai__' : (rec && rec._k);
       const hasPolygon = isDubai || (areaKey && _FEAT_BY_KEY.has(areaKey));
       if (areaKey && hasPolygon) {
-        return `<td${cls ? ' class="' + cls + '"' : ''}${titleAttr}><a class="tv-district-link" data-key="${_h(areaKey)}">${cellHtml}</a></td>`;
+        // Dubai rollup has no per-district page; keep as bare link (row click
+        // fits the map to all of Dubai). Real districts get a real href to
+        // /<lang>/<mode>/<slug>/ — name click navigates, row click flies-to.
+        const href = isDubai ? '' : (_districtHrefForKey(areaKey) || '');
+        const hrefAttr = href ? ` href="${_h(href)}"` : '';
+        return `<td${cls ? ' class="' + cls + '"' : ''}${titleAttr}><a class="tv-district-link" data-key="${_h(areaKey)}"${hrefAttr}>${cellHtml}</a></td>`;
       }
       return `<td${cls ? ' class="' + cls + ' tv-no-polygon"' : ' class="tv-no-polygon"'} title="${_h(t('tv_no_polygon'))}">${cellHtml}</td>`;
     }
@@ -1017,10 +1028,16 @@ function renderTable() {
   // Row-level click: anywhere in a row with [data-key] flies the map (in split
   // layout) or navigates (mobile fallback). Delegation keeps a single listener
   // even after sort/pagination rerenders.
+  //
+  // Clicks on the district-name link (`a.tv-district-link[href]`) bypass this
+  // handler so the browser performs a real navigation to the district page —
+  // name = open page, anywhere else in the row = fly the map. Dubai rollup's
+  // link has no href, so its row click still falls through to fly-to-city.
   const tbody = tbl.querySelector('tbody');
   if (tbody && !tbody._wired) {
     tbody._wired = true;
     tbody.addEventListener('click', e => {
+      if (e.target.closest('a.tv-district-link[href]')) return;
       const tr = e.target.closest('tr.clickable');
       if (!tr) return;
       const key = tr.getAttribute('data-key');
