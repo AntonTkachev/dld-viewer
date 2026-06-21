@@ -524,7 +524,7 @@ const MASKS = {
         ? `<div class="stat"><span class="k">${t('pp_fallback_yrs')}</span><span class="v">${p.real_fallback_yrs.toFixed(1)} ${t('unit_years')}</span></div>`
         : '';
       return `
-      <div class="stat"><span class="k">${t('pp_growth_pct')} <span class="src-tag" style="background:#e6f7e6;color:#0a7f00">DLD</span></span><span class="v" style="font-weight:700">${p.real_metric >= 0 ? '+' : ''}${p.real_metric.toFixed(1)}%</span></div>
+      <div class="stat"><span class="k">${t('pp_growth_pct')}</span><span class="v" style="font-weight:700">${p.real_metric >= 0 ? '+' : ''}${p.real_metric.toFixed(1)}%</span></div>
       <div class="stat"><span class="k">${t('pp_med_now_psqm')}</span><span class="v">${(p.real_med_ppsqm||0).toLocaleString('ru-RU')}</span></div>
       <div class="stat"><span class="k">${t('pp_med_then_psqm')}</span><span class="v">${(p.real_med_then_ppsqm||0).toLocaleString('ru-RU')}</span></div>
       ${fb}
@@ -532,12 +532,11 @@ const MASKS = {
     `;
     },
     tableColumns: [
-      { key: 'name',         labelKey: 'tv_col_district',    type: 'str',     width: '28%' },
-      { key: 'growth_pct',   labelKey: 'tv_col_growth_pct',  type: 'pct',     width: '12%', defaultSort: true, defaultSortDir: 'desc' },
-      { key: 'med_now',      labelKey: 'tv_col_med_now',     type: 'int',     width: '15%' },
-      { key: 'med_then',     labelKey: 'tv_col_med_then',    type: 'int',     width: '15%' },
-      { key: 'fallback_yrs', labelKey: 'tv_col_history',     type: 'yrs_opt', width: '14%' },
-      { key: 'n',            labelKey: 'tv_col_n_last_year', type: 'int',     width: '16%' },
+      { key: 'name',         labelKey: 'tv_col_district',    type: 'str',     width: '30%' },
+      { key: 'growth_pct',   labelKey: 'tv_col_growth_pct',  type: 'pct',     width: '14%', defaultSort: true, defaultSortDir: 'desc' },
+      { key: 'med_now',      labelKey: 'tv_col_med_now',     type: 'int',     width: '18%' },
+      { key: 'med_then',     labelKey: 'tv_col_med_then',    type: 'int',     width: '18%' },
+      { key: 'n',            labelKey: 'tv_col_n_last_year', type: 'int',     width: '20%' },
     ],
   },
   payback: {
@@ -566,7 +565,7 @@ const MASKS = {
     legendFmt: v => v.toFixed(1),
     periodLabelKey: 'mask_room_label',
     popupRows: (p, t) => p.real_metric === null || p.real_metric === undefined ? '' : `
-      <div class="stat"><span class="k">${t('pp_payback_years')} <span class="src-tag" style="background:#e6f7e6;color:#0a7f00">DLD</span></span><span class="v" style="font-weight:700">${p.real_metric.toFixed(1)} ${t('unit_years')}</span></div>
+      <div class="stat"><span class="k">${t('pp_payback_years')}</span><span class="v" style="font-weight:700">${p.real_metric.toFixed(1)} ${t('unit_years')}</span></div>
       <div class="stat"><span class="k">${t('pp_sale_ppsqm')}</span><span class="v">${(p.real_med_price||0).toLocaleString('ru-RU')} AED/м²</span></div>
       <div class="stat"><span class="k">${t('pp_rent_ppsqm')}</span><span class="v">${(p.real_med_ppsqm||0).toLocaleString('ru-RU')} AED/м²/${t('unit_year_short')}</span></div>
       <div class="stat"><span class="k">${t('pp_n_sale')}</span><span class="v">${(p.real_n_sale||0).toLocaleString('ru-RU')}</span></div>
@@ -924,7 +923,10 @@ function renderTable() {
     const sortedCls = (ident === state.sortKey) ? (' sorted-' + state.sortDir) : '';
     const numCls = (c.type !== 'str') ? 'num' : '';
     const cls = (numCls + sortedCls).trim();
-    return `<th data-col="${ident}"${cls ? ' class="' + cls + '"' : ''}>${t(c.labelKey)}</th>`;
+    const label = t(c.labelKey);
+    // title= shows the full label as a native tooltip when the header is
+    // truncated by ellipsis — common on Growth/Payback masks with longer names.
+    return `<th data-col="${ident}"${cls ? ' class="' + cls + '"' : ''} title="${_h(label)}">${_h(label)}</th>`;
   }).join('');
 
   const renderCell = (c, rec, isDubai) => {
@@ -934,6 +936,9 @@ function renderTable() {
     let cls = isNum ? 'num' : '';
     if (c.type === 'pct' && typeof v === 'number' && !isDubai) cls += ' ' + (v >= 0 ? 'pos' : 'neg');
     cls = cls.trim();
+    // title attr surfaces the full cell value as a native tooltip when
+    // truncation hides it (long district names, big numbers, etc.).
+    const titleAttr = ` title="${_h(String(txt))}"`;
     // District-name cell — clickable link if a polygon exists for this key
     // (or always for the DUBAI rollup row, which opens the city-wide panel).
     // Unmatchable rows stay as muted plain text so the user can see at a
@@ -945,12 +950,12 @@ function renderTable() {
       const areaKey = isDubai ? '__dubai__' : (rec && rec._k);
       const hasPolygon = isDubai || (areaKey && _FEAT_BY_KEY.has(areaKey));
       if (areaKey && hasPolygon) {
-        return `<td${cls ? ' class="' + cls + '"' : ''}><a class="tv-district-link" data-key="${_h(areaKey)}">${cellHtml}</a></td>`;
+        return `<td${cls ? ' class="' + cls + '"' : ''}${titleAttr}><a class="tv-district-link" data-key="${_h(areaKey)}">${cellHtml}</a></td>`;
       }
       return `<td${cls ? ' class="' + cls + ' tv-no-polygon"' : ' class="tv-no-polygon"'} title="${_h(t('tv_no_polygon'))}">${cellHtml}</td>`;
     }
     if (!isNum) {
-      return `<td${cls ? ' class="' + cls + '"' : ''}>${_h(String(txt))}</td>`;
+      return `<td${cls ? ' class="' + cls + '"' : ''}${titleAttr}>${_h(String(txt))}</td>`;
     }
     // Magnitude bar (right-anchored) for int/aed_big columns. pct gets a chip
     // via .pos/.neg class instead; yrs stays as plain text — low precision
@@ -963,7 +968,7 @@ function renderTable() {
         if (pct >= 1) barHtml = `<span class="bar" style="width:${pct.toFixed(1)}%"></span>`;
       }
     }
-    return `<td${cls ? ' class="' + cls + '"' : ''}>${barHtml}<span class="v">${txt}</span></td>`;
+    return `<td${cls ? ' class="' + cls + '"' : ''}${titleAttr}>${barHtml}<span class="v">${txt}</span></td>`;
   };
 
   // Rank cell — global rank within the filtered+sorted list (1-based, with
@@ -990,6 +995,9 @@ function renderTable() {
 
   const tbl = document.getElementById('tv-table');
   if (!tbl) return;
+  // Per-mask hook for header sizing (Growth/Payback have longer labels and get
+  // a smaller header font via .mask-growth / .mask-payback selectors).
+  tbl.className = 'mask-' + currentMask;
   tbl.innerHTML = `<colgroup>${cols}</colgroup><thead><tr>${ths}</tr></thead><tbody>${dubaiHtml}${bodyHtml}</tbody>`;
 
   const cnt = document.getElementById('tv-count');
@@ -1419,9 +1427,8 @@ map.on('zoomend', () => {
 function _featurePopupHtml(f) {
   const p = f.properties;
   const m = MASKS[currentMask] || MASKS.sales;
-  const sourceLabel = ({'osm-admin':'OSM admin_level=10','osm-place':'OSM place='+_h(p.kind||''),'osm-residential':'OSM landuse=residential'})[p.source] || 'OSM';
   const newDev = p._new_dev_count || 0;
-  const newDevRow = newDev ? `<div class="stat"><span class="k">${t("new_buildings")} <span class="src-tag src-osm">OSM</span></span><span class="v">${newDev|0}</span></div>` : '';
+  const newDevRow = newDev ? `<div class="stat"><span class="k">${t("new_buildings")}</span><span class="v">${newDev|0}</span></div>` : '';
   const detailsBtn = p.real_area_key
     ? `<div style="margin-top:8px"><a href="${_h(_safeUrl(_districtHrefForKey(p.real_area_key, p.name, p.legacy_area_key, p.master_project_key)))}" style="background:#0366d6;color:#fff;text-decoration:none;padding:6px 12px;border-radius:4px;font-size:12px;font-weight:600;display:inline-block">${t("pp_open")}</a></div>`
     : '';
@@ -1434,7 +1441,7 @@ function _featurePopupHtml(f) {
   } else {
     const volumeRow = m.showVolume ? `<div class="stat"><span class="k">${t("pp_volume")}</span><span class="v">${(p.real_total_aed||0)>=1e9?((p.real_total_aed/1e9).toFixed(2)+' '+t('abbr_b')):((p.real_total_aed/1e6).toFixed(1)+' '+t('abbr_m'))}</span></div>` : '';
     bodyRows = p.real_count ? `
-      <div class="stat"><span class="k">${t(m.popupCountKey || "pp_trans_ytd")} <span class="src-tag" style="background:#e6f7e6;color:#0a7f00">DLD</span>${p.real_match_kind==='parent'?' <span class="src-tag" style="background:#fff5e6;color:#7a4c00">parent: '+_h(p.real_parent_name||'')+'</span>':''}</span><span class="v">${p.real_count.toLocaleString('ru-RU')}</span></div>
+      <div class="stat"><span class="k">${t(m.popupCountKey || "pp_trans_ytd")}${p.real_match_kind==='parent'?' <span class="src-tag" style="background:#fff5e6;color:#7a4c00">parent: '+_h(p.real_parent_name||'')+'</span>':''}</span><span class="v">${p.real_count.toLocaleString('ru-RU')}</span></div>
       ${volumeRow}
       <div class="stat"><span class="k">${t("pp_median")}</span><span class="v">${((p.real_med_price||0)/1e6).toFixed(2)} ${t('abbr_m')}</span></div>
       <div class="stat"><span class="k">${t("pp_median_psqm")}</span><span class="v">${(p.real_med_ppsqm||0).toLocaleString('ru-RU')}</span></div>
@@ -1446,7 +1453,7 @@ function _featurePopupHtml(f) {
     `;
   }
   return `
-    <h3>${p.name ? _h(p.name) : '—'} <span class="src-tag src-osm">${sourceLabel}</span></h3>
+    <h3>${p.name ? _h(p.name) : '—'}</h3>
     <div class="muted" style="margin-bottom:6px;color:#888">${_h(p.name_ar||'')}</div>
     ${bodyRows}
   `;
@@ -1486,7 +1493,7 @@ let _hoveredFeat = null;
 let _selectedFeat = null;
 let _hoverRaf = 0;
 const _STYLE_HOVER    = {weight: 2,   color: '#000'};
-const _STYLE_SELECTED = {weight: 3.5, color: '#1d4ed8'};
+const _STYLE_SELECTED = {weight: 3.5, color: '#000'};
 
 function _restoreStyle(f) {
   if (!f || !f._layer) return;
