@@ -7,12 +7,16 @@ Reads:
   - growth/data/{1y,3y,5y,10y}.json            → GROWTH_PERIODS
   - payback/data/{studio,1br,2br,3br,4br_plus}.json → PAYBACK_PERIODS
 
-Inserts/replaces the four `const ..._PERIODS = ...` lines right after
-`const RENT_AGGREGATES`.
+Inserts/replaces the four `const ..._PERIODS = ...` lines right after the
+rents choropleth shard tag (`<script src="/rents/data/choropleth.js…">`).
+Falls back to `const RENT_AGGREGATES` for backwards compatibility with the
+pre-sharding layout.
 
 The /sales/ and /rents/ SEO pages inherit these from the root template.
 """
-import json, os, sys
+import json, os, re, sys
+
+RENTS_CHOROPLETH_TAG_RE = re.compile(r'^<script src="/rents/data/choropleth\.js(\?v=[a-f0-9]{8})?"></script>\s*$')
 
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 
@@ -60,14 +64,23 @@ for fname in ('index.html',):
         return any(s.startswith(f'const {n} =') or s.startswith(f'const {n}=') for n in NAMES)
     lines = [ln for ln in lines if not is_ours(ln)]
 
-    # Find anchor (after RENT_AGGREGATES line)
+    # Find anchor: prefer the rents choropleth script tag (post-sharding);
+    # fall back to `const RENT_AGGREGATES` (pre-sharding layout). The anchor
+    # broke silently after the choropleth shard refactor — periods kept the
+    # stale DM-admin keys while the polygons advanced to alias keys, blanking
+    # JVC/JVT/Mudon/etc on the 1y/3y/5y/10y masks.
     anchor = None
     for i, ln in enumerate(lines):
-        if ln.lstrip().startswith('const RENT_AGGREGATES'):
+        if RENTS_CHOROPLETH_TAG_RE.match(ln.lstrip()):
             anchor = i
             break
     if anchor is None:
-        print(f'  {fname}: RENT_AGGREGATES not found', file=sys.stderr); continue
+        for i, ln in enumerate(lines):
+            if ln.lstrip().startswith('const RENT_AGGREGATES'):
+                anchor = i
+                break
+    if anchor is None:
+        print(f'  {fname}: rents choropleth tag / RENT_AGGREGATES not found', file=sys.stderr); continue
 
     for off, line in enumerate(LINES, start=1):
         lines.insert(anchor + off, line)
