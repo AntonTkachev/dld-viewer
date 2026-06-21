@@ -189,7 +189,10 @@
     `;
   }
   function computeStatsRent(r) {
-    const slice = periodSlice(r.timeline || []);
+    // Room-aware. When S.roomFilter is 'all' we fall back to r.timeline;
+    // otherwise we read r.timeline_by_rooms[S.roomFilter]. Mirrors how
+    // computeStatsSale derives its numbers via roomTimelineFor.
+    const slice = periodSlice(roomTimelineFor(r));
     let n = 0;
     const meds = [], ppsqms = [];
     for (const p of slice) {
@@ -201,8 +204,6 @@
   }
   function renderStatsRent(r) {
     const s = computeStatsRent(r);
-    const newRatio = r.n ? Math.round((r.new||0) / r.n * 100) : 0;
-    const renRatio = 100 - newRatio;
     // Annual/Monthly toggle. The aggregator ships AED/year; divide on the
     // fly for the monthly view. PPSQM stays as AED/m²/year regardless —
     // industry convention — but we relabel the median itself.
@@ -222,7 +223,6 @@
           <button class="dp-unit-toggle" type="button" data-dp-rent-unit="${monthly ? 'annual' : 'monthly'}" title="${t(monthly ? 'rent_toggle_annual' : 'rent_toggle_monthly')}" aria-label="${t(monthly ? 'rent_toggle_annual' : 'rent_toggle_monthly')}">${monthly ? t('rent_toggle_annual') : t('rent_toggle_monthly')}</button>
         </div>
         <div class="dp-stat"><div class="k">${t("rent_sc_ppsqm")}</div><div class="v">${s.med_ppsqm ? fmtInt(s.med_ppsqm)+' AED' : '—'}</div></div>
-        <div class="dp-stat"><div class="k">${t("rent_sc_versions")}</div><div class="v" style="font-size:13px">${newRatio}% / ${renRatio}%</div></div>
         ${durHtml}
     `;
   }
@@ -599,6 +599,10 @@
           <div class="dp-donut-card">
             <div class="dp-donut-title">${t("rent_donut_tenant")}</div>
             <div class="dp-chart dp-donut" style="height:160px"><canvas id="ch-rent-donut-tenant"></canvas></div>
+          </div>
+          <div class="dp-donut-card">
+            <div class="dp-donut-title">${t("rent_sc_versions")}</div>
+            <div class="dp-chart dp-donut" style="height:160px"><canvas id="ch-rent-donut-newrenew"></canvas></div>
           </div>
         </div>
       </div>
@@ -1136,6 +1140,22 @@
       fmt: v => fmtInt(v) + ' ' + t('rent_sc_contracts').toLowerCase(),
     };
   }
+  // New vs Renew lifetime ratio for the district. Aggregator only ships the
+  // total split (not period-bucketed), so this doesn't react to the period
+  // filter — labels reflect the whole history. Worth surfacing as its own
+  // donut because the share of renewals is a useful "is this market mature
+  // or churning?" signal.
+  function _rentNewRenewDonutData(r) {
+    const ne = r.new || 0;
+    const re = r.renewed || 0;
+    if (ne + re === 0) return null;
+    return {
+      labels: [t('rent_v_new_label'), t('rent_v_renew_label')],
+      values: [ne, re],
+      colors: ['#10b981', '#a78bfa'],
+      fmt: v => fmtInt(v) + ' ' + t('rent_sc_contracts').toLowerCase(),
+    };
+  }
   // Person vs Authority vs Unknown — relabel via i18n so RU/AR/HI/ZH all
   // show localized "Physical / Legal entity / Unspecified".
   function _rentTenantDonutData(r) {
@@ -1192,9 +1212,10 @@
     }
     // Three insight donuts.
     try {
-      _renderDonut('ch-rent-donut-subtype', _rentSubtypeDonutData(r));
-      _renderDonut('ch-rent-donut-usage',   _rentUsageDonutData(r));
-      _renderDonut('ch-rent-donut-tenant',  _rentTenantDonutData(r));
+      _renderDonut('ch-rent-donut-subtype',  _rentSubtypeDonutData(r));
+      _renderDonut('ch-rent-donut-usage',    _rentUsageDonutData(r));
+      _renderDonut('ch-rent-donut-tenant',   _rentTenantDonutData(r));
+      _renderDonut('ch-rent-donut-newrenew', _rentNewRenewDonutData(r));
     } catch(e) { console.error('rent donuts:', e); }
   }
 
