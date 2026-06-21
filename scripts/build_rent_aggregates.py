@@ -64,7 +64,16 @@ SELECT {KEY_EXPR} AS k,
        COALESCE(property_usage_en,'Unknown')        AS usage,
        contract_reg_type_en AS rt,
        COALESCE(NULLIF(project_name_en,''), '')     AS proj,
-       TRY_CAST(annual_amount AS DOUBLE) AS amt,
+       -- Per-unit annual rent. DLD ships master contracts (no_of_prop > 1)
+       -- with annual_amount = TOTAL for the whole bundle, repeated on
+       -- every line_number row. A 53-unit DUSIT contract has each of its
+       -- 53 rows carrying annual=1.87M; un-normalized that floods the
+       -- median with bundle-totals masquerading as per-unit rents.
+       -- Confirmed by comparing single-unit contracts in the same project
+       -- (annual=35,284) to the divided bundle (1.87M / 53 = 35,284 ✓).
+       -- COALESCE+GREATEST guards against NULL / 0 / negative no_of_prop.
+       TRY_CAST(annual_amount AS DOUBLE)
+           / GREATEST(COALESCE(TRY_CAST(no_of_prop AS DOUBLE), 1), 1) AS amt,
        TRY_CAST(actual_area   AS DOUBLE) AS sqm,
        -- Room bucket parsed from Ejari's freeform sub-type ("1bed room+Hall",
        -- "2 bed rooms+hall", "Studio", "Penthouse", …). Mapped to the same
