@@ -1,0 +1,24 @@
+#!/usr/bin/env bash
+# Pre-commit hook: smoke-test the 4 mask choropleths against index.html
+# before letting a commit land. Catches:
+#   - inline_periods.py wrote consts as raw HTML text
+#   - polygon ↔ data key drift after alias edits
+#   - headline districts (JVC, Marina, Mudon, ...) lost data
+#
+# Install (one-time, in a fresh clone):
+#   ln -sf ../../scripts/hooks/pre-commit .git/hooks/pre-commit
+#
+# Skip in emergencies:  git commit --no-verify
+set -e
+
+REPO_ROOT="$(git rev-parse --show-toplevel)"
+cd "$REPO_ROOT"
+
+# Only run if index.html or any data/script touching the masks is staged.
+# Otherwise the hook adds nothing and slows down doc/css/js-only commits.
+if git diff --cached --name-only | grep -qE '^(index\.html|data/(curated_polygons\.geojson|polygon_overrides\.json|dm_to_dld_aliases\.json|tx\.parquet|rents\.parquet)|scripts/(build_(sale|rent|transactions|rents|growth|payback)_(map|aggregates)|inline_periods|_curated_sql|build_curated_polygons|test_masks)\.py|transactions/data/.*\.(json|js)|rents/data/.*\.(json|js)|growth/data/.*\.json|payback/data/.*\.json)$'; then
+    echo "==> pre-commit: running mask smoke tests..."
+    /usr/bin/python3 scripts/test_masks.py
+else
+    echo "==> pre-commit: no mask-relevant files staged, skipping smoke tests"
+fi
