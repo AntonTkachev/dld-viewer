@@ -29,11 +29,19 @@
     isDubai: false,
     period: 'all',
     roomFilter: 'all',
+    // 'annual' (default — DLD ships AED/year) or 'monthly' (value/12).
+    // Most renters in RU/HI/ZH markets think in monthly budget, so the
+    // toggle is a visible UX win even when the underlying figure is the same.
+    rentUnit: 'annual',
     activeCharts: [],
     timelineCharts: [],
     rentTimelineCharts: [],
     modalChart: null,
   };
+  // Active record for the rooms section — sale on the sales page, rent on
+  // the rents page. Keeps renderRoomBreakdown / refreshRoomBreakdown
+  // mode-agnostic without forking the implementation.
+  function _roomsRec() { return S.sale || S.rent; }
 
   const PERIODS = [
     { k: '1y',  months: 12  },
@@ -195,11 +203,27 @@
     const s = computeStatsRent(r);
     const newRatio = r.n ? Math.round((r.new||0) / r.n * 100) : 0;
     const renRatio = 100 - newRatio;
+    // Annual/Monthly toggle. The aggregator ships AED/year; divide on the
+    // fly for the monthly view. PPSQM stays as AED/m²/year regardless —
+    // industry convention — but we relabel the median itself.
+    const monthly = (S.rentUnit === 'monthly');
+    const med = monthly ? Math.round((s.med_annual || 0) / 12) : s.med_annual;
+    const medLabel = monthly
+      ? `${t("rent_sc_med_annual")} (${t("rent_toggle_monthly")})`
+      : t("rent_sc_med_annual");
+    const dur = r.med_dur_months;
+    const durHtml = (dur && dur > 0) ? `
+        <div class="dp-stat"><div class="k">${t("rent_sc_dur")}</div><div class="v">${dur.toFixed(0)} ${t("rent_unit_months")}</div></div>` : '';
     return `
         <div class="dp-stat"><div class="k">${t("rent_sc_contracts")}</div><div class="v">${fmtInt(s.n)}</div></div>
-        <div class="dp-stat"><div class="k">${t("rent_sc_med_annual")}</div><div class="v">${s.med_annual ? fmtAedDP(s.med_annual) : '—'}</div></div>
+        <div class="dp-stat dp-stat-toggle">
+          <div class="k">${medLabel}</div>
+          <div class="v">${med ? fmtAedDP(med) : '—'}</div>
+          <button class="dp-unit-toggle" type="button" data-dp-rent-unit="${monthly ? 'annual' : 'monthly'}" title="${t(monthly ? 'rent_toggle_annual' : 'rent_toggle_monthly')}" aria-label="${t(monthly ? 'rent_toggle_annual' : 'rent_toggle_monthly')}">${monthly ? t('rent_toggle_annual') : t('rent_toggle_monthly')}</button>
+        </div>
         <div class="dp-stat"><div class="k">${t("rent_sc_ppsqm")}</div><div class="v">${s.med_ppsqm ? fmtInt(s.med_ppsqm)+' AED' : '—'}</div></div>
-        <div class="dp-stat"><div class="k">New / Renew</div><div class="v" style="font-size:13px">${newRatio}% / ${renRatio}%</div></div>
+        <div class="dp-stat"><div class="k">${t("rent_sc_versions")}</div><div class="v" style="font-size:13px">${newRatio}% / ${renRatio}%</div></div>
+        ${durHtml}
     `;
   }
 
@@ -352,12 +376,13 @@
     S.roomBreakdownChart = ch;
   }
   function refreshRoomBreakdown() {
-    if (!S.sale) return;
+    const rec = _roomsRec();
+    if (!rec) return;
     const legend = S.container && S.container.querySelector('#dp-rb-legend');
     if (legend) {
       // Re-render legend chips (active/hidden state).
       const tmp = document.createElement('div');
-      tmp.innerHTML = renderRoomBreakdown(S.sale);
+      tmp.innerHTML = renderRoomBreakdown(rec);
       const fresh = tmp.querySelector('#dp-rb-legend');
       if (fresh) legend.innerHTML = fresh.innerHTML;
     }
@@ -369,7 +394,7 @@
       S.roomBreakdownChart.destroy();
       S.roomBreakdownChart = null;
     }
-    renderRoomBreakdownChart(S.sale);
+    renderRoomBreakdownChart(rec);
   }
   function openRoomChartModal() {
     // Reuse the modal shell — render a stacked bar version of the same data
@@ -522,24 +547,22 @@
     if (!r || !r.n) {
       return `<div class="dp-empty">${t('rent_no_data')}</div>`;
     }
-    const subOrder = ['Flat','Villa','Studio','Office','Shop','Warehouse','Hotel','Showroom','Complex Villas','Labor Camps','Other'];
+    // Iterate the actual by_subtype keys ordered by count desc — old code
+    // had a hardcoded whitelist [Flat, Villa, Studio, Office, Shop, …] that
+    // silently dropped Hotel apartments, Clinic, Restaurant, Penthouse,
+    // Kiosk, Store from the table when they appeared in the data.
     const sub = r.by_subtype || {};
-    const subKeys = subOrder.filter(k => sub[k]);
-    const sub_rows = subKeys.map(k => {
-      const v = sub[k];
-      return `<tr><td>${k}</td><td class="num">${fmtInt(v.n)}</td><td class="num">${fmtAedDP(v.med)}</td><td class="num">${fmtInt(v.med_ppsqm)}</td></tr>`;
-    }).join('');
-    const usage = r.by_usage || {};
-    const usageTotal = Object.values(usage).reduce((s,v)=>s+v,0) || 1;
-    const usage_rows = Object.entries(usage).sort((a,b)=>b[1]-a[1]).map(([k,v]) => {
-      const pct = (v/usageTotal*100).toFixed(1);
-      return `<tr><td>${k}</td><td class="num">${fmtInt(v)}</td><td class="num">${pct}%</td></tr>`;
-    }).join('');
+    const subSorted = Object.entries(sub).sort((a,b) => b[1].n - a[1].n);
+    const sub_rows = subSorted.map(([k, v]) => `
+      <tr><td>${_h(k)}</td><td class="num">${fmtInt(v.n)}</td><td class="num">${fmtAedDP(v.med)}</td><td class="num">${fmtInt(v.med_ppsqm)}</td></tr>`).join('');
     const proj_rows = (r.top_projects||[]).map(p => `<tr><td>${projName(p.proj)}</td><td class="num">${fmtInt(p.n)}</td><td class="num">${fmtAedDP(p.med)}</td></tr>`).join('');
     const recent_rows = (r.recent||[]).map(d => {
       const vTag = d.v === 'N' ? t('rent_v_new') : t('rent_v_renew');
       return `<tr><td>${_h(d.d)}</td><td>${projName(d.proj)}</td><td>${_h(d.sub)}</td><td class="num">${d.sqm ? fmtInt(d.sqm) : '—'}</td><td class="num">${fmtAedDP(d.val)}</td><td><span class="dp-tag-g dp-tag-g-${d.v==='N'?'O':'R'}">${_h(vTag)}</span></td></tr>`;
     }).join('');
+    // Room breakdown only if the aggregator emitted by_rooms_unit (rent
+    // schema added 2026-06-21). Older snapshots fall through gracefully.
+    const hasRooms = !!(r.by_rooms_unit && Object.keys(r.by_rooms_unit).length);
 
     return `
       <div class="period-chips" id="dp-period-chips-rent">${renderPeriodChipsRent()}</div>
@@ -547,6 +570,7 @@
 
       <div class="dp-section">
         <h3>${t("rent_section_timeline")}</h3>
+        ${hasRooms ? `<div class="room-chips" id="dp-room-chips-rent">${renderRoomChips(r)}</div>` : ''}
         <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
           <div>
             <div style="font-size:11px;color:#666;margin-bottom:2px">${t("sp_subsection_count")}</div>
@@ -559,26 +583,41 @@
         </div>
       </div>
 
-      ${sub_rows ? `<div class="dp-section">
-        <h3>${t("rent_section_subtype")}</h3>
-        <table class="dp-table"><thead><tr><th>${t("rent_th_subtype")}</th><th class="num">${t("th_n")}</th><th class="num">${t("rent_th_med")}</th><th class="num">${t("rent_th_ppsqm")}</th></tr></thead><tbody>${sub_rows}</tbody></table>
-      </div>` : ''}
+      ${hasRooms ? renderRoomBreakdown(r) : ''}
 
-      ${usage_rows ? `<div class="dp-section">
-        <h3>${t("rent_section_usage")}</h3>
-        <table class="dp-table"><thead><tr><th>${t("rent_section_usage")}</th><th class="num">${t("th_n")}</th><th class="num">%</th></tr></thead><tbody>${usage_rows}</tbody></table>
-      </div>` : ''}
+      <div class="dp-section">
+        <h3>${t("sp_section_insights")}</h3>
+        <div class="dp-donut-grid">
+          <div class="dp-donut-card">
+            <div class="dp-donut-title">${t("rent_donut_subtype")}</div>
+            <div class="dp-chart dp-donut" style="height:160px"><canvas id="ch-rent-donut-subtype"></canvas></div>
+          </div>
+          <div class="dp-donut-card">
+            <div class="dp-donut-title">${t("rent_donut_usage")}</div>
+            <div class="dp-chart dp-donut" style="height:160px"><canvas id="ch-rent-donut-usage"></canvas></div>
+          </div>
+          <div class="dp-donut-card">
+            <div class="dp-donut-title">${t("rent_donut_tenant")}</div>
+            <div class="dp-chart dp-donut" style="height:160px"><canvas id="ch-rent-donut-tenant"></canvas></div>
+          </div>
+        </div>
+      </div>
+
+      ${sub_rows ? `<details class="dp-collapsible">
+        <summary>${t("rent_section_subtype")}</summary>
+        <table class="dp-table"><thead><tr><th>${t("rent_th_subtype")}</th><th class="num">${t("th_n")}</th><th class="num">${t("rent_th_med")}</th><th class="num">${t("rent_th_ppsqm")}</th></tr></thead><tbody>${sub_rows}</tbody></table>
+      </details>` : ''}
 
       ${proj_rows ? `<details class="dp-collapsible" data-tier="premium">
         <summary>${t("rent_section_top_projects")}</summary>
         <table class="dp-table"><thead><tr><th>${t("th_project")}</th><th class="num">${t("th_n")}</th><th class="num">${t("rent_th_med")}</th></tr></thead><tbody>${proj_rows}</tbody></table>
-        ${listLinkFooter('top_projects', 'Открыть полный список топ-проектов по аренде')}
+        ${listLinkFooter('top_projects', t('open_full_top_projects'))}
       </details>` : ''}
 
       ${recent_rows ? `<details class="dp-collapsible" data-tier="premium">
         <summary>${t("rent_section_recent")}</summary>
         <table class="dp-table"><thead><tr><th>${t("th_date")}</th><th>${t("th_project")}</th><th>${t("rent_th_subtype")}</th><th class="num">${t("th_sqm")}</th><th class="num">${t("th_aed")}</th><th>${t("rent_th_version")}</th></tr></thead><tbody>${recent_rows}</tbody></table>
-        ${listLinkFooter('recent', 'Открыть последние договоры аренды')}
+        ${listLinkFooter('recent', t('open_full_recent'))}
       </details>` : ''}
     `;
   }
@@ -1064,11 +1103,67 @@
     try { renderRoomBreakdownChart(a); } catch(e) { console.error('rooms chart:', e); }
     try { renderInsightDonuts(a);    } catch(e) { console.error('donuts:', e); }
   }
+  // Rent donut datasets — same shape contract as the sales donut builders
+  // (labels, values, colors, fmt). Returns null when the section has nothing
+  // to render so _renderDonut shows a clean "no data" placeholder.
+  function _rentSubtypeDonutData(r) {
+    const sub = r.by_subtype || {};
+    const entries = Object.entries(sub).map(([k, v]) => [k, v.n || 0]).filter(([, n]) => n > 0);
+    if (!entries.length) return null;
+    entries.sort((a,b) => b[1] - a[1]);
+    const N = 6;
+    const top = entries.slice(0, N);
+    const tail = entries.slice(N);
+    const tailN = tail.reduce((s, [, n]) => s + n, 0);
+    const items = top.map(([k, n]) => ({ name: k, n }));
+    if (tailN > 0) items.push({ name: t('rent_subtype_other'), n: tailN });
+    return {
+      labels: items.map(i => i.name),
+      values: items.map(i => i.n),
+      colors: _donutPalette(items.length),
+      fmt: v => fmtInt(v) + ' ' + t('rent_sc_contracts').toLowerCase(),
+    };
+  }
+  function _rentUsageDonutData(r) {
+    const usage = r.by_usage || {};
+    const entries = Object.entries(usage).filter(([, n]) => n > 0);
+    if (!entries.length) return null;
+    entries.sort((a,b) => b[1] - a[1]);
+    return {
+      labels: entries.map(([k]) => k),
+      values: entries.map(([, n]) => n),
+      colors: _donutPalette(entries.length),
+      fmt: v => fmtInt(v) + ' ' + t('rent_sc_contracts').toLowerCase(),
+    };
+  }
+  // Person vs Authority vs Unknown — relabel via i18n so RU/AR/HI/ZH all
+  // show localized "Physical / Legal entity / Unspecified".
+  function _rentTenantDonutData(r) {
+    const tn = r.by_tenant || {};
+    const label = { 'Person': t('rent_tenant_person'), 'Authority': t('rent_tenant_authority'), 'Unknown': t('rent_tenant_unknown') };
+    const color = { 'Person': '#0ea5e9', 'Authority': '#f59e0b', 'Unknown': '#94a3b8' };
+    const entries = Object.entries(tn).filter(([, n]) => n > 0);
+    if (!entries.length) return null;
+    entries.sort((a,b) => b[1] - a[1]);
+    return {
+      labels: entries.map(([k]) => label[k] || k),
+      values: entries.map(([, n]) => n),
+      colors: entries.map(([k]) => color[k] || '#64748b'),
+      fmt: v => fmtInt(v) + ' ' + t('rent_sc_contracts').toLowerCase(),
+    };
+  }
   function renderRentCharts(r) {
-    const series = periodSlice(r.timeline || []);
+    // Timeline — respects the room filter when by_rooms_unit is present.
+    // Falls back to overall timeline otherwise (older snapshots).
+    const tlSource = (r.timeline_by_rooms && S.roomFilter !== 'all' && r.timeline_by_rooms[S.roomFilter])
+      ? r.timeline_by_rooms[S.roomFilter]
+      : (r.timeline || []);
+    const series = periodSlice(tlSource);
     const labels = series.map(p => p.d);
     const color = '#0ea5e9';
     const bg = 'rgba(14,165,233,.14)';
+    const monthly = (S.rentUnit === 'monthly');
+    const medVals = series.map(p => monthly ? Math.round((p.med || 0) / 12) : (p.med || 0));
     const mkChart = (id, data, fmtY, tooltipFmt) => {
       const ctx = document.getElementById(id);
       if (!ctx) return;
@@ -1089,7 +1184,18 @@
       S.rentTimelineCharts.push(ch);
     };
     mkChart('ch-rent-count', series.map(p => p.n), v => v,        v => v + ' ' + t('ch_count').toLowerCase());
-    mkChart('ch-rent-med',   series.map(p => p.med || 0), fmtAxisAed, fmtAedDP);
+    mkChart('ch-rent-med',   medVals, fmtAxisAed, fmtAedDP);
+
+    // Room breakdown chart if the data carries it.
+    if (r.by_rooms_unit && Object.keys(r.by_rooms_unit).length) {
+      try { renderRoomBreakdownChart(r); } catch(e) { console.error('rent rooms chart:', e); }
+    }
+    // Three insight donuts.
+    try {
+      _renderDonut('ch-rent-donut-subtype', _rentSubtypeDonutData(r));
+      _renderDonut('ch-rent-donut-usage',   _rentUsageDonutData(r));
+      _renderDonut('ch-rent-donut-tenant',  _rentTenantDonutData(r));
+    } catch(e) { console.error('rent donuts:', e); }
   }
 
   // ─── Event handlers (delegated) ────────────────────────────────
@@ -1130,13 +1236,24 @@
         }
         return;
       }
-      // Room filter change
+      // Room filter change — fan out to whichever side is mounted.
       const roomBtn = e.target.closest('[data-dp-set-room]');
       if (roomBtn && S.container && S.container.contains(roomBtn)) {
         const k = roomBtn.dataset.dpSetRoom;
         if (S.roomFilter !== k) {
           S.roomFilter = k;
-          refreshSale();
+          if (S.sale) refreshSale();
+          if (S.rent) refreshRent();
+        }
+        return;
+      }
+      // Annual ↔ Monthly toggle on the rent median stat.
+      const unitBtn = e.target.closest('[data-dp-rent-unit]');
+      if (unitBtn && S.container && S.container.contains(unitBtn)) {
+        const next = unitBtn.dataset.dpRentUnit;
+        if (S.rentUnit !== next) {
+          S.rentUnit = next;
+          refreshRent();
         }
         return;
       }
@@ -1202,10 +1319,13 @@
     if (pc) pc.innerHTML = renderPeriodChipsRent();
     const stEl = S.container.querySelector('#dp-stats-rent');
     if (stEl) stEl.innerHTML = renderStatsRent(S.rent);
+    const rc = S.container.querySelector('#dp-room-chips-rent');
+    if (rc) rc.innerHTML = renderRoomChips(S.rent);
     // Re-render rent charts only if its tab pane is currently visible
     if (S.container.querySelector('#ch-rent-count')) {
       destroyRentCharts();
       renderRentCharts(S.rent);
+      refreshRoomBreakdown();
     }
   }
 
