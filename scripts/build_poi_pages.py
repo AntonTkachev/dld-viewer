@@ -444,7 +444,8 @@ def hreflang_block(slug):
     parts = []
     for l in LANGUAGES:
         parts.append(f'<link rel="alternate" hreflang="{l}" href="{page_url(l, slug)}">')
-    parts.append(f'<link rel="alternate" hreflang="x-default" href="{page_url("ru", slug)}">')
+    # x-default → English (see build_pages.py for the rationale).
+    parts.append(f'<link rel="alternate" hreflang="x-default" href="{page_url("en", slug)}">')
     return '\n'.join(parts)
 
 

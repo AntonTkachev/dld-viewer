@@ -723,7 +723,9 @@ def hreflang_block(make_url):
     lines = []
     for l in LANGUAGES:
         lines.append(f'<link rel="alternate" hreflang="{l}" href="{make_url(l)}">')
-    lines.append(f'<link rel="alternate" hreflang="x-default" href="{make_url("ru")}">')
+    # x-default → English so Google serves an English title to users whose
+    # language isn't one of ru/en/ar/hi/zh. See build_pages.py for the why.
+    lines.append(f'<link rel="alternate" hreflang="x-default" href="{make_url("en")}">')
     return '\n'.join(lines)
 
 
