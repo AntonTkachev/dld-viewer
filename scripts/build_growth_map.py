@@ -39,6 +39,15 @@ now_to   = TODAY.isoformat()
 # creates nonsense growth numbers in districts that transition from plot
 # sales (e.g. Al Yelayiss 5: 994 → 15,533 AED/m² because some plots are
 # more central than others — not because anyone built anything).
+#
+# Villas are KEPT here even though DLD's actual_area is inconsistent for
+# them (some tx record built footprint, others the plot) and the median
+# ppsqm can bounce wildly year-over-year. Rationale: this builder feeds
+# the user-facing Growth mask, where wide coverage matters more than per-
+# district stability — villa-dominant communities (Springs, Arabian
+# Ranches, Damac Hills) would otherwise drop out entirely. The Lifecycle
+# mask, where per-district numerical stability matters for the composite
+# score, recomputes sale growth itself with a tighter Unit+Building filter.
 PROPERTY_TYPE_FILTER = "(property_type_en IS NULL OR property_type_en != 'Land')"
 now_rows = con.execute(f"""
 SELECT {KEY_EXPR} AS k,
