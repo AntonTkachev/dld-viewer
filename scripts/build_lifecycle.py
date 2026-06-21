@@ -33,8 +33,6 @@ from collections import Counter, defaultdict
 from datetime import date, timedelta
 
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-SALE_GROWTH = os.path.join(ROOT, 'growth/data/3y.json')
-SALE_GROWTH_FALLBACK = os.path.join(ROOT, 'growth/data/1y.json')  # for new districts
 TX_PARQUET = os.path.join(ROOT, 'data/tx.parquet')
 RENTS_PARQUET = os.path.join(ROOT, 'data/rents.parquet')
 RERA_CSV = os.path.join(ROOT, 'data/dld_projects.csv.gz')
@@ -126,8 +124,13 @@ def compute_pipeline(polys):
     """For each polygon, returns:
        {key: {'pipeline': share, 'units_active': int, 'units_finished_5y': int,
               'n_active': int, 'n_overdue': int}}
-    Pipeline share = units_active / (units_active + units_finished_5y);
-    polygons with no RERA join end up with empty record (pipeline=0).
+    Pipeline share = active_volume / (active_volume + finished_5y_volume).
+    "Volume" here is the sum of no_of_units + no_of_villas + no_of_lands
+    across each project — necessary because villa/land developments (e.g.
+    Palm Jabal Ali's 20 active projects) carry their development-size in
+    villas/lands fields, with no_of_units = 0. Counting units alone made
+    those districts show pipeline=0% despite real active construction.
+    Buildings field is NOT summed (would double-count the units inside).
     """
     five_yrs_ago = TODAY - timedelta(days=365 * 5)
     agg = defaultdict(lambda: {
@@ -143,10 +146,16 @@ def compute_pipeline(polys):
             if not key:
                 continue
             status = (r.get('project_status') or '').strip()
-            try:
-                units = int(r.get('no_of_units') or 0)
-            except ValueError:
-                units = 0
+            def to_int(s):
+                try: return int(s or 0)
+                except ValueError: return 0
+            # Development volume = units + villas + lands. Each is a separate
+            # "thing being delivered" — apartments inside a tower, villas in a
+            # cluster, or land plots in a subdivision. Summing them gives one
+            # comparable scalar across project types.
+            volume = (to_int(r.get('no_of_units'))
+                      + to_int(r.get('no_of_villas'))
+                      + to_int(r.get('no_of_lands')))
             end_raw = (r.get('project_end_date') or '').strip()
             comp_raw = (r.get('completion_date') or '').strip()
             try:
@@ -160,17 +169,123 @@ def compute_pipeline(polys):
             s = agg[key]
             if status in IN_FLIGHT_STATES:
                 s['n_active'] += 1
-                s['units_active'] += units
+                s['units_active'] += volume
                 if end_dt and end_dt < TODAY:
                     s['n_overdue'] += 1
             elif status == 'FINISHED':
                 if comp_dt and comp_dt >= five_yrs_ago:
-                    s['units_finished_5y'] += units
+                    s['units_finished_5y'] += volume
     # Compute the pipeline share now that totals are stable.
     for key, s in agg.items():
         denom = s['units_active'] + s['units_finished_5y']
         s['pipeline'] = (s['units_active'] / denom) if denom > 0 else 0.0
     return dict(agg)
+
+
+def compute_sale_growth(polys):
+    """Apartment-only sale growth (3y with 1y fallback) per polygon.
+    Mirrors build_growth_map.py's structure but excludes Villa as well as
+    Land — Villa median ppsqm is unreliable due to inconsistent area
+    recording (built footprint vs full plot), and including Villa
+    contaminates the lifecycle composite score. The user-facing Growth
+    mask keeps Villas; only Lifecycle is stricter.
+    Returns {polygon_key: {'growth_pct', 'med_now', 'med_then',
+                           '_growth_window': '3y'|'1y'}}.
+    """
+    sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+    from _curated_sql import build_curated_sql
+    KEY_EXPR, NAME_EXPR, _ = build_curated_sql()
+    con = duckdb.connect()
+    SALE_FILTER = "property_type_en IN ('Unit', 'Building')"
+    PPSQM_EXPR = "TRY_CAST(meter_sale_price AS DOUBLE)"
+    MIN_OBS = 10
+    NOW_DAYS = 365
+    WIN_DAYS = 180
+
+    now_from = (TODAY - timedelta(days=NOW_DAYS)).isoformat()
+    now_to = TODAY.isoformat()
+
+    def window(date_from, date_to):
+        return con.execute(f"""
+            SELECT {KEY_EXPR} AS k,
+                   ANY_VALUE({NAME_EXPR}) AS name,
+                   COUNT(*) AS n,
+                   ROUND(MEDIAN({PPSQM_EXPR})
+                         FILTER (WHERE {PPSQM_EXPR} > 0)) AS med
+            FROM '{TX_PARQUET}'
+            WHERE area_name_en IS NOT NULL
+              AND {SALE_FILTER}
+              AND CAST(instance_date AS DATE)
+                  BETWEEN DATE '{date_from}' AND DATE '{date_to}'
+            GROUP BY k
+            HAVING COUNT(*) >= {MIN_OBS}
+        """).fetchdf()
+
+    now_rows = window(now_from, now_to)
+    now_map = {r['k']: r for _, r in now_rows.iterrows() if r['med']}
+
+    def growth_for(period_days, window_label):
+        center = TODAY - timedelta(days=period_days)
+        base_from = (center - timedelta(days=WIN_DAYS)).isoformat()
+        base_to = (center + timedelta(days=WIN_DAYS)).isoformat()
+        base_rows = window(base_from, base_to)
+        base_map = {r['k']: r for _, r in base_rows.iterrows() if r['med']}
+        out = {}
+        for k, n_rec in now_map.items():
+            b_rec = base_map.get(k)
+            if b_rec is None:
+                continue
+            growth = (float(n_rec['med']) / float(b_rec['med']) - 1) * 100
+            out[k] = {
+                'name': str(n_rec['name']),
+                'med_now': int(n_rec['med']),
+                'med_then': int(b_rec['med']),
+                'growth_pct': round(growth, 1),
+                '_growth_window': window_label,
+            }
+        # Dubai aggregate (same filter so the rollup is consistent).
+        d_now = con.execute(f"""
+            SELECT ROUND(MEDIAN({PPSQM_EXPR})
+                         FILTER (WHERE {PPSQM_EXPR} > 0)) AS med
+            FROM '{TX_PARQUET}'
+            WHERE area_name_en IS NOT NULL AND {SALE_FILTER}
+              AND CAST(instance_date AS DATE)
+                  BETWEEN DATE '{now_from}' AND DATE '{now_to}'
+        """).fetchdf().iloc[0]
+        d_then = con.execute(f"""
+            SELECT ROUND(MEDIAN({PPSQM_EXPR})
+                         FILTER (WHERE {PPSQM_EXPR} > 0)) AS med
+            FROM '{TX_PARQUET}'
+            WHERE area_name_en IS NOT NULL AND {SALE_FILTER}
+              AND CAST(instance_date AS DATE)
+                  BETWEEN DATE '{base_from}' AND DATE '{base_to}'
+        """).fetchdf().iloc[0]
+        if d_now['med'] and d_then['med']:
+            out['__dubai__'] = {
+                'name': 'DUBAI',
+                'med_now': int(d_now['med']),
+                'med_then': int(d_then['med']),
+                'growth_pct': round((float(d_now['med']) / float(d_then['med']) - 1) * 100, 1),
+                '_growth_window': window_label,
+            }
+        return out
+
+    growth_3y = growth_for(365 * 3, '3y')
+    growth_1y = growth_for(365, '1y')
+
+    # Stitch: prefer 3y; fall back to 1y for polygons that didn't exist 3y ago
+    # (e.g. Bukadra — 9.8K Unit sales but all in 2024-2026, no baseline window).
+    # Dubai baseline from each window is returned separately so per-record
+    # normalization can match the window the record came from.
+    dubai_3y_pct = growth_3y.get('__dubai__', {}).get('growth_pct', 0)
+    dubai_1y_pct = growth_1y.get('__dubai__', {}).get('growth_pct', 0)
+    merged = dict(growth_3y)
+    for k, v in growth_1y.items():
+        if k == '__dubai__':
+            continue  # don't overwrite the 3y Dubai aggregate
+        if k not in merged:
+            merged[k] = v
+    return merged, dubai_3y_pct, dubai_1y_pct
 
 
 def compute_rent_growth(polys):
@@ -195,6 +310,15 @@ def compute_rent_growth(polys):
     # PPSQM rent — annual_amount per actual_area. Same filter as build_rents_map.
     PPSQM_EXPR = ("TRY_CAST(annual_amount AS DOUBLE) "
                   "/ NULLIF(TRY_CAST(actual_area AS DOUBLE), 0)")
+    # Restrict to residential apartment-style rentals. Without this, Dubai
+    # International Airport scored +40 vitality off Office/Warehouse/Shop
+    # rent growth (+81% across ~10K Office contracts) — irrelevant for a
+    # housing-market lifecycle mask. TRIM handles the 'Studio ' value DLD
+    # publishes with a trailing space.
+    RENT_RESIDENTIAL_FILTER = (
+        "TRIM(ejari_property_type_en) IN "
+        "('Flat', 'Studio', 'Hotel apartments')"
+    )
 
     def window(date_from, date_to):
         return con.execute(f"""
@@ -205,6 +329,7 @@ def compute_rent_growth(polys):
                          FILTER (WHERE {PPSQM_EXPR} > 0)) AS med_ppsqm
             FROM '{RENTS_PARQUET}'
             WHERE area_name_en IS NOT NULL
+              AND {RENT_RESIDENTIAL_FILTER}
               AND contract_start_date BETWEEN '{date_from}' AND '{date_to}'
             GROUP BY k
             HAVING COUNT(*) >= {RENT_MIN_OBS}
@@ -235,13 +360,15 @@ def compute_rent_growth(polys):
             'growth_pct': round(growth, 1),
         }
 
-    # Dubai aggregate for normalization baseline.
+    # Dubai aggregate for normalization baseline (same residential filter as
+    # per-polygon queries so the rollup is consistent).
     d_now = con.execute(f"""
         SELECT COUNT(*) AS n,
                ROUND(MEDIAN({PPSQM_EXPR})
                      FILTER (WHERE {PPSQM_EXPR} > 0)) AS med
         FROM '{RENTS_PARQUET}'
         WHERE area_name_en IS NOT NULL
+          AND {RENT_RESIDENTIAL_FILTER}
           AND contract_start_date BETWEEN '{now_from}' AND '{now_to}'
     """).fetchdf().iloc[0]
     d_then = con.execute(f"""
@@ -250,6 +377,7 @@ def compute_rent_growth(polys):
                      FILTER (WHERE {PPSQM_EXPR} > 0)) AS med
         FROM '{RENTS_PARQUET}'
         WHERE area_name_en IS NOT NULL
+          AND {RENT_RESIDENTIAL_FILTER}
           AND contract_start_date BETWEEN '{base_from}' AND '{base_to}'
     """).fetchdf().iloc[0]
     dubai_growth = round((float(d_now['med']) / float(d_then['med']) - 1) * 100, 1)
@@ -298,33 +426,21 @@ def main():
     polys = load_polygon_keys()
     print(f'Polygons indexed: {len(polys)}', file=sys.stderr)
 
-    # 1. Sales growth — prefer 3y for stability; fall back to 1y for districts
-    # that didn't exist 3 years ago. Bukadra is the canonical case: 9.8K Unit
-    # sales but 99% in 2024-2026, so the 3y baseline window has too few obs
-    # and the polygon is missing from 3y.json entirely. Without fallback, every
-    # brand-new district loses its price signal and ends up below the Dubai
-    # baseline by construction.
-    with open(SALE_GROWTH) as f:
-        sale_growth = json.load(f)
-    print(f'Sale growth (3y) polygons: {len(sale_growth) - 1}', file=sys.stderr)
-    fallback_used = 0
-    dubai_sale_growth_1y = 0
-    if os.path.exists(SALE_GROWTH_FALLBACK):
-        with open(SALE_GROWTH_FALLBACK) as f:
-            sale_growth_1y = json.load(f)
-        dubai_sale_growth_1y = sale_growth_1y.get('__dubai__', {}).get('growth_pct', 0)
-        for k, v in sale_growth_1y.items():
-            if k not in sale_growth:
-                # Mark fallback rows so normalization compares them against the
-                # MATCHING Dubai-1y baseline (not the 3y baseline — that would
-                # penalize new districts whose 1y growth is naturally small).
-                v = dict(v)
-                v['_growth_window'] = '1y'
-                sale_growth[k] = v
-                fallback_used += 1
-        print(f'Sale growth 1y fallback used: {fallback_used} polygons',
-              file=sys.stderr)
-    dubai_sale_growth = sale_growth.get('__dubai__', {}).get('growth_pct', 0)
+    # 1. Sale growth — apartment-only (Unit + Building, no Villa / Land).
+    # Recomputed locally rather than reading growth/data/3y.json so we can
+    # tighten the property-type filter without affecting the user-facing
+    # Growth mask (which keeps Villas for wider coverage). 3y is the
+    # preferred window; 1y is the fallback for brand-new districts like
+    # Bukadra that didn't exist 3y ago.
+    print('Computing sale growth (apartment-only, 3y + 1y fallback)...',
+          file=sys.stderr)
+    sale_growth, dubai_sale_growth, dubai_sale_growth_1y = compute_sale_growth(polys)
+    n_3y = sum(1 for k, v in sale_growth.items()
+               if k != '__dubai__' and v.get('_growth_window') == '3y')
+    n_1y_fallback = sum(1 for k, v in sale_growth.items()
+                        if k != '__dubai__' and v.get('_growth_window') == '1y')
+    print(f'Sale growth polygons: {n_3y} (3y) + {n_1y_fallback} (1y fallback)',
+          file=sys.stderr)
     print(f'Dubai-wide sale growth 3y: {dubai_sale_growth}%, 1y: {dubai_sale_growth_1y}%',
           file=sys.stderr)
 
