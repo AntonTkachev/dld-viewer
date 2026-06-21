@@ -261,7 +261,12 @@ def _hreflang_block(page_key, view):
     parts = []
     for l in LANGUAGES:
         parts.append(f'<link rel="alternate" hreflang="{l}" href="{_page_url(page_key, view, l)}">')
-    parts.append(f'<link rel="alternate" hreflang="x-default" href="{_page_url(page_key, view, "ru")}">')
+    # x-default → English. Google falls back to this when the user's language
+    # doesn't match any explicit hreflang — pointing at /en/ surfaces an
+    # English title to e.g. French / German / Spanish searchers instead of
+    # Russian (the pre-2026-06 behavior, GA confirmed non-RU users were
+    # landing on Russian-titled pages because x-default pointed at /sales/).
+    parts.append(f'<link rel="alternate" hreflang="x-default" href="{_page_url(page_key, view, "en")}">')
     return '\n'.join(parts)
 
 

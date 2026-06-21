@@ -409,7 +409,7 @@ def render_page(lang, projects_count, hero, this_year):
     hreflangs = '\n'.join(
         f'<link rel="alternate" hreflang="{l}" href="{BASE_URL}{lang_prefix(l)}/construction/">'
         for l in LANGUAGES
-    ) + f'\n<link rel="alternate" hreflang="x-default" href="{BASE_URL}/construction/">'
+    ) + f'\n<link rel="alternate" hreflang="x-default" href="{BASE_URL}/en/construction/">'
     # Match the <details class="langswitch-dd"> pattern used on every other
     # landing page (templates/district.html, build_pages.py) so the chrome
     # reads as one site, not five.
