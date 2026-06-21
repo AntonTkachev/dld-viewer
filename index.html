@@ -1,6 +1,7 @@
 <!doctype html>
 <html lang="ru">
 <head>
+<script>/* gh-redirect */if(location.hostname.endsWith('.github.io')){location.replace('https://dxbcompass.com'+(location.pathname.replace(/^\/dld-viewer/,'')||'/')+location.search+location.hash);}</script>
 <meta charset="utf-8">
 <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net https://unpkg.com https://dxbcompass.com https://www.googletagmanager.com; style-src 'self' 'unsafe-inline' https://unpkg.com https://dxbcompass.com; img-src 'self' data: https://*.tile.openstreetmap.org https://dxbcompass.com https://*.google-analytics.com https://*.analytics.google.com https://*.g.doubleclick.net; connect-src 'self' https://dxbcompass.com https://*.google-analytics.com https://*.analytics.google.com https://*.g.doubleclick.net; font-src 'self' data:; frame-ancestors 'none'; base-uri 'self'; form-action 'self'">
 <title>DXBCompass — карта сделок и аренды в Дубае по районам</title>
@@ -20,6 +21,11 @@
 <script>window.dataLayer=window.dataLayer||[];function gtag(){dataLayer.push(arguments);}gtag('js',new Date());gtag('config','G-5G3EY3Y2KG');</script>
 </head>
 <body>
+<div id="lang-banner" hidden>
+  <span class="lb-text"></span>
+  <a class="lb-cta"></a>
+  <button class="lb-x" type="button" aria-label="Close">✕</button>
+</div>
 <div id="map"></div>
 <div id="table-view">
   <div class="tv-toolbar">
@@ -122,5 +128,40 @@ const TRAM_STATIONS = [{"name":"Mina Seyahi","lat":25.091185,"lon":55.148736,"gr
 </script>
 <script src="js/i18n.js"></script>
 <script src="js/viewer.js"></script>
+<script>
+// Language banner — soft nudge for users whose browser language is not RU.
+// GA shows 32 English-browser users vs 6 Russian on a Russian-default home;
+// most have no easy hint that EN/AR/HI/ZH versions exist. We DON'T auto-
+// redirect (shared/copied links would break for the recipient).
+//
+// Banner appears once per browser; dismissal persists via localStorage.
+// Russian-browser users never see it.
+(function () {
+  var KEY = 'dxbc_lang_banner_dismissed';
+  try { if (localStorage.getItem(KEY)) return; } catch (e) {}
+  var lang = (navigator.language || 'en').toLowerCase();
+  if (lang.indexOf('ru') === 0) return;
+  var COPY = {
+    en: { txt: 'This page is in Russian.',           cta: 'Open in English →', url: '/en/sales/' },
+    ar: { txt: 'هذه الصفحة باللغة الروسية.',           cta: 'افتح بالعربية ←',    url: '/ar/sales/' },
+    hi: { txt: 'यह पेज रूसी में है।',                cta: 'हिन्दी में खोलें →',     url: '/hi/sales/' },
+    zh: { txt: '此页面为俄语。',                        cta: '切换到中文 →',         url: '/zh/sales/' }
+  };
+  var c = COPY[lang.slice(0, 2)] || COPY.en;
+  var banner = document.getElementById('lang-banner');
+  if (!banner) return;
+  banner.querySelector('.lb-text').textContent = c.txt;
+  var cta = banner.querySelector('.lb-cta');
+  cta.textContent = c.cta;
+  cta.href = c.url;
+  banner.hidden = false;
+  document.body.classList.add('has-lang-banner');
+  banner.querySelector('.lb-x').addEventListener('click', function () {
+    banner.hidden = true;
+    document.body.classList.remove('has-lang-banner');
+    try { localStorage.setItem(KEY, '1'); } catch (e) {}
+  });
+})();
+</script>
 </body>
 </html>
