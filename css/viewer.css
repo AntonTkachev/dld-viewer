@@ -222,10 +222,12 @@
   body.view-table #table-view{display:flex}
   body.view-table #map{right:50%}
   body.view-table #legend{display:none !important}
-  /* Keep Places + Language dropdowns from the top map panel (user wants
-     POI layers + language switch reachable in split view). Hide the rest
-     — Search/Metric/Levels are redundant or out-of-context here. */
+  /* Keep only Places (POI layers) in the split view top panel. Language was
+     hidden because switching it from here triggers a full page navigation
+     that drops the current sort/search/page state in the table — felt broken
+     to the user. Switch language from the map view instead. */
   body.view-table #mp-search,
+  body.view-table #mp-lang,
   body.view-table #mp-mask,
   body.view-table #mp-level{display:none}
   body.view-table #mp-panel{left:25%}
