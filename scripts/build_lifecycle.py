@@ -34,6 +34,8 @@ from datetime import date, timedelta
 
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 SALE_GROWTH = os.path.join(ROOT, 'growth/data/3y.json')
+SALE_GROWTH_FALLBACK = os.path.join(ROOT, 'growth/data/1y.json')  # for new districts
+TX_PARQUET = os.path.join(ROOT, 'data/tx.parquet')
 RENTS_PARQUET = os.path.join(ROOT, 'data/rents.parquet')
 RERA_CSV = os.path.join(ROOT, 'data/dld_projects.csv.gz')
 GEOJSON = os.path.join(ROOT, 'data/curated_polygons.geojson')
@@ -52,6 +54,17 @@ W_PIPELINE = 0.15
 W_PRICE = 0.45
 W_RENT = 0.40
 GROWTH_CLIP_PP = 30.0  # ±30 pp deviation from Dubai avg → ±1.0 norm score
+
+# Pipeline-cap heuristic for "old district with new RERA additions".
+# Discovery Gardens (built ~2007, predates the modern RERA register) shows 9
+# active projects, 0 RERA-FINISHED ever — raw pipeline = 1729/(1729+0) = 100%.
+# But the district itself has ~16K lifetime sales of pre-RERA stock that RERA
+# never recorded. We can't reconstruct that stock, but we CAN detect the
+# pattern via tx volume: if a district has lots of historical sales but RERA
+# knows nothing about its recent finishes, the raw pipeline overstates
+# "share of new stock" — cap it at a moderate value.
+ESTABLISHED_TX_THRESHOLD = 500  # ≥ this many lifetime tx → "established"
+ESTABLISHED_PIPELINE_CAP = 0.3  # cap pipeline when established + RERA-blind
 
 IN_FLIGHT_STATES = {'ACTIVE', 'NOT_STARTED', 'PENDING', 'CONDITIONAL_ACTIVATING'}
 
@@ -250,6 +263,33 @@ def compute_rent_growth(polys):
     return out
 
 
+def compute_n_tx_historical(polys):
+    """Tx count OLDER than 5 years per polygon — proxy for established stock.
+    We need to distinguish two RERA-blind cases that look similar on the
+    raw pipeline ratio but mean opposite things:
+      - Discovery Gardens: tons of tx spread 2007-onwards, but 0 RERA-finished
+        recently. RERA simply doesn't know its pre-register stock → cap.
+      - Bukadra: tons of tx too (9.8K Units) — but 99% in 2024-2026, almost
+        nothing before 2020. Genuinely new district mid-launch → DO NOT cap.
+    Using all-time tx count would conflate these. Historical depth (tx > 5y
+    ago) cleanly separates them: Discovery Gardens has thousands, Bukadra ≈ 0.
+    Land tx are excluded — they're plot deals, not housing stock."""
+    sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+    from _curated_sql import build_curated_sql
+    KEY_EXPR, _, _ = build_curated_sql()
+    con = duckdb.connect()
+    cutoff = (TODAY - timedelta(days=365 * 5)).isoformat()
+    rows = con.execute(f"""
+        SELECT {KEY_EXPR} AS k, COUNT(*) AS n
+        FROM '{TX_PARQUET}'
+        WHERE area_name_en IS NOT NULL
+          AND (property_type_en IS NULL OR property_type_en != 'Land')
+          AND CAST(instance_date AS DATE) < DATE '{cutoff}'
+        GROUP BY k
+    """).fetchdf()
+    return {r['k']: int(r['n']) for _, r in rows.iterrows()}
+
+
 def clip(x, lo, hi):
     return max(lo, min(hi, x))
 
@@ -258,12 +298,35 @@ def main():
     polys = load_polygon_keys()
     print(f'Polygons indexed: {len(polys)}', file=sys.stderr)
 
-    # 1. Sales growth (3y) — already baked
+    # 1. Sales growth — prefer 3y for stability; fall back to 1y for districts
+    # that didn't exist 3 years ago. Bukadra is the canonical case: 9.8K Unit
+    # sales but 99% in 2024-2026, so the 3y baseline window has too few obs
+    # and the polygon is missing from 3y.json entirely. Without fallback, every
+    # brand-new district loses its price signal and ends up below the Dubai
+    # baseline by construction.
     with open(SALE_GROWTH) as f:
         sale_growth = json.load(f)
     print(f'Sale growth (3y) polygons: {len(sale_growth) - 1}', file=sys.stderr)
+    fallback_used = 0
+    dubai_sale_growth_1y = 0
+    if os.path.exists(SALE_GROWTH_FALLBACK):
+        with open(SALE_GROWTH_FALLBACK) as f:
+            sale_growth_1y = json.load(f)
+        dubai_sale_growth_1y = sale_growth_1y.get('__dubai__', {}).get('growth_pct', 0)
+        for k, v in sale_growth_1y.items():
+            if k not in sale_growth:
+                # Mark fallback rows so normalization compares them against the
+                # MATCHING Dubai-1y baseline (not the 3y baseline — that would
+                # penalize new districts whose 1y growth is naturally small).
+                v = dict(v)
+                v['_growth_window'] = '1y'
+                sale_growth[k] = v
+                fallback_used += 1
+        print(f'Sale growth 1y fallback used: {fallback_used} polygons',
+              file=sys.stderr)
     dubai_sale_growth = sale_growth.get('__dubai__', {}).get('growth_pct', 0)
-    print(f'Dubai-wide sale growth 3y: {dubai_sale_growth}%', file=sys.stderr)
+    print(f'Dubai-wide sale growth 3y: {dubai_sale_growth}%, 1y: {dubai_sale_growth_1y}%',
+          file=sys.stderr)
 
     # 2. Rent growth (3y) — computed live
     print('Computing rent growth 3y...', file=sys.stderr)
@@ -277,7 +340,15 @@ def main():
     pipeline = compute_pipeline(polys)
     print(f'Pipeline polygons with data: {len(pipeline)}', file=sys.stderr)
 
+    # 3b. Historical tx volume (older than 5y) per polygon — for the
+    # established-district cap below. Only "old" tx count; recent activity
+    # is what RERA tracks, so it shouldn't double-count.
+    print('Querying historical tx volume (>5y old)...', file=sys.stderr)
+    n_tx_historical = compute_n_tx_historical(polys)
+    print(f'Polygons with historical tx: {len(n_tx_historical)}', file=sys.stderr)
+
     # 4. Per-polygon vitality
+    pipe_capped_n = 0
     out = {}
     for norm_key, name in polys.items():
         sale_rec = sale_growth.get(norm_key)
@@ -286,12 +357,34 @@ def main():
         # Skip polygons with no signals at all — choropleth will leave them blank.
         if not sale_rec and not rent_rec and not pipe_rec:
             continue
-        # Deviation from Dubai average → normalized to [-1, +1].
+        # Deviation from Dubai average → normalized to [-1, +1]. Pick the
+        # Dubai baseline that matches the district's growth-window (3y by
+        # default, 1y for fallback rows tagged in step 1).
         sg = sale_rec['growth_pct'] if sale_rec else None
         rg = rent_rec['growth_pct'] if rent_rec else None
-        price_norm = clip((sg - dubai_sale_growth) / GROWTH_CLIP_PP, -1, 1) if sg is not None else 0.0
+        sale_baseline = (dubai_sale_growth_1y
+                         if sale_rec and sale_rec.get('_growth_window') == '1y'
+                         else dubai_sale_growth)
+        price_norm = clip((sg - sale_baseline) / GROWTH_CLIP_PP, -1, 1) if sg is not None else 0.0
         rent_norm = clip((rg - dubai_rent_growth) / GROWTH_CLIP_PP, -1, 1) if rg is not None else 0.0
         pipe_share = pipe_rec['pipeline'] if pipe_rec else 0.0
+        # Established-district cap: if RERA shows no recent finishes here but
+        # tx history says the district is built-out, the raw pipeline ratio
+        # is misleading (denominator is wrong because RERA can't see
+        # pre-register stock). Cap at ESTABLISHED_PIPELINE_CAP. We gate on
+        # tx OLDER than 5y so that brand-new districts mid-launch (like
+        # Bukadra: ~10K Units sold but all in 2024-2026) don't get capped
+        # despite their high recent-tx volume.
+        units_fin_5y = pipe_rec['units_finished_5y'] if pipe_rec else 0
+        tx_old = n_tx_historical.get(norm_key, 0)
+        capped_here = False
+        if (pipe_rec
+                and units_fin_5y == 0
+                and tx_old >= ESTABLISHED_TX_THRESHOLD
+                and pipe_share > ESTABLISHED_PIPELINE_CAP):
+            pipe_share = ESTABLISHED_PIPELINE_CAP
+            capped_here = True
+            pipe_capped_n += 1
         vitality = (W_PIPELINE * pipe_share
                     + W_PRICE * price_norm
                     + W_RENT * rent_norm)
@@ -308,6 +401,8 @@ def main():
             rec['units_active'] = int(pipe_rec['units_active'])
             rec['n_active'] = int(pipe_rec['n_active'])
             rec['n_overdue'] = int(pipe_rec['n_overdue'])
+        if capped_here:
+            rec['pipeline_capped'] = True
         out[norm_key] = rec
 
     # Dubai rollup row (acts as the zero-line reference in the legend).
@@ -326,7 +421,8 @@ def main():
     n_districts = len(out) - 1
     pipe_covered = sum(1 for r in out.values() if r.get('n_active', 0) > 0)
     print(f'wrote {path} — {n_districts} districts, '
-          f'pipeline data on {pipe_covered}, {size_kb} KB',
+          f'pipeline data on {pipe_covered}, capped on {pipe_capped_n}, '
+          f'{size_kb} KB',
           file=sys.stderr)
 
     # Quick distribution of vitality scores for sanity check.
