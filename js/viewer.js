@@ -376,6 +376,7 @@ for (const f of GEOJSON.features) {
 const _TX_P      = (typeof TX_PERIODS      !== 'undefined') ? TX_PERIODS      : {};
 const _RENTS_P   = (typeof RENTS_PERIODS   !== 'undefined') ? RENTS_PERIODS   : {};
 const _GROWTH_P  = (typeof GROWTH_PERIODS  !== 'undefined') ? GROWTH_PERIODS  : {};
+const _LIFECYCLE = (typeof LIFECYCLE       !== 'undefined') ? LIFECYCLE       : {};
 const _PAYBACK_P = (typeof PAYBACK_PERIODS !== 'undefined') ? PAYBACK_PERIODS : {};
 
 // SPLIT_SQL in build_*_map.py produces keys like "springs" / "meadows" /
@@ -545,6 +546,63 @@ const MASKS = {
       { key: 'n',            labelKey: 'tv_col_n_last_year', type: 'int',     width: '20%' },
     ],
   },
+  // Market lifecycle — single composite score per district combining:
+  //   sale_growth_3y (45%), rent_growth_3y (40%), construction pipeline (15%)
+  // Each growth term is the deviation from the Dubai-wide average, clipped
+  // to ±30pp. Pipeline = units_active / (units_active + units_finished_5y),
+  // with 0 fallback for districts RERA doesn't cover (so missing-construction
+  // data never penalizes the score — see scripts/build_lifecycle.py).
+  //
+  // Score range is ~[-0.85, +1.0]; the legend is keyed off `vitality * 100`
+  // for readability. High = early/growth phase, low = mature/late phase.
+  // Neither end is "better" — the user picks based on goal (yield vs lifestyle).
+  lifecycle: {
+    labelKey: 'mask_lifecycle', descKey: 'mask_lifecycle_desc',
+    periods: ['all'], defaultPeriod: 'all',
+    data: { all: _LIFECYCLE },
+    pluck: r => ({
+      real_count: r.n_active || 0,
+      real_total_aed: 0,
+      real_med_price: 0,
+      real_med_ppsqm: 0,
+      // Multiply by 100 so the choropleth + legend show ±NN instead of ±0.NN.
+      real_metric: (typeof r.vitality === 'number') ? r.vitality * 100 : null,
+      real_price_pct: (typeof r.price_pct === 'number') ? r.price_pct : null,
+      real_rent_pct:  (typeof r.rent_pct  === 'number') ? r.rent_pct  : null,
+      real_pipeline:  (typeof r.pipeline  === 'number') ? r.pipeline  : 0,
+      real_units_active: r.units_active || 0,
+      real_n_overdue:    r.n_overdue    || 0,
+    }),
+    legendKey: 'legend_lifecycle', popupCountKey: 'pp_trans_ytd', showVolume: false,
+    metricKey: 'real_metric', scaleMode: 'quantile', allowZero: true,
+    overlay: r => (typeof r.vitality !== 'number') ? null
+                  : ((r.vitality >= 0 ? '+' : '') + Math.round(r.vitality * 100)),
+    legendFmt: v => (v >= 0 ? '+' : '') + Math.round(v),
+    popupRows: (p, t) => {
+      if (p.real_metric === null || p.real_metric === undefined) return '';
+      const pricePct = p.real_price_pct;
+      const rentPct  = p.real_rent_pct;
+      const pipeShare = (p.real_pipeline * 100).toFixed(0);
+      const fmtPct = v => (typeof v === 'number')
+        ? ((v >= 0 ? '+' : '') + v.toFixed(1) + '%')
+        : '—';
+      return `
+        <div class="stat"><span class="k">${t('pp_lifecycle_score')}</span><span class="v" style="font-weight:700">${p.real_metric >= 0 ? '+' : ''}${Math.round(p.real_metric)}</span></div>
+        <div class="stat"><span class="k">${t('pp_lifecycle_price')}</span><span class="v">${fmtPct(pricePct)}</span></div>
+        <div class="stat"><span class="k">${t('pp_lifecycle_rent')}</span><span class="v">${fmtPct(rentPct)}</span></div>
+        <div class="stat"><span class="k">${t('pp_lifecycle_pipeline')}</span><span class="v">${pipeShare}%</span></div>
+      `;
+    },
+    tableColumns: [
+      { key: 'name',       labelKey: 'tv_col_district',         type: 'str', width: '34%' },
+      { key: r => (typeof r.vitality === 'number') ? Math.round(r.vitality * 100) : null,
+                           labelKey: 'tv_col_lifecycle_score',  type: 'pct', width: '14%', defaultSort: true, defaultSortDir: 'desc' },
+      { key: 'price_pct',  labelKey: 'tv_col_lifecycle_price',  type: 'pct', width: '16%' },
+      { key: 'rent_pct',   labelKey: 'tv_col_lifecycle_rent',   type: 'pct', width: '16%' },
+      { key: r => Math.round((r.pipeline || 0) * 100),
+                           labelKey: 'tv_col_lifecycle_pipeline', type: 'pct', width: '20%' },
+    ],
+  },
   payback: {
     labelKey: 'mask_payback', descKey: 'mask_payback_desc',
     periods: ['studio','1br','2br','3br','4br_plus'], defaultPeriod: '1br',
@@ -616,9 +674,16 @@ for (const f of GEOJSON.features) {
 const _MASK_FIELDS = [
   'real_count','real_total_aed','real_med_price','real_med_ppsqm',
   'real_metric','real_med_then_ppsqm','real_n_sale','real_n_rent','real_fallback_yrs',
+  'real_price_pct','real_rent_pct','real_pipeline','real_units_active','real_n_overdue',
 ];
+// real_metric / real_fallback_yrs / real_price_pct / real_rent_pct stay nullable
+// so the popup can show '—' for missing components; everything else falls back
+// to 0 because the templates do numeric formatting on them.
+const _MASK_FIELDS_NULLABLE = new Set([
+  'real_metric', 'real_fallback_yrs', 'real_price_pct', 'real_rent_pct',
+]);
 function _resetMaskFields(p) {
-  for (const f of _MASK_FIELDS) p[f] = (f === 'real_metric' || f === 'real_fallback_yrs') ? null : 0;
+  for (const f of _MASK_FIELDS) p[f] = _MASK_FIELDS_NULLABLE.has(f) ? null : 0;
 }
 
 function applyMask(maskId, period, opts) {
