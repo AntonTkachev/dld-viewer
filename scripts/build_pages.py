@@ -406,6 +406,12 @@ for l, s in LANG_STUB.items():
     with open(out, 'w', encoding='utf-8') as f:
         f.write(
             f'<!doctype html>\n<html lang="{l}" dir="{s["dir"]}">\n<head>\n'
+            # GH Pages → custom-domain redirect. No-op on dxbcompass.com,
+            # but if someone hits AntonTkachev.github.io/dld-viewer/* (old
+            # bookmark / stale link) it bounces them to the canonical host
+            # before anything renders. Inline + first thing in <head> keeps
+            # it synchronous; putting it in viewer.js would flicker.
+            f'<script>/* gh-redirect */if(location.hostname.endsWith(\'.github.io\')){{location.replace(\'https://dxbcompass.com\'+(location.pathname.replace(/^\\/dld-viewer/,\'\')||\'/\')+location.search+location.hash);}}</script>\n'
             f'<meta charset="utf-8">\n'
             f'<title>{s["title"]}</title>\n'
             f'<link rel="icon" type="image/svg+xml" href="{BASE_URL}/favicon.svg">\n'

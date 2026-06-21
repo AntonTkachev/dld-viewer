@@ -493,6 +493,7 @@ def render_page(lang, projects_count, hero, this_year):
     return f'''<!DOCTYPE html>
 <html lang="{c["html_lang"]}" dir="{c["dir_"]}">
 <head>
+<script>/* gh-redirect */if(location.hostname.endsWith('.github.io')){{location.replace('https://dxbcompass.com'+(location.pathname.replace(/^\/dld-viewer/,'')||'/')+location.search+location.hash);}}</script>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <title>{title}</title>
