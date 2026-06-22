@@ -61,7 +61,8 @@
   <div class="tv-pager" id="tv-pager"></div>
 </div>
 <a id="faq-link" href="/ru/faq/" title="FAQ" aria-label="FAQ">?</a>
-<script>(function(){var m=location.pathname.match(/^\/(ru|en|ar|hi|zh)\//);if(m){var l=document.getElementById('faq-link');if(l)l.href='/'+m[1]+'/faq/';}})();</script>
+<a id="blog-link" href="/ru/blog/" title="Blog" aria-label="Blog">Blog</a>
+<script>(function(){var m=location.pathname.match(/^\/(ru|en|ar|hi|zh)\//);if(!m)return;var f=document.getElementById('faq-link');if(f)f.href='/'+m[1]+'/faq/';var b=document.getElementById('blog-link');if(b)b.href='/'+m[1]+'/blog/';})();</script>
 <button id="view-switch" type="button" title="Switch view">▦ Table</button>
 <div id="mp-panel">
   <div class="mp-item" id="mp-search">

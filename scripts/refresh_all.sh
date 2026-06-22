@@ -64,6 +64,9 @@ $PY scripts/build_pages.py
 phase "9b. FAQ page (standalone content, FAQPage schema)"
 $PY scripts/build_faq_page.py
 
+phase "9c. Blog (data-driven posts, BlogPosting schema)"
+$PY scripts/build_blog.py
+
 phase "10. Sitemap + robots (walks finished site tree)"
 $PY scripts/build_sitemap.py
 
