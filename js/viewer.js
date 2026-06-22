@@ -247,7 +247,6 @@ const LIFECYCLE_PHASE_COLORS = {
   mature:     '#5ec962',
   lagging:    '#3b528b',
   overheated: '#440154',
-  commercial: '#cbd5e1',
 };
 const LIFECYCLE_PHASE_TEXT = {
   rising:     '#0f172a',
@@ -255,9 +254,8 @@ const LIFECYCLE_PHASE_TEXT = {
   mature:     '#0f172a',
   lagging:    '#ffffff',
   overheated: '#ffffff',
-  commercial: '#0f172a',
 };
-const LIFECYCLE_PHASE_ORDER = ['rising', 'active', 'mature', 'lagging', 'overheated', 'commercial'];
+const LIFECYCLE_PHASE_ORDER = ['rising', 'active', 'mature', 'lagging', 'overheated'];
 function _lifecyclePhase(rec) {
   return (rec && rec.phase) ? rec.phase : null;
 }
@@ -500,8 +498,6 @@ const MASKS = {
       real_units_active: r.units_active || 0,
       real_n_overdue:    r.n_overdue    || 0,
       real_post_launch:  !!r.post_launch,
-      real_commercial:   !!r.commercial,
-      real_residential_share: (typeof r.residential_share === 'number') ? r.residential_share : null,
     }),
     legendKey: 'legend_lifecycle', popupCountKey: 'pp_trans_ytd', showVolume: false,
     metricKey: 'real_metric', scaleMode: 'categorical', allowZero: true,
@@ -513,15 +509,6 @@ const MASKS = {
       const textColor = LIFECYCLE_PHASE_TEXT[phaseId] || '#0f172a';
       const phaseLabel = t('lifecycle_phase_' + phaseId);
       const pill = `<span style="display:inline-block;padding:2px 8px;border-radius:10px;background:${color};color:${textColor};font-weight:600;font-size:12px">${phaseLabel}</span>`;
-      if (p.real_commercial) {
-        const share = (typeof p.real_residential_share === 'number')
-          ? (p.real_residential_share * 100).toFixed(0) + '%'
-          : '—';
-        return `
-          <div class="stat"><span class="k">${t('pp_lifecycle_phase')}</span><span class="v">${pill}</span></div>
-          <div class="stat"><span class="k">${t('pp_lifecycle_residential_share')}</span><span class="v">${share}</span></div>
-        `;
-      }
       const pricePct = p.real_price_pct;
       const rentPct  = p.real_rent_pct;
       const pipeShare = (p.real_pipeline * 100).toFixed(0);
