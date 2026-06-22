@@ -43,12 +43,18 @@ GOLDEN_GROWTH = [
 GOLDEN_PAYBACK = GOLDEN_GROWTH
 
 # Coverage thresholds chosen with ~10% buffer below current measurements
-# (June 2026): sales/rents ~85%, growth ~60-70%, payback ~20-33%.
+# (June 2026): sales/rents ~85%, growth ~45-55%, payback ~20-33%.
 # These catch catastrophic regressions (>15% drop), not perfection.
+# Growth coverage dropped after build_growth_map.py started filtering out
+# Mortgage Registrations (trans_group_en = 'Sales'). Many small districts
+# only cleared MIN_OBS=10 by counting mortgage filings as transactions;
+# without them, their baseline windows are too sparse to compute growth.
+# The numbers we DO publish are now honest — fewer districts is the
+# correct trade-off for fewer phantom 6.79B median spikes.
 COV_MIN = {
     'TX_PERIODS':      {'1y':0.70, '3y':0.75, '5y':0.75, '10y':0.75, 'all':0.80},
     'RENTS_PERIODS':   {'1y':0.70, '3y':0.75, '5y':0.75, '10y':0.75, 'all':0.80},
-    'GROWTH_PERIODS':  {'1y':0.55, '3y':0.55, '5y':0.50, '10y':0.50},
+    'GROWTH_PERIODS':  {'1y':0.45, '3y':0.42, '5y':0.40, '10y':0.40},
     'PAYBACK_PERIODS': {'studio':0.15, '1br':0.20, '2br':0.25, '3br':0.25, '4br_plus':0.15},
 }
 

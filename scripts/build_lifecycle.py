@@ -209,7 +209,14 @@ def compute_sale_growth(polys):
     from _curated_sql import build_curated_sql
     KEY_EXPR, NAME_EXPR, _ = build_curated_sql()
     con = duckdb.connect()
-    SALE_FILTER = "property_type_en IN ('Unit', 'Building')"
+    # Same canonical filters as scripts/build_sale_aggregates.py:
+    #   trans_group_en = 'Sales' removes Mortgage Registrations (banks
+    #   logging liens at loan size, not price) and Gifts (token-value
+    #   family transfers) — both inflate medians and counts. Without
+    #   this, Palm Jabal Ali shows two 2013-12 "median 6.79B" tx that
+    #   are actually mortgage registrations on the 27 km² master plot.
+    SALE_FILTER = ("trans_group_en = 'Sales' "
+                   "AND property_type_en IN ('Unit', 'Building')")
     PPSQM_EXPR = "TRY_CAST(meter_sale_price AS DOUBLE)"
     MIN_OBS = 10
     NOW_DAYS = 365
@@ -320,8 +327,19 @@ def compute_rent_growth(polys):
     base_from = (base_center - timedelta(days=RENT_BASE_WIN)).isoformat()
     base_to = (base_center + timedelta(days=RENT_BASE_WIN)).isoformat()
 
-    # PPSQM rent — annual_amount per actual_area. Same filter as build_rents_map.
-    PPSQM_EXPR = ("TRY_CAST(annual_amount AS DOUBLE) "
+    # PPSQM rent — annual_amount per actual_area, normalized per-unit first.
+    # DLD ships master rental contracts (no_of_prop > 1) with annual_amount
+    # = TOTAL across the whole bundle, repeated on every line_number row.
+    # A 53-unit DUSIT Emirates Saray contract had each of its 53 rows
+    # carrying annual=1.87M; un-normalized, that floods MEDIAN with 53
+    # copies of a bundle-total masquerading as per-unit rents. The fix
+    # (commit 8799ac9643): divide by no_of_prop first. GREATEST(COALESCE)
+    # guards against NULL / 0 / negative no_of_prop in DLD junk rows.
+    ANNUAL_PER_UNIT = (
+        "TRY_CAST(annual_amount AS DOUBLE) "
+        "/ GREATEST(COALESCE(TRY_CAST(no_of_prop AS DOUBLE), 1), 1)"
+    )
+    PPSQM_EXPR = (f"({ANNUAL_PER_UNIT}) "
                   "/ NULLIF(TRY_CAST(actual_area AS DOUBLE), 0)")
     # Restrict to residential apartment-style rentals. Without this, Dubai
     # International Airport scored +40 vitality off Office/Warehouse/Shop
@@ -421,7 +439,8 @@ def compute_tx_velocity(polys):
     base_center = TODAY - timedelta(days=365 * 3)
     base_from = (base_center - timedelta(days=180)).isoformat()
     base_to = (base_center + timedelta(days=180)).isoformat()
-    SALE_FILTER = "property_type_en IN ('Unit', 'Building')"
+    SALE_FILTER = ("trans_group_en = 'Sales' "
+                   "AND property_type_en IN ('Unit', 'Building')")
     out = {}
     for label, frm, to in (('n_tx_1y', now_from, now_to),
                            ('n_tx_baseline', base_from, base_to)):
@@ -462,6 +481,7 @@ def compute_n_tx_historical(polys):
         SELECT {KEY_EXPR} AS k, COUNT(*) AS n
         FROM '{TX_PARQUET}'
         WHERE area_name_en IS NOT NULL
+          AND trans_group_en = 'Sales'
           AND (property_type_en IS NULL OR property_type_en != 'Land')
           AND CAST(instance_date AS DATE) < DATE '{cutoff}'
         GROUP BY k
