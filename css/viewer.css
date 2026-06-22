@@ -267,6 +267,8 @@
   #view-switch:hover{background:#1641aa}
   #faq-link{position:fixed;bottom:14px;inset-inline-start:14px;z-index:1200;width:30px;height:30px;display:flex;align-items:center;justify-content:center;background:rgba(255,255,255,.92);color:#0f172a;border:1px solid #e5e7eb;border-radius:6px;font-size:15px;font-weight:600;text-decoration:none;font-family:inherit;box-shadow:0 1px 4px rgba(0,0,0,.08)}
   #faq-link:hover{background:#fff;border-color:#1d4ed8;color:#1d4ed8}
+  #blog-link{position:fixed;bottom:14px;inset-inline-start:52px;z-index:1200;height:30px;padding:0 12px;display:flex;align-items:center;justify-content:center;background:rgba(255,255,255,.92);color:#0f172a;border:1px solid #e5e7eb;border-radius:6px;font-size:13px;font-weight:600;text-decoration:none;font-family:inherit;box-shadow:0 1px 4px rgba(0,0,0,.08)}
+  #blog-link:hover{background:#fff;border-color:#1d4ed8;color:#1d4ed8}
   .tv-pager{display:flex;align-items:center;justify-content:center;gap:3px;padding:8px;border-top:1px solid #e5e7eb;flex-shrink:0;background:#fff;font-size:12px}
   .tv-pager-btn{background:#fff;border:1px solid #d6dde6;color:#374151;padding:3px 9px;border-radius:4px;cursor:pointer;font-family:inherit;font-size:12px;min-width:30px;font-variant-numeric:tabular-nums}
   .tv-pager-btn:hover:not(.disabled):not(.active){background:#f1f5fb;border-color:#9bb6e2}
