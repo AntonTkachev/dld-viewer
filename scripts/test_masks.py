@@ -58,9 +58,28 @@ COV_MIN = {
     'PAYBACK_PERIODS': {'studio':0.15, '1br':0.20, '2br':0.25, '3br':0.25, '4br_plus':0.15},
 }
 
+# Lifecycle is structurally different: one flat {area_key: rec} dict, no
+# nested periods. It also has lower coverage than the period masks because
+# districts need at least one of sale/rent/pipeline signals after the
+# apartment-only and Mortgage-excluded filters. Added after a key-format
+# regression slipped past the period-mask tests: my norm() function was
+# stripping parens/apostrophes from polygon keys, so JLT / JBR / "(other)"
+# sub-zones serialised under different keys than the viewer looks up by.
+# That's a structural failure the existing coverage check would have
+# caught if LIFECYCLE had been in scope.
+LIFECYCLE_COV_MIN = 0.55  # ≥55% of polygons should have lifecycle data
+LIFECYCLE_GOLDEN = [
+    # Big and consistent — apartment-heavy, well-covered by all three signals.
+    'dubai marina', 'business bay', 'downtown dubai', 'palm jumeirah',
+    'jumeirah village circle', 'dubai hills',
+    # Special-char keys — exactly the regression mode the smoke test now
+    # catches. If these go missing, polygon-key normalisation broke again.
+    'jlt (jumeirah lake towers)', 'jbr (jumeirah beach residence)',
+]
+
 CONST_RE = {
     name: re.compile(rf'const {name} = (\{{.*?\}});\s*\n', re.S)
-    for name in COV_MIN
+    for name in list(COV_MIN) + ['LIFECYCLE']
 }
 SCRIPT_BLOCK_RE = re.compile(r'<script(?P<attrs>[^>]*)>(?P<body>.*?)</script>', re.S)
 
@@ -112,7 +131,7 @@ def load_polygon_keys(geojson_path):
 
 def main():
     consts = extract_consts(os.path.join(ROOT, 'index.html'))
-    print('[structure] PASS — all 4 _PERIODS parsed from <script> blocks')
+    print('[structure] PASS — 4 _PERIODS + LIFECYCLE parsed from <script> blocks')
 
     poly_keys = load_polygon_keys(os.path.join(ROOT, 'data/curated_polygons.geojson'))
     print(f'[load] {len(poly_keys)} polygon keys from curated_polygons.geojson')
@@ -135,6 +154,19 @@ def main():
                     f'missing e.g. {missing}'
                 )
 
+    # Lifecycle coverage — flat dict, no nested period.
+    lc = consts.get('LIFECYCLE', {})
+    lc_keys = set(lc.keys()) - {'__dubai__'}
+    lc_cov = len(poly_keys & lc_keys) / len(poly_keys) if poly_keys else 0
+    status = 'OK ' if lc_cov >= LIFECYCLE_COV_MIN else 'FAIL'
+    print(f'  {status}  LIFECYCLE:        {lc_cov*100:5.1f}%  (need ≥{LIFECYCLE_COV_MIN*100:.0f}%)')
+    if lc_cov < LIFECYCLE_COV_MIN:
+        missing = sorted(poly_keys - lc_keys)[:5]
+        fails.append(
+            f'[coverage] LIFECYCLE: {lc_cov*100:.1f}% < {LIFECYCLE_COV_MIN*100:.0f}% — '
+            f'missing e.g. {missing}'
+        )
+
     # Golden check: specific districts must be present
     print('\n[golden]')
     golden_specs = [
@@ -153,12 +185,20 @@ def main():
             else:
                 print(f'  OK   {const_name}/{period}: all {len(golden)} key districts present')
 
+    # Lifecycle golden — flat, no period.
+    lc_missing = [g for g in LIFECYCLE_GOLDEN if g not in lc]
+    if lc_missing:
+        fails.append(f'[golden] LIFECYCLE: missing {lc_missing}')
+        print(f'  FAIL LIFECYCLE: missing {lc_missing}')
+    else:
+        print(f'  OK   LIFECYCLE: all {len(LIFECYCLE_GOLDEN)} key districts present')
+
     if fails:
         print('\n=== FAILED ===')
         for f in fails:
             print('  ' + f)
         sys.exit(1)
-    print('\n=== PASS — all 4 masks healthy ===')
+    print('\n=== PASS — sales/rents/growth/payback/lifecycle all healthy ===')
 
 
 if __name__ == '__main__':
