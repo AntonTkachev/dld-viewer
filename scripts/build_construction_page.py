@@ -501,9 +501,18 @@ def render_page(lang, projects_count, hero, this_year):
 <link rel="canonical" href="{canon}">
 {hreflangs}
 <meta property="og:type" content="website">
+<meta property="og:site_name" content="DXBCompass">
 <meta property="og:title" content="{title}">
 <meta property="og:description" content="{meta}">
 <meta property="og:url" content="{canon}">
+<meta property="og:image" content="{BASE_URL}/og/cover.png">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta property="og:image:alt" content="DXBCompass — Dubai real estate data">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:image" content="{BASE_URL}/og/cover.png">
+<meta name="twitter:title" content="{title}">
+<meta name="twitter:description" content="{meta}">
 <meta name="robots" content="index,follow">
 {json_ld}
 <link rel="icon" type="image/svg+xml" href="{BASE_URL}/favicon.svg">

@@ -347,6 +347,7 @@ def build(page_key, cfg, view, lang):
     # Build the OG locale block: current first, others as alternates.
     og_locale_main = OG_LOCALE[lang]
     og_locale_alts = [v for k, v in OG_LOCALE.items() if k != lang]
+    og_image_url = BASE_URL + '/og/cover.png'
 
     # JSON-LD: Dataset describes the data behind the page (same dataset is
     # rendered as map AND as table — both views are presentations of one
@@ -380,7 +381,6 @@ def build(page_key, cfg, view, lang):
         'itemListElement': bc_items,
     }
 
-    og_image_url = BASE_URL + '/og/cover.png'
     head_block = (
         f'<title>{title}</title>\n'
         f'<meta name="description" content="{desc}">\n'
@@ -413,6 +413,10 @@ def build(page_key, cfg, view, lang):
     s = re.sub(r'<link rel="canonical"[^>]*>\n?', '', s, count=1)
     s = re.sub(r'<meta name="description"[^>]*>\n?', '', s, count=1)
     s = re.sub(r'<meta name="keywords"[^>]*>\n?', '', s, count=1)
+    # Strip every og:* / twitter:* / og:image:* tag from the template so the
+    # head_block injection below doesn't end up duplicating them.
+    s = re.sub(r'<meta property="og:[^"]+"[^>]*>\n?', '', s)
+    s = re.sub(r'<meta name="twitter:[^"]+"[^>]*>\n?', '', s)
     s = re.sub(r'<title>[^<]*</title>', head_block, s, count=1)
 
     # Force <html lang="..." dir="..."> to match this page's language —

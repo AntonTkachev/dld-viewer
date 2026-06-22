@@ -751,13 +751,24 @@ def build_list_seo_head(mode, name, slug, list_slug, list_h1, list_lede, n_items
         (c[leaf_key], canon),
     ]
     breadcrumb_ld = _breadcrumb_ld(crumbs)
+    og_image = f'{BASE_URL}/og/cover.png'
     return f'''<title>{title}</title>
 <meta name="description" content="{html_escape(desc)}">
 <link rel="canonical" href="{canon}">
 {hreflang}
 <meta property="og:type" content="article">
+<meta property="og:site_name" content="DXBCompass">
+<meta property="og:url" content="{canon}">
 <meta property="og:title" content="{html_escape(title)}">
 <meta property="og:description" content="{html_escape(desc)}">
+<meta property="og:image" content="{og_image}">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta property="og:image:alt" content="DXBCompass — Dubai real estate data">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:image" content="{og_image}">
+<meta name="twitter:title" content="{html_escape(title)}">
+<meta name="twitter:description" content="{html_escape(desc)}">
 {breadcrumb_ld}'''
 
 
@@ -989,13 +1000,24 @@ def build_seo_head(mode, name, slug, n, period_code, lang):
         crumbs.append((c[f'crumb_period_{period_code}'], canon))
     breadcrumb_ld = _breadcrumb_ld(crumbs)
 
+    og_image = f'{BASE_URL}/og/cover.png'
     return f'''<title>{html_escape(title)}</title>
 <meta name="description" content="{html_escape(desc)}">
 <link rel="canonical" href="{canon}">
 {hreflang}
 <meta property="og:type" content="article">
+<meta property="og:site_name" content="DXBCompass">
+<meta property="og:url" content="{canon}">
 <meta property="og:title" content="{html_escape(title)}">
 <meta property="og:description" content="{html_escape(desc)}">
+<meta property="og:image" content="{og_image}">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta property="og:image:alt" content="DXBCompass — Dubai real estate data">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:image" content="{og_image}">
+<meta name="twitter:title" content="{html_escape(title)}">
+<meta name="twitter:description" content="{html_escape(desc)}">
 {place_ld}
 {breadcrumb_ld}'''
 
