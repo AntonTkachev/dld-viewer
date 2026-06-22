@@ -45,6 +45,10 @@
   .qa{margin:0 0 24px;padding:16px 18px;background:#fff;border:1px solid #e5e7eb;border-radius:8px}
   .qa h2{font-size:16px;font-weight:600;margin:0 0 8px;color:#0f172a}
   .qa p{margin:0;font-size:14.5px;color:#334155}
+  .lang-switch{display:flex;flex-wrap:wrap;gap:6px;margin:0 0 24px;justify-content:center}
+  .lang-item{display:inline-block;padding:5px 11px;font-size:13px;color:#475569;background:#fff;border:1px solid #e5e7eb;border-radius:6px;text-decoration:none;font-family:inherit}
+  .lang-item:hover{border-color:#1d4ed8;color:#1d4ed8}
+  .lang-item.active{background:#1d4ed8;color:#fff;border-color:#1d4ed8;cursor:default;pointer-events:none}
   footer{margin-top:40px;font-size:13px;color:#64748b;text-align:center}
   footer a{color:#1d4ed8;text-decoration:none}
   footer a:hover{text-decoration:underline}
@@ -59,6 +63,13 @@
     <a class="back" href="https://dxbcompass.com/hi/sales/">← मानचित्र पर वापस</a>
   </header>
   <p class="intro">DXBCompass डेटा के बारे में उत्तर: स्रोत, अद्यतन आवृत्ति, हर मास्क का अर्थ (बिक्री, किराये, वृद्धि, पेबैक, जीवन-चक्र), और जिलों के नाम सामान्य उपयोग से क्यों भिन्न हैं।</p>
+  <nav class="lang-switch" aria-label="Language">
+    <a class="lang-item" href="https://dxbcompass.com/faq/" hreflang="ru" lang="ru">Русский</a>
+    <a class="lang-item" href="https://dxbcompass.com/en/faq/" hreflang="en" lang="en">English</a>
+    <a class="lang-item" href="https://dxbcompass.com/ar/faq/" hreflang="ar" lang="ar">العربية</a>
+    <a class="lang-item active" href="https://dxbcompass.com/hi/faq/" hreflang="hi" lang="hi">हिन्दी</a>
+    <a class="lang-item" href="https://dxbcompass.com/zh/faq/" hreflang="zh" lang="zh">中文</a>
+  </nav>
   <section class="qa">
     <h2>DXBCompass क्या है?</h2>
     <p>Dubai Land Department के ओपन डेटा पर आधारित दुबई के रियल एस्टेट बाज़ार का इंटरैक्टिव मानचित्र। प्रत्येक जिले के लिए लेन-देन, किराये, मूल्य वृद्धि, पेबैक और जीवन-चक्र चरण दिखाता है।</p>

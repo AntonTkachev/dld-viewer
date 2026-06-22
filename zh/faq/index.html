@@ -45,6 +45,10 @@
   .qa{margin:0 0 24px;padding:16px 18px;background:#fff;border:1px solid #e5e7eb;border-radius:8px}
   .qa h2{font-size:16px;font-weight:600;margin:0 0 8px;color:#0f172a}
   .qa p{margin:0;font-size:14.5px;color:#334155}
+  .lang-switch{display:flex;flex-wrap:wrap;gap:6px;margin:0 0 24px;justify-content:center}
+  .lang-item{display:inline-block;padding:5px 11px;font-size:13px;color:#475569;background:#fff;border:1px solid #e5e7eb;border-radius:6px;text-decoration:none;font-family:inherit}
+  .lang-item:hover{border-color:#1d4ed8;color:#1d4ed8}
+  .lang-item.active{background:#1d4ed8;color:#fff;border-color:#1d4ed8;cursor:default;pointer-events:none}
   footer{margin-top:40px;font-size:13px;color:#64748b;text-align:center}
   footer a{color:#1d4ed8;text-decoration:none}
   footer a:hover{text-decoration:underline}
@@ -59,6 +63,13 @@
     <a class="back" href="https://dxbcompass.com/zh/sales/">← 返回地图</a>
   </header>
   <p class="intro">DXBCompass 数据相关问答：来源、刷新频率、每个掩码（销售、租赁、涨幅、回本、生命周期）的含义，以及社区名称为何与常用叫法不同。</p>
+  <nav class="lang-switch" aria-label="Language">
+    <a class="lang-item" href="https://dxbcompass.com/faq/" hreflang="ru" lang="ru">Русский</a>
+    <a class="lang-item" href="https://dxbcompass.com/en/faq/" hreflang="en" lang="en">English</a>
+    <a class="lang-item" href="https://dxbcompass.com/ar/faq/" hreflang="ar" lang="ar">العربية</a>
+    <a class="lang-item" href="https://dxbcompass.com/hi/faq/" hreflang="hi" lang="hi">हिन्दी</a>
+    <a class="lang-item active" href="https://dxbcompass.com/zh/faq/" hreflang="zh" lang="zh">中文</a>
+  </nav>
   <section class="qa">
     <h2>DXBCompass 是什么？</h2>
     <p>基于 Dubai Land Department 开放数据构建的迪拜房产市场交互地图，按社区展示交易、租金、价格涨幅、回本年限及生命周期阶段。</p>
