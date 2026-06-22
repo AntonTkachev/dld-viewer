@@ -291,6 +291,32 @@ L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
 }).addTo(map);
 
 // ===================== CHOROPLETH =====================
+// Lifecycle mask uses a CATEGORICAL palette (5 named phases), not the
+// continuous viridis/blue/green RAMP. Colors are semantic, not gradient:
+//   rising   — bright amber: high momentum, eye-catching (new aggressive growth)
+//   active   — solid emerald: healthy outperformer (built-out + still growing)
+//   mature   — pastel emerald: established at market pace (the steady majority)
+//   lagging  — cool blue: below city-wide growth
+//   overheated — solid purple: off-plan sold out, awaiting handover
+// Thresholds tuned from the live distribution (P25 = -0.14, P50 = +0.045,
+// P75 = +0.36) so each bucket ends up ~20–40% of the 169 covered polygons.
+const LIFECYCLE_PHASE_COLORS = {
+  rising:     '#fbbf24',
+  active:     '#059669',
+  mature:     '#86efac',
+  lagging:    '#60a5fa',
+  overheated: '#a855f7',
+};
+const LIFECYCLE_PHASE_ORDER = ['rising', 'active', 'mature', 'lagging', 'overheated'];
+function _lifecyclePhase(rec) {
+  if (!rec || typeof rec.vitality !== 'number') return null;
+  if (rec.post_launch) return 'overheated';
+  if (rec.vitality >= 0.40)  return 'rising';
+  if (rec.vitality >= 0.10)  return 'active';
+  if (rec.vitality >= -0.20) return 'mature';
+  return 'lagging';
+}
+
 const RAMP_VIRIDIS = ['#440154','#3b528b','#21918c','#5ec962','#fde725'];
 const RAMP_BLUE    = ['#eaf2fb','#b8d0f0','#7da4e2','#3f73d4','#1d4ed8'];
 const RAMP_GREEN   = ['#ebf6ee','#b6dcc2','#7bc090','#3a9a55','#188a37'];
@@ -575,8 +601,8 @@ const MASKS = {
       real_total_aed: 0,
       real_med_price: 0,
       real_med_ppsqm: 0,
-      // Multiply by 100 so the choropleth + legend show ±NN instead of ±0.NN.
       real_metric: (typeof r.vitality === 'number') ? r.vitality * 100 : null,
+      real_phase: _lifecyclePhase(r),
       real_price_pct: (typeof r.price_pct === 'number') ? r.price_pct : null,
       real_rent_pct:  (typeof r.rent_pct  === 'number') ? r.rent_pct  : null,
       real_pipeline:  (typeof r.pipeline  === 'number') ? r.pipeline  : 0,
@@ -585,41 +611,41 @@ const MASKS = {
       real_post_launch:  !!r.post_launch,
     }),
     legendKey: 'legend_lifecycle', popupCountKey: 'pp_trans_ytd', showVolume: false,
-    metricKey: 'real_metric', scaleMode: 'quantile', allowZero: true,
-    overlay: r => (typeof r.vitality !== 'number') ? null
-                  : ((r.vitality >= 0 ? '+' : '') + Math.round(r.vitality * 100)),
-    legendFmt: v => (v >= 0 ? '+' : '') + Math.round(v),
+    metricKey: 'real_metric', scaleMode: 'categorical', allowZero: true,
+    overlay: () => null,  // category color speaks for itself; no per-polygon label
     popupRows: (p, t) => {
-      if (p.real_metric === null || p.real_metric === undefined) return '';
+      const phaseId = p.real_phase;
+      if (!phaseId) return '';
       const pricePct = p.real_price_pct;
       const rentPct  = p.real_rent_pct;
       const pipeShare = (p.real_pipeline * 100).toFixed(0);
       const fmtPct = v => (typeof v === 'number')
         ? ((v >= 0 ? '+' : '') + v.toFixed(1) + '%')
         : '—';
-      // Post-launch flag shows up as an extra row when the detector fires
-      // (high pipeline + crashed tx velocity). Tells the reader the low
-      // vitality number isn't "market dying", it's "inventory sold out,
-      // waiting for handover" — see scripts/build_lifecycle.py.
-      const phase = p.real_post_launch
-        ? `<div class="stat"><span class="k">${t('pp_lifecycle_phase')}</span><span class="v" style="font-weight:600;color:#0f172a">${t('pp_lifecycle_phase_post_launch')}</span></div>`
-        : '';
+      const color = LIFECYCLE_PHASE_COLORS[phaseId];
+      const phaseLabel = t('lifecycle_phase_' + phaseId);
       return `
-        <div class="stat"><span class="k">${t('pp_lifecycle_score')}</span><span class="v" style="font-weight:700">${p.real_metric >= 0 ? '+' : ''}${Math.round(p.real_metric)}</span></div>
-        ${phase}
+        <div class="stat"><span class="k">${t('pp_lifecycle_phase')}</span><span class="v"><span style="display:inline-block;padding:2px 8px;border-radius:10px;background:${color};color:#0f172a;font-weight:600;font-size:12px">${phaseLabel}</span></span></div>
         <div class="stat"><span class="k">${t('pp_lifecycle_price')}</span><span class="v">${fmtPct(pricePct)}</span></div>
         <div class="stat"><span class="k">${t('pp_lifecycle_rent')}</span><span class="v">${fmtPct(rentPct)}</span></div>
         <div class="stat"><span class="k">${t('pp_lifecycle_pipeline')}</span><span class="v">${pipeShare}%</span></div>
       `;
     },
     tableColumns: [
-      { key: 'name',       labelKey: 'tv_col_district',         type: 'str', width: '34%' },
-      { key: r => (typeof r.vitality === 'number') ? Math.round(r.vitality * 100) : null,
-                           labelKey: 'tv_col_lifecycle_score',  type: 'pct', width: '14%', defaultSort: true, defaultSortDir: 'desc' },
+      { key: 'name',       labelKey: 'tv_col_district',         type: 'str', width: '32%' },
+      // Phase column: sortable by underlying vitality, rendered as colored badge.
+      // post_launch districts force-sorted to bottom by clamping their key.
+      { key: r => {
+          if (typeof r.vitality !== 'number') return null;
+          if (r.post_launch) return -Infinity;
+          return Math.round(r.vitality * 100);
+        },
+        rawKey: r => _lifecyclePhase(r),
+        labelKey: 'tv_col_lifecycle_score',  type: 'phase', width: '20%', defaultSort: true, defaultSortDir: 'desc' },
       { key: 'price_pct',  labelKey: 'tv_col_lifecycle_price',  type: 'pct', width: '16%' },
       { key: 'rent_pct',   labelKey: 'tv_col_lifecycle_rent',   type: 'pct', width: '16%' },
       { key: r => Math.round((r.pipeline || 0) * 100),
-                           labelKey: 'tv_col_lifecycle_pipeline', type: 'pct', width: '20%' },
+                           labelKey: 'tv_col_lifecycle_pipeline', type: 'pct', width: '16%' },
     ],
   },
   payback: {
@@ -837,6 +863,7 @@ function _tableFmt(col, v) {
     case 'pct':     return (v >= 0 ? '+' : '') + Number(v).toFixed(1) + '%';
     case 'yrs':
     case 'yrs_opt': return Number(v).toFixed(1) + ' ' + t('unit_years');
+    case 'phase':   return v;  // formatted by renderCell directly
     default:        return String(v);
   }
 }
@@ -1022,11 +1049,19 @@ function renderTable() {
 
   const renderCell = (c, rec, isDubai) => {
     const v = _tableValue(c, rec);
-    const isNum = c.type !== 'str';
+    const isNum = c.type !== 'str' && c.type !== 'phase';
     const txt = _tableFmt(c, v);
     let cls = isNum ? 'num' : '';
     if (c.type === 'pct' && typeof v === 'number' && !isDubai) cls += ' ' + (v >= 0 ? 'pos' : 'neg');
     cls = cls.trim();
+    // Phase cell — colored pill with the localized phase name.
+    if (c.type === 'phase') {
+      const phaseId = c.rawKey ? c.rawKey(rec) : null;
+      if (!phaseId) return `<td class="num">—</td>`;
+      const color = LIFECYCLE_PHASE_COLORS[phaseId] || '#cbd5e1';
+      const label = t('lifecycle_phase_' + phaseId);
+      return `<td class="num"><span style="display:inline-block;padding:2px 10px;border-radius:10px;background:${color};color:#0f172a;font-weight:600;font-size:12px;white-space:nowrap">${_h(label)}</span></td>`;
+    }
     // title attr surfaces the full cell value as a native tooltip when
     // truncation hides it (long district names, big numbers, etc.).
     const titleAttr = ` title="${_h(String(txt))}"`;
@@ -1639,19 +1674,31 @@ function renderChoro(){
   const metricKey = mask.metricKey || 'real_count';
   const scale     = mask.scaleMode || 'log';
   const allowZero = !!mask.allowZero;
-  const isMissing = (v) => v === null || v === undefined || isNaN(v) || (!allowZero && v === 0);
-  const vs = GEOJSON.features
-    .map(f => f.properties[metricKey])
-    .filter(v => !isMissing(v));
-  const breaks = vs.length
-    ? (scale==='quantile' ? qBreaks(vs,RAMP.length)
-       : scale==='log'    ? logBreaks(vs,RAMP.length)
-       :                    lBreaks(vs,RAMP.length))
-    : Array(RAMP.length - 1).fill(0);
+  const isCategorical = scale === 'categorical';
+  const isMissing = isCategorical
+    ? (f) => !f.properties.real_phase
+    : (v) => v === null || v === undefined || isNaN(v) || (!allowZero && v === 0);
+  // breaks only used for continuous scales
+  let breaks = null;
+  if (!isCategorical) {
+    const vs = GEOJSON.features
+      .map(f => f.properties[metricKey])
+      .filter(v => !isMissing(v));
+    breaks = vs.length
+      ? (scale==='quantile' ? qBreaks(vs,RAMP.length)
+         : scale==='log'    ? logBreaks(vs,RAMP.length)
+         :                    lBreaks(vs,RAMP.length))
+      : Array(RAMP.length - 1).fill(0);
+  }
   if(choro) map.removeLayer(choro);
   choro = L.geoJSON(GEOJSON,{
     filter: f => (f._level !== undefined ? f._level >= minLevel : true),
     style: f => {
+      if (isCategorical) {
+        const phase = f.properties.real_phase;
+        if (!phase) return {weight:0.8,color:'#64748b',fillColor:'url(#nodata-hatch)',fillOpacity:1,dashArray:'4,3'};
+        return {weight:0.6,color:'#1f2933',fillColor:LIFECYCLE_PHASE_COLORS[phase] || '#cbd5e1',fillOpacity:0.7};
+      }
       const v = f.properties[metricKey], z = isMissing(v);
       if (z) return {weight:0.8,color:'#64748b',fillColor:'url(#nodata-hatch)',fillOpacity:1,dashArray:'4,3'};
       let idx = classify(v, breaks);
@@ -1672,37 +1719,37 @@ function renderChoro(){
   }).addTo(map);
   choro.bringToBack();
 
-  // Post-launch overlay (lifecycle mask only). Sits on top of choro and
-  // adds diagonal stripes to districts in handover-consolidation phase.
-  // Pure decorative — clicks pass through to the choro polygon below.
+  // Lifecycle uses a categorical color = phase, so no separate stripes
+  // overlay is needed (Перегретый is now a solid purple fill). Keep the
+  // teardown so any stale overlay from prior renders is removed.
   if (_postLaunchOverlay) { map.removeLayer(_postLaunchOverlay); _postLaunchOverlay = null; }
-  if (currentMask === 'lifecycle') {
-    _postLaunchOverlay = L.geoJSON(GEOJSON, {
-      filter: f => f.properties.real_post_launch === true
-                   && (f._level !== undefined ? f._level >= minLevel : true),
-      interactive: false,
-      style: { weight: 0, fillColor: 'url(#post-launch-stripes)', fillOpacity: 1 },
-    }).addTo(map);
-  }
 
   // Legend
-  const fmt = mask.legendFmt || METRIC_FMT.count;
   const title = t(mask.legendKey || 'ch_count');
-  const lo = vs.length ? Math.min(...vs) : 0;
-  const hi = vs.length ? Math.max(...vs) : 0;
-  const all = [lo, ...breaks, hi];
-  const paletteName = _paletteName.charAt(0).toUpperCase() + _paletteName.slice(1);
-  let html = `<div style="display:flex;justify-content:space-between;align-items:center;gap:10px;margin-bottom:4px"><span style="font-weight:600">${title}</span><button type="button" onclick="togglePalette()" title="Сменить палитру (A/B-тест)" style="border:1px solid #d1d5db;background:#fff;border-radius:4px;padding:1px 7px;cursor:pointer;font-size:11px;color:#374151;line-height:1.4">🎨 ${paletteName}</button></div>`;
-  for(let i=0;i<RAMP.length;i++) {
-    const cIdx = mask.invertRamp ? (RAMP.length - 1 - i) : i;
-    html += `<div class="row"><span class="sw" style="background:${RAMP[cIdx]}"></span>${fmt(all[i])} – ${fmt(all[i+1])}</div>`;
-  }
-  html += `<div class="row"><span class="sw" style="background:repeating-linear-gradient(45deg,transparent,transparent 3px,#94a3b8 3px,#94a3b8 4px)"></span>${t('legend_no_data')}</div>`;
-  // Lifecycle mask gets an extra legend row explaining the dark-stripes
-  // overlay (post-launch districts). Hidden for other masks where the
-  // overlay isn't rendered.
-  if (currentMask === 'lifecycle') {
-    html += `<div class="row"><span class="sw" style="background:repeating-linear-gradient(45deg,transparent,transparent 3px,rgba(15,23,42,0.55) 3px,rgba(15,23,42,0.55) 5px)"></span>${t('legend_post_launch')}</div>`;
+  let html;
+  if (isCategorical) {
+    // Categorical legend: 5 named phases. No palette toggle (the colors are
+    // semantic, not a swappable gradient).
+    html = `<div style="margin-bottom:4px"><span style="font-weight:600">${title}</span></div>`;
+    for (const id of LIFECYCLE_PHASE_ORDER) {
+      html += `<div class="row"><span class="sw" style="background:${LIFECYCLE_PHASE_COLORS[id]}"></span>${t('lifecycle_phase_' + id)}</div>`;
+    }
+    html += `<div class="row"><span class="sw" style="background:repeating-linear-gradient(45deg,transparent,transparent 3px,#94a3b8 3px,#94a3b8 4px)"></span>${t('legend_no_data')}</div>`;
+  } else {
+    const fmt = mask.legendFmt || METRIC_FMT.count;
+    const vs = GEOJSON.features
+      .map(f => f.properties[metricKey])
+      .filter(v => !isMissing(v));
+    const lo = vs.length ? Math.min(...vs) : 0;
+    const hi = vs.length ? Math.max(...vs) : 0;
+    const all = [lo, ...breaks, hi];
+    const paletteName = _paletteName.charAt(0).toUpperCase() + _paletteName.slice(1);
+    html = `<div style="display:flex;justify-content:space-between;align-items:center;gap:10px;margin-bottom:4px"><span style="font-weight:600">${title}</span><button type="button" onclick="togglePalette()" title="Сменить палитру (A/B-тест)" style="border:1px solid #d1d5db;background:#fff;border-radius:4px;padding:1px 7px;cursor:pointer;font-size:11px;color:#374151;line-height:1.4">🎨 ${paletteName}</button></div>`;
+    for(let i=0;i<RAMP.length;i++) {
+      const cIdx = mask.invertRamp ? (RAMP.length - 1 - i) : i;
+      html += `<div class="row"><span class="sw" style="background:${RAMP[cIdx]}"></span>${fmt(all[i])} – ${fmt(all[i+1])}</div>`;
+    }
+    html += `<div class="row"><span class="sw" style="background:repeating-linear-gradient(45deg,transparent,transparent 3px,#94a3b8 3px,#94a3b8 4px)"></span>${t('legend_no_data')}</div>`;
   }
   document.getElementById('legend').innerHTML = html;
 
