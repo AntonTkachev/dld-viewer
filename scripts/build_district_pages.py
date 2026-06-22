@@ -550,6 +550,101 @@ COPY = {
     },
 }
 
+
+# Per-district FAQ Q&A templates. Each entry is a (question, answer) template
+# pair with named placeholders ({name}, {n}, {med}, {ppsqm}, {flat_pct},
+# {villa_pct}, {proj}). Rendered into both visible HTML and FAQPage JSON-LD
+# on every district page — 22k pages × 5 langs × ~5 Q&A each turns the FAQ
+# section into a meaningful long-tail SEO surface.
+FAQ_COPY = {
+    'ru': {
+        'section_title': 'Часто задаваемые вопросы о {name}',
+        'q_price':  'Какая средняя цена квадратного метра в {name}?',
+        'a_price':  'Медианная цена в {name} — {ppsqm} AED за м² '
+                    '(медианная стоимость объекта — {med} AED). Данные по всем '
+                    'зарегистрированным сделкам в Dubai Land Department.',
+        'q_count':  'Сколько сделок прошло в {name}?',
+        'a_count':  'В {name} зарегистрировано {n} сделок купли-продажи за всё время. '
+                    'Это официальный счёт из реестра DLD.',
+        'q_rent':   'Какая средняя аренда в {name}?',
+        'a_rent':   'Медианная годовая аренда в {name} — {med} AED. '
+                    'Всего зарегистрировано {n} договоров аренды (Ejari).',
+        'q_mix':    'Что преобладает в {name} — квартиры или виллы?',
+        'a_mix':    'В {name} {flat_pct}% сделок — квартиры, {villa_pct}% — виллы.',
+        'q_top':    'Какие самые активные проекты в {name}?',
+        'a_top':    'В {name} лидер по объёму сделок — {proj}.',
+    },
+    'en': {
+        'section_title': 'Frequently asked questions about {name}',
+        'q_price':  'What is the average price per m² in {name}?',
+        'a_price':  'The median price in {name} is {ppsqm} AED per m² '
+                    '(median total price — {med} AED). Based on all registered '
+                    'transactions in the Dubai Land Department.',
+        'q_count':  'How many transactions have happened in {name}?',
+        'a_count':  '{n} sale transactions have been registered in {name} to date. '
+                    'Source: official DLD register.',
+        'q_rent':   'What is the average rent in {name}?',
+        'a_rent':   'The median annual rent in {name} is {med} AED. '
+                    'A total of {n} rental contracts (Ejari) are registered.',
+        'q_mix':    'What dominates in {name} — apartments or villas?',
+        'a_mix':    'In {name}, {flat_pct}% of transactions are apartments, '
+                    '{villa_pct}% are villas.',
+        'q_top':    'What are the most active projects in {name}?',
+        'a_top':    'The leader by transaction volume in {name} is {proj}.',
+    },
+    'ar': {
+        'section_title': 'الأسئلة الشائعة حول {name}',
+        'q_price':  'ما متوسط سعر المتر المربع في {name}؟',
+        'a_price':  'السعر الوسيط في {name} هو {ppsqm} درهم للمتر المربع '
+                    '(السعر الإجمالي الوسيط — {med} درهم). استنادًا إلى جميع الصفقات '
+                    'المسجلة في دائرة الأراضي والأملاك في دبي.',
+        'q_count':  'كم عدد الصفقات التي تمت في {name}؟',
+        'a_count':  'تم تسجيل {n} صفقة بيع في {name} حتى الآن. '
+                    'المصدر: السجل الرسمي لدائرة الأراضي.',
+        'q_rent':   'ما متوسط الإيجار في {name}؟',
+        'a_rent':   'الإيجار السنوي الوسيط في {name} هو {med} درهم. '
+                    'إجمالي {n} عقد إيجار مسجل (إيجاري).',
+        'q_mix':    'ما الذي يهيمن في {name} — الشقق أم الفلل؟',
+        'a_mix':    'في {name}، {flat_pct}% من الصفقات شقق و{villa_pct}% فلل.',
+        'q_top':    'ما هي أكثر المشاريع نشاطًا في {name}؟',
+        'a_top':    'الرائد بحجم الصفقات في {name} هو {proj}.',
+    },
+    'hi': {
+        'section_title': '{name} के बारे में अक्सर पूछे जाने वाले प्रश्न',
+        'q_price':  '{name} में प्रति m² औसत मूल्य क्या है?',
+        'a_price':  '{name} में मध्यिका मूल्य {ppsqm} AED प्रति m² है '
+                    '(मध्यिका कुल मूल्य — {med} AED)। Dubai Land Department में '
+                    'पंजीकृत सभी लेन-देन पर आधारित।',
+        'q_count':  '{name} में कितने लेन-देन हुए हैं?',
+        'a_count':  'अब तक {name} में {n} बिक्री लेन-देन पंजीकृत हुए हैं। '
+                    'स्रोत: DLD का आधिकारिक रजिस्टर।',
+        'q_rent':   '{name} में औसत किराया क्या है?',
+        'a_rent':   '{name} में मध्यिका वार्षिक किराया {med} AED है। '
+                    'कुल {n} किराये के अनुबंध (Ejari) पंजीकृत हैं।',
+        'q_mix':    '{name} में क्या प्रबल है — अपार्टमेंट या विला?',
+        'a_mix':    '{name} में {flat_pct}% लेन-देन अपार्टमेंट हैं, '
+                    '{villa_pct}% विला हैं।',
+        'q_top':    '{name} में सबसे सक्रिय परियोजनाएँ कौन सी हैं?',
+        'a_top':    '{name} में लेन-देन की मात्रा के अनुसार अग्रणी {proj} है।',
+    },
+    'zh': {
+        'section_title': '关于 {name} 的常见问题',
+        'q_price':  '{name} 每平方米的平均价格是多少？',
+        'a_price':  '{name} 的中位价格为每平方米 {ppsqm} 迪拉姆'
+                    '（总价中位数 — {med} 迪拉姆）。基于在迪拜土地局登记的所有交易。',
+        'q_count':  '{name} 已经发生了多少笔交易？',
+        'a_count':  '{name} 累计登记了 {n} 笔销售交易。'
+                    '数据来源：DLD 官方登记册。',
+        'q_rent':   '{name} 的平均租金是多少？',
+        'a_rent':   '{name} 的年租金中位数为 {med} 迪拉姆。'
+                    '已登记 {n} 份租赁合同（Ejari）。',
+        'q_mix':    '{name} 以公寓为主还是别墅为主？',
+        'a_mix':    '{name} 中 {flat_pct}% 的交易为公寓，{villa_pct}% 为别墅。',
+        'q_top':    '{name} 最活跃的项目有哪些？',
+        'a_top':    '{name} 按成交量计算的领头项目是 {proj}。',
+    },
+}
+
 # Sub-page list types — all label/text references go through COPY[lang][key].
 # Format per row: (mode, url-fragment, data-field, breadcrumb-key, h1-key,
 #                  lede-key, [(label-key, data-key, kind), ...])
@@ -949,6 +1044,83 @@ def build_about(name, sale_rec, rent_rec, lang):
     return f'<section class="about"><h2>{html_escape(title_text)}</h2>{intro}{grid_html}</section>'
 
 
+def build_district_faq(name, sale_rec, rent_rec, lang):
+    """Per-district Q&A — visible HTML section + FAQPage JSON-LD, returned
+    as one combined string ready to drop into __DISTRICT_FAQ__. Empty if
+    the district has too little data for any of the 5 question templates."""
+    c = FAQ_COPY[lang]
+    qa = []
+
+    if sale_rec.get('med_ppsqm') and sale_rec.get('med'):
+        qa.append((
+            c['q_price'].format(name=name),
+            c['a_price'].format(name=name,
+                                ppsqm=fmt_int(sale_rec['med_ppsqm'], lang),
+                                med=fmt_aed(sale_rec['med'], lang)),
+        ))
+
+    if sale_rec.get('n'):
+        qa.append((
+            c['q_count'].format(name=name),
+            c['a_count'].format(name=name, n=fmt_int(sale_rec['n'], lang)),
+        ))
+
+    if rent_rec.get('med') and rent_rec.get('n'):
+        qa.append((
+            c['q_rent'].format(name=name),
+            c['a_rent'].format(name=name,
+                               med=fmt_aed(rent_rec['med'], lang),
+                               n=fmt_int(rent_rec['n'], lang)),
+        ))
+
+    flat = sale_rec.get('flat', {}) or {}
+    villa = sale_rec.get('villa', {}) or {}
+    flat_n = flat.get('n', 0)
+    villa_n = villa.get('n', 0)
+    if flat_n + villa_n > 0:
+        share_flat = round(flat_n / (flat_n + villa_n) * 100)
+        qa.append((
+            c['q_mix'].format(name=name),
+            c['a_mix'].format(name=name, flat_pct=share_flat, villa_pct=100 - share_flat),
+        ))
+
+    tp = sale_rec.get('top_projects') or []
+    named_top = next((p for p in tp if p.get('proj')), None)
+    if named_top:
+        qa.append((
+            c['q_top'].format(name=name),
+            c['a_top'].format(name=name, proj=named_top['proj'].title()),
+        ))
+
+    if not qa:
+        return ''
+
+    items_html = ''.join(
+        f'<div class="qa"><h3>{html_escape(q)}</h3><p>{html_escape(a)}</p></div>'
+        for q, a in qa
+    )
+    section_html = (
+        f'<section class="district-faq">'
+        f'<h2>{html_escape(c["section_title"].format(name=name))}</h2>'
+        f'{items_html}'
+        f'</section>'
+    )
+
+    faq_ld = {
+        '@context': 'https://schema.org',
+        '@type': 'FAQPage',
+        'mainEntity': [
+            {'@type': 'Question', 'name': q,
+             'acceptedAnswer': {'@type': 'Answer', 'text': a}}
+            for q, a in qa
+        ],
+    }
+    ld_script = ('<script type="application/ld+json">'
+                 + json.dumps(faq_ld, ensure_ascii=False)
+                 + '</script>')
+    return section_html + ld_script
+
+
 def _breadcrumb_ld(items):
     return ('<script type="application/ld+json">'
             + json.dumps({
@@ -1167,6 +1339,7 @@ def main():
             html_lang = c['html_lang']
             html_dir = c.get('html_dir', 'ltr')
             about_html = build_about(name, sale_rec, rent_rec, lang)
+            district_faq_html = build_district_faq(name, sale_rec, rent_rec, lang)
 
             for mode, prefix in MODES:
                 base_rec = sale_rec if mode == 'sale' else rent_rec
@@ -1260,6 +1433,7 @@ def main():
                     # Top deals, Recent). Sub-page links remain in the breadcrumb
                     # nav and inside each <details> body.
                     html = html.replace('<!--__SUBPAGES__-->', '')
+                    html = html.replace('<!--__DISTRICT_FAQ__-->', district_faq_html)
 
                     html_path = os.path.join(out_dir, 'index.html')
                     with open(html_path, 'w', encoding='utf-8') as f:
