@@ -60,6 +60,15 @@ BACK_LINK = {
     'zh': '← 返回地图',
 }
 
+# Native autonyms — what speakers of each language call their own language.
+LANG_NAME = {
+    'ru': 'Русский',
+    'en': 'English',
+    'ar': 'العربية',
+    'hi': 'हिन्दी',
+    'zh': '中文',
+}
+
 # Questions — each entry is a (lang → text) dict for question and answer.
 # Keep answers 1-3 sentences. Factual. No marketing.
 FAQS = [
@@ -482,6 +491,14 @@ def build(lang):
         )
     qa_block = '\n'.join(qa_html)
 
+    lang_links = []
+    for l in LANGUAGES:
+        cls = 'lang-item active' if l == lang else 'lang-item'
+        lang_links.append(
+            f'    <a class="{cls}" href="{_page_url(l)}" hreflang="{l}" lang="{l}">{escape(LANG_NAME[l])}</a>'
+        )
+    lang_switcher = '<nav class="lang-switch" aria-label="Language">\n' + '\n'.join(lang_links) + '\n  </nav>'
+
     html = (
         f'<!doctype html>\n<html lang="{lang}" dir="{DIR_FOR_LANG[lang]}">\n<head>\n'
         '<meta charset="utf-8">\n'
@@ -520,6 +537,10 @@ def build(lang):
         '  .qa{margin:0 0 24px;padding:16px 18px;background:#fff;border:1px solid #e5e7eb;border-radius:8px}\n'
         '  .qa h2{font-size:16px;font-weight:600;margin:0 0 8px;color:#0f172a}\n'
         '  .qa p{margin:0;font-size:14.5px;color:#334155}\n'
+        '  .lang-switch{display:flex;flex-wrap:wrap;gap:6px;margin:0 0 24px;justify-content:center}\n'
+        '  .lang-item{display:inline-block;padding:5px 11px;font-size:13px;color:#475569;background:#fff;border:1px solid #e5e7eb;border-radius:6px;text-decoration:none;font-family:inherit}\n'
+        '  .lang-item:hover{border-color:#1d4ed8;color:#1d4ed8}\n'
+        '  .lang-item.active{background:#1d4ed8;color:#fff;border-color:#1d4ed8;cursor:default;pointer-events:none}\n'
         '  footer{margin-top:40px;font-size:13px;color:#64748b;text-align:center}\n'
         '  footer a{color:#1d4ed8;text-decoration:none}\n'
         '  footer a:hover{text-decoration:underline}\n'
@@ -530,6 +551,7 @@ def build(lang):
         '<main>\n'
         f'  <header>\n    <h1>{escape(H1[lang])}</h1>\n    <a class="back" href="{back_target}">{escape(BACK_LINK[lang])}</a>\n  </header>\n'
         f'  <p class="intro">{escape(desc)}</p>\n'
+        f'  {lang_switcher}\n'
         f'{qa_block}\n'
         f'  <footer><a href="{back_target}">{escape(BACK_LINK[lang])}</a></footer>\n'
         '</main>\n'
