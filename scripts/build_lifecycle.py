@@ -98,39 +98,68 @@ AREA_ALIASES = {'world islands': 'the world'}
 
 
 def norm(s):
+    """Strip-everything normalizer for alias matching. The polygon canonical
+    key is lower(name) (matches what _curated_sql.py's KEY_EXPR emits and
+    what viewer.js looks up via `data[real_area_key]`). But aliases come
+    from RERA's free-form text, and DLD spells the same name with vs without
+    punctuation across rows. We norm() both sides for the *match*, but the
+    return value is always the canonical lower(name) key so it joins back
+    cleanly to the tx/rent aggregates."""
     return re.sub(r'[^a-z0-9 ]', '', re.sub(r'\s+', ' ', (s or '').lower())).strip()
 
 
 def lookup(polys, raw, aliases, prefix_rollups=None):
+    """Map a raw RERA name onto the canonical polygon lower-key.
+    `polys` is {lower(name): lower(name)} for direct hits + {norm(name):
+    lower(name)} fallback entries built by load_polygon_keys. So we can try
+    lower() first (cheap exact match), then norm() (punctuation-tolerant).
+    Returns lower(polygon.name) — the same key tx.parquet / rents.parquet
+    aggregates use, so downstream joins are direct."""
     if not raw:
         return None
+    lo = raw.lower().strip()
+    if lo in polys:
+        return polys[lo]
     n = norm(raw)
     if n in polys:
-        return n
+        return polys[n]
+    # Aliases are keyed by norm(rera_name) and resolve to the canonical
+    # lower(polygon.name) — see MASTER_ALIASES below.
     a = aliases.get(n)
     if a and a in polys:
-        return a
+        return polys[a]
     if prefix_rollups:
         for prefix, target in prefix_rollups:
             if n != prefix and n.startswith(prefix) and target in polys:
-                return target
+                return polys[target]
     return None
 
 
 def load_polygon_keys():
-    """{normalized_name → display_name} from curated polygons."""
+    """Build a fat lookup table for polygon-key resolution.
+    Returns {form: canonical_lower_key} where each polygon contributes
+    TWO entries: its lower(name) form (= canonical) and its norm(name)
+    form (for fallback against RERA names recorded with extra punctuation
+    differences). Both forms resolve to the same lower(name) canonical
+    string which matches KEY_EXPR's output and viewer.js's lookup key.
+    Also returns a separate {canonical_lower_key: display_name} map for
+    rendering."""
     with open(GEOJSON, encoding='utf-8') as f:
         g = json.load(f)
-    out = {}
+    polys = {}            # form → canonical lower-key
+    display = {}          # canonical lower-key → display name
     for ft in g['features']:
         p = ft.get('properties') or {}
         name = p.get('name') or ''
         if not name:
             continue
-        n = norm(name)
-        if n and n not in out:
-            out[n] = name
-    return out
+        canonical = name.lower()
+        display.setdefault(canonical, name)
+        # Register both forms; first hit wins so the canonical always maps
+        # to itself.
+        polys.setdefault(canonical, canonical)
+        polys.setdefault(norm(name), canonical)
+    return polys, display
 
 
 def compute_pipeline(polys):
@@ -494,8 +523,8 @@ def clip(x, lo, hi):
 
 
 def main():
-    polys = load_polygon_keys()
-    print(f'Polygons indexed: {len(polys)}', file=sys.stderr)
+    polys, display = load_polygon_keys()
+    print(f'Polygons indexed: {len(display)} (lookup forms: {len(polys)})', file=sys.stderr)
 
     # 1. Sale growth — apartment-only (Unit + Building, no Villa / Land).
     # Recomputed locally rather than reading growth/data/3y.json so we can
@@ -544,10 +573,12 @@ def main():
     pipe_capped_n = 0
     post_launch_n = 0
     out = {}
-    for norm_key, name in polys.items():
-        sale_rec = sale_growth.get(norm_key)
-        rent_rec = rent_growth.get(norm_key)
-        pipe_rec = pipeline.get(norm_key)
+    # Iterate the canonical {lower(name) → display_name} map so each polygon
+    # is emitted under the lower-key viewer.js will look it up by.
+    for poly_key, name in display.items():
+        sale_rec = sale_growth.get(poly_key)
+        rent_rec = rent_growth.get(poly_key)
+        pipe_rec = pipeline.get(poly_key)
         # Skip polygons with no signals at all — choropleth will leave them blank.
         if not sale_rec and not rent_rec and not pipe_rec:
             continue
@@ -570,7 +601,7 @@ def main():
         # Bukadra: ~10K Units sold but all in 2024-2026) don't get capped
         # despite their high recent-tx volume.
         units_fin_5y = pipe_rec['units_finished_5y'] if pipe_rec else 0
-        tx_old = n_tx_historical.get(norm_key, 0)
+        tx_old = n_tx_historical.get(poly_key, 0)
         capped_here = False
         if (pipe_rec
                 and units_fin_5y == 0
@@ -605,7 +636,7 @@ def main():
         # overlay so the (genuinely-low) vitality number isn't read as
         # "this market is dead" — it's "this market is on pause until
         # buildings deliver".
-        vel = tx_velocity.get(norm_key)
+        vel = tx_velocity.get(poly_key)
         if (pipe_rec
                 and pipe_share >= POST_LAUNCH_PIPELINE_MIN
                 and vel
@@ -616,7 +647,7 @@ def main():
             rec['tx_baseline'] = vel['n_tx_baseline']
             post_launch_n += 1
 
-        out[norm_key] = rec
+        out[poly_key] = rec
 
     # Dubai rollup row (acts as the zero-line reference in the legend).
     out['__dubai__'] = {
