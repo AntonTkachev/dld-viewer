@@ -571,8 +571,18 @@ PAGE_TEMPLATE = '''<!DOCTYPE html>
 <meta name="robots" content="index,follow">
 <link rel="canonical" href="{canonical}">
 <meta property="og:type" content="website">
+<meta property="og:site_name" content="DXBCompass">
+<meta property="og:url" content="{canonical}">
 <meta property="og:title" content="{title}">
 <meta property="og:description" content="{desc}">
+<meta property="og:image" content="{BASE_URL}/og/cover.png">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta property="og:image:alt" content="DXBCompass — Dubai real estate data">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:image" content="{BASE_URL}/og/cover.png">
+<meta name="twitter:title" content="{title}">
+<meta name="twitter:description" content="{desc}">
 {hreflang}
 {ld_json}
 <link rel="stylesheet" href="{css_url}">
@@ -665,6 +675,7 @@ def build_page(cat, rows_with_district, lang):
     ld_json = build_seo_ld(cat, len(rows_with_district), lang, h1_plain, lede_plain)
 
     html = PAGE_TEMPLATE.format(
+        BASE_URL=BASE_URL,
         html_lang=c['html_lang'], dir=c['dir'],
         title=h1_plain,
         desc=re.sub(r'<[^>]+>', '', lede),
