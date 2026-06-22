@@ -95,12 +95,9 @@ PHASE_RISING_MIN  = 0.40   # vitality ≥ this → 'rising' (top bucket)
 PHASE_ACTIVE_MIN  = 0.10   # vitality ≥ this → 'active'
 PHASE_MATURE_MIN  = -0.20  # vitality ≥ this → 'mature'; below → 'lagging'
 
-def classify_phase(vitality, post_launch, commercial=False):
-    """Map a vitality score to a named phase.
-    `commercial` and `post_launch` take precedence — those districts are
-    categorically different, not numeric extremes of vitality."""
-    if commercial:
-        return 'commercial'
+def classify_phase(vitality, post_launch):
+    """Map a vitality score to a named phase. post_launch takes precedence
+    over numeric ranges — those districts are categorically different."""
     if vitality is None:
         return None
     if post_launch:
@@ -663,21 +660,15 @@ def main():
         rent_rec = rent_growth.get(poly_key)
         pipe_rec = pipeline.get(poly_key)
 
-        # Commercial-dominant districts get a category of their own and
-        # skip the residential vitality math entirely. The absolute floor
-        # spares major residential markets that look low-ratio just
-        # because the office side is also huge (Business Bay 37.6% but
-        # 16K Flat rentals/year — clearly a real residential market).
+        # Commercial-dominant districts don't belong on the residential
+        # lifecycle map — skip them entirely. The absolute floor spares
+        # major mixed markets like Business Bay (37.6% but 16K Flat
+        # rentals/year). Future: a separate office-market mask will
+        # reuse this detection.
         res_rec = residential.get(poly_key)
         if (res_rec
                 and res_rec['ratio'] < COMMERCIAL_RESIDENTIAL_MIN
                 and res_rec['res'] < COMMERCIAL_RES_ABSOLUTE_FLOOR):
-            out[poly_key] = {
-                'name': name,
-                'commercial': True,
-                'residential_share': round(res_rec['ratio'], 3),
-                'phase': classify_phase(None, False, commercial=True),
-            }
             commercial_n += 1
             continue
 
