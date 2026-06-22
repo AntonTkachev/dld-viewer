@@ -77,6 +77,15 @@ POST_LAUNCH_PIPELINE_MIN = 0.5      # still in active construction
 POST_LAUNCH_TX_DROP_RATIO = 0.5     # n_tx_1y < 50% of baseline (≥ 50% drop)
 POST_LAUNCH_BASELINE_MIN_OBS = 100  # avoid flagging tiny districts on noise
 
+# Commercial filter — drop districts whose rental mix isn't primarily a
+# residential market from this map. Al Safouh Second (Knowledge Village +
+# Internet City) has 3050 Office vs ~970 residential rentals — measuring
+# its "lifecycle" off thin residential tx is noise. Future: separate
+# office-market view picks these up.
+COMMERCIAL_RESIDENTIAL_MIN = 0.30      # below = candidate for commercial flag
+COMMERCIAL_RES_ABSOLUTE_FLOOR = 1000   # but spare if absolute residential ≥ this
+COMMERCIAL_MIN_OBS = 50                # skip noise-prone tiny districts
+
 # Phase categorization — bake the bucket assignment server-side so the
 # frontend just reads `rec.phase` and doesn't carry any of the thresholds.
 # Cuts tuned against the live distribution (P25 = -0.14, P50 = +0.045,
@@ -86,10 +95,12 @@ PHASE_RISING_MIN  = 0.40   # vitality ≥ this → 'rising' (top bucket)
 PHASE_ACTIVE_MIN  = 0.10   # vitality ≥ this → 'active'
 PHASE_MATURE_MIN  = -0.20  # vitality ≥ this → 'mature'; below → 'lagging'
 
-def classify_phase(vitality, post_launch):
-    """Map a vitality score to one of 5 named phases.
-    post_launch takes precedence — those districts are categorically
-    different (sold-out off-plan), not a numeric extreme of vitality."""
+def classify_phase(vitality, post_launch, commercial=False):
+    """Map a vitality score to a named phase.
+    `commercial` and `post_launch` take precedence — those districts are
+    categorically different, not numeric extremes of vitality."""
+    if commercial:
+        return 'commercial'
     if vitality is None:
         return None
     if post_launch:
@@ -540,6 +551,43 @@ def compute_n_tx_historical(polys):
     return {r['k']: int(r['n']) for _, r in rows.iterrows()}
 
 
+def compute_residential_share(polys):
+    """Per-polygon ratio of residential rentals (Flat/Villa/Studio/Hotel apt/
+    Complex Villas) to total rental contracts over the last 12 months.
+    Districts with < COMMERCIAL_RESIDENTIAL_MIN residential share are
+    office/shop/warehouse-dominant and don't belong on the residential
+    lifecycle map. Districts with fewer than COMMERCIAL_MIN_OBS total
+    contracts are skipped — too small to judge.
+    Returns {canonical_key: {'res': int, 'total': int, 'ratio': float}}.
+    """
+    sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+    from _curated_sql import build_curated_sql
+    KEY_EXPR, _, _ = build_curated_sql()
+    con = duckdb.connect()
+    since = (TODAY - timedelta(days=365)).isoformat()
+    RESIDENTIAL = (
+        "TRIM(ejari_property_type_en) IN "
+        "('Flat','Villa','Studio','Hotel apartments','Complex Villas')"
+    )
+    rows = con.execute(f"""
+        SELECT {KEY_EXPR} AS k,
+               COUNT(*) AS total,
+               COUNT(*) FILTER (WHERE {RESIDENTIAL}) AS res
+        FROM '{RENTS_PARQUET}'
+        WHERE area_name_en IS NOT NULL
+          AND ejari_property_type_en IS NOT NULL
+          AND CAST(contract_start_date AS DATE) >= '{since}'
+        GROUP BY k
+        HAVING COUNT(*) >= {COMMERCIAL_MIN_OBS}
+    """).fetchdf()
+    out = {}
+    for _, r in rows.iterrows():
+        total = int(r['total'])
+        res = int(r['res'])
+        out[r['k']] = {'res': res, 'total': total, 'ratio': res / total}
+    return out
+
+
 def clip(x, lo, hi):
     return max(lo, min(hi, x))
 
@@ -591,9 +639,22 @@ def main():
     print('Querying tx velocity (1y vs baseline)...', file=sys.stderr)
     tx_velocity = compute_tx_velocity(polys)
 
+    # 3d. Residential vs commercial rental mix — excludes office-dominant
+    # districts (Al Safouh Second / Knowledge Village area, etc.) from the
+    # residential lifecycle map.
+    print('Computing residential share (commercial filter)...', file=sys.stderr)
+    residential = compute_residential_share(polys)
+    n_commercial = sum(1 for v in residential.values()
+                       if v['ratio'] < COMMERCIAL_RESIDENTIAL_MIN)
+    print(f'Residential ratio computed for {len(residential)} districts; '
+          f'{n_commercial} flagged commercial (<{int(COMMERCIAL_RESIDENTIAL_MIN*100)}% residential)',
+          file=sys.stderr)
+
     # 4. Per-polygon vitality
     pipe_capped_n = 0
     post_launch_n = 0
+    spec_penalty_n = 0
+    commercial_n = 0
     out = {}
     # Iterate the canonical {lower(name) → display_name} map so each polygon
     # is emitted under the lower-key viewer.js will look it up by.
@@ -601,12 +662,28 @@ def main():
         sale_rec = sale_growth.get(poly_key)
         rent_rec = rent_growth.get(poly_key)
         pipe_rec = pipeline.get(poly_key)
+
+        # Commercial-dominant districts get a category of their own and
+        # skip the residential vitality math entirely. The absolute floor
+        # spares major residential markets that look low-ratio just
+        # because the office side is also huge (Business Bay 37.6% but
+        # 16K Flat rentals/year — clearly a real residential market).
+        res_rec = residential.get(poly_key)
+        if (res_rec
+                and res_rec['ratio'] < COMMERCIAL_RESIDENTIAL_MIN
+                and res_rec['res'] < COMMERCIAL_RES_ABSOLUTE_FLOOR):
+            out[poly_key] = {
+                'name': name,
+                'commercial': True,
+                'residential_share': round(res_rec['ratio'], 3),
+                'phase': classify_phase(None, False, commercial=True),
+            }
+            commercial_n += 1
+            continue
+
         # Skip polygons with no signals at all — choropleth will leave them blank.
         if not sale_rec and not rent_rec and not pipe_rec:
             continue
-        # Deviation from Dubai average → normalized to [-1, +1]. Pick the
-        # Dubai baseline that matches the district's growth-window (3y by
-        # default, 1y for fallback rows tagged in step 1).
         sg = sale_rec['growth_pct'] if sale_rec else None
         rg = rent_rec['growth_pct'] if rent_rec else None
         sale_baseline = (dubai_sale_growth_1y
@@ -615,13 +692,6 @@ def main():
         price_norm = clip((sg - sale_baseline) / GROWTH_CLIP_PP, -1, 1) if sg is not None else 0.0
         rent_norm = clip((rg - dubai_rent_growth) / GROWTH_CLIP_PP, -1, 1) if rg is not None else 0.0
         pipe_share = pipe_rec['pipeline'] if pipe_rec else 0.0
-        # Established-district cap: if RERA shows no recent finishes here but
-        # tx history says the district is built-out, the raw pipeline ratio
-        # is misleading (denominator is wrong because RERA can't see
-        # pre-register stock). Cap at ESTABLISHED_PIPELINE_CAP. We gate on
-        # tx OLDER than 5y so that brand-new districts mid-launch (like
-        # Bukadra: ~10K Units sold but all in 2024-2026) don't get capped
-        # despite their high recent-tx volume.
         units_fin_5y = pipe_rec['units_finished_5y'] if pipe_rec else 0
         tx_old = n_tx_historical.get(poly_key, 0)
         capped_here = False
@@ -632,9 +702,26 @@ def main():
             pipe_share = ESTABLISHED_PIPELINE_CAP
             capped_here = True
             pipe_capped_n += 1
-        vitality = (W_PIPELINE * pipe_share
+
+        # Speculative-failure penalty. When a district has zero residential
+        # rental activity AND its price is actually falling, the active
+        # pipeline isn't earning credit — it's off-plan supply without
+        # occupancy uptake. Drop the pipeline boost AND treat rent absence
+        # as worst-case rather than neutral. Brand-new districts are protected:
+        # they have price_pct=null (not strictly negative), so this doesn't fire.
+        spec_penalty = False
+        if rg is None and sg is not None and sg < 0:
+            pipe_for_formula = 0.0
+            rent_norm_for_formula = -1.0
+            spec_penalty = True
+            spec_penalty_n += 1
+        else:
+            pipe_for_formula = pipe_share
+            rent_norm_for_formula = rent_norm
+
+        vitality = (W_PIPELINE * pipe_for_formula
                     + W_PRICE * price_norm
-                    + W_RENT * rent_norm)
+                    + W_RENT * rent_norm_for_formula)
         # If only one of price/rent is missing, the dominant component still
         # reflects the district's direction; vitality just has narrower range.
         rec = {
@@ -650,6 +737,8 @@ def main():
             rec['n_overdue'] = int(pipe_rec['n_overdue'])
         if capped_here:
             rec['pipeline_capped'] = True
+        if spec_penalty:
+            rec['spec_penalty'] = True
 
         # Post-launch detector — pipeline still alive but tx volume crashed
         # from the 3y baseline. Means the district was an off-plan boom
@@ -694,11 +783,14 @@ def main():
     print(f'wrote {path} — {n_districts} districts, '
           f'pipeline data on {pipe_covered}, capped on {pipe_capped_n}, '
           f'post-launch flagged on {post_launch_n}, '
+          f'spec-penalty on {spec_penalty_n}, '
+          f'commercial on {commercial_n}, '
           f'{size_kb} KB',
           file=sys.stderr)
 
     # Quick distribution of vitality scores for sanity check.
-    vits = [r['vitality'] for k, r in out.items() if k != '__dubai__']
+    vits = [r['vitality'] for k, r in out.items()
+            if k != '__dubai__' and 'vitality' in r]
     if vits:
         vits.sort()
         n = len(vits)

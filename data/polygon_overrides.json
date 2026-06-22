@@ -334,7 +334,7 @@
     },
 
     {
-      "_comment": "Madinat Al Mataar — admin shell of Dubai South. 3 clean splits: Dubai World Central (21k, the airport/logistics zone), Dubai South Residential (15k), Expo City (4k).",
+      "_comment": "Madinat Al Mataar — admin shell of Dubai South (rebrand of Dubai World Central, 2015). 3 clean splits: Dubai South (21k, the umbrella zone — aviation/logistics/business/golf), Dubai South Residential (15k), Expo City (4k). DLD master_project_en still uses the old 'Dubai World Central' string; we surface the modern brand 'Dubai South' as the display name.",
       "area_name_en": "Madinat Al Mataar",
       "keep_remainder": false,
       "sub_polygons": [
@@ -345,9 +345,9 @@
           "master_projects": ["Dubai South Residential District"]
         },
         {
-          "name": "Dubai World Central",
-          "name_ar": "دبي وورلد سنترال",
-          "osm_polygon": "Dubai World Central",
+          "name": "Dubai South",
+          "name_ar": "دبي ساوث",
+          "osm_polygon": "Madinat Al Mataar",
           "master_projects": ["Dubai World Central"]
         },
         {
@@ -434,7 +434,7 @@
   ],
 
   "_todo_splits": [
-    "Madinat Al Mataar → Dubai World Central + Dubai South Residential + Expo City",
+    "Madinat Al Mataar → Dubai South + Dubai South Residential + Expo City (done)",
     "Al Yelayiss 2 → Town Square Dubai (collapse Mira 1..5)",
     "Al Hebiah Fourth → Dubai Sports City + Tilal Al Ghaf",
     "Al Hebiah First → Motor City + Mudon",
