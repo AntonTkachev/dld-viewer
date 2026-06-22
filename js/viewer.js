@@ -58,11 +58,7 @@ setTimeout(() => {
       }
     });
   }
-  // Boot language detection — priority:
-  //   1. window.__INITIAL_LANG__ (injected by build_pages.py for /<lang>/<mask>/)
-  //   2. URL path prefix /(en|ar|hi)/...
-  //   3. ?lang=<code> query param (legacy / backward compatibility)
-  // Falls through to default 'ru' (set in i18n.js currentLang).
+  // Boot language: window.__INITIAL_LANG__ > URL prefix > ?lang= > default.
   let _bootLang = currentLang;
   try {
     if (typeof window.__INITIAL_LANG__ === 'string'
@@ -108,23 +104,14 @@ setTimeout(() => {
 
 
 // ===================== DETAIL NAVIGATION =====================
-// The slide-out detail panel was removed in favour of dedicated district pages
-// (see scripts/build_district_pages.py output under /<lang>/sales|rents/<slug>/).
-// What stays here is just the routing: clicking a polygon / popup button /
-// table row resolves the district's slug + current language and navigates.
+// Click on a polygon / popup button / table row resolves district slug
+// + current language and navigates to the per-district page.
 function _slugify(s) {
   return (s || '').normalize('NFKD').replace(/[\u0300-\u036f]/g, '')
     .toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '');
 }
-// XSS guards. Every popup / table cell that interpolates external data
-// (OSM tags, KHDA/DLD/RERA strings, OSM-author free-form `website` URLs)
-// is built with template literals into innerHTML strings \u2014 so any unescaped
-// `<` or `"` becomes live markup. `_h` is the standard HTML-entity escape
-// for both text content and quoted attribute values. `_safeUrl` is for
-// href/src attribute values specifically \u2014 escaping wouldn't stop the
-// `javascript:` scheme, so we whitelist http(s)/tel/mailto and replace
-// anything else with the empty fragment so the link still renders but
-// goes nowhere.
+// XSS guards: `_h` HTML-escapes text + attribute values; `_safeUrl`
+// whitelists http(s)/tel/mailto for href/src and drops anything else.
 function _h(s) {
   return String(s == null ? '' : s).replace(/[&<>"'`]/g, c => ({
     '&':'&amp;', '<':'&lt;', '>':'&gt;', '"':'&quot;', "'":'&#39;', '`':'&#96;',
@@ -168,8 +155,7 @@ function _langUrlPrefixOf(lang) {
   return _BASE_PATH + ((lang && lang !== 'ru') ? '/' + lang : '');
 }
 // Navigate to the same mask/view in a different language, preserving
-// ?layers= and any other relevant query state. The mask landings exist
-// under /<lang>/<mask>/[table/] (see scripts/build_pages.py).
+// ?layers= and any other relevant query state.
 function _navigateToLang(targetLang) {
   if (!targetLang || typeof window === 'undefined') return;
   // Strip an existing /(en|ar|hi|zh)/ prefix from the current path to expose
@@ -198,38 +184,13 @@ function _districtModePrefix(mask) {
 }
 function _districtHrefForKey(key, name, legacyKey, masterKey) {
   if (!key || key === '__dubai__') return _langUrlPrefix() + '/';
-  // Slug MUST match the build script (scripts/build_district_pages.py), which
-  // slugifies the DLD record's `name`. OSM polygon labels often differ —
-  // "Jabal Ali Industrial 2" (OSM) vs "Jabal Ali Industrial Second" (DLD) —
-  // so always prefer the AGGREGATES/RENT_AGGREGATES name when it exists.
-  //
-  // Mode-aware lookup. Earlier this function tried AGGREGATES first regardless
-  // of mode, so clicking a polygon while in rents mode could resolve via the
-  // SALES aggregate (since AGGREGATES has more areas than RENT_AGGREGATES —
-  // rent builder drops areas with <5 contracts) and route to /rents/<slug>/
-  // even when no rent page existed. Now we look up in the matching aggregate
-  // first; if empty there, fall through to the other and route to that mode
-  // instead. World Islands (51 sales, 1 rent) used to land on /rents/world-islands/
-  // 404; now it lands on /sales/world-islands/ even when clicked from rents view.
-  //
-  // _isStub guards: AGGREGATES entries created at boot for split sub-zones
-  // (JBR, "Marsa Dubai (other)", "Wadi Al Safa 5 (other)") have no matching
-  // /sales/<slug>/ page. Treat them as MISSING here so we fall through to
-  // the legacy admin-parent key, which DOES have a real district page.
-  // See _stubSplitAggregates above for where stubs get marked.
+  // Mode-aware lookup: probe the current-mode aggregate first; fall through
+  // to the other mode if the key isn't there (and route accordingly).
+  // Probe order per side: polygon key → masterKey → legacyKey.
   const hasReal = (a, k) => a && a[k] && a[k].name && !a[k]._isStub;
   const mode = _districtModePrefix(typeof currentMask !== 'undefined' ? currentMask : 'sales');
   const PRIMARY   = (mode === 'rents' && typeof RENT_AGGREGATES !== 'undefined') ? RENT_AGGREGATES : (typeof AGGREGATES !== 'undefined' ? AGGREGATES : null);
   const SECONDARY = (mode === 'rents' && typeof AGGREGATES      !== 'undefined') ? AGGREGATES      : (typeof RENT_AGGREGATES !== 'undefined' ? RENT_AGGREGATES : null);
-  // Probe lookup order:
-  //   1. polygon `key` (the polygon's own name)
-  //   2. polygon `masterKey` (the rolled-up master_project AGGREGATES key —
-  //      set in merge_curated_polygons_into_viewer.py for splits like
-  //      "Expo City Dubai" → 'expo city')
-  //   3. polygon `legacyKey` (admin parent — last-resort for "(other)"
-  //      remainders, display-aliases, sub-zones without master filters)
-  // First try inside the primary aggregate (matches current mode); if all
-  // three miss, switch to the secondary and route to its mode instead.
   const probes = [key, masterKey, legacyKey].filter(Boolean);
   let display = null, finalMode = mode;
   for (const probe of probes) {
@@ -257,15 +218,12 @@ window.openDistrictByKey = function(key) {
 window.openDubai = function() { /* Dubai-wide overview moved off the slide-out panel; no-op for now. */ };
 function openDistrict(props) {
   if (!props) return;
-  // _districtHrefForKey is mode-aware and now also accepts master_project_key
-  // for split polygons whose data lives under a master_project AGGREGATES
-  // bucket rather than the polygon name.
   const href = _districtHrefForKey(props.real_area_key, props.name, props.legacy_area_key, props.master_project_key);
   if (href) window.location.href = href;
 }
 
 // ===================== MAP =====================
-// SVG pattern defs for "no DLD data" hatched fill. Injected into the document
+// SVG pattern defs for the no-data hatched fill. Injected into the document
 // (not Leaflet's overlay <svg>) so url(#nodata-hatch) resolves the moment any
 // path is rendered, regardless of pane creation order.
 document.body.insertAdjacentHTML('beforeend',
@@ -273,14 +231,6 @@ document.body.insertAdjacentHTML('beforeend',
   + '<defs>'
   + '<pattern id="nodata-hatch" patternUnits="userSpaceOnUse" width="8" height="8" patternTransform="rotate(45)">'
   +   '<line x1="0" y1="0" x2="0" y2="8" stroke="#94a3b8" stroke-width="1.4"/>'
-  + '</pattern>'
-  // Post-launch consolidation marker for the lifecycle mask: districts
-  // whose tx volume crashed below 50% of the 3y baseline while RERA
-  // pipeline is still ≥50% (think Dubai Harbour — inventory sold out on
-  // off-plan, waiting for handover). Stripes are pure dark with
-  // transparent gaps so the vitality color underneath still shows.
-  + '<pattern id="post-launch-stripes" patternUnits="userSpaceOnUse" width="10" height="10" patternTransform="rotate(45)">'
-  +   '<line x1="0" y1="0" x2="0" y2="10" stroke="rgba(15,23,42,0.55)" stroke-width="2.2"/>'
   + '</pattern>'
   + '</defs></svg>');
 
@@ -291,18 +241,6 @@ L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
 }).addTo(map);
 
 // ===================== CHOROPLETH =====================
-// Lifecycle mask uses a CATEGORICAL palette (5 named phases) drawn from the
-// same viridis ramp as the other masks, so the site reads as one visual
-// system instead of "this map uses its own colors". Mapping is by hue
-// match, not by ramp position — yellow reads as "attention/momentum" for
-// rising, purple reads as "warning/saturation" for overheated:
-//   rising     — viridis yellow  (#fde725): top bucket, eye-catching
-//   active     — viridis teal    (#21918c): darker green, healthy outperformer
-//   mature     — viridis green   (#5ec962): lighter green, at-market growth
-//   lagging    — viridis blue    (#3b528b): cool, below city-wide
-//   overheated — viridis purple  (#440154): off-plan sold out, awaiting handover
-// Thresholds tuned from the live distribution (P25 = -0.14, P50 = +0.045,
-// P75 = +0.36) so each bucket ends up ~20–40% of the 169 covered polygons.
 const LIFECYCLE_PHASE_COLORS = {
   rising:     '#fde725',
   active:     '#21918c',
@@ -310,8 +248,6 @@ const LIFECYCLE_PHASE_COLORS = {
   lagging:    '#3b528b',
   overheated: '#440154',
 };
-// White text on the three dark viridis ends; near-black on the two light
-// (yellow + light green) so badge labels stay legible everywhere.
 const LIFECYCLE_PHASE_TEXT = {
   rising:     '#0f172a',
   active:     '#ffffff',
@@ -320,10 +256,6 @@ const LIFECYCLE_PHASE_TEXT = {
   overheated: '#ffffff',
 };
 const LIFECYCLE_PHASE_ORDER = ['rising', 'active', 'mature', 'lagging', 'overheated'];
-// Phase is precomputed server-side in scripts/build_lifecycle.py — JS just
-// reads it. Cutoffs, weights, and the post_launch detector all live in
-// Python; nothing on the page leaks the formula. View-Source on /lifecycle/
-// shows only output values (vitality, price_pct, rent_pct, pipeline, phase).
 function _lifecyclePhase(rec) {
   return (rec && rec.phase) ? rec.phase : null;
 }
@@ -354,10 +286,9 @@ function lBreaks(vs,n){const lo=Math.min(...vs),hi=Math.max(...vs),b=[];for(let 
 function logBreaks(vs,n){const p=vs.filter(v=>v>0);if(!p.length)return Array(n-1).fill(0);const lo=Math.log(Math.min(...p)),hi=Math.log(Math.max(...p)),b=[];for(let i=1;i<n;i++)b.push(Math.exp(lo+(hi-lo)*i/n));return b}
 function classify(v,b){for(let i=0;i<b.length;i++)if(v<=b[i])return i;return b.length}
 
-// Manual parent-fallback for polygons that have a DLD area_id but no CSV row.
-// DLD records deals from these sub-communities under their parent community.
+// Manual parent-fallback for polygons without a direct CSV row — route them
+// to the bucket where deals are actually counted.
 const PARENT_OVERRIDES = {
-  // exact name equivalence (different transliteration / modern DLD name)
   'The Gardens':                          { parent_key: 'discovery gardens',  parent_name: 'Discovery Gardens' },
   'Jebel Ali Village':                    { parent_key: 'jabal ali first',    parent_name: 'Jabal Ali First' },
   'Al Jaddaf':                            { parent_key: 'sama al jadaf',      parent_name: 'Sama Al Jadaf' },
@@ -366,22 +297,15 @@ const PARENT_OVERRIDES = {
   'Al Ruwayyah 1':                        { parent_key: 'al rowaiyah first',  parent_name: 'Al Rowaiyah First' },
   'Al Ruwayyah 2':                        { parent_key: 'al rowaiyah first',  parent_name: 'Al Rowaiyah First' },
   'Al Ruwayyah 3':                        { parent_key: 'al rowaiyah first',  parent_name: 'Al Rowaiyah First' },
-  // shared DLD code / geographic containment
-  // Al Barsha South 5 polygon sits over the JVT geographic area (west of Al Khail);
-  // the big "Jumeirah Village Circle" polygon already covers actual JVC on the east.
   'Al Barsha South 5':                    { parent_key: 'jumeirah village triangle', parent_name: 'Jumeirah Village Triangle' },
   'Wadi Al Safa 6':                       { parent_key: 'arabian ranches i',  parent_name: 'Arabian Ranches I' },
   'Dubai International Financial Centre': { parent_key: 'zaabeel second',     parent_name: 'Zaabeel Second' },
   'Emaar Beachfront':                     { parent_key: 'dubai harbour',      parent_name: 'Dubai Harbour' },
-  // DLD-name equivalents (OSM marketing name → DLD official community)
   'Downtown Dubai':                       { parent_key: 'burj khalifa',       parent_name: 'Burj Khalifa' },
   'Expo City Dubai':                      { parent_key: 'madinat al mataar',  parent_name: 'Madinat Al Mataar' },
-  // Polygon spans two DLD sub-communities; using the larger half (more deals)
   'Zabeel':                               { parent_key: 'zaabeel second',     parent_name: 'Zaabeel Second' },
   'Trade Centre':                         { parent_key: 'trade center second', parent_name: 'Trade Center Second' },
 };
-// Emirates Living master community: DLD doesn't split it per sub-community,
-// all deals roll into "emirate living". Map all sub-polygons to that parent.
 for (const n of [
   'Springs 2','Springs 3','Springs 4','Springs 5','Springs 6','Springs 7','Springs 8',
   'Springs 9','Springs 10','Springs 11','Springs 12','Springs 14','Springs 15',
@@ -426,10 +350,8 @@ const _GROWTH_P  = (typeof GROWTH_PERIODS  !== 'undefined') ? GROWTH_PERIODS  : 
 const _LIFECYCLE = (typeof LIFECYCLE       !== 'undefined') ? LIFECYCLE       : {};
 const _PAYBACK_P = (typeof PAYBACK_PERIODS !== 'undefined') ? PAYBACK_PERIODS : {};
 
-// SPLIT_SQL in build_*_map.py produces keys like "springs" / "meadows" /
-// "jumeirah heights" that don't exist in the rich legacy AGGREGATES (which
-// is built by a separate, older pipeline). Without a stub the detail panel
-// alerts "not found" when the user clicks "Open" on those sub-communities.
+// Stub aggregates for split sub-zone keys that don't exist in the rich
+// legacy AGGREGATES bucket — keeps the "Open details" path alive.
 // Fill in a minimal shape so renderBodySale/Rent render with empty timelines
 // and empty tables instead of crashing.
 (function _stubSplitAggregates() {
@@ -445,12 +367,6 @@ const _PAYBACK_P = (typeof PAYBACK_PERIODS !== 'undefined') ? PAYBACK_PERIODS : 
       commercial: {...EMPTY_BUCKET}, land: {...EMPTY_BUCKET},
       rooms_flat: {}, rooms_villa: {}, offplan: {},
       timeline: [], top_projects: [], top_deals: [], recent: [],
-      // Marker so _districtHrefForKey can distinguish a real district page
-      // from a stub created at boot for a split sub-community. Real entries
-      // come from the legacy AGGREGATES literal and have full timeline data;
-      // stubs are slim per-period data that was promoted to make the detail
-      // panel not crash. Click-navigation should skip stubs in favor of the
-      // legacy admin parent key, which DOES have a real district page.
       _isStub: true,
     };
   }
@@ -481,24 +397,8 @@ const MASKS = {
   sales: {
     labelKey: 'mask_sales', descKey: 'mask_sales_desc',
     periods: ['1y','3y','5y','10y','all'], defaultPeriod: 'all',
-    // For `all`, layer the per-period build over AGGREGATES so newly split
-    // sub-community keys (springs / meadows / jumeirah heights) appear on
-    // top of the legacy aggregate.
-    //
-    // AGGREGATES used to be inlined in index.html (`const AGGREGATES = {…}`).
-    // It now ships as a separate /transactions/data/choropleth.js via a
-    // `<script src>` tag — same global symbol, but if the external script
-    // 404s (botched deploy / corporate proxy / CSP block / CDN transient),
-    // the bare reference would throw ReferenceError here and bring the
-    // whole page-init crashing down. The typeof guard makes the page fall
-    // back to period-only data instead of going white.
-    //
-    // AGGREGATES is the THIN choropleth shard: only {name, n, total, med,
-    // med_ppsqm} per district. Full per-district detail (timeline,
-    // top_deals, recent, room-bucket breakdowns) lives in
-    // /sales/<slug>/data.json and is fetched by the detail page, not here.
-    // If you need a field beyond those 5 on the main map, you also have
-    // to add it to scripts/build_sale_aggregates.py's `thin` projection.
+    // typeof guard: AGGREGATES ships as an external <script src>; if it
+    // 404s the page falls back to period-only data instead of crashing.
     data: {
       all:   Object.assign({}, (typeof AGGREGATES !== 'undefined' ? AGGREGATES : {}), _TX_P['all'] || {}),
       '1y':  _TX_P['1y']  || {},
@@ -522,18 +422,6 @@ const MASKS = {
     data: {
       // Same overlay pattern as sales — _RENTS_P['all'] adds the split keys.
       //
-      // RENT_AGGREGATES used to be inlined in index.html (`const RENT_AGGREGATES
-      // = {…}`, 2.9 MB). It now ships as a separate /rents/data/choropleth.js
-      // via a `<script src>` tag — same global symbol, but the typeof guard
-      // catches a 404 (botched deploy / CSP block / corporate proxy) so the
-      // page falls back to period-only data instead of throwing ReferenceError.
-      //
-      // RENT_AGGREGATES is the THIN choropleth shard: only {name, n,
-      // med_annual, med_ppsqm} per district. Full per-district detail
-      // (timeline, top_projects, recent, by_subtype, by_usage) lives in
-      // /rents/<slug>/data.json and is fetched by the detail page, not here.
-      // If you need a field beyond those 4 on the main map, you also have
-      // to add it to scripts/build_rent_aggregates.py's `thin` projection.
       all:   Object.assign({},
               (typeof RENT_AGGREGATES !== 'undefined') ? RENT_AGGREGATES : {},
               _RENTS_P['all'] || {}),
@@ -593,16 +481,6 @@ const MASKS = {
       { key: 'n',            labelKey: 'tv_col_n_last_year', type: 'int',     width: '20%' },
     ],
   },
-  // Market lifecycle — single composite score per district combining:
-  //   sale_growth_3y (45%), rent_growth_3y (40%), construction pipeline (15%)
-  // Each growth term is the deviation from the Dubai-wide average, clipped
-  // to ±30pp. Pipeline = units_active / (units_active + units_finished_5y),
-  // with 0 fallback for districts RERA doesn't cover (so missing-construction
-  // data never penalizes the score — see scripts/build_lifecycle.py).
-  //
-  // Score range is ~[-0.85, +1.0]; the legend is keyed off `vitality * 100`
-  // for readability. High = early/growth phase, low = mature/late phase.
-  // Neither end is "better" — the user picks based on goal (yield vs lifestyle).
   lifecycle: {
     labelKey: 'mask_lifecycle', descKey: 'mask_lifecycle_desc',
     periods: ['all'], defaultPeriod: 'all',
@@ -623,7 +501,7 @@ const MASKS = {
     }),
     legendKey: 'legend_lifecycle', popupCountKey: 'pp_trans_ytd', showVolume: false,
     metricKey: 'real_metric', scaleMode: 'categorical', allowZero: true,
-    overlay: () => null,  // category color speaks for itself; no per-polygon label
+    overlay: () => null,
     popupRows: (p, t) => {
       const phaseId = p.real_phase;
       if (!phaseId) return '';
@@ -645,8 +523,6 @@ const MASKS = {
     },
     tableColumns: [
       { key: 'name',       labelKey: 'tv_col_district',         type: 'str', width: '32%' },
-      // Phase column: sortable by underlying vitality, rendered as colored badge.
-      // post_launch districts force-sorted to bottom by clamping their key.
       { key: r => {
           if (typeof r.vitality !== 'number') return null;
           if (r.post_launch) return -Infinity;
@@ -712,7 +588,7 @@ let currentView = (typeof window !== 'undefined' && window.__INITIAL_VIEW__ === 
 // /sales/table/ and /rents/table/ keeps a per-table sort intent.
 const _tableState = {};  // { [maskId]: { sortKey, sortDir, search } }
 
-// Snapshot baseline real_* (post-PARENT_OVERRIDES) so applyMask can restore cleanly.
+// Snapshot baseline real_* so applyMask can restore cleanly.
 const BASE_REAL = new Map();
 for (const f of GEOJSON.features) {
   const p = f.properties;
@@ -1066,7 +942,7 @@ function renderTable() {
     let cls = isNum ? 'num' : '';
     if (c.type === 'pct' && typeof v === 'number' && !isDubai) cls += ' ' + (v >= 0 ? 'pos' : 'neg');
     cls = cls.trim();
-    // Phase cell — colored pill with the localized phase name.
+    // Phase cell — colored pill.
     if (c.type === 'phase') {
       const phaseId = c.rawKey ? c.rawKey(rec) : null;
       if (!phaseId) return `<td class="num">—</td>`;
@@ -1500,9 +1376,6 @@ function _onSearchSelect(feat){
 }
 
 let choro;
-// Layer for the post-launch stripes overlay (lifecycle mask). Re-created
-// from scratch on every renderChoro so a mask switch removes it cleanly.
-let _postLaunchOverlay = null;
 // Color by sign of label ("+12%" green, "-3%" red, unsigned neutral)
 function _overlayColorFor(label) {
   const s = String(label);
@@ -1732,17 +1605,10 @@ function renderChoro(){
   }).addTo(map);
   choro.bringToBack();
 
-  // Lifecycle uses a categorical color = phase, so no separate stripes
-  // overlay is needed (Перегретый is now a solid purple fill). Keep the
-  // teardown so any stale overlay from prior renders is removed.
-  if (_postLaunchOverlay) { map.removeLayer(_postLaunchOverlay); _postLaunchOverlay = null; }
-
   // Legend
   const title = t(mask.legendKey || 'ch_count');
   let html;
   if (isCategorical) {
-    // Categorical legend: 5 named phases. No palette toggle (the colors are
-    // semantic, not a swappable gradient).
     html = `<div style="margin-bottom:4px"><span style="font-weight:600">${title}</span></div>`;
     for (const id of LIFECYCLE_PHASE_ORDER) {
       html += `<div class="row"><span class="sw" style="background:${LIFECYCLE_PHASE_COLORS[id]}"></span>${t('lifecycle_phase_' + id)}</div>`;
@@ -2014,14 +1880,10 @@ for (const mo of MOSQUES) {
   m.addTo(mosqueLayer);
 }
 
-// ===================== PROJECTS (RERA, aggregated per district) =====================
-// One marker per master_project_en / area_name_en polygon — NOT per project.
-// The badge shows the in-flight count; the popup breaks down by status,
-// lists top developers, sums composition, and links to a per-district detail
-// page (still a placeholder — page is being built separately).
-//
-// Source: Dubai Pulse dataset 467654 (RERA Real Estate Projects), refreshed
-// via scripts/dld_projects_pull.py + dld_projects_merge_into_viewer.py.
+// ===================== CONSTRUCTION PROJECTS =====================
+// One marker per project bucket — NOT per individual project.
+// Badge shows in-flight count; popup breaks down by status, lists top
+// developers, sums composition.
 const projectLayer = L.layerGroup();
 const STATUS_META = {
   ACTIVE:                 {color: '#3aaf2f', key: 'pj_status_active'},
