@@ -27,7 +27,7 @@ import sys
 import unicodedata
 
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-SRC  = os.path.join(ROOT, 'index.html')
+SRC  = os.path.join(ROOT, 'template.html')
 TPL  = os.path.join(ROOT, 'templates', 'district.html')
 TPL_LIST = os.path.join(ROOT, 'templates', 'district-list.html')
 
@@ -612,8 +612,8 @@ def slugify(s):
 
 
 def lang_prefix(lang):
-    """URL prefix for a language: '' for the default ('ru'), '/en' / '/ar' / '/hi' for others."""
-    return '' if lang == 'ru' else '/' + lang
+    """URL prefix for a language: '/ru' / '/en' / '/ar' / '/hi' / '/zh'."""
+    return '/' + lang
 
 
 def base_url(mode, slug, lang):
@@ -654,7 +654,7 @@ def split_tiers(rec):
 
 def out_root(lang):
     """Filesystem root for a language's pages."""
-    return ROOT if lang == 'ru' else os.path.join(ROOT, lang)
+    return os.path.join(ROOT, lang)
 
 
 def html_escape(s):

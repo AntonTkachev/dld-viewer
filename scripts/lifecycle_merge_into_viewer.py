@@ -13,7 +13,7 @@ import sys
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parent.parent
-HTML = ROOT / 'index.html'
+HTML = ROOT / 'template.html'
 SRC = ROOT / 'lifecycle/data/all.json'
 
 

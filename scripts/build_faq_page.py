@@ -425,7 +425,7 @@ FAQS = [
 
 
 def _lang_path_prefix(lang):
-    return '' if lang == 'ru' else '/' + lang
+    return '/' + lang
 
 
 def _page_url(lang):
@@ -558,10 +558,7 @@ def build(lang):
         '</body>\n</html>\n'
     )
 
-    parts = [ROOT]
-    if lang != 'ru':
-        parts.append(lang)
-    parts.append('faq')
+    parts = [ROOT, lang, 'faq']
     out_dir = os.path.join(*parts)
     os.makedirs(out_dir, exist_ok=True)
     out = os.path.join(out_dir, 'index.html')

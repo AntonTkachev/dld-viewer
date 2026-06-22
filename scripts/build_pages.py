@@ -27,7 +27,7 @@ sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 from _seo_config import BASE_URL
 
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-SRC  = os.path.join(ROOT, 'index.html')
+SRC  = os.path.join(ROOT, 'template.html')
 
 LANGUAGES = ('ru', 'en', 'ar', 'hi', 'zh')
 VIEWS = ('map', 'table')
@@ -308,7 +308,7 @@ def _swap_desc(desc, lang, view):
 
 
 def _lang_path_prefix(lang):
-    return '' if lang == 'ru' else '/' + lang
+    return '/' + lang
 
 
 def _page_url(page_key, view, lang):
@@ -333,9 +333,8 @@ def build(page_key, cfg, view, lang):
     s = template
     canonical = _page_url(page_key, view, lang)
     # Depth: how many '../' to climb to repo root.
-    lang_dirs = 0 if lang == 'ru' else 1
     view_dirs = 1 if view == 'table' else 0
-    depth = lang_dirs + 1 + view_dirs   # +1 because /<mask>/ itself
+    depth = 1 + 1 + view_dirs   # /<lang>/ + /<mask>/ + optional /table/
     asset_prefix = '../' * depth
 
     title = _swap_title(cfg['title'][lang],      lang, view)
@@ -442,11 +441,8 @@ def build(page_key, cfg, view, lang):
     )
     s = re.sub(r'(?=<script src="https://cdn\.jsdelivr\.net)', boot, s, count=1)
 
-    # Output path: [<lang>/]<page_key>/[table/]index.html
-    parts = [ROOT]
-    if lang != 'ru':
-        parts.append(lang)
-    parts.append(page_key)
+    # Output path: /<lang>/<page_key>/[table/]index.html
+    parts = [ROOT, lang, page_key]
     if view == 'table':
         parts.append('table')
     out_dir = os.path.join(*parts)
@@ -465,10 +461,10 @@ for key, cfg in PAGES.items():
 
 
 # Thin /<lang>/index.html stubs — redirect to /<lang>/sales/.
-# Reason: without these /en/, /ar/, /hi/ 404 (no dir-listing on GH Pages),
-# which breaks BreadcrumbList "Dubai" links and any direct typing /ar/.
-# RU root (/) already has the master index.html, so only non-RU need stubs.
+# Reason: without these /en/, /ar/, /hi/, /ru/ 404 (no dir-listing on GH Pages),
+# which breaks BreadcrumbList "Dubai" links and any direct typing /ru/.
 LANG_STUB = {
+    'ru': dict(dir='ltr', title='DXBCompass — данные о недвижимости Дубая', label='Открыть карту Дубая →'),
     'en': dict(dir='ltr', title='DXBCompass — Dubai real estate data', label='Open the Dubai map →'),
     'ar': dict(dir='rtl', title='DXBCompass — بيانات عقارات دبي', label='افتح خريطة دبي ←'),
     'hi': dict(dir='ltr', title='DXBCompass — दुबई रियल एस्टेट डेटा', label='दुबई का मानचित्र खोलें →'),
@@ -499,5 +495,35 @@ for l, s in LANG_STUB.items():
             '</body>\n</html>\n'
         )
     print(f'  /{l}/                          stub → {target}', file=sys.stderr)
+
+
+# Root /index.html — redirect to /en/sales/ (x-default).
+# After the /ru/-prefix migration, the root no longer serves Russian content;
+# it lives at /ru/sales/ alongside the other locales. The root just bounces
+# uncategorized visitors to the English landing, which is what hreflang
+# x-default already advertises.
+_root_target = f'{BASE_URL}/en/sales/'
+with open(os.path.join(ROOT, 'index.html'), 'w', encoding='utf-8') as f:
+    f.write(
+        '<!doctype html>\n<html lang="en">\n<head>\n'
+        '<script>/* gh-redirect */if(location.hostname.endsWith(\'.github.io\')){location.replace(\'https://dxbcompass.com\'+(location.pathname.replace(/^\\/dld-viewer/,\'\')||\'/\')+location.search+location.hash);}</script>\n'
+        '<meta charset="utf-8">\n'
+        '<title>DXBCompass — Dubai real estate data</title>\n'
+        f'<link rel="icon" type="image/svg+xml" href="{BASE_URL}/favicon.svg">\n'
+        f'<link rel="canonical" href="{_root_target}">\n'
+        f'<meta http-equiv="refresh" content="0; url={_root_target}">\n'
+        '<meta name="robots" content="noindex,follow">\n'
+        '<link rel="alternate" hreflang="ru" href="https://dxbcompass.com/ru/sales/">\n'
+        '<link rel="alternate" hreflang="en" href="https://dxbcompass.com/en/sales/">\n'
+        '<link rel="alternate" hreflang="ar" href="https://dxbcompass.com/ar/sales/">\n'
+        '<link rel="alternate" hreflang="hi" href="https://dxbcompass.com/hi/sales/">\n'
+        '<link rel="alternate" hreflang="zh" href="https://dxbcompass.com/zh/sales/">\n'
+        '<link rel="alternate" hreflang="x-default" href="https://dxbcompass.com/en/sales/">\n'
+        '</head>\n<body>\n'
+        f'<p><a href="{_root_target}">Open the Dubai map →</a></p>\n'
+        f'<script>location.replace("{_root_target}");</script>\n'
+        '</body>\n</html>\n'
+    )
+print(f'  /                            redirect → {_root_target}', file=sys.stderr)
 
 print('done', file=sys.stderr)

@@ -24,7 +24,7 @@ import sys
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parent.parent
-HTML = ROOT / 'index.html'
+HTML = ROOT / 'template.html'
 SRC  = ROOT / 'data' / 'curated_polygons.geojson'
 
 with HTML.open(encoding='utf-8') as f:

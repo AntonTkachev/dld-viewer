@@ -105,7 +105,7 @@ def slugify(s):
 
 
 def lang_prefix(lang):
-    return '' if lang == 'ru' else '/' + lang
+    return '/' + lang
 
 
 def load_area_slugs():
@@ -1013,7 +1013,7 @@ def main():
 
     for lang in LANGUAGES:
         html = render_page(lang, len(projects), hero, this_year)
-        out_dir = os.path.join(ROOT, 'construction') if lang == 'ru' else os.path.join(ROOT, lang, 'construction')
+        out_dir = os.path.join(ROOT, lang, 'construction')
         os.makedirs(out_dir, exist_ok=True)
         with open(os.path.join(out_dir, 'index.html'), 'w', encoding='utf-8') as f:
             f.write(html)

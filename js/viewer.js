@@ -149,24 +149,23 @@ const _BASE_PATH = (() => {
   return _PROJECT_SUBPATHS.has(first) ? '/' + first : '';
 })();
 function _langUrlPrefix() {
-  return _BASE_PATH + ((typeof currentLang === 'string' && currentLang !== 'ru') ? '/' + currentLang : '');
+  return _BASE_PATH + (typeof currentLang === 'string' && currentLang ? '/' + currentLang : '');
 }
 function _langUrlPrefixOf(lang) {
-  return _BASE_PATH + ((lang && lang !== 'ru') ? '/' + lang : '');
+  return _BASE_PATH + (lang ? '/' + lang : '');
 }
 // Navigate to the same mask/view in a different language, preserving
 // ?layers= and any other relevant query state.
 function _navigateToLang(targetLang) {
   if (!targetLang || typeof window === 'undefined') return;
-  // Strip an existing /(en|ar|hi|zh)/ prefix from the current path to expose
-  // the bare path (/sales/, /rents/table/, /metro/, …) — then prepend the
-  // new language prefix. Also strip _BASE_PATH first (e.g. /dld-viewer)
-  // so the regex against /en/, /ar/, /hi/, /zh/ matches on GH Pages.
+  // Strip an existing /(ru|en|ar|hi|zh)/ prefix from the current path to
+  // expose the bare path (/sales/, /rents/table/, /metro/, …) — then
+  // prepend the new language prefix. Also strip _BASE_PATH first
+  // (e.g. /dld-viewer) so the regex matches on GH Pages.
   const p = (window.location.pathname || '/').slice(_BASE_PATH.length) || '/';
-  let stripped = p.replace(/^\/(en|ar|hi|zh)(?=\/|$)/, '') || '/';
-  // No /<lang>/index.html exists — only /<lang>/<mask>/ landings. The root
-  // viewer (/, /index.html, /<lang>/) is effectively the sales landing in
-  // RU; route the lang switch there so we don't land on a directory listing.
+  let stripped = p.replace(/^\/(ru|en|ar|hi|zh)(?=\/|$)/, '') || '/';
+  // /<lang>/index.html and /<lang>/ are sales-redirect stubs; route the
+  // switch to /<targetLang>/sales/ explicitly so we don't bounce through.
   if (stripped === '/' || stripped === '/index.html') {
     stripped = '/sales/';
   }

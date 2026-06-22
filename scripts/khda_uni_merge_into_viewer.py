@@ -19,7 +19,7 @@ import sys
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parent.parent
-HTML = ROOT / 'index.html'
+HTML = ROOT / 'template.html'
 KHDA = ROOT / 'data' / 'khda_universities.csv'
 OSM  = ROOT / 'data' / 'osm_universities.json'
 

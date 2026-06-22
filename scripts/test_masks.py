@@ -130,7 +130,7 @@ def load_polygon_keys(geojson_path):
 
 
 def main():
-    consts = extract_consts(os.path.join(ROOT, 'index.html'))
+    consts = extract_consts(os.path.join(ROOT, 'template.html'))
     print('[structure] PASS — 4 _PERIODS + LIFECYCLE parsed from <script> blocks')
 
     poly_keys = load_polygon_keys(os.path.join(ROOT, 'data/curated_polygons.geojson'))
