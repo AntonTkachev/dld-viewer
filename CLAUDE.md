@@ -193,4 +193,8 @@ python3 scripts/osm_malls_pull.py
 python3 scripts/osm_subcommunities_pull.py
 ```
 
-A unified `scripts/refresh_all.sh` is on the TODO list — see project memory.
+After any of those (or after editing `polygon_overrides.json` / `dm_to_dld_aliases.json`), run:
+```bash
+./scripts/refresh_all.sh    # rebuilds 5 masks + every inlined const + 22K SEO pages + sitemap, ends with smoke test
+```
+It does NOT pull network sources — those still own their own refresh scripts above.
