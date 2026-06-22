@@ -291,21 +291,33 @@ L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
 }).addTo(map);
 
 // ===================== CHOROPLETH =====================
-// Lifecycle mask uses a CATEGORICAL palette (5 named phases), not the
-// continuous viridis/blue/green RAMP. Colors are semantic, not gradient:
-//   rising   — bright amber: high momentum, eye-catching (new aggressive growth)
-//   active   — solid emerald: healthy outperformer (built-out + still growing)
-//   mature   — pastel emerald: established at market pace (the steady majority)
-//   lagging  — cool blue: below city-wide growth
-//   overheated — solid purple: off-plan sold out, awaiting handover
+// Lifecycle mask uses a CATEGORICAL palette (5 named phases) drawn from the
+// same viridis ramp as the other masks, so the site reads as one visual
+// system instead of "this map uses its own colors". Mapping is by hue
+// match, not by ramp position — yellow reads as "attention/momentum" for
+// rising, purple reads as "warning/saturation" for overheated:
+//   rising     — viridis yellow  (#fde725): top bucket, eye-catching
+//   active     — viridis teal    (#21918c): darker green, healthy outperformer
+//   mature     — viridis green   (#5ec962): lighter green, at-market growth
+//   lagging    — viridis blue    (#3b528b): cool, below city-wide
+//   overheated — viridis purple  (#440154): off-plan sold out, awaiting handover
 // Thresholds tuned from the live distribution (P25 = -0.14, P50 = +0.045,
 // P75 = +0.36) so each bucket ends up ~20–40% of the 169 covered polygons.
 const LIFECYCLE_PHASE_COLORS = {
-  rising:     '#fbbf24',
-  active:     '#059669',
-  mature:     '#86efac',
-  lagging:    '#60a5fa',
-  overheated: '#a855f7',
+  rising:     '#fde725',
+  active:     '#21918c',
+  mature:     '#5ec962',
+  lagging:    '#3b528b',
+  overheated: '#440154',
+};
+// White text on the three dark viridis ends; near-black on the two light
+// (yellow + light green) so badge labels stay legible everywhere.
+const LIFECYCLE_PHASE_TEXT = {
+  rising:     '#0f172a',
+  active:     '#ffffff',
+  mature:     '#0f172a',
+  lagging:    '#ffffff',
+  overheated: '#ffffff',
 };
 const LIFECYCLE_PHASE_ORDER = ['rising', 'active', 'mature', 'lagging', 'overheated'];
 function _lifecyclePhase(rec) {
@@ -623,9 +635,10 @@ const MASKS = {
         ? ((v >= 0 ? '+' : '') + v.toFixed(1) + '%')
         : '—';
       const color = LIFECYCLE_PHASE_COLORS[phaseId];
+      const textColor = LIFECYCLE_PHASE_TEXT[phaseId] || '#0f172a';
       const phaseLabel = t('lifecycle_phase_' + phaseId);
       return `
-        <div class="stat"><span class="k">${t('pp_lifecycle_phase')}</span><span class="v"><span style="display:inline-block;padding:2px 8px;border-radius:10px;background:${color};color:#0f172a;font-weight:600;font-size:12px">${phaseLabel}</span></span></div>
+        <div class="stat"><span class="k">${t('pp_lifecycle_phase')}</span><span class="v"><span style="display:inline-block;padding:2px 8px;border-radius:10px;background:${color};color:${textColor};font-weight:600;font-size:12px">${phaseLabel}</span></span></div>
         <div class="stat"><span class="k">${t('pp_lifecycle_price')}</span><span class="v">${fmtPct(pricePct)}</span></div>
         <div class="stat"><span class="k">${t('pp_lifecycle_rent')}</span><span class="v">${fmtPct(rentPct)}</span></div>
         <div class="stat"><span class="k">${t('pp_lifecycle_pipeline')}</span><span class="v">${pipeShare}%</span></div>
@@ -1059,8 +1072,9 @@ function renderTable() {
       const phaseId = c.rawKey ? c.rawKey(rec) : null;
       if (!phaseId) return `<td class="num">—</td>`;
       const color = LIFECYCLE_PHASE_COLORS[phaseId] || '#cbd5e1';
+      const textColor = LIFECYCLE_PHASE_TEXT[phaseId] || '#0f172a';
       const label = t('lifecycle_phase_' + phaseId);
-      return `<td class="num"><span style="display:inline-block;padding:2px 10px;border-radius:10px;background:${color};color:#0f172a;font-weight:600;font-size:12px;white-space:nowrap">${_h(label)}</span></td>`;
+      return `<td class="num"><span style="display:inline-block;padding:2px 10px;border-radius:10px;background:${color};color:${textColor};font-weight:600;font-size:12px;white-space:nowrap">${_h(label)}</span></td>`;
     }
     // title attr surfaces the full cell value as a native tooltip when
     // truncation hides it (long district names, big numbers, etc.).
