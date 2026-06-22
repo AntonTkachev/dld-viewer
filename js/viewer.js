@@ -66,10 +66,10 @@ setTimeout(() => {
       _bootLang = window.__INITIAL_LANG__;
     } else {
       // Strip the project subpath (_BASE_PATH, e.g. /dld-viewer) before
-      // matching the /(en|ar|hi|zh)/ language prefix — on GH Pages project
-      // sites the path is /dld-viewer/en/sales/, not /en/sales/.
+      // matching the /(ru|en|ar|hi|zh)/ language prefix — on GH Pages
+      // project sites the path is /dld-viewer/en/sales/, not /en/sales/.
       const _pPath = ((window.location.pathname || '').slice(_BASE_PATH.length)) || '/';
-      const pm = _pPath.match(/^\/(en|ar|hi|zh)(?:\/|$)/);
+      const pm = _pPath.match(/^\/(ru|en|ar|hi|zh)(?:\/|$)/);
       if (pm && typeof I18N !== 'undefined' && I18N[pm[1]]) {
         _bootLang = pm[1];
       } else {

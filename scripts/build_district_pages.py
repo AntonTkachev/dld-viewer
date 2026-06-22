@@ -631,8 +631,8 @@ def base_path(mode, slug, lang):
 
 def data_url(mode, slug):
     """Data JSON is language-independent — one file shared across langs.
-    Lives under the RU canonical path. Root-relative so fetch() works on
-    any origin without rebuild."""
+    Lives at the language-neutral root path (/<mask>/<slug>/data.json).
+    Root-relative so fetch() works on any origin without rebuild."""
     return f'/{"sales" if mode == "sale" else "rents"}/{slug}/data.json'
 
 

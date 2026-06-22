@@ -13,7 +13,7 @@ every URL just changed even though the data is the same — wastes their
 crawl budget and ours.
 
 Skipped:
-  - Root / (master dev-preview index — its canonical points to /sales/)
+  - Root / (noindex redirect to /en/sales/ — the x-default landing)
   - /<lang>/index.html (noindex redirect stubs from build_pages.py)
   - Anything outside the indexable top-level dirs
 
