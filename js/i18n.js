@@ -1238,6 +1238,7 @@ function applyLang(newLang) {
   if (typeof renderMaskList === 'function') renderMaskList();
   if (typeof updateMaskCurrentLabel === 'function') updateMaskCurrentLabel();
   if (typeof renderPoiList === 'function') renderPoiList();
+  if (typeof _refreshViewSwitchLabel === 'function') _refreshViewSwitchLabel();
   // Re-render legend (renderChoro repaints chrome too)
   if (typeof renderChoro === 'function') renderChoro();
   // Re-render side panel if open
