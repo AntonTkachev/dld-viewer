@@ -355,6 +355,7 @@ def build(page_key, cfg, view, lang):
         '@context': 'https://schema.org', '@type': 'Dataset',
         'name': dataset_name, 'alternateName': dataset_name_en,
         'description': desc, 'inLanguage': lang, 'url': canonical,
+        'image': og_image_url,
         'creator': {'@type': 'Organization', 'name': 'DXBCompass'},
         'license': 'https://www.dubaipulse.gov.ae/terms',
         'isAccessibleForFree': True,
@@ -379,6 +380,7 @@ def build(page_key, cfg, view, lang):
         'itemListElement': bc_items,
     }
 
+    og_image_url = BASE_URL + '/og/cover.png'
     head_block = (
         f'<title>{title}</title>\n'
         f'<meta name="description" content="{desc}">\n'
@@ -386,8 +388,18 @@ def build(page_key, cfg, view, lang):
         f'<meta name="robots" content="index,follow">\n'
         f'<link rel="canonical" href="{canonical}">\n'
         f'<meta property="og:type" content="website">\n'
+        f'<meta property="og:site_name" content="DXBCompass">\n'
+        f'<meta property="og:url" content="{canonical}">\n'
         f'<meta property="og:title" content="{title}">\n'
         f'<meta property="og:description" content="{desc}">\n'
+        f'<meta property="og:image" content="{og_image_url}">\n'
+        f'<meta property="og:image:width" content="1200">\n'
+        f'<meta property="og:image:height" content="630">\n'
+        f'<meta property="og:image:alt" content="DXBCompass — Dubai real estate data">\n'
+        f'<meta name="twitter:card" content="summary_large_image">\n'
+        f'<meta name="twitter:image" content="{og_image_url}">\n'
+        f'<meta name="twitter:title" content="{title}">\n'
+        f'<meta name="twitter:description" content="{desc}">\n'
         f'<meta property="og:locale" content="{og_locale_main}">\n'
         + ''.join(f'<meta property="og:locale:alternate" content="{a}">\n' for a in og_locale_alts) +
         _hreflang_block(page_key, view) + '\n'
