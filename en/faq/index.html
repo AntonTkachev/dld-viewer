@@ -1,0 +1,113 @@
+<!doctype html>
+<html lang="en" dir="ltr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Frequently asked questions — DXBCompass</title>
+<meta name="description" content="Answers about DXBCompass data: source, refresh cadence, what each mask (sales, rents, growth, payback, lifecycle) means, and why district names differ from common usage.">
+<meta name="robots" content="index,follow">
+<link rel="canonical" href="https://dxbcompass.com/en/faq/">
+<link rel="icon" type="image/svg+xml" href="https://dxbcompass.com/favicon.svg">
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="DXBCompass">
+<meta property="og:url" content="https://dxbcompass.com/en/faq/">
+<meta property="og:title" content="Frequently asked questions — DXBCompass">
+<meta property="og:description" content="Answers about DXBCompass data: source, refresh cadence, what each mask (sales, rents, growth, payback, lifecycle) means, and why district names differ from common usage.">
+<meta property="og:image" content="https://dxbcompass.com/og/cover.png">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta property="og:image:alt" content="DXBCompass — Dubai real estate data">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:image" content="https://dxbcompass.com/og/cover.png">
+<meta name="twitter:title" content="Frequently asked questions — DXBCompass">
+<meta name="twitter:description" content="Answers about DXBCompass data: source, refresh cadence, what each mask (sales, rents, growth, payback, lifecycle) means, and why district names differ from common usage.">
+<meta property="og:locale" content="en_US">
+<meta property="og:locale:alternate" content="ru_RU">
+<meta property="og:locale:alternate" content="ar_AE">
+<meta property="og:locale:alternate" content="hi_IN">
+<meta property="og:locale:alternate" content="zh_CN">
+  <link rel="alternate" hreflang="ru" href="https://dxbcompass.com/faq/">
+  <link rel="alternate" hreflang="en" href="https://dxbcompass.com/en/faq/">
+  <link rel="alternate" hreflang="ar" href="https://dxbcompass.com/ar/faq/">
+  <link rel="alternate" hreflang="hi" href="https://dxbcompass.com/hi/faq/">
+  <link rel="alternate" hreflang="zh" href="https://dxbcompass.com/zh/faq/">
+  <link rel="alternate" hreflang="x-default" href="https://dxbcompass.com/en/faq/">
+<script type="application/ld+json">{"@context": "https://schema.org", "@type": "FAQPage", "inLanguage": "en", "url": "https://dxbcompass.com/en/faq/", "mainEntity": [{"@type": "Question", "name": "What is DXBCompass?", "acceptedAnswer": {"@type": "Answer", "text": "An interactive map of Dubai's real estate market built on Dubai Land Department open data. Shows transactions, rentals, price growth, payback and lifecycle phase per district."}}, {"@type": "Question", "name": "Where does the data come from?", "acceptedAnswer": {"@type": "Answer", "text": "All data is published by Dubai Land Department through the Dubai Pulse portal. It is the official register of every sale transaction and rental contract (Ejari) in Dubai. We aggregate and visualize — the data is not ours."}}, {"@type": "Question", "name": "How often is the data updated?", "acceptedAnswer": {"@type": "Answer", "text": "Weekly. DLD publishes new snapshots irregularly — sometimes several times a week, sometimes 2-3 weeks of silence. We check every Monday and rebuild the maps when a new snapshot is available."}}, {"@type": "Question", "name": "What is the difference between the Sales, Rents, Growth, Payback and Lifecycle masks?", "acceptedAnswer": {"@type": "Answer", "text": "Sales — count and median price of purchase transactions. Rents — count and median amount of rental contracts. Growth — AED/sqm growth over 1/3/5/10 years. Payback — how many years of annual rent recoup the purchase. Lifecycle — composite market phase per district (rising / active / mature / lagging / overheated)."}}, {"@type": "Question", "name": "What do the lifecycle phases mean?", "acceptedAnswer": {"@type": "Answer", "text": "Rising — early phase, prices and rents outpace the city average. Active — consistently above average. Mature — near average, no pronounced dynamic. Lagging — below average, slowdown signals. Overheated — price growth has sharply outpaced rent growth, the market cooled but prices have not corrected."}}, {"@type": "Question", "name": "Why is Dubai Marina labeled as Marsa Dubai?", "acceptedAnswer": {"@type": "Answer", "text": "That is the name in the official DLD register. Marsa Dubai is Arabic for \"Dubai Marina\". We label the popular districts with their familiar English aliases (Dubai Marina, Downtown, Palm Jumeirah), but the URL slug and title come from DLD as the source of truth."}}, {"@type": "Question", "name": "Why are some districts grayed out?", "acceptedAnswer": {"@type": "Answer", "text": "Gray means \"not enough data for this mask's metric\". For example, a district may have had fewer than 50 transactions in the selected period — we do not show a median on a tiny sample. Lifecycle separately excludes commercial districts (Al Quoz Industrial, Dubai Airport) — they have no residential market."}}, {"@type": "Question", "name": "Can I use your data?", "acceptedAnswer": {"@type": "Answer", "text": "Yes. The source is Dubai Land Department open data under the UAE Federal Open Data License. We only aggregate. A link to DXBCompass is appreciated but not legally required. For serious analysis, take the raw source from Dubai Pulse."}}, {"@type": "Question", "name": "How accurate are the prices?", "acceptedAnswer": {"@type": "Answer", "text": "Prices are medians of real registered transactions. Accurate as a district-level baseline, but not for a specific property: neighboring towers can differ by 2×. We use medians so outliers do not distort the picture (one 200M AED deal does not shift the map)."}}, {"@type": "Question", "name": "What is off-plan and how does it affect the numbers?", "acceptedAnswer": {"@type": "Answer", "text": "Off-plan is a transaction on a property still under construction, before handover. DLD records it as a normal transaction. We do not filter these out — they are part of the market. The Lifecycle mask separately tracks the pipeline share to indicate a district's stage."}}, {"@type": "Question", "name": "Can I see a specific building or tower?", "acceptedAnswer": {"@type": "Answer", "text": "No, granularity is district-level (master_project_en in the DLD register). This is intentional: for individual listings you want Property Finder or Bayut. Our purpose is the macro picture of the market, not picking a flat."}}, {"@type": "Question", "name": "Is this investment advice?", "acceptedAnswer": {"@type": "Answer", "text": "No. DXBCompass shows data — you draw the conclusions. We do not recommend buying or selling, do not forecast prices, and bear no responsibility for decisions made based on these statistics. Before purchasing, consult a licensed agent or lawyer."}}]}</script>
+<script type="application/ld+json">{"@context": "https://schema.org", "@type": "BreadcrumbList", "itemListElement": [{"@type": "ListItem", "position": 1, "name": "Dubai", "item": "https://dxbcompass.com/en/"}, {"@type": "ListItem", "position": 2, "name": "Frequently asked questions", "item": "https://dxbcompass.com/en/faq/"}]}</script>
+<style>
+  html,body{margin:0;padding:0;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Helvetica,Arial,sans-serif;color:#1a1a1a;background:#f7f8fa;line-height:1.55}
+  main{max-width:760px;margin:0 auto;padding:32px 20px 64px}
+  header{display:flex;justify-content:space-between;align-items:center;margin-bottom:24px;gap:12px;flex-wrap:wrap}
+  header a.back{color:#1d4ed8;text-decoration:none;font-size:14px;font-weight:500}
+  header a.back:hover{text-decoration:underline}
+  h1{font-size:28px;font-weight:700;margin:0 0 8px;line-height:1.2}
+  .intro{color:#555;font-size:15px;margin-bottom:32px}
+  .qa{margin:0 0 24px;padding:16px 18px;background:#fff;border:1px solid #e5e7eb;border-radius:8px}
+  .qa h2{font-size:16px;font-weight:600;margin:0 0 8px;color:#0f172a}
+  .qa p{margin:0;font-size:14.5px;color:#334155}
+  footer{margin-top:40px;font-size:13px;color:#64748b;text-align:center}
+  footer a{color:#1d4ed8;text-decoration:none}
+  footer a:hover{text-decoration:underline}
+  [dir="rtl"] header{direction:rtl}
+  @media (max-width:600px){h1{font-size:24px}.qa{padding:14px 14px}}
+</style>
+</head>
+<body>
+<main>
+  <header>
+    <h1>Frequently asked questions</h1>
+    <a class="back" href="https://dxbcompass.com/en/sales/">← Back to map</a>
+  </header>
+  <p class="intro">Answers about DXBCompass data: source, refresh cadence, what each mask (sales, rents, growth, payback, lifecycle) means, and why district names differ from common usage.</p>
+  <section class="qa">
+    <h2>What is DXBCompass?</h2>
+    <p>An interactive map of Dubai&#x27;s real estate market built on Dubai Land Department open data. Shows transactions, rentals, price growth, payback and lifecycle phase per district.</p>
+  </section>
+  <section class="qa">
+    <h2>Where does the data come from?</h2>
+    <p>All data is published by Dubai Land Department through the Dubai Pulse portal. It is the official register of every sale transaction and rental contract (Ejari) in Dubai. We aggregate and visualize — the data is not ours.</p>
+  </section>
+  <section class="qa">
+    <h2>How often is the data updated?</h2>
+    <p>Weekly. DLD publishes new snapshots irregularly — sometimes several times a week, sometimes 2-3 weeks of silence. We check every Monday and rebuild the maps when a new snapshot is available.</p>
+  </section>
+  <section class="qa">
+    <h2>What is the difference between the Sales, Rents, Growth, Payback and Lifecycle masks?</h2>
+    <p>Sales — count and median price of purchase transactions. Rents — count and median amount of rental contracts. Growth — AED/sqm growth over 1/3/5/10 years. Payback — how many years of annual rent recoup the purchase. Lifecycle — composite market phase per district (rising / active / mature / lagging / overheated).</p>
+  </section>
+  <section class="qa">
+    <h2>What do the lifecycle phases mean?</h2>
+    <p>Rising — early phase, prices and rents outpace the city average. Active — consistently above average. Mature — near average, no pronounced dynamic. Lagging — below average, slowdown signals. Overheated — price growth has sharply outpaced rent growth, the market cooled but prices have not corrected.</p>
+  </section>
+  <section class="qa">
+    <h2>Why is Dubai Marina labeled as Marsa Dubai?</h2>
+    <p>That is the name in the official DLD register. Marsa Dubai is Arabic for &quot;Dubai Marina&quot;. We label the popular districts with their familiar English aliases (Dubai Marina, Downtown, Palm Jumeirah), but the URL slug and title come from DLD as the source of truth.</p>
+  </section>
+  <section class="qa">
+    <h2>Why are some districts grayed out?</h2>
+    <p>Gray means &quot;not enough data for this mask&#x27;s metric&quot;. For example, a district may have had fewer than 50 transactions in the selected period — we do not show a median on a tiny sample. Lifecycle separately excludes commercial districts (Al Quoz Industrial, Dubai Airport) — they have no residential market.</p>
+  </section>
+  <section class="qa">
+    <h2>Can I use your data?</h2>
+    <p>Yes. The source is Dubai Land Department open data under the UAE Federal Open Data License. We only aggregate. A link to DXBCompass is appreciated but not legally required. For serious analysis, take the raw source from Dubai Pulse.</p>
+  </section>
+  <section class="qa">
+    <h2>How accurate are the prices?</h2>
+    <p>Prices are medians of real registered transactions. Accurate as a district-level baseline, but not for a specific property: neighboring towers can differ by 2×. We use medians so outliers do not distort the picture (one 200M AED deal does not shift the map).</p>
+  </section>
+  <section class="qa">
+    <h2>What is off-plan and how does it affect the numbers?</h2>
+    <p>Off-plan is a transaction on a property still under construction, before handover. DLD records it as a normal transaction. We do not filter these out — they are part of the market. The Lifecycle mask separately tracks the pipeline share to indicate a district&#x27;s stage.</p>
+  </section>
+  <section class="qa">
+    <h2>Can I see a specific building or tower?</h2>
+    <p>No, granularity is district-level (master_project_en in the DLD register). This is intentional: for individual listings you want Property Finder or Bayut. Our purpose is the macro picture of the market, not picking a flat.</p>
+  </section>
+  <section class="qa">
+    <h2>Is this investment advice?</h2>
+    <p>No. DXBCompass shows data — you draw the conclusions. We do not recommend buying or selling, do not forecast prices, and bear no responsibility for decisions made based on these statistics. Before purchasing, consult a licensed agent or lawyer.</p>
+  </section>
+  <footer><a href="https://dxbcompass.com/en/sales/">← Back to map</a></footer>
+</main>
+</body>
+</html>

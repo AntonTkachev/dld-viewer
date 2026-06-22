@@ -61,6 +61,9 @@ $PY scripts/build_district_pages.py
 phase "9. Locale SEO landings + table views"
 $PY scripts/build_pages.py
 
+phase "9b. FAQ page (standalone content, FAQPage schema)"
+$PY scripts/build_faq_page.py
+
 phase "10. Sitemap + robots (walks finished site tree)"
 $PY scripts/build_sitemap.py
 

@@ -38,6 +38,8 @@ TOP_DIRS = (
     'sales', 'rents', 'growth', 'payback', 'lifecycle',
     # POI category landings
     'metro', 'schools', 'universities', 'medical', 'mosques', 'construction', 'malls',
+    # Content pages
+    'faq',
 )
 LANG_DIRS = ('en', 'ar', 'hi', 'zh')
 
