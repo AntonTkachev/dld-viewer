@@ -77,6 +77,28 @@ POST_LAUNCH_PIPELINE_MIN = 0.5      # still in active construction
 POST_LAUNCH_TX_DROP_RATIO = 0.5     # n_tx_1y < 50% of baseline (≥ 50% drop)
 POST_LAUNCH_BASELINE_MIN_OBS = 100  # avoid flagging tiny districts on noise
 
+# Phase categorization — bake the bucket assignment server-side so the
+# frontend just reads `rec.phase` and doesn't carry any of the thresholds.
+# Cuts tuned against the live distribution (P25 = -0.14, P50 = +0.045,
+# P75 = +0.36) so each bucket lands at ~13–40% of polygons. Re-tune here,
+# not in the JS, when the distribution drifts.
+PHASE_RISING_MIN  = 0.40   # vitality ≥ this → 'rising' (top bucket)
+PHASE_ACTIVE_MIN  = 0.10   # vitality ≥ this → 'active'
+PHASE_MATURE_MIN  = -0.20  # vitality ≥ this → 'mature'; below → 'lagging'
+
+def classify_phase(vitality, post_launch):
+    """Map a vitality score to one of 5 named phases.
+    post_launch takes precedence — those districts are categorically
+    different (sold-out off-plan), not a numeric extreme of vitality."""
+    if vitality is None:
+        return None
+    if post_launch:
+        return 'overheated'
+    if vitality >= PHASE_RISING_MIN:  return 'rising'
+    if vitality >= PHASE_ACTIVE_MIN:  return 'active'
+    if vitality >= PHASE_MATURE_MIN:  return 'mature'
+    return 'lagging'
+
 IN_FLIGHT_STATES = {'ACTIVE', 'NOT_STARTED', 'PENDING', 'CONDITIONAL_ACTIVATING'}
 
 # Mirror dld_projects_merge_into_viewer.py aliases so polygon matching
@@ -647,6 +669,10 @@ def main():
             rec['tx_baseline'] = vel['n_tx_baseline']
             post_launch_n += 1
 
+        # Bake the bucket assignment into the record. Frontend reads
+        # `rec.phase` directly — no thresholds in JS.
+        rec['phase'] = classify_phase(rec['vitality'], rec.get('post_launch', False))
+
         out[poly_key] = rec
 
     # Dubai rollup row (acts as the zero-line reference in the legend).
@@ -656,6 +682,7 @@ def main():
         'price_pct': dubai_sale_growth,
         'rent_pct': dubai_rent_growth,
         'pipeline': 0.0,
+        'phase': 'mature',
     }
 
     path = os.path.join(OUT_DIR, 'all.json')

@@ -320,13 +320,12 @@ const LIFECYCLE_PHASE_TEXT = {
   overheated: '#ffffff',
 };
 const LIFECYCLE_PHASE_ORDER = ['rising', 'active', 'mature', 'lagging', 'overheated'];
+// Phase is precomputed server-side in scripts/build_lifecycle.py — JS just
+// reads it. Cutoffs, weights, and the post_launch detector all live in
+// Python; nothing on the page leaks the formula. View-Source on /lifecycle/
+// shows only output values (vitality, price_pct, rent_pct, pipeline, phase).
 function _lifecyclePhase(rec) {
-  if (!rec || typeof rec.vitality !== 'number') return null;
-  if (rec.post_launch) return 'overheated';
-  if (rec.vitality >= 0.40)  return 'rising';
-  if (rec.vitality >= 0.10)  return 'active';
-  if (rec.vitality >= -0.20) return 'mature';
-  return 'lagging';
+  return (rec && rec.phase) ? rec.phase : null;
 }
 
 const RAMP_VIRIDIS = ['#440154','#3b528b','#21918c','#5ec962','#fde725'];
