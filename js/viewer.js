@@ -270,9 +270,19 @@ function openDistrict(props) {
 // path is rendered, regardless of pane creation order.
 document.body.insertAdjacentHTML('beforeend',
   '<svg width="0" height="0" style="position:absolute" aria-hidden="true">'
-  + '<defs><pattern id="nodata-hatch" patternUnits="userSpaceOnUse" width="8" height="8" patternTransform="rotate(45)">'
-  + '<line x1="0" y1="0" x2="0" y2="8" stroke="#94a3b8" stroke-width="1.4"/>'
-  + '</pattern></defs></svg>');
+  + '<defs>'
+  + '<pattern id="nodata-hatch" patternUnits="userSpaceOnUse" width="8" height="8" patternTransform="rotate(45)">'
+  +   '<line x1="0" y1="0" x2="0" y2="8" stroke="#94a3b8" stroke-width="1.4"/>'
+  + '</pattern>'
+  // Post-launch consolidation marker for the lifecycle mask: districts
+  // whose tx volume crashed below 50% of the 3y baseline while RERA
+  // pipeline is still ≥50% (think Dubai Harbour — inventory sold out on
+  // off-plan, waiting for handover). Stripes are pure dark with
+  // transparent gaps so the vitality color underneath still shows.
+  + '<pattern id="post-launch-stripes" patternUnits="userSpaceOnUse" width="10" height="10" patternTransform="rotate(45)">'
+  +   '<line x1="0" y1="0" x2="0" y2="10" stroke="rgba(15,23,42,0.55)" stroke-width="2.2"/>'
+  + '</pattern>'
+  + '</defs></svg>');
 
 const map = L.map('map', { zoomControl: false }).setView([25.12, 55.25], 10);
 L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
@@ -572,6 +582,7 @@ const MASKS = {
       real_pipeline:  (typeof r.pipeline  === 'number') ? r.pipeline  : 0,
       real_units_active: r.units_active || 0,
       real_n_overdue:    r.n_overdue    || 0,
+      real_post_launch:  !!r.post_launch,
     }),
     legendKey: 'legend_lifecycle', popupCountKey: 'pp_trans_ytd', showVolume: false,
     metricKey: 'real_metric', scaleMode: 'quantile', allowZero: true,
@@ -586,8 +597,16 @@ const MASKS = {
       const fmtPct = v => (typeof v === 'number')
         ? ((v >= 0 ? '+' : '') + v.toFixed(1) + '%')
         : '—';
+      // Post-launch flag shows up as an extra row when the detector fires
+      // (high pipeline + crashed tx velocity). Tells the reader the low
+      // vitality number isn't "market dying", it's "inventory sold out,
+      // waiting for handover" — see scripts/build_lifecycle.py.
+      const phase = p.real_post_launch
+        ? `<div class="stat"><span class="k">${t('pp_lifecycle_phase')}</span><span class="v" style="font-weight:600;color:#0f172a">${t('pp_lifecycle_phase_post_launch')}</span></div>`
+        : '';
       return `
         <div class="stat"><span class="k">${t('pp_lifecycle_score')}</span><span class="v" style="font-weight:700">${p.real_metric >= 0 ? '+' : ''}${Math.round(p.real_metric)}</span></div>
+        ${phase}
         <div class="stat"><span class="k">${t('pp_lifecycle_price')}</span><span class="v">${fmtPct(pricePct)}</span></div>
         <div class="stat"><span class="k">${t('pp_lifecycle_rent')}</span><span class="v">${fmtPct(rentPct)}</span></div>
         <div class="stat"><span class="k">${t('pp_lifecycle_pipeline')}</span><span class="v">${pipeShare}%</span></div>
@@ -675,6 +694,7 @@ const _MASK_FIELDS = [
   'real_count','real_total_aed','real_med_price','real_med_ppsqm',
   'real_metric','real_med_then_ppsqm','real_n_sale','real_n_rent','real_fallback_yrs',
   'real_price_pct','real_rent_pct','real_pipeline','real_units_active','real_n_overdue',
+  'real_post_launch',
 ];
 // real_metric / real_fallback_yrs / real_price_pct / real_rent_pct stay nullable
 // so the popup can show '—' for missing components; everything else falls back
@@ -1432,6 +1452,9 @@ function _onSearchSelect(feat){
 }
 
 let choro;
+// Layer for the post-launch stripes overlay (lifecycle mask). Re-created
+// from scratch on every renderChoro so a mask switch removes it cleanly.
+let _postLaunchOverlay = null;
 // Color by sign of label ("+12%" green, "-3%" red, unsigned neutral)
 function _overlayColorFor(label) {
   const s = String(label);
@@ -1649,6 +1672,19 @@ function renderChoro(){
   }).addTo(map);
   choro.bringToBack();
 
+  // Post-launch overlay (lifecycle mask only). Sits on top of choro and
+  // adds diagonal stripes to districts in handover-consolidation phase.
+  // Pure decorative — clicks pass through to the choro polygon below.
+  if (_postLaunchOverlay) { map.removeLayer(_postLaunchOverlay); _postLaunchOverlay = null; }
+  if (currentMask === 'lifecycle') {
+    _postLaunchOverlay = L.geoJSON(GEOJSON, {
+      filter: f => f.properties.real_post_launch === true
+                   && (f._level !== undefined ? f._level >= minLevel : true),
+      interactive: false,
+      style: { weight: 0, fillColor: 'url(#post-launch-stripes)', fillOpacity: 1 },
+    }).addTo(map);
+  }
+
   // Legend
   const fmt = mask.legendFmt || METRIC_FMT.count;
   const title = t(mask.legendKey || 'ch_count');
@@ -1662,6 +1698,12 @@ function renderChoro(){
     html += `<div class="row"><span class="sw" style="background:${RAMP[cIdx]}"></span>${fmt(all[i])} – ${fmt(all[i+1])}</div>`;
   }
   html += `<div class="row"><span class="sw" style="background:repeating-linear-gradient(45deg,transparent,transparent 3px,#94a3b8 3px,#94a3b8 4px)"></span>${t('legend_no_data')}</div>`;
+  // Lifecycle mask gets an extra legend row explaining the dark-stripes
+  // overlay (post-launch districts). Hidden for other masks where the
+  // overlay isn't rendered.
+  if (currentMask === 'lifecycle') {
+    html += `<div class="row"><span class="sw" style="background:repeating-linear-gradient(45deg,transparent,transparent 3px,rgba(15,23,42,0.55) 3px,rgba(15,23,42,0.55) 5px)"></span>${t('legend_post_launch')}</div>`;
+  }
   document.getElementById('legend').innerHTML = html;
 
   _refreshOverlay(mask);

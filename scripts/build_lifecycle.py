@@ -64,6 +64,19 @@ GROWTH_CLIP_PP = 30.0  # ±30 pp deviation from Dubai avg → ±1.0 norm score
 ESTABLISHED_TX_THRESHOLD = 500  # ≥ this many lifetime tx → "established"
 ESTABLISHED_PIPELINE_CAP = 0.3  # cap pipeline when established + RERA-blind
 
+# Post-launch detector. Dubai Harbour at the time of writing had:
+#   tx 2023 baseline window: 3,552  (off-plan boom)
+#   tx 2026 last-year window:  532
+#   pipeline:                   66% (handover still ahead)
+# Same pattern in Dubai Creek Harbour, Dubai Maritime City, etc. The
+# formula's "no growth = late cycle" reading is wrong for these — they're
+# in a post-launch consolidation phase, not aging. Flag separately so the
+# map can render them with a distinct visual pattern (option Б from the
+# discussion: stripes overlay, vitality number unchanged).
+POST_LAUNCH_PIPELINE_MIN = 0.5      # still in active construction
+POST_LAUNCH_TX_DROP_RATIO = 0.5     # n_tx_1y < 50% of baseline (≥ 50% drop)
+POST_LAUNCH_BASELINE_MIN_OBS = 100  # avoid flagging tiny districts on noise
+
 IN_FLIGHT_STATES = {'ACTIVE', 'NOT_STARTED', 'PENDING', 'CONDITIONAL_ACTIVATING'}
 
 # Mirror dld_projects_merge_into_viewer.py aliases so polygon matching
@@ -391,6 +404,44 @@ def compute_rent_growth(polys):
     return out
 
 
+def compute_tx_velocity(polys):
+    """Recent vs baseline-window tx counts per polygon — needed by the
+    post-launch detector. Same Unit+Building filter as compute_sale_growth
+    so the volumes are comparable. The baseline window matches the 3y
+    growth baseline (±180 days around TODAY-3y) so a district's velocity
+    drop is read against the same reference period the price signal uses.
+    Returns {key: {'n_tx_1y': int, 'n_tx_baseline': int}}.
+    """
+    sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+    from _curated_sql import build_curated_sql
+    KEY_EXPR, _, _ = build_curated_sql()
+    con = duckdb.connect()
+    now_from = (TODAY - timedelta(days=365)).isoformat()
+    now_to = TODAY.isoformat()
+    base_center = TODAY - timedelta(days=365 * 3)
+    base_from = (base_center - timedelta(days=180)).isoformat()
+    base_to = (base_center + timedelta(days=180)).isoformat()
+    SALE_FILTER = "property_type_en IN ('Unit', 'Building')"
+    out = {}
+    for label, frm, to in (('n_tx_1y', now_from, now_to),
+                           ('n_tx_baseline', base_from, base_to)):
+        rows = con.execute(f"""
+            SELECT {KEY_EXPR} AS k, COUNT(*) AS n
+            FROM '{TX_PARQUET}'
+            WHERE area_name_en IS NOT NULL
+              AND {SALE_FILTER}
+              AND CAST(instance_date AS DATE) BETWEEN DATE '{frm}' AND DATE '{to}'
+            GROUP BY k
+        """).fetchdf()
+        for _, r in rows.iterrows():
+            out.setdefault(r['k'], {})[label] = int(r['n'])
+    # Fill zeros for missing labels so per-polygon math is safe.
+    for k, v in out.items():
+        v.setdefault('n_tx_1y', 0)
+        v.setdefault('n_tx_baseline', 0)
+    return out
+
+
 def compute_n_tx_historical(polys):
     """Tx count OLDER than 5 years per polygon — proxy for established stock.
     We need to distinguish two RERA-blind cases that look similar on the
@@ -463,8 +514,15 @@ def main():
     n_tx_historical = compute_n_tx_historical(polys)
     print(f'Polygons with historical tx: {len(n_tx_historical)}', file=sys.stderr)
 
+    # 3c. Recent vs baseline tx velocity — needed for the post-launch
+    # detector below. A district whose tx volume crashed but pipeline is
+    # still high is in handover-consolidation, not late cycle.
+    print('Querying tx velocity (1y vs baseline)...', file=sys.stderr)
+    tx_velocity = compute_tx_velocity(polys)
+
     # 4. Per-polygon vitality
     pipe_capped_n = 0
+    post_launch_n = 0
     out = {}
     for norm_key, name in polys.items():
         sale_rec = sale_growth.get(norm_key)
@@ -519,6 +577,25 @@ def main():
             rec['n_overdue'] = int(pipe_rec['n_overdue'])
         if capped_here:
             rec['pipeline_capped'] = True
+
+        # Post-launch detector — pipeline still alive but tx volume crashed
+        # from the 3y baseline. Means the district was an off-plan boom
+        # whose inventory is sold out and now waits for handover. Flag in
+        # the record; the viewer renders these polygons with a stripes
+        # overlay so the (genuinely-low) vitality number isn't read as
+        # "this market is dead" — it's "this market is on pause until
+        # buildings deliver".
+        vel = tx_velocity.get(norm_key)
+        if (pipe_rec
+                and pipe_share >= POST_LAUNCH_PIPELINE_MIN
+                and vel
+                and vel['n_tx_baseline'] >= POST_LAUNCH_BASELINE_MIN_OBS
+                and vel['n_tx_1y'] < POST_LAUNCH_TX_DROP_RATIO * vel['n_tx_baseline']):
+            rec['post_launch'] = True
+            rec['tx_1y'] = vel['n_tx_1y']
+            rec['tx_baseline'] = vel['n_tx_baseline']
+            post_launch_n += 1
+
         out[norm_key] = rec
 
     # Dubai rollup row (acts as the zero-line reference in the legend).
@@ -538,6 +615,7 @@ def main():
     pipe_covered = sum(1 for r in out.values() if r.get('n_active', 0) > 0)
     print(f'wrote {path} — {n_districts} districts, '
           f'pipeline data on {pipe_covered}, capped on {pipe_capped_n}, '
+          f'post-launch flagged on {post_launch_n}, '
           f'{size_kb} KB',
           file=sys.stderr)
 
