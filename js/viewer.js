@@ -761,7 +761,7 @@ function setView(view, opts) {
 // Each SEO mask owns two SEO landings: map (/<mask>/) and table
 // (/<mask>/table/). Switching mask or view via dropdown / footer pills
 // updates the URL so deep links + Back/Forward both work.
-const _SEO_MASKS = ['sales', 'rents', 'growth', 'payback'];
+const _SEO_MASKS = ['sales', 'rents', 'growth', 'payback', 'lifecycle'];
 
 function _isSeoMask(m) { return _SEO_MASKS.indexOf(m) !== -1; }
 

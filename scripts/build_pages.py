@@ -176,6 +176,52 @@ PAGES = {
             zh='迪拜房产价格涨幅',
         ),
     ),
+    'lifecycle': dict(
+        initial_mask='lifecycle',
+        initial_period='all',
+        og_image='/og/lifecycle.png',
+        title=dict(
+            ru='Жизненный цикл рынка недвижимости Дубая по районам — DXBCompass',
+            en='Dubai real estate market lifecycle by district — DXBCompass',
+            ar='دورة سوق العقارات في دبي حسب الحي — DXBCompass',
+            hi='जिले के अनुसार दुबई रियल एस्टेट बाज़ार जीवन-चक्र — DXBCompass',
+            zh='迪拜各社区房产市场生命周期 — DXBCompass',
+        ),
+        desc=dict(
+            ru='Интерактивная карта стадии рынка по районам Дубая: композитный индекс '
+               'роста цены, роста аренды и доли в стройке относительно среднего по '
+               'городу. + = ранняя/растущая фаза, − = зрелая/поздняя.',
+            en='Interactive map of market phase across Dubai districts: composite score '
+               'of price growth, rent growth and construction pipeline share relative '
+               'to the city-wide average. + = early/growing phase, − = mature/late.',
+            ar='خريطة تفاعلية لمرحلة السوق عبر أحياء دبي: مؤشر مركّب لنمو السعر ونمو '
+               'الإيجار ونصيب البناء مقارنةً بمتوسط المدينة. + = مبكرة/نامية، − = ناضجة/متأخرة.',
+            hi='दुबई के जिलों में बाज़ार चरण का इंटरैक्टिव मानचित्र: मूल्य वृद्धि, किराया '
+               'वृद्धि और निर्माण पाइपलाइन के संयुक्त सूचकांक का शहर-व्यापी औसत के सापेक्ष। '
+               '+ = प्रारंभिक/वर्धमान, − = परिपक्व/विलम्बित।',
+            zh='迪拜各社区市场阶段交互地图：相对城市平均水平的价格涨幅、租金涨幅与在建占比的复合指数。'
+               '+ = 早期/增长，− = 成熟/晚期。',
+        ),
+        keywords=dict(
+            ru='жизненный цикл рынка Дубай, стадия рынка недвижимости Дубай, рост цены Дубай, '
+               'рост аренды Дубай, стройка Дубай, перегретый район Дубай, ранняя стадия Дубай',
+            en='Dubai market lifecycle, Dubai real estate phase, Dubai price growth, '
+               'Dubai rent growth, Dubai pipeline, overheated district Dubai, early-stage Dubai',
+            ar='دورة سوق دبي، مرحلة سوق العقارات في دبي، نمو السعر في دبي، نمو الإيجار في دبي، '
+               'البناء في دبي، حي مفرط الحرارة في دبي، المرحلة المبكرة في دبي',
+            hi='दुबई बाज़ार जीवन-चक्र, दुबई रियल एस्टेट चरण, दुबई मूल्य वृद्धि, दुबई किराया वृद्धि, '
+               'दुबई पाइपलाइन, दुबई अति-गरम जिला, दुबई प्रारंभिक चरण',
+            zh='迪拜市场生命周期, 迪拜房地产阶段, 迪拜价格涨幅, 迪拜租金涨幅, '
+               '迪拜在建, 迪拜过热社区, 迪拜早期阶段',
+        ),
+        dataset_name=dict(
+            ru='Жизненный цикл рынка недвижимости в Дубае',
+            en='Dubai real estate market lifecycle',
+            ar='دورة سوق العقارات في دبي',
+            hi='दुबई रियल एस्टेट बाज़ार जीवन-चक्र',
+            zh='迪拜房产市场生命周期',
+        ),
+    ),
     'payback': dict(
         initial_mask='payback',
         initial_period='1br',

@@ -35,7 +35,7 @@ from _seo_config import BASE_URL  # noqa: E402  (path manipulation above)
 # Top-level dirs that carry indexable index.html files.
 TOP_DIRS = (
     # Mask landings + district sub-tree
-    'sales', 'rents', 'growth', 'payback',
+    'sales', 'rents', 'growth', 'payback', 'lifecycle',
     # POI category landings
     'metro', 'schools', 'universities', 'medical', 'mosques', 'construction', 'malls',
 )
