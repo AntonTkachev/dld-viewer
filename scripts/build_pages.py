@@ -19,6 +19,7 @@ Per page, swaps:
   - Bootstrap script: window.__INITIAL_MASK__ / _PERIOD__ / _VIEW__ / _LANG__
   - Hreflang block listing all 4 language variants
 """
+import hashlib
 import json
 import os, re, sys
 
@@ -28,6 +29,23 @@ from _seo_config import BASE_URL
 
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 SRC  = os.path.join(ROOT, 'template.html')
+
+
+def _content_hash(path, length=8):
+    """Short content hash of a file — appended as ?v=… so the browser
+    refetches the script after the file changes. Cache-busting is critical
+    here: viewer.js and i18n.js are cached for 4h by Cloudflare and longer
+    by the browser, so a deployed JS change can take hours to reach a
+    user's tab without ?v=."""
+    h = hashlib.sha256()
+    with open(path, 'rb') as f:
+        for chunk in iter(lambda: f.read(65536), b''):
+            h.update(chunk)
+    return h.hexdigest()[:length]
+
+
+_VIEWER_VER = _content_hash(os.path.join(ROOT, 'js', 'viewer.js'))
+_I18N_VER   = _content_hash(os.path.join(ROOT, 'js', 'i18n.js'))
 
 LANGUAGES = ('ru', 'en', 'ar', 'hi', 'zh')
 VIEWS = ('map', 'table')
@@ -412,10 +430,13 @@ def build(page_key, cfg, view, lang):
     s = re.sub(r'<link rel="canonical"[^>]*>\n?', '', s, count=1)
     s = re.sub(r'<meta name="description"[^>]*>\n?', '', s, count=1)
     s = re.sub(r'<meta name="keywords"[^>]*>\n?', '', s, count=1)
-    # Strip every og:* / twitter:* / og:image:* tag from the template so the
-    # head_block injection below doesn't end up duplicating them.
+    # Strip every og:* / twitter:* / og:image:* / hreflang tag from the
+    # template so the head_block injection below doesn't end up duplicating
+    # them. hreflang in the template has stale RU URL (pre-/ru/-migration);
+    # _hreflang_block emits the fresh values.
     s = re.sub(r'<meta property="og:[^"]+"[^>]*>\n?', '', s)
     s = re.sub(r'<meta name="twitter:[^"]+"[^>]*>\n?', '', s)
+    s = re.sub(r'<link rel="alternate" hreflang="[^"]+"[^>]*>\n?', '', s)
     s = re.sub(r'<title>[^<]*</title>', head_block, s, count=1)
 
     # Force <html lang="..." dir="..."> to match this page's language —
@@ -428,8 +449,8 @@ def build(page_key, cfg, view, lang):
 
     s = s.replace('href="css/viewer.css"',  f'href="{asset_prefix}css/viewer.css"')
     s = s.replace('href="favicon.svg"',     f'href="{asset_prefix}favicon.svg"')
-    s = s.replace('src="js/i18n.js"',       f'src="{asset_prefix}js/i18n.js"')
-    s = s.replace('src="js/viewer.js"',     f'src="{asset_prefix}js/viewer.js"')
+    s = s.replace('src="js/i18n.js"',       f'src="{asset_prefix}js/i18n.js?v={_I18N_VER}"')
+    s = s.replace('src="js/viewer.js"',     f'src="{asset_prefix}js/viewer.js?v={_VIEWER_VER}"')
 
     boot = (
         '<script>'
