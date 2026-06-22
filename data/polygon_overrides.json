@@ -347,7 +347,7 @@
         {
           "name": "Dubai World Central",
           "name_ar": "دبي وورلد سنترال",
-          "osm_polygon": "Dubai South",
+          "osm_polygon": "Dubai World Central",
           "master_projects": ["Dubai World Central"]
         },
         {
