@@ -27,7 +27,7 @@ from collections import Counter, defaultdict
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parent.parent
-HTML = ROOT / 'index.html'
+HTML = ROOT / 'template.html'
 SRC  = ROOT / 'data' / 'dld_projects.csv.gz'
 
 # In-flight = projects still in some "not yet done" state. Note: we use the

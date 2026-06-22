@@ -475,7 +475,7 @@ print(f'wrote {CHOROPLETH_JS}', file=sys.stderr)
 print(f'  entries: {len(thin)}, size: {os.path.getsize(CHOROPLETH_JS):,} bytes, hash: {CHOROPLETH_HASH}', file=sys.stderr)
 
 # ─── Splice into index.html ─────────────────────────────────────
-HTML = os.path.join(ROOT, 'index.html')
+HTML = os.path.join(ROOT, 'template.html')
 print(f'patching {HTML}: const RENT_AGGREGATES → <script src ?v={CHOROPLETH_HASH}>', file=sys.stderr)
 with open(HTML, encoding='utf-8') as f:
     lines = f.readlines()

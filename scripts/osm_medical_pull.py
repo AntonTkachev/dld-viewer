@@ -25,7 +25,7 @@ import time
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parent.parent
-HTML = ROOT / 'index.html'
+HTML = ROOT / 'template.html'
 OUT  = ROOT / 'data' / 'osm_medical.json'
 URL  = 'https://overpass-api.de/api/interpreter'
 UA   = 'dld-viewer/1'

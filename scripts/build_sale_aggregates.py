@@ -659,7 +659,7 @@ print(f'  entries: {len(thin)}, size: {os.path.getsize(CHOROPLETH_JS):,} bytes, 
 # block, load the external script, and reopen — classic scripts share
 # the global lexical scope, so subsequent `const RENT_AGGREGATES = …`
 # still works as before.
-HTML = os.path.join(ROOT, 'index.html')
+HTML = os.path.join(ROOT, 'template.html')
 print(f'patching {HTML}: const AGGREGATES → <script src ?v={CHOROPLETH_HASH}>', file=sys.stderr)
 with open(HTML, encoding='utf-8') as f:
     lines = f.readlines()

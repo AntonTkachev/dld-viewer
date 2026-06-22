@@ -59,7 +59,7 @@ LINES = [
 ]
 NAMES = [name for name, _ in INLINES]
 
-for fname in ('index.html',):
+for fname in ('template.html',):
     path = os.path.join(ROOT, fname)
     if not os.path.exists(path):
         print(f'skip: {fname}', file=sys.stderr); continue

@@ -26,7 +26,7 @@ import sys
 import unicodedata
 
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-SRC = os.path.join(ROOT, 'index.html')
+SRC = os.path.join(ROOT, 'template.html')
 GEO = os.path.join(ROOT, '_data_communities.geojson')
 
 # Single source of truth for BASE_URL (env-overridable for dev builds).
@@ -424,7 +424,7 @@ def fmt_cell(val, kind, lang):
 # ===================== HREFLANG / SWITCHERS =====================
 
 def lang_prefix(lang):
-    return '' if lang == 'ru' else '/' + lang
+    return '/' + lang
 
 
 def page_url(lang, slug):
@@ -695,8 +695,7 @@ def build_page(cat, rows_with_district, lang):
         nav_map=c['nav_map'],
     )
 
-    out_dir = ROOT if lang == 'ru' else os.path.join(ROOT, lang)
-    out_dir = os.path.join(out_dir, slug)
+    out_dir = os.path.join(ROOT, lang, slug)
     os.makedirs(out_dir, exist_ok=True)
     out_path = os.path.join(out_dir, 'index.html')
     with open(out_path, 'w', encoding='utf-8') as f:

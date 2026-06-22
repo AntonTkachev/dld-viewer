@@ -41,7 +41,7 @@ TOP_DIRS = (
     # Content pages
     'faq',
 )
-LANG_DIRS = ('en', 'ar', 'hi', 'zh')
+LANG_DIRS = ('ru', 'en', 'ar', 'hi', 'zh')
 
 
 def is_noindex_stub(rel_path):
