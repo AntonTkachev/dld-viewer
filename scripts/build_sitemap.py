@@ -21,6 +21,7 @@ Sitemap caps at 50K URLs / 50 MB per file (sitemaps protocol). Current site
 sits ~10K URLs — well under the cap, so we ship one flat file. If the URL
 count ever crosses 50K, swap to a sitemapindex.
 """
+import json
 import os
 import sys
 from datetime import datetime, timezone
@@ -43,11 +44,56 @@ TOP_DIRS = (
 )
 LANG_DIRS = ('ru', 'en', 'ar', 'hi', 'zh')
 
+# SEO whitelist: only top-N popular + lifecycle districts get sitemap'd.
+# Everything else gets noindex (build_district_pages.py) — Google has finite
+# crawl budget for a new domain; spreading it across 27K thin variants
+# starves the few pages that could actually rank.
+_WHITELIST_PATH = os.path.join(ROOT, 'data', 'seo_whitelist.json')
+with open(_WHITELIST_PATH) as _f:
+    _wl = json.load(_f)
+SALES_WHITELIST = set(_wl['sales'])
+RENTS_WHITELIST = set(_wl['rents'])
+PERIOD_EXCEPTIONS = set(_wl.get('period_subpage_exceptions', []))
+
 
 def is_noindex_stub(rel_path):
     """`/<lang>/index.html` are 0-second redirects with noindex — skip."""
     parts = [p for p in rel_path.split(os.sep) if p and p != 'index.html']
     return len(parts) == 1 and parts[0] in LANG_DIRS
+
+
+def is_whitelisted(rel_path):
+    """Decide if a URL belongs in the sitemap.
+
+    Rule of thumb: keep landing pages (mask landings, content, FAQ, blog).
+    For per-district pages keep only main pages of whitelisted slugs;
+    drop period subpages (1y/3y/5y/10y/deals/projects/recent) entirely
+    EXCEPT URLs in PERIOD_EXCEPTIONS (those Google already indexed —
+    keep them in sitemap so the existing index entry doesn't decay).
+    """
+    parts = [p for p in rel_path.split(os.sep) if p and p != 'index.html']
+    # Old-style RU paths (no lang prefix) — skip wholesale; redirects exist.
+    if parts and parts[0] not in LANG_DIRS:
+        return False
+    if len(parts) < 2:
+        return True  # /<lang>/  — but is_noindex_stub already filtered these
+    lang, top = parts[0], parts[1]
+    if top not in ('sales', 'rents'):
+        return True  # mask landings, content pages, FAQ, blog, table variants
+    if len(parts) == 2:
+        return True  # /<lang>/sales/ or /<lang>/rents/ — the mask landing
+    # Exceptions take precedence (e.g. an already-indexed period subpage
+    # on a district whose mode-main is below the whitelist threshold).
+    url_path = '/' + '/'.join(parts) + '/'
+    if url_path in PERIOD_EXCEPTIONS:
+        return True
+    slug = parts[2]
+    whitelist = SALES_WHITELIST if top == 'sales' else RENTS_WHITELIST
+    if slug not in whitelist:
+        return False  # long-tail district — gets noindex, no sitemap
+    if len(parts) == 3:
+        return True  # /<lang>/sales/<whitelisted-slug>/
+    return False  # period subpage on whitelisted district — not in sitemap
 
 
 def iter_index_files():
@@ -91,6 +137,8 @@ def main():
                   # preserving the per-file lastmod alignment.
     for rel in iter_index_files():
         if is_noindex_stub(rel):
+            continue
+        if not is_whitelisted(rel):
             continue
         url = url_for(rel)
         if url in seen:

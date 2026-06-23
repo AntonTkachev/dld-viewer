@@ -35,6 +35,39 @@ TPL_LIST = os.path.join(ROOT, 'templates', 'district-list.html')
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 from _seo_config import BASE_URL
 
+# SEO indexation whitelist — only top/lifecycle districts are indexable;
+# everything else (long-tail district mains + ALL period/list subpages) gets
+# `<meta name="robots" content="noindex,follow">` so Google's crawl budget
+# is spent on pages that can actually rank. Keep in sync with
+# scripts/build_sitemap.py.
+with open(os.path.join(ROOT, 'data', 'seo_whitelist.json')) as _f:
+    _SEO_WL = json.load(_f)
+SALES_WHITELIST = set(_SEO_WL['sales'])
+RENTS_WHITELIST = set(_SEO_WL['rents'])
+PERIOD_EXCEPTIONS = set(_SEO_WL.get('period_subpage_exceptions', []))
+NOINDEX_META = '<meta name="robots" content="noindex,follow">'
+
+
+def _should_noindex(mode, slug, lang, *, sub_slug=None, period_code=None):
+    """Return True iff this URL must carry the noindex meta tag.
+
+    - District main page (period_code='all', no sub_slug): noindex unless
+      `slug` is on the whitelist for this mode.
+    - Period subpage (period_code in 1y/3y/5y/10y): always noindex, UNLESS
+      the resolved URL appears in PERIOD_EXCEPTIONS (pre-indexed pages we
+      don't want Google to deindex).
+    - List subpage (projects/deals/recent): always noindex — list views are
+      thin compared to the district main page.
+    """
+    wl = SALES_WHITELIST if mode == 'sale' else RENTS_WHITELIST
+    if sub_slug is not None:  # /<lang>/<sales|rents>/<slug>/<list-frag>/
+        return True
+    if period_code and period_code != 'all':
+        url_path = (f'/{lang}/{"sales" if mode == "sale" else "rents"}/'
+                    f'{slug}/{period_code}/')
+        return url_path not in PERIOD_EXCEPTIONS
+    return slug not in wl
+
 # DISTRICTS = None  → build every district present in AGGREGATES / RENT_AGGREGATES.
 # DISTRICTS = ('business bay',) for pilot work on a single district.
 DISTRICTS = None
@@ -847,7 +880,9 @@ def build_list_seo_head(mode, name, slug, list_slug, list_h1, list_lede, n_items
     ]
     breadcrumb_ld = _breadcrumb_ld(crumbs)
     og_image = f'{BASE_URL}/og/cover.png'
-    return f'''<title>{title}</title>
+    # List subpages (projects/deals/recent) are always thin views — noindex.
+    robots = NOINDEX_META + '\n'
+    return f'''{robots}<title>{title}</title>
 <meta name="description" content="{html_escape(desc)}">
 <link rel="canonical" href="{canon}">
 {hreflang}
@@ -1173,7 +1208,10 @@ def build_seo_head(mode, name, slug, n, period_code, lang):
     breadcrumb_ld = _breadcrumb_ld(crumbs)
 
     og_image = f'{BASE_URL}/og/cover.png'
-    return f'''<title>{html_escape(title)}</title>
+    robots = (NOINDEX_META + '\n'
+              if _should_noindex(mode, slug, lang, period_code=period_code)
+              else '')
+    return f'''{robots}<title>{html_escape(title)}</title>
 <meta name="description" content="{html_escape(desc)}">
 <link rel="canonical" href="{canon}">
 {hreflang}
