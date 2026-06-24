@@ -34,11 +34,13 @@ phase "2. Sales + rents 'all' choropleth shards"
 $PY scripts/build_sale_aggregates.py
 $PY scripts/build_rent_aggregates.py
 
-phase "3. Period shards (sales, rents, growth, payback)"
+phase "3. Period shards (sales, rents, growth, payback, yearly_sell, yearly_rent)"
 $PY scripts/build_transactions_map.py
 $PY scripts/build_rents_map.py
 $PY scripts/build_growth_map.py
 $PY scripts/build_payback_map.py
+$PY scripts/build_room_prices_map.py
+$PY scripts/build_yearly_rent_map.py
 
 phase "4. Lifecycle classifier (separate mask, separate inline)"
 $PY scripts/build_lifecycle.py
