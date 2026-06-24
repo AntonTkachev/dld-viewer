@@ -179,7 +179,8 @@ function _navigateToLang(targetLang) {
 }
 function _districtModePrefix(mask) {
   // Per-district pages exist only for sales + rents. growth/payback land on /sales/.
-  return (mask === 'rents') ? 'rents' : 'sales';
+  // yearly_rent is a bedroom-class breakdown of rentals → rents detail pages.
+  return (mask === 'rents' || mask === 'yearly_rent') ? 'rents' : 'sales';
 }
 function _districtHrefForKey(key, name, legacyKey, masterKey) {
   if (!key || key === '__dubai__') return _langUrlPrefix() + '/';
@@ -348,6 +349,8 @@ const _RENTS_P   = (typeof RENTS_PERIODS   !== 'undefined') ? RENTS_PERIODS   : 
 const _GROWTH_P  = (typeof GROWTH_PERIODS  !== 'undefined') ? GROWTH_PERIODS  : {};
 const _LIFECYCLE = (typeof LIFECYCLE       !== 'undefined') ? LIFECYCLE       : {};
 const _PAYBACK_P = (typeof PAYBACK_PERIODS !== 'undefined') ? PAYBACK_PERIODS : {};
+const _YSELL_P   = (typeof YEARLY_SELL_PERIODS !== 'undefined') ? YEARLY_SELL_PERIODS : {};
+const _YRENT_P   = (typeof YEARLY_RENT_PERIODS !== 'undefined') ? YEARLY_RENT_PERIODS : {};
 
 // Stub aggregates for split sub-zone keys that don't exist in the rich
 // legacy AGGREGATES bucket — keeps the "Open details" path alive.
@@ -575,6 +578,78 @@ const MASKS = {
       { key: 'rent_ppsqm', labelKey: 'tv_col_rent_ppsqm',  type: 'int', width: '15%' },
       { key: 'n_sale',     labelKey: 'tv_col_n_sale_2y',   type: 'int', width: '14%' },
       { key: 'n_rent',     labelKey: 'tv_col_n_rent_2y',   type: 'int', width: '14%' },
+    ],
+  },
+  yearly_sell: {
+    labelKey: 'mask_yearly_sell', descKey: 'mask_yearly_sell_desc',
+    periods: ['studio','1br','2br','3br','4br_plus','villa'], defaultPeriod: '1br',
+    data: {
+      'studio':   _YSELL_P['studio']   || {},
+      '1br':      _YSELL_P['1br']      || {},
+      '2br':      _YSELL_P['2br']      || {},
+      '3br':      _YSELL_P['3br']      || {},
+      '4br_plus': _YSELL_P['4br_plus'] || {},
+      'villa':    _YSELL_P['villa']    || {},
+    },
+    pluck: r => ({
+      real_count: r.n || 0,
+      real_total_aed: 0,
+      real_med_price: r.med || 0,
+      real_med_ppsqm: r.med_ppsqm || 0,
+      real_metric: r.med || null,
+    }),
+    legendKey: 'legend_yearly_sell', popupCountKey: 'pp_trans_ytd', showVolume: false,
+    metricKey: 'real_metric', scaleMode: 'quantile', allowZero: true,
+    periodLabelKey: 'mask_room_label',
+    overlay: r => (typeof r.med !== 'number' || !r.med) ? null
+                  : (r.med >= 1e6 ? (r.med/1e6).toFixed(1) + 'M' : Math.round(r.med/1e3) + 'K'),
+    legendFmt: v => v >= 1e6 ? (v/1e6).toFixed(1) + 'M' : Math.round(v/1e3) + 'K',
+    popupRows: (p, t) => (p.real_metric === null || p.real_metric === undefined) ? '' : `
+      <div class="stat"><span class="k">${t('pp_median')}</span><span class="v" style="font-weight:700">${(p.real_med_price/1e6).toFixed(2)} ${t('abbr_m')}</span></div>
+      <div class="stat"><span class="k">${t('pp_sale_ppsqm')}</span><span class="v">${(p.real_med_ppsqm||0).toLocaleString('ru-RU')} AED/м²</span></div>
+      <div class="stat"><span class="k">${t('pp_n_sale_1y')}</span><span class="v">${(p.real_count||0).toLocaleString('ru-RU')}</span></div>
+    `,
+    tableColumns: [
+      { key: 'name',      labelKey: 'tv_col_district',  type: 'str',     width: '34%' },
+      { key: 'med',       labelKey: 'tv_col_median',    type: 'aed_big', width: '22%', defaultSort: true, defaultSortDir: 'desc' },
+      { key: 'med_ppsqm', labelKey: 'tv_col_ppsqm',     type: 'int',     width: '22%' },
+      { key: 'n',         labelKey: 'tv_col_n_sale_1y', type: 'int',     width: '22%' },
+    ],
+  },
+  yearly_rent: {
+    labelKey: 'mask_yearly_rent', descKey: 'mask_yearly_rent_desc',
+    periods: ['studio','1br','2br','3br','4br_plus','villa'], defaultPeriod: '1br',
+    data: {
+      'studio':   _YRENT_P['studio']   || {},
+      '1br':      _YRENT_P['1br']      || {},
+      '2br':      _YRENT_P['2br']      || {},
+      '3br':      _YRENT_P['3br']      || {},
+      '4br_plus': _YRENT_P['4br_plus'] || {},
+      'villa':    _YRENT_P['villa']    || {},
+    },
+    pluck: r => ({
+      real_count: r.n || 0,
+      real_total_aed: 0,
+      real_med_price: r.med || 0,
+      real_med_ppsqm: r.med_ppsqm || 0,
+      real_metric: r.med || null,
+    }),
+    legendKey: 'legend_yearly_rent', popupCountKey: 'pp_n_rent_1y', showVolume: false,
+    metricKey: 'real_metric', scaleMode: 'quantile', allowZero: true,
+    periodLabelKey: 'mask_room_label',
+    overlay: r => (typeof r.med !== 'number' || !r.med) ? null
+                  : (r.med >= 1e6 ? (r.med/1e6).toFixed(1) + 'M' : Math.round(r.med/1e3) + 'K'),
+    legendFmt: v => v >= 1e6 ? (v/1e6).toFixed(1) + 'M' : Math.round(v/1e3) + 'K',
+    popupRows: (p, t) => (p.real_metric === null || p.real_metric === undefined) ? '' : `
+      <div class="stat"><span class="k">${t('pp_median_annual')}</span><span class="v" style="font-weight:700">${(p.real_med_price||0).toLocaleString('ru-RU')} AED</span></div>
+      <div class="stat"><span class="k">${t('pp_rent_ppsqm')}</span><span class="v">${(p.real_med_ppsqm||0).toLocaleString('ru-RU')} AED/м²/${t('unit_year_short')}</span></div>
+      <div class="stat"><span class="k">${t('pp_n_rent_1y')}</span><span class="v">${(p.real_count||0).toLocaleString('ru-RU')}</span></div>
+    `,
+    tableColumns: [
+      { key: 'name',      labelKey: 'tv_col_district',      type: 'str',     width: '34%' },
+      { key: 'med',       labelKey: 'tv_col_median_annual', type: 'aed_big', width: '22%', defaultSort: true, defaultSortDir: 'desc' },
+      { key: 'med_ppsqm', labelKey: 'tv_col_ppsqm_year',    type: 'int',     width: '22%' },
+      { key: 'n',         labelKey: 'tv_col_n_rent_1y',     type: 'int',     width: '22%' },
     ],
   },
 };

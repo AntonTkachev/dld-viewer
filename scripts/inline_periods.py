@@ -6,6 +6,8 @@ Reads:
   - rents/data/{1y,3y,5y,10y,all}.json         → RENTS_PERIODS
   - growth/data/{1y,3y,5y,10y}.json            → GROWTH_PERIODS
   - payback/data/{studio,1br,2br,3br,4br_plus}.json → PAYBACK_PERIODS
+  - yearly_sell/data/{studio,1br,2br,3br,4br_plus,villa}.json → YEARLY_SELL_PERIODS
+  - yearly_rent/data/{studio,1br,2br,3br,4br_plus,villa}.json → YEARLY_RENT_PERIODS
 
 Inserts/replaces one self-contained <script data-inlined="periods"> block
 containing all four `const ..._PERIODS = ...` lines, anchored right after
@@ -45,12 +47,18 @@ tx_periods      = load_dir('transactions', ('1y','3y','5y','10y','all'))
 rents_periods   = load_dir('rents',        ('1y','3y','5y','10y','all'))
 growth_periods  = load_dir('growth',       ('1y','3y','5y','10y'))
 payback_periods = load_dir('payback',      ('studio','1br','2br','3br','4br_plus'))
+yearly_sell_periods = load_dir('yearly_sell',
+                               ('studio','1br','2br','3br','4br_plus','villa'))
+yearly_rent_periods = load_dir('yearly_rent',
+                               ('studio','1br','2br','3br','4br_plus','villa'))
 
 INLINES = [
-    ('TX_PERIODS',      tx_periods),
-    ('RENTS_PERIODS',   rents_periods),
-    ('GROWTH_PERIODS',  growth_periods),
-    ('PAYBACK_PERIODS', payback_periods),
+    ('TX_PERIODS',          tx_periods),
+    ('RENTS_PERIODS',       rents_periods),
+    ('GROWTH_PERIODS',      growth_periods),
+    ('PAYBACK_PERIODS',     payback_periods),
+    ('YEARLY_SELL_PERIODS', yearly_sell_periods),
+    ('YEARLY_RENT_PERIODS', yearly_rent_periods),
 ]
 
 LINES = [
