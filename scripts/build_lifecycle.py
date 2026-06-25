@@ -95,9 +95,21 @@ PHASE_RISING_MIN  = 0.40   # vitality ≥ this → 'rising' (top bucket)
 PHASE_ACTIVE_MIN  = 0.10   # vitality ≥ this → 'active'
 PHASE_MATURE_MIN  = -0.20  # vitality ≥ this → 'mature'; below → 'lagging'
 
-def classify_phase(vitality, post_launch):
-    """Map a vitality score to a named phase. post_launch takes precedence
-    over numeric ranges — those districts are categorically different."""
+# Emerging detector — districts where the residential market hasn't opened
+# for resale yet. Directly reads DLD's `reg_type_en` flag rather than going
+# through pipeline/rent proxies. A district where 85%+ of last-12mo Sales
+# tagged 'Off-Plan Properties' (vs 'Existing Properties') is, by definition,
+# in launch phase — buyers are speculating on buildings that don't exist yet.
+# Categorical flag overrides commercial filter, spec_penalty and numeric bucket.
+EMERGING_OFFPLAN_SHARE_MIN = 0.85
+EMERGING_OFFPLAN_OBS_MIN   = 100
+
+def classify_phase(vitality, post_launch, emerging=False):
+    """Map a vitality score to a named phase. Categorical flags take
+    precedence over numeric ranges in this order: emerging > overheated >
+    numeric. Commercial is filtered out before this function is called."""
+    if emerging:
+        return 'emerging'
     if vitality is None:
         return None
     if post_launch:
@@ -585,6 +597,40 @@ def compute_residential_share(polys):
     return out
 
 
+def compute_offplan_share(polys):
+    """Per-polygon off-plan share of residential sales over last 12 months.
+    Uses DLD's reg_type_en flag — the authoritative marker that a sale was
+    pre-registration (Off-Plan Properties) vs ready-to-move (Existing
+    Properties). 85%+ off-plan with ≥100 transactions = the district is
+    still entirely in launch phase; resale market hasn't opened.
+    Returns {canonical_key: {'off_plan': int, 'total': int, 'share': float}}
+    only for polygons that cleared EMERGING_OFFPLAN_OBS_MIN off-plan sales.
+    """
+    sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+    from _curated_sql import build_curated_sql
+    KEY_EXPR, _, _ = build_curated_sql()
+    con = duckdb.connect()
+    since = (TODAY - timedelta(days=365)).isoformat()
+    rows = con.execute(f"""
+        SELECT {KEY_EXPR} AS k,
+               COUNT(*) FILTER (WHERE reg_type_en = 'Off-Plan Properties') AS op,
+               COUNT(*) AS total
+        FROM '{TX_PARQUET}'
+        WHERE area_name_en IS NOT NULL
+          AND trans_group_en = 'Sales'
+          AND property_type_en IN ('Unit', 'Building', 'Villa')
+          AND CAST(instance_date AS DATE) >= '{since}'
+        GROUP BY k
+        HAVING COUNT(*) FILTER (WHERE reg_type_en = 'Off-Plan Properties')
+               >= {EMERGING_OFFPLAN_OBS_MIN}
+    """).fetchdf()
+    out = {}
+    for _, r in rows.iterrows():
+        op = int(r['op']); total = int(r['total'])
+        out[r['k']] = {'off_plan': op, 'total': total, 'share': op / total}
+    return out
+
+
 def clip(x, lo, hi):
     return max(lo, min(hi, x))
 
@@ -647,11 +693,26 @@ def main():
           f'{n_commercial} flagged commercial (<{int(COMMERCIAL_RESIDENTIAL_MIN*100)}% residential)',
           file=sys.stderr)
 
+    # 3e. Off-plan share — Emerging flag detector. Runs BEFORE the commercial
+    # filter and BEFORE spec_penalty: launch districts whose residential
+    # rentals look commercial only because nothing has been built yet (Wadi
+    # Al Safa 4, Ras Al Khor Industrial First, Al Safouh Second) — and Palm
+    # Jabal Ali, the original target of spec_penalty — flip to 'emerging'
+    # here rather than getting silently dropped or pushed to lagging.
+    print('Computing off-plan share (Emerging detector)...', file=sys.stderr)
+    offplan = compute_offplan_share(polys)
+    n_emerging_candidates = sum(
+        1 for v in offplan.values() if v['share'] >= EMERGING_OFFPLAN_SHARE_MIN)
+    print(f'Off-plan-dominant candidates (≥{int(EMERGING_OFFPLAN_SHARE_MIN*100)}% AND '
+          f'≥{EMERGING_OFFPLAN_OBS_MIN} sales): {n_emerging_candidates}',
+          file=sys.stderr)
+
     # 4. Per-polygon vitality
     pipe_capped_n = 0
     post_launch_n = 0
     spec_penalty_n = 0
     commercial_n = 0
+    emerging_n = 0
     out = {}
     # Iterate the canonical {lower(name) → display_name} map so each polygon
     # is emitted under the lower-key viewer.js will look it up by.
@@ -660,20 +721,29 @@ def main():
         rent_rec = rent_growth.get(poly_key)
         pipe_rec = pipeline.get(poly_key)
 
+        # Emerging detector — checked FIRST so launch districts override both
+        # commercial filter and spec_penalty (those rules misclassify the
+        # launch phase as failure / non-residential).
+        op_rec = offplan.get(poly_key)
+        is_emerging = (op_rec is not None
+                       and op_rec['off_plan'] >= EMERGING_OFFPLAN_OBS_MIN
+                       and op_rec['share']    >= EMERGING_OFFPLAN_SHARE_MIN)
+
         # Commercial-dominant districts don't belong on the residential
         # lifecycle map — skip them entirely. The absolute floor spares
         # major mixed markets like Business Bay (37.6% but 16K Flat
         # rentals/year). Future: a separate office-market mask will
-        # reuse this detection.
+        # reuse this detection. Emerging beats commercial.
         res_rec = residential.get(poly_key)
-        if (res_rec
+        if (not is_emerging
+                and res_rec
                 and res_rec['ratio'] < COMMERCIAL_RESIDENTIAL_MIN
                 and res_rec['res'] < COMMERCIAL_RES_ABSOLUTE_FLOOR):
             commercial_n += 1
             continue
 
         # Skip polygons with no signals at all — choropleth will leave them blank.
-        if not sale_rec and not rent_rec and not pipe_rec:
+        if not is_emerging and not sale_rec and not rent_rec and not pipe_rec:
             continue
         sg = sale_rec['growth_pct'] if sale_rec else None
         rg = rent_rec['growth_pct'] if rent_rec else None
@@ -700,8 +770,10 @@ def main():
         # occupancy uptake. Drop the pipeline boost AND treat rent absence
         # as worst-case rather than neutral. Brand-new districts are protected:
         # they have price_pct=null (not strictly negative), so this doesn't fire.
+        # Emerging districts also skip — their no-rent / shifting-median is
+        # the SIGNAL, not a failure (residences just aren't built yet).
         spec_penalty = False
-        if rg is None and sg is not None and sg < 0:
+        if not is_emerging and rg is None and sg is not None and sg < 0:
             pipe_for_formula = 0.0
             rent_norm_for_formula = -1.0
             spec_penalty = True
@@ -730,6 +802,11 @@ def main():
             rec['pipeline_capped'] = True
         if spec_penalty:
             rec['spec_penalty'] = True
+        if is_emerging:
+            rec['emerging'] = True
+            rec['off_plan_count'] = op_rec['off_plan']
+            rec['off_plan_share'] = round(op_rec['share'], 3)
+            emerging_n += 1
 
         # Post-launch detector — pipeline still alive but tx volume crashed
         # from the 3y baseline. Means the district was an off-plan boom
@@ -751,7 +828,9 @@ def main():
 
         # Bake the bucket assignment into the record. Frontend reads
         # `rec.phase` directly — no thresholds in JS.
-        rec['phase'] = classify_phase(rec['vitality'], rec.get('post_launch', False))
+        rec['phase'] = classify_phase(rec['vitality'],
+                                      rec.get('post_launch', False),
+                                      emerging=is_emerging)
 
         out[poly_key] = rec
 
@@ -776,6 +855,7 @@ def main():
           f'post-launch flagged on {post_launch_n}, '
           f'spec-penalty on {spec_penalty_n}, '
           f'commercial on {commercial_n}, '
+          f'emerging on {emerging_n}, '
           f'{size_kb} KB',
           file=sys.stderr)
 

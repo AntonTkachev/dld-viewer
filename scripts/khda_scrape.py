@@ -19,8 +19,8 @@ Run from repo root:
 import csv
 import html
 import re
+import subprocess
 import sys
-import urllib.request
 from pathlib import Path
 
 DATA = Path(__file__).resolve().parent.parent / 'data'
@@ -33,9 +33,14 @@ UNI_OUT       = DATA / 'khda_universities.csv'
 
 
 def fetch(url: str) -> str:
-    req = urllib.request.Request(url, headers={'User-Agent': UA})
-    with urllib.request.urlopen(req, timeout=60) as r:
-        return r.read().decode('utf-8', errors='ignore')
+    # KHDA serves only the leaf cert without intermediates — Python's urllib
+    # can't AIA-chase, so it fails verification. curl handles AIA + uses the
+    # macOS keychain. Same pattern as scripts/osm_*_pull.py.
+    p = subprocess.run(
+        ['curl', '-sS', '--max-time', '60', '-A', UA, url],
+        check=True, capture_output=True, text=True,
+    )
+    return p.stdout
 
 
 def clean(s: str) -> str:
