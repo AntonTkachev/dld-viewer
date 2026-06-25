@@ -21,7 +21,12 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parent.parent
 HTML = ROOT / 'template.html'
 # Externalized GEOJSON literal (was an inline const in template.html before).
-GEOJSON_JS = ROOT / 'data' / 'curated_polygons.js'
+# Priority order — first existing file wins. data/curated_polygons.js was
+# the original location before the move to /polygons/.
+GEOJSON_JS_CANDIDATES = (
+    ROOT / 'polygons' / 'curated.js',
+    ROOT / 'data' / 'curated_polygons.js',
+)
 KHDA = ROOT / 'data' / 'khda_universities.csv'
 OSM  = ROOT / 'data' / 'osm_universities.json'
 
@@ -128,8 +133,8 @@ def _feat_contains(feat, pt):
 
 def load_polygons():
     # Try the externalized GEOJSON first (post-2026-06-25 layout); fall back
-    # to the legacy inline const in template.html for older trees.
-    for path in (GEOJSON_JS, HTML):
+    # to the original /data/ path; finally to the inline const in template.html.
+    for path in (*GEOJSON_JS_CANDIDATES, HTML):
         if not path.exists():
             continue
         with path.open(encoding='utf-8') as f:

@@ -176,6 +176,15 @@ POI seeds for the map's layers (schools / universities / medical / mosques / met
 | File | Source(s) | Generator |
 |---|---|---|
 | `data/curated_polygons.geojson` | `dld_communities.geojson` + `polygon_overrides.json` + `osm_subcommunities.json` + `dm_to_dld_aliases.json` | `scripts/build_curated_polygons.py` |
+| `polygons/curated.js` | `data/curated_polygons.geojson` + AGGREGATES + ROLLUP rules | `scripts/merge_curated_polygons_into_viewer.py` |
+
+## Where the runtime GEOJSON lives
+
+Originally inlined as `const GEOJSON = {...};` in `template.html`. Externalized to `polygons/curated.js` on 2026-06-25 to shrink every landing from 3.2 MB → 1.15 MB raw and let the browser cache the polygon set once across all locale × mask navigations. Template (and the 35 SEO landings) reference it via `<script src="/polygons/curated.js?v=<sha8>"></script>`.
+
+The file lives in a dedicated `/polygons/` top-level dir (not `/data/`) so the Jekyll exclude rule for `data/` can stay a simple blanket deny — no allow-by-omission of new file types.
+
+**Caveat — `osm_subcommunities_merge_into_viewer.py` standalone:** that script mutates `polygons/curated.js` AND rewrites the `?v=hash` in `template.html`, but does NOT touch the 35 SEO landings. Browsers hitting those landings still get the freshly-mutated `curated.js` (the server ignores `?v=`), only cache invalidation lags. To fully sync, run `scripts/build_pages.py` after standalone mutations, or just rely on the next `refresh_all.sh` to regenerate everything.
 
 ## Refresh playbook
 

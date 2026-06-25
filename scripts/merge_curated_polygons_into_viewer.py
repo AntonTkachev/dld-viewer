@@ -1,13 +1,18 @@
 #!/usr/bin/env python3
-"""Externalize the curated polygon set into data/curated_polygons.js and
+"""Externalize the curated polygon set into polygons/curated.js and
 swap the inline `const GEOJSON = {...}` in template.html for a
-<script src="/data/curated_polygons.js?v=<hash>"></script> tag.
+<script src="/polygons/curated.js?v=<hash>"></script> tag.
 
 Why externalize: the curated GeoJSON is ~2.1 MB raw and was previously
 inlined into every locale × mask landing (5 × 7 = 35 copies). Browsers
-re-downloaded it on every navigation. Moving it to /data/curated_polygons.js
+re-downloaded it on every navigation. Moving it to /polygons/curated.js
 lets the browser cache it once per content hash and cuts every landing
 from 3.2 MB to ~1.1 MB raw / ~300 KB gzipped.
+
+Why /polygons/ and not /data/: the entire data/ directory is Jekyll-excluded
+from the deployed _site/ (raw source data shouldn't ship to the runtime).
+A standalone top-level dir keeps the exclude rule simple (`data/` stays
+fully excluded — no allow-by-omission with per-extension globs).
 
 See docs/polygon_overrides_design.md for the polygon-set rationale. Build chain:
 
@@ -38,7 +43,7 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parent.parent
 HTML = ROOT / 'template.html'
 SRC  = ROOT / 'data' / 'curated_polygons.geojson'
-JS_OUT = ROOT / 'data' / 'curated_polygons.js'
+JS_OUT = ROOT / 'polygons' / 'curated.js'
 
 with HTML.open(encoding='utf-8') as f:
     text = f.read()
@@ -53,14 +58,16 @@ with HTML.open(encoding='utf-8') as f:
 #       <script src=…> inside a <script> block (browser would treat the
 #       outer block's content as JS up to the first </script> and break).
 #   (b) already-externalized script tag — one line, replaced in place:
-#         <script src="/data/curated_polygons.js?v=…"></script>
+#         <script src="/polygons/curated.js?v=…"></script>
+#       (also matches the legacy /data/curated_polygons.js path from the
+#       first iteration of this refactor, so trees mid-migration still work).
 inline_const_re = re.compile(r'^const GEOJSON = (\{.*?\});\s*$', re.MULTILINE)
 inline_block_re = re.compile(
     r'<script>\s*\n(?://[^\n]*\n)*const GEOJSON = \{.*?\};\s*\n</script>\n?',
     re.MULTILINE,
 )
 script_tag_re = re.compile(
-    r'<script src="/data/curated_polygons\.js(\?v=[a-f0-9]{8})?"></script>\n?',
+    r'<script src="(?:/polygons/curated|/data/curated_polygons)\.js(?:\?v=[a-f0-9]{8})?"></script>\n?',
     re.MULTILINE,
 )
 m_block  = inline_block_re.search(text)
@@ -183,13 +190,14 @@ new_literal = 'const GEOJSON = ' + json.dumps(new_geo, ensure_ascii=False, separ
 
 # Write external JS file. Format matches the inline literal the merge scripts
 # previously parsed out of template.html, so the regex anchor stays portable.
+JS_OUT.parent.mkdir(parents=True, exist_ok=True)
 with JS_OUT.open('w', encoding='utf-8') as f:
     f.write(new_literal)
 
-# Content hash → ?v=… cache-bust query. Browser caches /data/curated_polygons.js
+# Content hash → ?v=… cache-bust query. Browser caches /polygons/curated.js
 # essentially forever, but a content change flips the hash and force-refreshes.
 sha = hashlib.sha256(new_literal.encode('utf-8')).hexdigest()[:8]
-tag_line = f'<script src="/data/curated_polygons.js?v={sha}"></script>\n'
+tag_line = f'<script src="/polygons/curated.js?v={sha}"></script>\n'
 
 # Swap whatever's currently anchored (inline <script> block OR existing
 # script tag) for the fresh script tag.
