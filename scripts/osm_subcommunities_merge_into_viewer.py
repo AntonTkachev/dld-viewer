@@ -14,6 +14,11 @@ this injection by rewriting polygons/curated.js from data/curated_polygons.geojs
 which does NOT include subcommunities. That has been the behavior all along —
 the subcommunity overlay is ephemeral between refresh_all.sh runs.
 
+Hash length: 8 hex chars (sha256 prefix). If you change this, the
+tag_re below and the matching ones in test_masks.py /
+merge_curated_polygons_into_viewer.py / inline_periods.py all need to be
+updated together — otherwise a re-stamp leaves the old tag in place.
+
 CAVEAT — standalone runs leave landings out of sync:
 This script re-stamps template.html's ?v= hash but NOT the 35 locale
 landings under {ru,en,ar,hi,zh}/{sales,rents,…}/[table/]index.html.

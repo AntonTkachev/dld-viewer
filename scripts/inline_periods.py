@@ -27,8 +27,12 @@ Idempotent: on subsequent runs the prior /periods/all.js script tag is
 re-stamped with the fresh hash; the 7 inline const lines stay absent
 from template.html (they're not re-added).
 
-Hash length: 8 hex chars. If you ever change this, sync with the
-script_tag_re in scripts/test_masks.py and any other re-stampers.
+Hash length: 8 hex chars (sha256 prefix). If you change this, the
+script_tag_re below and the matching ones in test_masks.py and
+merge_curated_polygons_into_viewer.py / osm_subcommunities_merge_into_viewer.py
+all need to be updated together — otherwise a re-stamp with the old
+length leaves the old tag in place and a duplicate <script src> gets
+prepended.
 """
 import hashlib
 import json

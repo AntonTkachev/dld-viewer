@@ -4,7 +4,7 @@
 # This is the authoritative community boundary file from DM GIS NET — flat
 # partition of Dubai into 224 admin communities, each tagged with CNAME_E /
 # CNAME_A and a stable numeric COMM_NUM. Use this in place of the OSM-stitched
-# `data/dld_communities_raw.geojson` once we wire up name matching to DLD's
+# `data/dld_communities_osm.geojson` once we wire up name matching to DLD's
 # `area_name_en`.
 #
 # Output:  data/dld_communities.kml      (uncompressed)

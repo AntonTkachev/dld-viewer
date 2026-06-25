@@ -33,6 +33,12 @@ read this same `const GEOJSON = …;` literal but from data/curated_polygons.js
 now instead of template.html.
 
 Run this AFTER build_curated_polygons.py and BEFORE inline_periods.py.
+
+Hash length: 8 hex chars (sha256 prefix). If you change this, the
+script_tag_re regex below and the matching one in test_masks.py /
+osm_subcommunities_merge_into_viewer.py / inline_periods.py all need
+to be updated together — otherwise a re-stamp with the old length
+leaves the old tag in place and a duplicate <script src> gets prepended.
 """
 import hashlib
 import json

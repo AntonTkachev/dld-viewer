@@ -18,7 +18,7 @@ import duckdb, json, sys, os, re, hashlib
 from datetime import date
 
 ROOT  = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-OUT   = os.path.join(ROOT, 'data', '_aggregates_intermediate', 'rent.json')
+OUT   = os.path.join(ROOT, 'data', 'aggregates_intermediate', 'rent.json')
 RENTS = os.path.join(ROOT, 'data/rents.parquet')
 DATE_FROM = '2001-01-01'      # parquet starts 2001-02-15
 DATE_TO   = '2030-12-31'      # include forward-dated leases
@@ -431,7 +431,7 @@ print(f'  key: master_project_en → fallback area_name_en (no manual remap)', f
 # Only the fields viewer.js reads from RENT_AGGREGATES on the main map
 # (pluck() + _districtHrefForKey name lookup): {name, n, med_annual,
 # med_ppsqm}. Full per-district detail (timeline, top_projects, recent,
-# by_subtype, by_usage) stays in data/_aggregates_intermediate/rent.json (gitignored)
+# by_subtype, by_usage) stays in data/aggregates_intermediate/rent.json (gitignored)
 # and /rents/<slug>/data.json. Scraping full detail now needs ~300
 # per-district fetches where the Cloudflare rate limit can bite —
 # instead of a single 2.9 MB read from the inlined HTML literal.

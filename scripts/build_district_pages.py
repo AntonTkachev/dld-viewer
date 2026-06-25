@@ -1344,9 +1344,9 @@ def main():
     # no longer carries the full per-district detail this script needs
     # to build per-district pages. Read from the canonical on-disk JSON
     # instead — same shape, just bypasses the HTML.
-    with open(os.path.join(ROOT, 'data', '_aggregates_intermediate', 'sale.json'), encoding='utf-8') as f:
+    with open(os.path.join(ROOT, 'data', 'aggregates_intermediate', 'sale.json'), encoding='utf-8') as f:
         agg = json.load(f)
-    with open(os.path.join(ROOT, 'data', '_aggregates_intermediate', 'rent.json'), encoding='utf-8') as f:
+    with open(os.path.join(ROOT, 'data', 'aggregates_intermediate', 'rent.json'), encoding='utf-8') as f:
         rent = json.load(f)
     tx_periods, rents_periods = load_period_aggregates()
     with open(TPL, encoding='utf-8') as f:
