@@ -232,6 +232,7 @@ L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
 }).addTo(map);
 
 const LIFECYCLE_PHASE_COLORS = {
+  emerging:   '#ff8c42',
   rising:     '#fde725',
   active:     '#21918c',
   mature:     '#5ec962',
@@ -239,13 +240,14 @@ const LIFECYCLE_PHASE_COLORS = {
   overheated: '#440154',
 };
 const LIFECYCLE_PHASE_TEXT = {
+  emerging:   '#ffffff',
   rising:     '#0f172a',
   active:     '#ffffff',
   mature:     '#0f172a',
   lagging:    '#ffffff',
   overheated: '#ffffff',
 };
-const LIFECYCLE_PHASE_ORDER = ['rising', 'active', 'mature', 'lagging', 'overheated'];
+const LIFECYCLE_PHASE_ORDER = ['emerging', 'rising', 'active', 'mature', 'lagging', 'overheated'];
 function _lifecyclePhase(rec) {
   return (rec && rec.phase) ? rec.phase : null;
 }
