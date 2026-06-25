@@ -1,0 +1,86 @@
+name: Build & Deploy
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: pages
+  cancel-in-progress: false
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: JS syntax — viewer + every shipped bundle
+        run: |
+          set -e
+          for f in js/viewer.js js/i18n.js js/detail-panel.js \
+                   polygons/*.js periods/*.js \
+                   transactions/data/*.js rents/data/*.js; do
+            [ -f "$f" ] || continue
+            node --check "$f"
+          done
+
+      - name: JSON config files parse
+        run: |
+          set -e
+          for f in data/dld_seen.json \
+                   data/polygon_overrides.json \
+                   data/dm_to_dld_aliases.json \
+                   data/rera_arabic_aliases.json \
+                   data/seo_whitelist.json; do
+            [ -f "$f" ] || continue
+            python3 -c "import json,sys; json.load(open('$f')); print('  ok: $f')"
+          done
+
+      - name: Script tags in template.html resolve to existing files
+        run: python3 scripts/validate_script_tags.py
+
+      - name: Mask data coverage + golden districts
+        run: python3 scripts/test_masks.py
+
+  build:
+    needs: validate
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Setup Pages
+        uses: actions/configure-pages@v5
+      - name: Build with Jekyll
+        uses: actions/jekyll-build-pages@v1
+        with:
+          source: ./
+          destination: ./_site
+      - name: Upload artifact
+        uses: actions/upload-pages-artifact@v3
+
+  deploy:
+    needs: build
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - name: Deploy to GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v4
