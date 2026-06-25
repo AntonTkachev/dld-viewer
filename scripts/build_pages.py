@@ -397,6 +397,11 @@ def build(page_key, cfg, view, lang):
         '@context': 'https://schema.org', '@type': 'BreadcrumbList',
         'itemListElement': bc_items,
     }
+    organization_ld = {
+        '@context': 'https://schema.org', '@type': 'Organization',
+        'name': 'DXBCompass', 'url': BASE_URL + '/',
+        'logo': BASE_URL + '/icon-512.png',
+    }
 
     head_block = (
         f'<title>{title}</title>\n'
@@ -425,6 +430,9 @@ def build(page_key, cfg, view, lang):
         '</script>\n'
         '<script type="application/ld+json">'
         + json.dumps(breadcrumb_ld, ensure_ascii=False) +
+        '</script>\n'
+        '<script type="application/ld+json">'
+        + json.dumps(organization_ld, ensure_ascii=False) +
         '</script>'
     )
     s = re.sub(r'<link rel="canonical"[^>]*>\n?', '', s, count=1)
@@ -449,6 +457,9 @@ def build(page_key, cfg, view, lang):
 
     s = s.replace('href="css/viewer.css"',  f'href="{asset_prefix}css/viewer.css"')
     s = s.replace('href="favicon.svg"',     f'href="{asset_prefix}favicon.svg"')
+    s = s.replace('href="icon-192.png"',    f'href="{asset_prefix}icon-192.png"')
+    s = s.replace('href="icon-512.png"',    f'href="{asset_prefix}icon-512.png"')
+    s = s.replace('href="apple-touch-icon.png"', f'href="{asset_prefix}apple-touch-icon.png"')
     s = s.replace('src="js/i18n.js"',       f'src="{asset_prefix}js/i18n.js?v={_I18N_VER}"')
     s = s.replace('src="js/viewer.js"',     f'src="{asset_prefix}js/viewer.js?v={_VIEWER_VER}"')
 
@@ -484,13 +495,35 @@ for key, cfg in PAGES.items():
 # Thin /<lang>/index.html stubs — redirect to /<lang>/sales/.
 # Reason: without these /en/, /ar/, /hi/, /ru/ 404 (no dir-listing on GH Pages),
 # which breaks BreadcrumbList "Dubai" links and any direct typing /ru/.
+#
+# Even though these stubs are noindex, social-media link previews (Telegram,
+# WhatsApp, Facebook, Twitter, LinkedIn) DO fetch and render og:* meta tags —
+# noindex only blocks search engines, not OG scrapers. So the OG block here
+# is what makes a plain dxbcompass.com/<lang>/ share render with a preview.
 LANG_STUB = {
-    'ru': dict(dir='ltr', title='DXBCompass — данные о недвижимости Дубая', label='Открыть карту Дубая →'),
-    'en': dict(dir='ltr', title='DXBCompass — Dubai real estate data', label='Open the Dubai map →'),
-    'ar': dict(dir='rtl', title='DXBCompass — بيانات عقارات دبي', label='افتح خريطة دبي ←'),
-    'hi': dict(dir='ltr', title='DXBCompass — दुबई रियल एस्टेट डेटा', label='दुबई का मानचित्र खोलें →'),
-    'zh': dict(dir='ltr', title='DXBCompass — 迪拜房产数据', label='打开迪拜地图 →'),
+    'ru': dict(dir='ltr', title='DXBCompass — данные о недвижимости Дубая',
+               desc='Карта районов Дубая с данными Dubai Land Department: сделки, аренда, рост цен, окупаемость, жизненный цикл рынка.',
+               label='Открыть карту Дубая →'),
+    'en': dict(dir='ltr', title='DXBCompass — Dubai real estate data',
+               desc='Map of Dubai districts powered by Dubai Land Department: sales, rents, price growth, payback, market lifecycle.',
+               label='Open the Dubai map →'),
+    'ar': dict(dir='rtl', title='DXBCompass — بيانات عقارات دبي',
+               desc='خريطة أحياء دبي ببيانات دائرة الأراضي والأملاك: المبيعات والإيجارات ونمو الأسعار والاسترداد ودورة حياة السوق.',
+               label='افتح خريطة دبي ←'),
+    'hi': dict(dir='ltr', title='DXBCompass — दुबई रियल एस्टेट डेटा',
+               desc='दुबई लैंड डिपार्टमेंट डेटा पर आधारित दुबई के जिलों का मानचित्र: बिक्री, किराया, मूल्य वृद्धि, payback, बाजार लाइफसाइकिल।',
+               label='दुबई का मानचित्र खोलें →'),
+    'zh': dict(dir='ltr', title='DXBCompass — 迪拜房产数据',
+               desc='基于迪拜土地局数据的迪拜各区地图:成交、租赁、价格增长、回报周期、市场生命周期。',
+               label='打开迪拜地图 →'),
 }
+_og_image = BASE_URL + '/og/cover.png'
+_org_ld_json = json.dumps({
+    '@context': 'https://schema.org', '@type': 'Organization',
+    'name': 'DXBCompass', 'url': BASE_URL + '/',
+    'logo': BASE_URL + '/icon-512.png',
+}, ensure_ascii=False)
+
 for l, s in LANG_STUB.items():
     target = f'{BASE_URL}/{l}/sales/'
     out = os.path.join(ROOT, l, 'index.html')
@@ -506,10 +539,28 @@ for l, s in LANG_STUB.items():
             f'<script>/* gh-redirect */if(location.hostname.endsWith(\'.github.io\')){{location.replace(\'https://dxbcompass.com\'+(location.pathname.replace(/^\\/dld-viewer/,\'\')||\'/\')+location.search+location.hash);}}</script>\n'
             f'<meta charset="utf-8">\n'
             f'<title>{s["title"]}</title>\n'
+            f'<meta name="description" content="{s["desc"]}">\n'
             f'<link rel="icon" type="image/svg+xml" href="{BASE_URL}/favicon.svg">\n'
+            f'<link rel="icon" type="image/png" sizes="192x192" href="{BASE_URL}/icon-192.png">\n'
+            f'<link rel="icon" type="image/png" sizes="512x512" href="{BASE_URL}/icon-512.png">\n'
+            f'<link rel="apple-touch-icon" sizes="180x180" href="{BASE_URL}/apple-touch-icon.png">\n'
             f'<link rel="canonical" href="{target}">\n'
             f'<meta http-equiv="refresh" content="0; url={target}">\n'
             f'<meta name="robots" content="noindex,follow">\n'
+            f'<meta property="og:type" content="website">\n'
+            f'<meta property="og:site_name" content="DXBCompass">\n'
+            f'<meta property="og:url" content="{BASE_URL}/{l}/">\n'
+            f'<meta property="og:title" content="{s["title"]}">\n'
+            f'<meta property="og:description" content="{s["desc"]}">\n'
+            f'<meta property="og:image" content="{_og_image}">\n'
+            f'<meta property="og:image:width" content="1200">\n'
+            f'<meta property="og:image:height" content="630">\n'
+            f'<meta property="og:image:alt" content="DXBCompass — Dubai real estate data">\n'
+            f'<meta name="twitter:card" content="summary_large_image">\n'
+            f'<meta name="twitter:image" content="{_og_image}">\n'
+            f'<meta name="twitter:title" content="{s["title"]}">\n'
+            f'<meta name="twitter:description" content="{s["desc"]}">\n'
+            f'<script type="application/ld+json">{_org_ld_json}</script>\n'
             '</head>\n<body>\n'
             f'<p><a href="{target}">{s["label"]}</a></p>\n'
             f'<script>location.replace("{target}");</script>\n'
@@ -523,23 +574,47 @@ for l, s in LANG_STUB.items():
 # it lives at /ru/sales/ alongside the other locales. The root just bounces
 # uncategorized visitors to the English landing, which is what hreflang
 # x-default already advertises.
+#
+# Same OG-on-noindex rationale as LANG_STUB above: social previews bypass
+# noindex, so og:* tags here are what makes dxbcompass.com shares render
+# with a preview image.
 _root_target = f'{BASE_URL}/en/sales/'
+_root_title = 'DXBCompass — Dubai real estate data'
+_root_desc = LANG_STUB['en']['desc']
 with open(os.path.join(ROOT, 'index.html'), 'w', encoding='utf-8') as f:
     f.write(
         '<!doctype html>\n<html lang="en">\n<head>\n'
         '<script>/* gh-redirect */if(location.hostname.endsWith(\'.github.io\')){location.replace(\'https://dxbcompass.com\'+(location.pathname.replace(/^\\/dld-viewer/,\'\')||\'/\')+location.search+location.hash);}</script>\n'
         '<meta charset="utf-8">\n'
-        '<title>DXBCompass — Dubai real estate data</title>\n'
+        f'<title>{_root_title}</title>\n'
+        f'<meta name="description" content="{_root_desc}">\n'
         f'<link rel="icon" type="image/svg+xml" href="{BASE_URL}/favicon.svg">\n'
+        f'<link rel="icon" type="image/png" sizes="192x192" href="{BASE_URL}/icon-192.png">\n'
+        f'<link rel="icon" type="image/png" sizes="512x512" href="{BASE_URL}/icon-512.png">\n'
+        f'<link rel="apple-touch-icon" sizes="180x180" href="{BASE_URL}/apple-touch-icon.png">\n'
         f'<link rel="canonical" href="{_root_target}">\n'
         f'<meta http-equiv="refresh" content="0; url={_root_target}">\n'
         '<meta name="robots" content="noindex,follow">\n'
+        '<meta property="og:type" content="website">\n'
+        '<meta property="og:site_name" content="DXBCompass">\n'
+        f'<meta property="og:url" content="{BASE_URL}/">\n'
+        f'<meta property="og:title" content="{_root_title}">\n'
+        f'<meta property="og:description" content="{_root_desc}">\n'
+        f'<meta property="og:image" content="{_og_image}">\n'
+        '<meta property="og:image:width" content="1200">\n'
+        '<meta property="og:image:height" content="630">\n'
+        '<meta property="og:image:alt" content="DXBCompass — Dubai real estate data">\n'
+        '<meta name="twitter:card" content="summary_large_image">\n'
+        f'<meta name="twitter:image" content="{_og_image}">\n'
+        f'<meta name="twitter:title" content="{_root_title}">\n'
+        f'<meta name="twitter:description" content="{_root_desc}">\n'
         '<link rel="alternate" hreflang="ru" href="https://dxbcompass.com/ru/sales/">\n'
         '<link rel="alternate" hreflang="en" href="https://dxbcompass.com/en/sales/">\n'
         '<link rel="alternate" hreflang="ar" href="https://dxbcompass.com/ar/sales/">\n'
         '<link rel="alternate" hreflang="hi" href="https://dxbcompass.com/hi/sales/">\n'
         '<link rel="alternate" hreflang="zh" href="https://dxbcompass.com/zh/sales/">\n'
         '<link rel="alternate" hreflang="x-default" href="https://dxbcompass.com/en/sales/">\n'
+        f'<script type="application/ld+json">{_org_ld_json}</script>\n'
         '</head>\n<body>\n'
         f'<p><a href="{_root_target}">Open the Dubai map →</a></p>\n'
         f'<script>location.replace("{_root_target}");</script>\n'
