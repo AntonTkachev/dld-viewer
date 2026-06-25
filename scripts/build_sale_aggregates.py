@@ -8,7 +8,7 @@ community-style keys (e.g. 'dubai marina') still find data.
 import duckdb, json, sys, os, re, hashlib
 
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-OUT = os.path.join(ROOT, '_data_sale_aggregates.json')
+OUT = os.path.join(ROOT, 'data', '_aggregates_intermediate', 'sale.json')
 TX  = os.path.join(ROOT, 'data/tx.parquet')
 DATE_FROM = '1995-01-01'   # full parquet history (ignore Hijri-converted noise)
 DATE_TO   = '2026-12-31'
@@ -590,7 +590,7 @@ print(f'  key: master_project_en → fallback area_name_en (no manual remap)', f
 # Thin choropleth shard — only the fields viewer.js reads when rendering
 # the main map (pluck() + _districtHrefForKey name lookup + Springs/Meadows
 # parent override). Full per-district detail (timeline, top_deals, recent,
-# room-bucket breakdowns) stays in /_data_sale_aggregates.json (gitignored)
+# room-bucket breakdowns) stays in data/_aggregates_intermediate/sale.json (gitignored)
 # and the per-district /sales/<slug>/data.json. Keeping main-page payload
 # tiny means a scraper wanting the full dataset must issue one request per
 # district (where the Cloudflare rate-limit rule can mitigate).

@@ -1,6 +1,6 @@
 # Curated polygon overrides — design
 
-Goal: replace the OSM-stitched `_data_communities.geojson` (442 polygons with
+Goal: replace the OSM-stitched `data/dld_communities_raw.geojson` (442 polygons with
 duplicates and nominatim-fallbacks) with a clean curated set keyed to DLD data.
 
 ## Pipeline
@@ -14,7 +14,7 @@ duplicates and nominatim-fallbacks) with a clean curated set keyed to DLD data.
             │     ▲
             │     │  data/polygon_overrides.json   (hand-curated)
             │     │
-            ▼     │  _data_communities.geojson    (legacy OSM polygons — used as
+            ▼     │  data/dld_communities_raw.geojson    (legacy OSM polygons — used as
    ┌─────────────┴──────────────┐                  geometry source for sub-zones)
    │ build_curated_polygons.py  │
    └────────────┬───────────────┘
@@ -58,7 +58,7 @@ duplicates and nominatim-fallbacks) with a clean curated set keyed to DLD data.
           // Optional translations (ar/ru/hi/zh). EN comes from `name`.
           "name_ar": "مرسى دبي",
 
-          // Geometry source: name of a feature in `_data_communities.geojson`
+          // Geometry source: name of a feature in `data/dld_communities_raw.geojson`
           // whose polygon we copy. We don't use its data — only its shape.
           "osm_polygon": "Dubai Marina",
 
@@ -126,7 +126,7 @@ master_projects consumed by sibling sub-polygons → catches the leftovers.
 
 | Option | Verdict |
 |---|---|
-| Stick with OSM-stitched `_data_communities.geojson` | Status quo — duplicates, holes, nominatim-fallback for DH. Rejected. |
+| Stick with OSM-stitched `data/dld_communities_raw.geojson` | Status quo — duplicates, holes, nominatim-fallback for DH. Rejected. |
 | Pure DM Communities (224 polygons, no splits) | Clean but Marsa Dubai blob. Rejected for not solving the user-visible problem. |
 | Custom polygons drawn by hand | Highest quality but weeks of GIS work. Skipped. |
 | **DM base + handcrafted splits using OSM geometry** | **Chosen.** ~85% of needed sub-polygons are in OSM with decent quality; rest can be added later. Honest about provenance (`source` field). |

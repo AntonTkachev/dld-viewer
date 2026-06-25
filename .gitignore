@@ -6,8 +6,7 @@ rents-*.csv
 data/*.parquet
 
 # Intermediate JSON outputs (inlined into HTML at build time)
-_data_rent_aggregates.json
-_data_sale_aggregates.json
+data/_aggregates_intermediate/
 
 # Python / OS junk
 __pycache__/
