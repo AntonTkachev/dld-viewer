@@ -1159,7 +1159,7 @@ function renderMaskList() {
   const toggle = document.createElement('button');
   toggle.type = 'button';
   toggle.className = 'mask-more-toggle' + (expanded ? ' expanded' : '');
-  toggle.innerHTML = `<span class="mask-more-label">${t('mask_more')}</span><span class="mask-more-caret" aria-hidden="true">▼</span>`;
+  toggle.innerHTML = `<span class="mask-more-label">${t(expanded ? 'mask_less' : 'mask_more')}</span><span class="mask-more-caret" aria-hidden="true">▼</span>`;
   toggle.setAttribute('aria-expanded', expanded ? 'true' : 'false');
   toggle.addEventListener('click', e => {
     e.stopPropagation();
