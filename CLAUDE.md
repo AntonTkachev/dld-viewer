@@ -72,7 +72,6 @@ scripts/
   dld_to_parquet.sh     ← dedup latest snapshot → parquet (DuckDB)
   dld_check_new.sh      ← compare API listing vs local — flag if newer exists
   dld_refresh.sh        ← orchestrates download → parquet
-  dld_filter.py         ← optional: filter CSV.gz by date column (pre-parquet era)
   khda_scrape.py        ← fetch KHDA K-12 + Higher-Ed directories
                           → data/khda_schools.csv + khda_universities.csv
   osm_schools_pull.py   ← Overpass amenity=school|university|college (Dubai bbox)
