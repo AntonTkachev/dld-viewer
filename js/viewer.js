@@ -1631,6 +1631,20 @@ if (typeof ETIHAD_STATIONS !== 'undefined') {
 if (typeof GOLD_STATIONS !== 'undefined') {
   for (const s of GOLD_STATIONS) METRO_STATIONS.push(s);
 }
+// Gold Line shares physical stations with Red/Green/Etihad at 4 interchange
+// points (Al Ghubaiba, BurJuman, Business Bay, JGE). To avoid duplicate pins
+// stacked on the same coords, we DON'T add those four to GOLD_STATIONS.
+// Instead, we patch the existing METRO_STATIONS entry — adding 'gold' to its
+// groups field — so its popup correctly lists both lines and renders as
+// interchange.
+if (typeof GOLD_INTERCHANGES !== 'undefined') {
+  for (const name of GOLD_INTERCHANGES) {
+    const s = METRO_STATIONS.find(x => x.name === name);
+    if (!s) continue;
+    const cur = s.groups || [s.group];
+    if (!cur.includes('gold')) s.groups = cur.concat('gold');
+  }
+}
 for (const s of METRO_STATIONS) {
   const groups = s.groups || [s.group];
   const labelLines = groups.map(g => getGroupLabel(g)).join(' / ');
