@@ -1615,13 +1615,17 @@ function renderChoro(){
 const metroLayer = L.layerGroup();
 
 if (typeof TRAM_LINE !== 'undefined') METRO_LINES.features.push(TRAM_LINE);
+if (typeof ETIHAD_LINE !== 'undefined') METRO_LINES.features.push(ETIHAD_LINE);
 for (const f of METRO_LINES.features) {
   L.geoJSON(f, {style: {color: f.properties.color, weight: 4, opacity: 0.9, dashArray: f.properties.status==='construction' ? '8,6' : null}}).addTo(metroLayer);
 }
-function getGroupLabel(g) { return ({red:t('metro_line_red'), green:t('metro_line_green'), blue:t('metro_line_blue'), tram:t('metro_line_tram'), gold:t('metro_line_gold')})[g] || g; }
-const GROUP_PIN = {red:'metro-red', green:'metro-green', blue:'metro-blue', tram:'metro-tram', gold:'metro-gold'};
+function getGroupLabel(g) { return ({red:t('metro_line_red'), green:t('metro_line_green'), blue:t('metro_line_blue'), tram:t('metro_line_tram'), gold:t('metro_line_gold'), etihad:'Etihad Rail'})[g] || g; }
+const GROUP_PIN = {red:'metro-red', green:'metro-green', blue:'metro-blue', tram:'metro-tram', gold:'metro-gold', etihad:'metro-etihad'};
 if (typeof TRAM_STATIONS !== 'undefined') {
   for (const s of TRAM_STATIONS) METRO_STATIONS.push(s);
+}
+if (typeof ETIHAD_STATIONS !== 'undefined') {
+  for (const s of ETIHAD_STATIONS) METRO_STATIONS.push(s);
 }
 for (const s of METRO_STATIONS) {
   const groups = s.groups || [s.group];
@@ -1629,7 +1633,7 @@ for (const s of METRO_STATIONS) {
   const isInterchange = groups.length > 1;
   
   const primary = groups[0];
-  const pinLetter = (primary === 'tram') ? 'T' : 'M';
+  const pinLetter = (primary === 'tram') ? 'T' : (primary === 'etihad') ? 'E' : 'M';
   const icon = L.divIcon({className:'', html:`<div class="pin ${GROUP_PIN[primary]}">${pinLetter}</div>`, iconSize:[24,24], iconAnchor:[12,12]});
   const m = L.marker([s.lat, s.lon], {icon});
   m.bindPopup(() => `
