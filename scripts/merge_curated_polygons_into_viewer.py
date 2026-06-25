@@ -1,8 +1,15 @@
 #!/usr/bin/env python3
-"""Replace the `const GEOJSON = {...}` literal in index.html with the curated
-polygon set (DM Communities + handcrafted splits from data/polygon_overrides.json).
+"""Externalize the curated polygon set into data/curated_polygons.js and
+swap the inline `const GEOJSON = {...}` in template.html for a
+<script src="/data/curated_polygons.js?v=<hash>"></script> tag.
 
-See docs/polygon_overrides_design.md for the rationale. The build chain is:
+Why externalize: the curated GeoJSON is ~2.1 MB raw and was previously
+inlined into every locale × mask landing (5 × 7 = 35 copies). Browsers
+re-downloaded it on every navigation. Moving it to /data/curated_polygons.js
+lets the browser cache it once per content hash and cuts every landing
+from 3.2 MB to ~1.1 MB raw / ~300 KB gzipped.
+
+See docs/polygon_overrides_design.md for the polygon-set rationale. Build chain:
 
   scripts/dld_communities_pull.sh           → data/dld_communities.kml
   scripts/dld_communities_to_geojson.py     → data/dld_communities.geojson
@@ -16,8 +23,13 @@ matches the key in TX_PERIODS[period][key]. We set real_area_key to the
 lowercased polygon name, which is also what build_curated_sql() in
 _curated_sql.py uses.
 
+Downstream merge scripts (khda_*, dld_projects_*, osm_subcommunities_*)
+read this same `const GEOJSON = …;` literal but from data/curated_polygons.js
+now instead of template.html.
+
 Run this AFTER build_curated_polygons.py and BEFORE inline_periods.py.
 """
+import hashlib
 import json
 import re
 import sys
@@ -26,16 +38,47 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parent.parent
 HTML = ROOT / 'template.html'
 SRC  = ROOT / 'data' / 'curated_polygons.geojson'
+JS_OUT = ROOT / 'data' / 'curated_polygons.js'
 
 with HTML.open(encoding='utf-8') as f:
     text = f.read()
 
-m = re.search(r'^const GEOJSON = (\{.*?\});\s*$', text, re.MULTILINE)
-if not m:
-    print('GEOJSON literal not found in index.html', file=sys.stderr)
+# Find the GEOJSON declaration. Two shapes are accepted:
+#   (a) legacy inline block in template.html — three lines, wrapper + literal:
+#         <script>
+#         // ===================== DATA =====================
+#         const GEOJSON = {...};
+#         </script>
+#       Whole wrapper is replaced so we don't end up with a nested
+#       <script src=…> inside a <script> block (browser would treat the
+#       outer block's content as JS up to the first </script> and break).
+#   (b) already-externalized script tag — one line, replaced in place:
+#         <script src="/data/curated_polygons.js?v=…"></script>
+inline_const_re = re.compile(r'^const GEOJSON = (\{.*?\});\s*$', re.MULTILINE)
+inline_block_re = re.compile(
+    r'<script>\s*\n(?://[^\n]*\n)*const GEOJSON = \{.*?\};\s*\n</script>\n?',
+    re.MULTILINE,
+)
+script_tag_re = re.compile(
+    r'<script src="/data/curated_polygons\.js(\?v=[a-f0-9]{8})?"></script>\n?',
+    re.MULTILINE,
+)
+m_block  = inline_block_re.search(text)
+m_script = script_tag_re.search(text)
+if not (m_block or m_script):
+    print('GEOJSON anchor not found in template.html '
+          '(neither inline <script>…const GEOJSON…</script> block '
+          'nor curated_polygons.js script tag)', file=sys.stderr)
     sys.exit(1)
-old_geo = json.loads(m.group(1))
-old_count = len(old_geo['features'])
+if m_block:
+    m_lit = inline_const_re.search(m_block.group(0))
+    old_count = len(json.loads(m_lit.group(1))['features']) if m_lit else 0
+elif JS_OUT.exists():
+    js_text = JS_OUT.read_text(encoding='utf-8')
+    m_js = inline_const_re.search(js_text)
+    old_count = len(json.loads(m_js.group(1))['features']) if m_js else 0
+else:
+    old_count = 0
 
 # Read AGGREGATES + RENT_AGGREGATES from index.html so we can resolve each
 # split-polygon's master_projects filter into a real AGGREGATES key. Without
@@ -136,13 +179,27 @@ for f in curated['features']:
     })
 
 new_geo = {'type': 'FeatureCollection', 'features': new_features}
-new_literal = 'const GEOJSON = ' + json.dumps(new_geo, ensure_ascii=False, separators=(', ', ': ')) + ';'
-text = text[:m.start()] + new_literal + text[m.end():]
+new_literal = 'const GEOJSON = ' + json.dumps(new_geo, ensure_ascii=False, separators=(', ', ': ')) + ';\n'
 
+# Write external JS file. Format matches the inline literal the merge scripts
+# previously parsed out of template.html, so the regex anchor stays portable.
+with JS_OUT.open('w', encoding='utf-8') as f:
+    f.write(new_literal)
+
+# Content hash → ?v=… cache-bust query. Browser caches /data/curated_polygons.js
+# essentially forever, but a content change flips the hash and force-refreshes.
+sha = hashlib.sha256(new_literal.encode('utf-8')).hexdigest()[:8]
+tag_line = f'<script src="/data/curated_polygons.js?v={sha}"></script>\n'
+
+# Swap whatever's currently anchored (inline <script> block OR existing
+# script tag) for the fresh script tag.
+target = m_block or m_script
+text = text[:target.start()] + tag_line + text[target.end():]
 with HTML.open('w', encoding='utf-8') as f:
     f.write(text)
 
-print(f'replaced GEOJSON: was {old_count} features, now {len(new_features)}', file=sys.stderr)
+print(f'externalized GEOJSON: was {old_count} features, now {len(new_features)} '
+      f'→ {JS_OUT.name} ({JS_OUT.stat().st_size // 1024} KB) ?v={sha}', file=sys.stderr)
 # Source breakdown for quick verification.
 from collections import Counter
 src_counts = Counter(f['properties']['source'] for f in new_features)
