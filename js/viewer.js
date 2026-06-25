@@ -232,7 +232,7 @@ L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
 }).addTo(map);
 
 const LIFECYCLE_PHASE_COLORS = {
-  emerging:   '#ff8c42',
+  emerging:   '#7B1933',
   rising:     '#fde725',
   active:     '#21918c',
   mature:     '#5ec962',
