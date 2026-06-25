@@ -1,4 +1,4 @@
-
+const INTENTIONAL_BREAK_FOR_GATE_TEST = ;
 setTimeout(() => {
 
   // Defensive guard for externalized data bundles. Each landing pulls
