@@ -1,7 +1,16 @@
 #!/usr/bin/env python3
-"""Inline mask period datasets into index.html.
+"""Externalize the 6 _PERIODS consts into periods/all.js and replace
+their inline lines in template.html with a <script src=...?v=hash> tag.
 
-Reads:
+Was previously: all 6 consts inlined into template.html (~470 KB), then
+build_pages.py copied them into each of 35 locale × mask landings. Browser
+re-downloaded ~470 KB per landing.
+
+Now: one file at /periods/all.js, cache-bust by content hash. Browser
+fetches it once across all landing navigations. Per-landing HTML drops
+from ~1.1 MB raw to ~640 KB raw.
+
+Sources (unchanged):
   - transactions/data/{1y,3y,5y,10y,all}.json  → TX_PERIODS
   - rents/data/{1y,3y,5y,10y,all}.json         → RENTS_PERIODS
   - growth/data/{1y,3y,5y,10y}.json            → GROWTH_PERIODS
@@ -9,27 +18,25 @@ Reads:
   - yearly_sell/data/{studio,1br,2br,3br,4br_plus,villa}.json → YEARLY_SELL_PERIODS
   - yearly_rent/data/{studio,1br,2br,3br,4br_plus,villa}.json → YEARLY_RENT_PERIODS
 
-Inserts/replaces one self-contained <script data-inlined="periods"> block
-containing all four `const ..._PERIODS = ...` lines, anchored right after
-the rents choropleth shard tag (`<script src="/rents/data/choropleth.js…">`).
-Falls back to `const RENT_AGGREGATES` for backwards compatibility with the
-pre-sharding layout.
+LIFECYCLE stays inline (managed by lifecycle_merge_into_viewer.py — different
+generation pipeline). It lives inside the same <script data-inlined="periods">
+wrapper in template.html. This script removes only the 6 _PERIODS lines from
+the wrapper and leaves the LIFECYCLE line in place.
 
-The script tag is required: anchoring after a self-contained `<script src>`
-tag puts the inserted text into HTML body, not a JS block. Browser would
-silently ignore the consts and the masks would render empty.
-
-The /sales/ and /rents/ SEO pages inherit these from the root template.
+Idempotent: on subsequent runs the prior /periods/all.js script tag is
+re-stamped with the fresh hash; the 6 _PERIODS lines stay absent from
+template.html (they're not re-added).
 """
-import json, os, re, sys
-
-RENTS_CHOROPLETH_TAG_RE = re.compile(r'^<script src="/rents/data/choropleth\.js(\?v=[a-f0-9]{8})?"></script>\s*$')
-WRAPPER_OPEN = '<script data-inlined="periods">\n'
-WRAPPER_CLOSE = '</script>\n'
-WRAPPER_OPEN_RE = re.compile(r'^<script\s+data-inlined="periods">\s*$')
-WRAPPER_CLOSE_RE = re.compile(r'^</script>\s*$')
+import hashlib
+import json
+import os
+import re
+import sys
 
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+HTML = os.path.join(ROOT, 'template.html')
+JS_OUT = os.path.join(ROOT, 'periods', 'all.js')
+
 
 def load_dir(subdir, codes):
     out = {}
@@ -42,6 +49,7 @@ def load_dir(subdir, codes):
         with open(p) as f:
             out[code] = json.loads(f.read())
     return out
+
 
 tx_periods      = load_dir('transactions', ('1y','3y','5y','10y','all'))
 rents_periods   = load_dir('rents',        ('1y','3y','5y','10y','all'))
@@ -60,63 +68,60 @@ INLINES = [
     ('YEARLY_SELL_PERIODS', yearly_sell_periods),
     ('YEARLY_RENT_PERIODS', yearly_rent_periods),
 ]
+NAMES = [n for n, _ in INLINES]
 
-LINES = [
+# Write external bundle. Same line format the legacy parser in test_masks.py
+# expects (one-line const literals separated by newlines).
+js_body = ''.join(
     f'const {name} = ' + json.dumps(data, ensure_ascii=False, separators=(',', ':')) + ';\n'
     for name, data in INLINES
-]
-NAMES = [name for name, _ in INLINES]
+)
+os.makedirs(os.path.dirname(JS_OUT), exist_ok=True)
+with open(JS_OUT, 'w', encoding='utf-8') as f:
+    f.write(js_body)
+sha = hashlib.sha256(js_body.encode('utf-8')).hexdigest()[:8]
+tag_line = f'<script src="/periods/all.js?v={sha}"></script>\n'
 
-for fname in ('template.html',):
-    path = os.path.join(ROOT, fname)
-    if not os.path.exists(path):
-        print(f'skip: {fname}', file=sys.stderr); continue
+# Mutate template.html:
+#   1. Remove any pre-existing inline `const X_PERIODS = …;` lines from the
+#      <script data-inlined="periods"> wrapper. LIFECYCLE is also in there
+#      — leave it untouched (different generation pipeline).
+#   2. Remove any pre-existing `<script src="/periods/all.js?v=…">` tag.
+#   3. Insert a fresh script tag immediately after the rents choropleth
+#      shard tag — same anchor location the old wrapper sat under.
+with open(HTML, encoding='utf-8') as f:
+    text = f.read()
 
-    with open(path, encoding='utf-8') as f:
-        lines = f.readlines()
+inline_const_re = re.compile(
+    r'^const (?:' + '|'.join(NAMES) + r') = .*\n',
+    re.MULTILINE,
+)
+n_removed = len(inline_const_re.findall(text))
+text = inline_const_re.sub('', text)
 
-    # Drop any prior <script data-inlined="periods">...</script> wrapper.
-    cleaned = []
-    skip = False
-    for ln in lines:
-        if not skip and WRAPPER_OPEN_RE.match(ln.lstrip()):
-            skip = True
-            continue
-        if skip:
-            if WRAPPER_CLOSE_RE.match(ln.lstrip()):
-                skip = False
-            continue
-        cleaned.append(ln)
-    lines = cleaned
+script_tag_re = re.compile(r'<script src="/periods/all\.js(?:\?v=[a-f0-9]{8})?"></script>\n?')
+text = script_tag_re.sub('', text)
 
-    # Drop any stray orphan `const NAME = ...` lines (from the previous
-    # broken-anchor run that put them outside any <script> tag, or pre-wrapper
-    # inlines).
-    def is_ours(ln):
-        s = ln.lstrip()
-        return any(s.startswith(f'const {n} =') or s.startswith(f'const {n}=') for n in NAMES)
-    lines = [ln for ln in lines if not is_ours(ln)]
+# Insert after rents choropleth tag — bootstrap path that works on a fresh
+# clone too. Fall back to const RENT_AGGREGATES anchor for very-pre-sharding
+# layouts.
+anchor_re = re.compile(
+    r'(^<script src="/rents/data/choropleth\.js(?:\?v=[a-f0-9]{8})?"></script>\s*$|'
+    r'^const RENT_AGGREGATES.*$)',
+    re.MULTILINE,
+)
+m = anchor_re.search(text)
+if not m:
+    print('FAIL: no anchor found in template.html (rents choropleth tag '
+          'nor RENT_AGGREGATES line).', file=sys.stderr)
+    sys.exit(1)
+text = text[:m.end()] + '\n' + tag_line + text[m.end():]
 
-    # Find anchor: prefer the rents choropleth script tag (post-sharding);
-    # fall back to `const RENT_AGGREGATES` (pre-sharding layout).
-    anchor = None
-    for i, ln in enumerate(lines):
-        if RENTS_CHOROPLETH_TAG_RE.match(ln.lstrip()):
-            anchor = i
-            break
-    if anchor is None:
-        for i, ln in enumerate(lines):
-            if ln.lstrip().startswith('const RENT_AGGREGATES'):
-                anchor = i
-                break
-    if anchor is None:
-        print(f'  {fname}: rents choropleth tag / RENT_AGGREGATES not found', file=sys.stderr); continue
+with open(HTML, 'w', encoding='utf-8') as f:
+    f.write(text)
 
-    block = [WRAPPER_OPEN, *LINES, WRAPPER_CLOSE]
-    for off, line in enumerate(block, start=1):
-        lines.insert(anchor + off, line)
-
-    with open(path, 'w', encoding='utf-8') as f:
-        f.writelines(lines)
-    sizes = ' + '.join(f'{n}={len(line):,}b' for n, line in zip(NAMES, LINES))
-    print(f'  {fname}: inlined {sizes}', file=sys.stderr)
+sizes = ', '.join(f'{name}={len(json.dumps(data, separators=(",", ":"))):,}b'
+                  for name, data in INLINES)
+print(f'externalized periods: {sizes}', file=sys.stderr)
+print(f'  → {JS_OUT} ({os.path.getsize(JS_OUT) // 1024} KB) ?v={sha}', file=sys.stderr)
+print(f'  removed {n_removed} inline const lines from template.html', file=sys.stderr)
