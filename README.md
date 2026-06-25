@@ -25,8 +25,8 @@ The whole viewer is one self-contained `index.html` (~8.8 MB) with all data inli
 
 Source pipeline:
 - `data/tx.parquet`, `data/rents.parquet` — refreshed via `./scripts/dld_refresh.sh`
-- `_data_communities.geojson` — polygons (Overpass API + DLD `carea-lookup`)
-- `_data_sale_aggregates.json`, `_data_rent_aggregates.json` — per-area aggregates built by `/tmp/build_sale_aggregates.py` and `/tmp/build_rent_aggregates.py`
+- `data/dld_communities_raw.geojson` — legacy OSM polygons (Overpass + DLD `carea-lookup`) used as geometry source for sub-zones in `build_curated_polygons.py`
+- `data/_aggregates_intermediate/{sale,rent}.json` — per-area aggregates built by `scripts/build_sale_aggregates.py` and `scripts/build_rent_aggregates.py` (gitignored intermediate)
 - Inlined into `index.html` by the rebuild scripts
 
 ## Acknowledgments

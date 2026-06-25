@@ -12,7 +12,7 @@ Output: 7 categories × 4 languages = 28 pages.
   /malls/                          …
 
 Each page lists every entry of that category. Each row links to the enclosing
-district page (resolved by point-in-polygon against _data_communities.geojson).
+district page (resolved by point-in-polygon against data/dld_communities_raw.geojson).
 A "Show on map" CTA deep-links to /<lang>/sales/?layers=<key> so the matching
 layer activates immediately when the visitor hits the map.
 
@@ -27,7 +27,7 @@ import unicodedata
 
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 SRC = os.path.join(ROOT, 'template.html')
-GEO = os.path.join(ROOT, '_data_communities.geojson')
+GEO = os.path.join(ROOT, 'data', 'dld_communities_raw.geojson')
 
 # Single source of truth for BASE_URL (env-overridable for dev builds).
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
