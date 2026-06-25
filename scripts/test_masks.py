@@ -87,45 +87,54 @@ SCRIPT_BLOCK_RE = re.compile(r'<script(?P<attrs>[^>]*)>(?P<body>.*?)</script>', 
 def extract_consts(html_path):
     """Parse the 6 _PERIODS consts and LIFECYCLE.
 
-    Periods can live in either of two places (idempotent extraction):
+    Each const can live in either of two places:
       (a) inline <script> blocks in template.html — pre-externalize layout
       (b) external periods/all.js, referenced via <script src=…> tag —
           post-externalize layout (see inline_periods.py).
 
-    LIFECYCLE stays inline in template.html (different generation pipeline,
-    inside the <script data-inlined="periods"> wrapper alongside whatever
-    periods are still inline).
+    Asserts each const appears in EXACTLY ONE source (inline OR external,
+    never both). Double-presence is a silent-drift hazard: if inline_periods.py
+    has a regression and leaves the inline copy behind, runtime takes whichever
+    loads last (could be either) and a stale snapshot persists invisibly. The
+    cascading reader below would happily pick one and call coverage green.
 
-    Raises SystemExit if any const is missing — that means a build step
-    didn't run or wrote them outside a parseable <script> block.
+    Raises SystemExit if any const is missing OR if it appears more than once.
     """
     with open(html_path, encoding='utf-8') as f:
         html = f.read()
 
-    # Collect ALL JS bodies the browser would evaluate:
-    #   - every inline <script> body
-    #   - the body of any external <script src="…"> we recognize as a known
-    #     data bundle (currently just periods/all.js — extend as more get
-    #     externalized).
-    js_bodies = [
+    # Inline <script> bodies — everything the browser parses as inline JS.
+    inline_combined = '\n'.join(
         m.group('body')
         for m in SCRIPT_BLOCK_RE.finditer(html)
         if 'src=' not in m.group('attrs')
-    ]
-    external_src_re = re.compile(r'<script src="(/periods/all\.js)(?:\?v=[a-f0-9]+)?"></script>')
+    )
+
+    # External <script src=…> bundles we know about. Currently just
+    # /periods/all.js — extend the dict as more get externalized.
+    KNOWN_EXTERNAL = {'/periods/all.js'}
+    external_src_re = re.compile(r'<script src="([^"?]+)(?:\?v=[a-f0-9]+)?"></script>')
+    external_combined_parts = []
     for m in external_src_re.finditer(html):
-        ext = os.path.join(ROOT, m.group(1).lstrip('/'))
+        path = m.group(1)
+        if path not in KNOWN_EXTERNAL:
+            continue
+        ext = os.path.join(ROOT, path.lstrip('/'))
         if os.path.exists(ext):
             with open(ext, encoding='utf-8') as f:
-                js_bodies.append(f.read())
-    js_combined = '\n'.join(js_bodies)
+                external_combined_parts.append(f.read())
+    external_combined = '\n'.join(external_combined_parts)
 
     out = {}
     for name, pat in CONST_RE.items():
-        m = pat.search(js_combined)
-        if not m:
-            # Last-ditch: is it in the raw HTML at all? If yes, it's the
-            # outside-script-block bug specifically — point at that.
+        inline_hits = pat.findall(inline_combined)
+        external_hits = pat.findall(external_combined)
+        n_inline = len(inline_hits)
+        n_external = len(external_hits)
+
+        if n_inline == 0 and n_external == 0:
+            # Last-ditch: is it in raw HTML at all? If yes, it's outside any
+            # <script> block — point at that specific failure.
             if re.search(rf'const {name} = ', html):
                 raise SystemExit(
                     f'FAIL [structure]: const {name} exists in {html_path} but is '
@@ -136,8 +145,23 @@ def extract_consts(html_path):
                 f'FAIL [structure]: const {name} not found in {html_path} '
                 f'or any referenced external script bundle.'
             )
+
+        total = n_inline + n_external
+        if total > 1:
+            sources = []
+            if n_inline: sources.append(f'{n_inline}× inline')
+            if n_external: sources.append(f'{n_external}× external')
+            raise SystemExit(
+                f'FAIL [structure]: const {name} appears {total} times '
+                f'({", ".join(sources)}) — should be exactly 1. '
+                f'Likely silent double-write: inline_periods.py wrote the external '
+                f'copy but failed to remove the inline one (or vice-versa). Runtime '
+                f'gets whichever loads last and stale data lingers invisibly.'
+            )
+
+        raw = (inline_hits or external_hits)[0]
         try:
-            out[name] = json.loads(m.group(1))
+            out[name] = json.loads(raw)
         except json.JSONDecodeError as e:
             raise SystemExit(f'FAIL [structure]: const {name} parses as broken JSON: {e}')
     return out
