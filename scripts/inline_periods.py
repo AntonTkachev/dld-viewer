@@ -1,31 +1,34 @@
 #!/usr/bin/env python3
-"""Externalize the 6 _PERIODS consts into periods/all.js and replace
-their inline lines in template.html with a <script src=...?v=hash> tag.
+"""Externalize the 6 _PERIODS consts + LIFECYCLE into periods/all.js
+and replace their inline lines in template.html with a <script src=...?v=hash> tag.
 
-Was previously: all 6 consts inlined into template.html (~470 KB), then
+Was previously: all 7 consts inlined into template.html (~490 KB), then
 build_pages.py copied them into each of 35 locale × mask landings. Browser
-re-downloaded ~470 KB per landing.
+re-downloaded ~490 KB per landing.
 
 Now: one file at /periods/all.js, cache-bust by content hash. Browser
 fetches it once across all landing navigations. Per-landing HTML drops
-from ~1.1 MB raw to ~640 KB raw.
+from ~1.1 MB raw to ~670 KB raw.
 
-Sources (unchanged):
+Sources:
   - transactions/data/{1y,3y,5y,10y,all}.json  → TX_PERIODS
   - rents/data/{1y,3y,5y,10y,all}.json         → RENTS_PERIODS
   - growth/data/{1y,3y,5y,10y}.json            → GROWTH_PERIODS
   - payback/data/{studio,1br,2br,3br,4br_plus}.json → PAYBACK_PERIODS
   - yearly_sell/data/{studio,1br,2br,3br,4br_plus,villa}.json → YEARLY_SELL_PERIODS
   - yearly_rent/data/{studio,1br,2br,3br,4br_plus,villa}.json → YEARLY_RENT_PERIODS
+  - lifecycle/data/all.json                    → LIFECYCLE
 
-LIFECYCLE stays inline (managed by lifecycle_merge_into_viewer.py — different
-generation pipeline). It lives inside the same <script data-inlined="periods">
-wrapper in template.html. This script removes only the 6 _PERIODS lines from
-the wrapper and leaves the LIFECYCLE line in place.
+LIFECYCLE moved into this bundle 2026-06-25 (was inlined separately via
+lifecycle_merge_into_viewer.py). That script is now a thin wrapper around
+this one so the single source of truth for the periods bundle is here.
 
 Idempotent: on subsequent runs the prior /periods/all.js script tag is
-re-stamped with the fresh hash; the 6 _PERIODS lines stay absent from
-template.html (they're not re-added).
+re-stamped with the fresh hash; the 7 inline const lines stay absent
+from template.html (they're not re-added).
+
+Hash length: 8 hex chars. If you ever change this, sync with the
+script_tag_re in scripts/test_masks.py and any other re-stampers.
 """
 import hashlib
 import json
@@ -60,6 +63,15 @@ yearly_sell_periods = load_dir('yearly_sell',
 yearly_rent_periods = load_dir('yearly_rent',
                                ('studio','1br','2br','3br','4br_plus','villa'))
 
+# Lifecycle: single flat {area_key: rec} dict, not period-bucketed.
+lifecycle_path = os.path.join(ROOT, 'lifecycle', 'data', 'all.json')
+if not os.path.exists(lifecycle_path):
+    print(f'FAIL: {lifecycle_path} not found — run scripts/build_lifecycle.py first',
+          file=sys.stderr)
+    sys.exit(1)
+with open(lifecycle_path) as f:
+    lifecycle_data = json.load(f)
+
 INLINES = [
     ('TX_PERIODS',          tx_periods),
     ('RENTS_PERIODS',       rents_periods),
@@ -67,6 +79,7 @@ INLINES = [
     ('PAYBACK_PERIODS',     payback_periods),
     ('YEARLY_SELL_PERIODS', yearly_sell_periods),
     ('YEARLY_RENT_PERIODS', yearly_rent_periods),
+    ('LIFECYCLE',           lifecycle_data),
 ]
 NAMES = [n for n, _ in INLINES]
 
@@ -83,9 +96,10 @@ sha = hashlib.sha256(js_body.encode('utf-8')).hexdigest()[:8]
 tag_line = f'<script src="/periods/all.js?v={sha}"></script>\n'
 
 # Mutate template.html:
-#   1. Remove any pre-existing inline `const X_PERIODS = …;` lines from the
-#      <script data-inlined="periods"> wrapper. LIFECYCLE is also in there
-#      — leave it untouched (different generation pipeline).
+#   1. Remove any pre-existing inline `const X_PERIODS = …;` lines AND the
+#      `const LIFECYCLE = …;` line from the <script data-inlined="periods">
+#      wrapper. (The wrapper itself stays around in case future inlined
+#      consts land there — empty <script> is harmless.)
 #   2. Remove any pre-existing `<script src="/periods/all.js?v=…">` tag.
 #   3. Insert a fresh script tag immediately after the rents choropleth
 #      shard tag — same anchor location the old wrapper sat under.
