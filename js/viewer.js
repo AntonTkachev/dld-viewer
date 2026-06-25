@@ -1,6 +1,35 @@
 
 setTimeout(() => {
 
+  // Defensive guard for externalized data bundles. Each landing pulls
+  // GEOJSON / AGGREGATES / RENT_AGGREGATES / *_PERIODS / LIFECYCLE from
+  // separate <script src=…> tags now. If any of those fail to load
+  // (CDN blip, stale cache, broken rebuild), the existing
+  // `typeof X !== 'undefined' ? X : {}` fallbacks lower in this file
+  // would silently render an empty map — worse UX than failing loud.
+  const REQUIRED_BUNDLES = [
+    'GEOJSON',                    // /polygons/curated.js
+    'AGGREGATES',                 // /transactions/data/choropleth.js
+    'RENT_AGGREGATES',            // /rents/data/choropleth.js
+    'TX_PERIODS', 'RENTS_PERIODS', 'GROWTH_PERIODS',
+    'PAYBACK_PERIODS', 'YEARLY_SELL_PERIODS', 'YEARLY_RENT_PERIODS',
+                                  // /periods/all.js
+    'LIFECYCLE',                  // currently inline; track in same list once externalized
+  ];
+  const missing = REQUIRED_BUNDLES.filter(n => typeof window[n] === 'undefined');
+  if (missing.length) {
+    console.error('viewer.js: required data bundles missing:', missing.join(', '));
+    document.body.innerHTML =
+      '<div style="max-width:480px;margin:80px auto;padding:32px;font:14px/1.5 system-ui;background:#fef2f2;border:1px solid #fca5a5;color:#991b1b;border-radius:8px">'
+      + '<h2 style="margin:0 0 12px;font-size:18px">Data failed to load</h2>'
+      + '<p style="margin:0 0 16px">Map can\'t render. Reloading usually fixes this — a CDN blip or stale cache.</p>'
+      + '<p style="margin:0;font-family:monospace;font-size:12px;color:#7f1d1d">missing: '
+      + missing.join(', ') + '</p>'
+      + '<button onclick="location.reload()" style="margin-top:16px;padding:8px 16px;background:#dc2626;color:#fff;border:none;border-radius:6px;cursor:pointer;font:inherit">Reload</button>'
+      + '</div>';
+    return;
+  }
+
   document.querySelectorAll('#mp-panel .mp-btn').forEach(btn => {
     btn.addEventListener('click', e => {
       e.stopPropagation();
