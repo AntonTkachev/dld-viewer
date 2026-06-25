@@ -1,7 +1,7 @@
-// ===================== I18N =====================
+
 const I18N = {
   ru: {
-    // layer control
+    
     metro_all: '🚇 Метро',
     poi_title: 'Места на карте',
     mp_label_search: 'Поиск', mp_label_lang: 'Язык', mp_label_poi: 'Места',
@@ -102,7 +102,7 @@ const I18N = {
     mosques: '🕌 Мечети',
     construction: '🏗️ Стройки',
     malls: '🛍️ Моллы',
-    // polygon popup
+    
     pp_trans_ytd: 'Сделок (всего)',
     pp_volume: 'Объём, AED',
     pp_median: 'Медиана, AED',
@@ -114,7 +114,7 @@ const I18N = {
     pp_open_fs: 'На весь экран',
     dp_open_full: 'Открыть полную страницу',
     dp_close: 'Закрыть',
-    // side panel sections
+    
     sp_section_timeline: 'Динамика по дням',
     sp_subsection_count: 'Кол-во сделок',
     sp_subsection_volume: 'Объём (AED)',
@@ -147,7 +147,7 @@ const I18N = {
     open_full_top_projects: 'Открыть полный список топ-проектов',
     open_full_top_deals:    'Открыть полный список крупных сделок',
     open_full_recent:       'Открыть последние сделки',
-    // stat cards
+    
     sc_trans: 'Кол-во сделок',
     sc_volume: 'Объём (AED)',
     sc_median_price: 'Средняя цена (AED)',
@@ -157,18 +157,18 @@ const I18N = {
     sc_per_day: '/день',
     sc_mean: 'mean',
     sc_median_short: 'медиана',
-    // tables
+    
     th_project: 'Проект', th_n: 'Сделок', th_median: 'Медиана (AED)', th_volume: 'Объём (AED)', th_district: 'Район',
     not_specified: '(не указан)', rooms_breakdown_title: 'По комнатам',
     th_rooms_type: 'Тип', th_count: 'Кол-во', th_med_aed: 'Медиана (AED)', th_aed_psqm: 'AED/м²',
     th_date: 'дата', th_br: 'BR', th_sqm: 'м²', th_aed: 'AED', th_type: 'тип',
-    // chart legends
+    
     ch_count: 'Сделок', ch_median_aed: 'Медиана AED', ch_volume_aed: 'Объём AED',
     chart_expand: 'Увеличить', ch_channel: 'Канал ±1.5σ', ch_ma: 'Скользящая средняя', ch_trend: 'Тренд', ch_median: 'Медиана',
-    // misc
+    
     close: 'Закрыть',
     no_data_alert: 'Для этого района нет данных из CSV (плейсхолдеры).',
-    // tabs (sale / rent)
+    
     tab_sale: 'Покупка', tab_rent: 'Аренда',
     rent_no_data: 'Нет данных по аренде для этого района',
     rent_sc_contracts: 'Контрактов аренды',
@@ -198,8 +198,7 @@ const I18N = {
     rent_donut_tenant: 'Кто арендует',
     rent_donut_usage: 'Назначение',
     rent_subtype_other: 'Другое',
-  
-    // construction/project popup (RERA-backed, district-aggregate)
+
     pj_status:'Статус',
     pj_status_active:'Строится', pj_status_not_started:'Не начат', pj_status_pending:'Ожидание', pj_status_cond_activating:'Условный старт',
     pj_status_finished:'Сдан', pj_status_cancelled:'Отменён', pj_status_frozen:'Заморожен',
@@ -216,35 +215,35 @@ const I18N = {
     pj_completion:'Факт. сдача',
     pj_geocode_area:'⚠ Координаты приближены по центроиду района (точных нет в RERA)',
     pj_start:'Старт',
-    // school popup
+    
     sch_curr:'Куррикулум', sch_rating:'KHDA рейтинг',
     sch_area:'Район', sch_phone:'Телефон', sch_grade_range:'Классы',
     sch_wellbeing:'Wellbeing', sch_inclusion:'Inclusion',
     sch_gender:'Тип (м/ж)',
     sch_not_in_khda:'Нет в реестре KHDA',
     sch_warn_real:'Все поля — реальные из KHDA (Education Directory).',
-    // university popup
+    
     uni_op:'Оператор', uni_op_type:'Тип', uni_city:'Район', uni_web:'Сайт',
     uni_established:'Основан', uni_khda_stars:'KHDA рейтинг',
     uni_not_in_khda:'Нет в реестре KHDA Higher Education',
     uni_khda_only_geocoded:'Координаты приближены по району (нет точки в OSM)',
-    // medical popup
+    
     h_emerg:'Скорая (24/7)', h_op:'Оператор', h_phone:'Телефон', h_web:'Сайт', h_city:'Город',
     h_specs_real:'Специальности',
     med_kind:'Тип', med_kind_hospital:'Больница', med_kind_clinic:'Клиника', med_kind_doctors:'Кабинет врача',
-    // mosque popup
+    
     mo_denom:'Деноминация', mo_street:'Улица', mo_city:'Город', mo_wheel:'Wheelchair', mo_image:'Фото',
     mo_size:'Размер', mo_cap:'Вместимость', mo_khutbah:'Хутба, языки',
     mo_women:'Женская часть', mo_park:'Парковка', mo_classes:'Курсы Корана', mo_iftar:'Ифтар в Рамадан',
     yes_t:'✓ есть', no_t:'нет', view_t:'смотреть',
     mo_size_big:'Большая', mo_size_mid:'Средняя', mo_size_small:'Махалля',
     mo_warn:'⚠ Поля с ~ — синтетика. Деноминация/адрес/wheelchair/фото — реальные из OSM.',
-    // mall popup
+    
     ml_kind:'Тип', ml_kind_mall:'Молл', ml_kind_souq:'Сук / рынок',
     ml_hours:'Часы работы', ml_op:'Оператор', ml_brand:'Бренд',
     ml_phone:'Телефон', ml_web:'Сайт',
     ml_levels:'Этажей', ml_addr:'Адрес', ml_access:'Доступная среда', ml_wifi:'Wi-Fi',
-    // metro station popup
+    
     metro_line:'Линия', metro_interchange:'пересадка',
 
     abbr_m:'млн', abbr_b:'млрд', abbr_k:'тыс',
@@ -1264,18 +1263,18 @@ const currentPType = 'all';
 function applyLang(newLang) {
   if (!I18N[newLang]) return;
   currentLang = newLang;
-  // Update lang buttons
+  
   document.querySelectorAll('#mp-lang-list .lang-btn').forEach(b => {
     b.classList.toggle('active', b.dataset.lang === newLang);
   });
-  // Update globe label and close all dropdowns
+  
   const codeEl = document.querySelector('.lang-current-code');
   if (codeEl) codeEl.textContent = newLang.toUpperCase();
   document.querySelectorAll('#mp-panel .mp-item').forEach(it => it.classList.remove('open'));
-  // Update document direction for Arabic
+  
   document.documentElement.lang = newLang;
   document.documentElement.dir = newLang === 'ar' ? 'rtl' : 'ltr';
-  // Update static elements
+  
   const closeBtn = document.getElementById('dp-close');
   if (closeBtn) closeBtn.title = t('close');
   const lsLabel = document.getElementById('ls-label-text');
@@ -1304,9 +1303,9 @@ function applyLang(newLang) {
   if (typeof updateMaskCurrentLabel === 'function') updateMaskCurrentLabel();
   if (typeof renderPoiList === 'function') renderPoiList();
   if (typeof _refreshViewSwitchLabel === 'function') _refreshViewSwitchLabel();
-  // Re-render legend (renderChoro repaints chrome too)
+  
   if (typeof renderChoro === 'function') renderChoro();
-  // Re-render side panel if open
+  
   const panel = document.getElementById('detail-panel');
   if (panel && panel.classList.contains('open')) {
     const titleEl = document.getElementById('dp-title');

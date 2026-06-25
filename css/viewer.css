@@ -1,7 +1,5 @@
   html,body{margin:0;height:100%;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Helvetica,Arial,sans-serif;color:#1a1a1a;background:#0d1117}
-  /* Language banner — soft nudge for non-RU browsers on the Russian root.
-     Position:fixed overlay; map sits underneath unchanged. When visible,
-     bump #mp-panel + #view-switch down so they don't collide. */
+  
   #lang-banner{position:fixed;top:0;left:0;right:0;z-index:1300;background:#fef3c7;border-bottom:1px solid #fbbf24;padding:8px 16px;display:flex;align-items:center;gap:12px;font-size:13px;font-family:inherit;color:#78350f;box-shadow:0 1px 4px rgba(0,0,0,.06)}
   #lang-banner[hidden]{display:none}
   #lang-banner .lb-text{flex:1;line-height:1.3}
@@ -43,13 +41,13 @@
   .pin.mall.souq{border-color:#b8590a;color:#b8590a}
   .pin.mosque{border-color:#8c564b;color:#8c564b;width:18px;height:18px;font-size:11px}
   .pin.construction{border-color:#9467bd;color:#9467bd}
-  /* District-aggregate cluster pin: round badge with big count + tiny emoji */
+  
   .pin.construction-cluster{display:flex;align-items:center;justify-content:center;flex-direction:column;background:#9467bd;color:#fff;border:2px solid #5d3f86;border-radius:50%;box-shadow:0 1px 4px rgba(0,0,0,.3);font-weight:700;line-height:1;cursor:pointer}
   .pin.construction-cluster .pin-count{font-size:13px;line-height:1;letter-spacing:.5px}
   .pin.construction-cluster .pin-emoji{font-size:9px;opacity:.85;margin-top:1px}
-  /* Status chip inside the aggregate popup */
+  
   .pj-status-chip{display:inline-block;padding:1px 7px;border-radius:9px;font-size:11px;font-weight:600;line-height:1.5;white-space:nowrap}
-  /* Placeholder "Open all" button — wired in a later page */
+  
   .pj-open-all{display:block;text-align:center;text-decoration:none;width:100%;box-sizing:border-box;background:#e6f7e6;color:#0a7f00;border:1px solid #b6dfb6;border-radius:5px;padding:6px 10px;font-size:12px;font-weight:600;font-family:inherit;cursor:pointer;transition:background .12s,border-color .12s}
   .pj-open-all:hover{background:#d3eed3;border-color:#92cc92;text-decoration:none}
   .rating{display:inline-block;padding:1px 6px;border-radius:3px;font-size:11px;font-weight:600;color:#fff}
@@ -77,14 +75,12 @@
   .dp-stat .k{font-size:11px;color:#777;line-height:1.2}
   .dp-stat .v{font-size:15px;font-weight:600;line-height:1.3;margin-top:2px;font-variant-numeric:tabular-nums}
   .dp-stat .sub{font-size:10.5px;color:#999;margin-top:1px}
-  /* Each card's left-border tint signals which chart it pairs with. Hues
-     are intentionally muted — same family as ROOM_COLORS so the panel
-     stays "neutral" overall, not rainbow. */
+  
   .dp-stat.dp-stat--avg   {border-left-color:#1d4ed8}
   .dp-stat.dp-stat--count {border-left-color:#475569}
   .dp-stat.dp-stat--vol   {border-left-color:#9a6418}
   .dp-stat.dp-stat--ppsqm {border-left-color:#0e7c66}
-  /* Rent median stat embeds an Annual ↔ Monthly toggle in the top-right. */
+  
   .dp-stat.dp-stat-toggle{position:relative}
   .dp-unit-toggle{position:absolute;top:6px;right:6px;font-size:10.5px;line-height:1;padding:3px 7px;border:1px solid #cbd5e1;border-radius:999px;background:#fff;color:#475569;cursor:pointer;font-weight:600}
   .dp-unit-toggle:hover{background:#f1f5f9;border-color:#94a3b8;color:#0f172a}
@@ -109,9 +105,7 @@
   .chart-modal{position:fixed;inset:0;background:rgba(15,23,42,.62);display:none;align-items:center;justify-content:center;z-index:9000;padding:24px}
   .chart-modal.open{display:flex}
   .chart-modal-inner{background:#fff;border-radius:8px;width:100%;max-width:1400px;height:100%;max-height:90vh;display:flex;flex-direction:column;box-shadow:0 8px 40px rgba(0,0,0,.3)}
-  /* Insight donut grid — 4 cards side by side, each a compact analytic
-     exhibit (off-plan share / top projects / big-money years / what's
-     selling now). Collapses to 2x2 on narrow screens. */
+  
   .dp-donut-grid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:10px;margin-top:6px}
   @media (max-width:780px){.dp-donut-grid{grid-template-columns:repeat(2,minmax(0,1fr))}}
   .dp-donut-card{background:#fff;border:1px solid #edf0f4;border-radius:8px;padding:8px 8px 6px;display:flex;flex-direction:column;min-width:0}
@@ -121,7 +115,7 @@
   .dp-donut-foot .dp-section-more{padding-top:0}
   .dp-donut-foot a{font-size:11.5px;font-weight:500;color:#1d4ed8;text-decoration:none}
   .dp-donut-foot a:hover{text-decoration:underline}
-  /* Room-breakdown legend — chip per room category, click to toggle. */
+  
   .rb-legend{display:flex;flex-wrap:wrap;gap:5px;margin:4px 0 10px}
   .rb-chip{font-family:inherit;cursor:pointer;border-radius:14px;border:1px solid;padding:4px 10px;font-size:11.5px;font-weight:600;display:inline-flex;align-items:center;gap:5px;line-height:1.2;transition:opacity .12s}
   .rb-chip:hover{opacity:.85}
@@ -157,7 +151,6 @@
   .dp-tag-g-Mortgage{background:#f3e7ff;color:#6b1dff}
   .dp-tag-g-Gifts{background:#ffe7f3;color:#c026d3}
 
-  /* Top-center consolidated control bar (pill style) */
   #mp-panel{position:absolute;top:12px;left:50%;transform:translateX(-50%);z-index:1100;background:#fff;border:1px solid #d0d7de;border-radius:28px;box-shadow:0 4px 16px rgba(0,0,0,.12);display:flex;align-items:stretch;padding:4px;gap:0;font-family:inherit;max-width:calc(100vw - 24px)}
   .mp-item{position:relative;display:flex}
   .mp-item:not(:last-child){border-right:1px solid #eef0f3}
@@ -172,12 +165,12 @@
   .mp-body{position:absolute;top:calc(100% + 6px);left:50%;transform:translateX(-50%);background:#fff;border:1px solid #d0d7de;border-radius:8px;box-shadow:0 8px 24px rgba(0,0,0,.18);min-width:260px;display:none;z-index:1101}
   .mp-item.open .mp-body{display:block}
   .mp-section-title{font-size:11px;color:#666;font-weight:600;text-transform:uppercase;letter-spacing:.04em;padding:10px 14px 4px}
-  /* Lang options */
+  
   #mp-lang-list{display:flex;flex-direction:column;gap:2px;padding:6px}
   #mp-lang-list .lang-btn{background:#fff;border:none;color:#444;padding:8px 12px;font-size:12.5px;font-weight:600;cursor:pointer;border-radius:5px;font-family:inherit;text-align:left}
   #mp-lang-list .lang-btn.active{background:#1d4ed8;color:#fff}
   #mp-lang-list .lang-btn:hover:not(.active){background:#f0f3f6}
-  /* Search */
+  
   #search-input{box-sizing:border-box;width:calc(100% - 16px);margin:8px;padding:7px 10px;border:1px solid #d0d7de;border-radius:5px;font-size:13px;font-family:inherit}
   #search-input:focus{outline:none;border-color:#1d4ed8;box-shadow:0 0 0 2px rgba(29,78,216,.12)}
   #search-results{max-height:320px;overflow-y:auto;padding:0 6px 6px}
@@ -186,13 +179,13 @@
   .sr-item .sr-name{color:#1f2933;font-weight:500;flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
   .sr-item .sr-meta{color:#888;font-size:10.5px;flex-shrink:0;font-variant-numeric:tabular-nums}
   .sr-empty{padding:14px 8px;color:#999;font-size:12px;text-align:center}
-  /* POI list */
+  
   #mp-poi-list{display:flex;flex-direction:column;padding:6px}
   #mp-poi-list label{display:flex;align-items:center;gap:8px;padding:8px 12px;font-size:12.5px;cursor:pointer;border-radius:4px;color:#1f2933;line-height:1.2}
   #mp-poi-list label:hover{background:#f0f3f6}
   #mp-poi-list input{margin:0;accent-color:#1d4ed8}
   #mp-poi-list .poi-count{margin-left:auto;color:#888;font-size:11px;font-variant-numeric:tabular-nums}
-  /* Masks dropdown */
+  
   #mp-mask-list{display:flex;flex-direction:column;padding:6px;min-width:260px;max-width:320px}
   .mask-row{display:flex;flex-direction:column;padding:8px 10px;border-radius:6px;cursor:pointer;border:1px solid transparent;transition:background .12s,border-color .12s}
   .mask-row:hover{background:#f4f6f9}
@@ -215,45 +208,38 @@
   .period-tick{cursor:pointer;padding:1px 4px;border-radius:3px;transition:color .12s,background .12s;white-space:nowrap;font-family:inherit}
   .period-tick:hover{color:#1d4ed8}
   .period-tick.active{color:#0f172a;font-weight:700;background:#eef3fc}
-  /* Secondary-masks "envelope" button — always at the bottom of the list */
+  
   .mask-more-toggle{display:flex;align-items:center;justify-content:center;gap:6px;margin:8px 6px 4px;padding:6px 14px;border:1px solid #d6dde6;border-radius:14px;background:#fff;cursor:pointer;font-family:inherit;font-size:12px;font-weight:600;color:#374151;user-select:none;transition:background .12s,border-color .12s,color .12s}
   .mask-more-toggle:hover{background:#f1f5fb;border-color:#9bb6e2;color:#1d4ed8}
   .mask-more-toggle:focus{outline:none;box-shadow:0 0 0 2px rgba(29,78,216,.18)}
   .mask-more-caret{display:inline-block;font-size:9px;color:#888;line-height:1;transition:transform .18s ease}
   .mask-more-toggle.expanded .mask-more-caret{transform:rotate(180deg)}
   .mask-more-toggle:hover .mask-more-caret{color:#1d4ed8}
-  /* View toggle pills (Map / Table) — sit at bottom of mask body */
+  
   .mp-mask-view{display:flex;align-items:center;gap:4px;padding:6px 10px 0;font-size:11px;color:#666;font-family:inherit}
   .mp-mask-view-k{color:#888;margin-right:2px}
   .mp-mask-view-btn{font-family:inherit;font-weight:600;padding:3px 10px;border-radius:12px;border:1px solid #d6dde6;background:#fff;color:#374151;cursor:pointer;font-size:11px;transition:background .12s,border-color .12s,color .12s}
   .mp-mask-view-btn:hover:not(.active){background:#f1f5fb;border-color:#9bb6e2}
   .mp-mask-view-btn.active{background:#0f172a;border-color:#0f172a;color:#fff;cursor:default}
-  /* Split layout — table on right half, map on left half. */
+  
   #table-view{display:none;position:fixed;top:0;bottom:0;right:0;width:50%;background:#fff;flex-direction:column;z-index:5;border-left:1px solid #d6dde6;box-shadow:-2px 0 8px rgba(15,23,42,0.04)}
   body.view-table #table-view{display:flex}
   body.view-table #map{right:50%}
   body.view-table #legend{display:none !important}
-  /* Keep only Places (POI layers) in the split view top panel. Language was
-     hidden because switching it from here triggers a full page navigation
-     that drops the current sort/search/page state in the table — felt broken
-     to the user. Switch language from the map view instead. */
+  
   body.view-table #mp-search,
   body.view-table #mp-lang,
   body.view-table #mp-mask,
   body.view-table #mp-level{display:none}
   body.view-table #mp-panel{left:25%}
   body.view-table #view-switch{inset-inline-end:calc(50% + 14px)}
-  /* Narrow viewport (mobile/tablet portrait) — fall back to full-width
-     table, hide the map. Split is only useful when both halves are wide
-     enough to be legible. */
+  
   @media (max-width: 900px) {
     #table-view{width:auto;left:0;border-left:0;box-shadow:none}
     body.view-table #map{display:none;right:0}
     body.view-table #mp-panel{display:none !important}
     body.view-table #view-switch{inset-inline-end:14px}
-    /* Hint mentions "click row → show on map", but on mobile the map is
-       hidden and row clicks navigate to the district page (same as name
-       clicks). Hide the now-inaccurate hint. */
+    
     .tv-hint{display:none}
   }
   .tv-toolbar{display:flex;align-items:center;flex-wrap:wrap;gap:8px 12px;padding:9px 14px;border-bottom:1px solid #e5e7eb;flex-shrink:0;background:#fff}
@@ -288,8 +274,7 @@
   #tv-table th,#tv-table td{padding:4px 12px;text-align:left;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;line-height:1.45}
   #tv-table td{border-bottom:1px solid #eef0f3}
   #tv-table th{position:sticky;top:0;background:#f8fafc;font-weight:700;color:#475569;cursor:pointer;user-select:none;border-bottom:1px solid #cfd6e0;z-index:1;font-size:10.5px;text-transform:uppercase;letter-spacing:.04em;padding:8px 12px}
-  /* Growth/Payback have longer header labels — shrink them one step so
-     "Цена сейчас (м²)" / "Окупаемость (лет)" don't get truncated. */
+  
   #tv-table.mask-growth th, #tv-table.mask-payback th{font-size:9.5px;letter-spacing:.03em;padding:8px 10px}
   #tv-table th:hover{background:#eef3fc}
   #tv-table th.sorted-asc,#tv-table th.sorted-desc{color:#1d4ed8}
@@ -314,14 +299,14 @@
   .tv-district-link:hover{text-decoration:underline}
   #tv-table td.tv-no-polygon{color:#94a3b8}
   .tv-empty{padding:30px;text-align:center;color:#888;font-size:13px}
-  /* Whole row is a fly-to trigger when there's a polygon to focus. */
+  
   #tv-table tbody tr.clickable{cursor:pointer}
   #tv-table tbody tr.clickable:hover td{background:#eef3fc}
-  /* Choropleth overlay labels (growth %, payback years) */
+  
   .choro-overlay{background:transparent;border:0}
   .choro-overlay-text{display:inline-block;background:rgba(255,255,255,0.85);color:#1f2933;font-size:11px;font-weight:700;padding:0 2px;border-radius:2px;white-space:nowrap;transform:translate(-50%,-50%);box-shadow:0 1px 1px rgba(0,0,0,0.14);font-variant-numeric:tabular-nums;line-height:1.2;cursor:pointer;transition:background 0.12s}
   .choro-overlay:hover .choro-overlay-text{background:rgba(255,255,255,1);box-shadow:0 1px 3px rgba(0,0,0,0.25)}
-  /* Levels dropdown (vertical top→down) */
+  
   #mp-level-list{display:flex;flex-direction:column;align-items:stretch;padding:8px 10px;gap:3px;min-width:140px}
   #mp-level-list .ls-btn{background:#fff;border:1px solid #e1e6ec;color:#444;padding:6px 12px;font-size:12.5px;font-weight:600;cursor:pointer;border-radius:5px;font-family:inherit;font-variant-numeric:tabular-nums;line-height:1.2;text-align:center}
   #mp-level-list .ls-btn:hover:not(.active){background:#eef;border-color:#c5d4ea}
