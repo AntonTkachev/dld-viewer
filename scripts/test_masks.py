@@ -85,25 +85,44 @@ SCRIPT_BLOCK_RE = re.compile(r'<script(?P<attrs>[^>]*)>(?P<body>.*?)</script>', 
 
 
 def extract_consts(html_path):
-    """Parse the four _PERIODS consts from inline <script> blocks.
-    Raises SystemExit if any const is missing or outside a <script> block —
-    that means inline_periods.py wrote them as raw text and the browser
-    will silently ignore the entire data layer.
+    """Parse the 6 _PERIODS consts and LIFECYCLE.
+
+    Periods can live in either of two places (idempotent extraction):
+      (a) inline <script> blocks in template.html — pre-externalize layout
+      (b) external periods/all.js, referenced via <script src=…> tag —
+          post-externalize layout (see inline_periods.py).
+
+    LIFECYCLE stays inline in template.html (different generation pipeline,
+    inside the <script data-inlined="periods"> wrapper alongside whatever
+    periods are still inline).
+
+    Raises SystemExit if any const is missing — that means a build step
+    didn't run or wrote them outside a parseable <script> block.
     """
     with open(html_path, encoding='utf-8') as f:
         html = f.read()
 
-    # Join all inline <script> bodies (skip external <script src="...">).
-    inline_bodies = [
+    # Collect ALL JS bodies the browser would evaluate:
+    #   - every inline <script> body
+    #   - the body of any external <script src="…"> we recognize as a known
+    #     data bundle (currently just periods/all.js — extend as more get
+    #     externalized).
+    js_bodies = [
         m.group('body')
         for m in SCRIPT_BLOCK_RE.finditer(html)
         if 'src=' not in m.group('attrs')
     ]
-    inline_combined = '\n'.join(inline_bodies)
+    external_src_re = re.compile(r'<script src="(/periods/all\.js)(?:\?v=[a-f0-9]+)?"></script>')
+    for m in external_src_re.finditer(html):
+        ext = os.path.join(ROOT, m.group(1).lstrip('/'))
+        if os.path.exists(ext):
+            with open(ext, encoding='utf-8') as f:
+                js_bodies.append(f.read())
+    js_combined = '\n'.join(js_bodies)
 
     out = {}
     for name, pat in CONST_RE.items():
-        m = pat.search(inline_combined)
+        m = pat.search(js_combined)
         if not m:
             # Last-ditch: is it in the raw HTML at all? If yes, it's the
             # outside-script-block bug specifically — point at that.
@@ -113,7 +132,10 @@ def extract_consts(html_path):
                     f'NOT inside any <script> block — browser ignores it as text. '
                     f'Check inline_periods.py wrapper.'
                 )
-            raise SystemExit(f'FAIL [structure]: const {name} not found in {html_path}')
+            raise SystemExit(
+                f'FAIL [structure]: const {name} not found in {html_path} '
+                f'or any referenced external script bundle.'
+            )
         try:
             out[name] = json.loads(m.group(1))
         except json.JSONDecodeError as e:
