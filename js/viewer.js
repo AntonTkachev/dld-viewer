@@ -1616,6 +1616,7 @@ const metroLayer = L.layerGroup();
 
 if (typeof TRAM_LINE !== 'undefined') METRO_LINES.features.push(TRAM_LINE);
 if (typeof ETIHAD_LINE !== 'undefined') METRO_LINES.features.push(ETIHAD_LINE);
+if (typeof GOLD_LINE !== 'undefined') METRO_LINES.features.push(GOLD_LINE);
 for (const f of METRO_LINES.features) {
   L.geoJSON(f, {style: {color: f.properties.color, weight: 4, opacity: 0.9, dashArray: f.properties.status==='construction' ? '8,6' : null}}).addTo(metroLayer);
 }
@@ -1626,6 +1627,9 @@ if (typeof TRAM_STATIONS !== 'undefined') {
 }
 if (typeof ETIHAD_STATIONS !== 'undefined') {
   for (const s of ETIHAD_STATIONS) METRO_STATIONS.push(s);
+}
+if (typeof GOLD_STATIONS !== 'undefined') {
+  for (const s of GOLD_STATIONS) METRO_STATIONS.push(s);
 }
 for (const s of METRO_STATIONS) {
   const groups = s.groups || [s.group];
