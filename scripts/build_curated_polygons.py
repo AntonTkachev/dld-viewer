@@ -4,7 +4,7 @@
 Pipeline:
   data/dld_communities.geojson      (224 DM admin polygons — clean, non-overlapping)
   data/polygon_overrides.json       (hand-curated splits — Marsa Dubai → Marina/JBR/...)
-  data/dld_communities_raw.geojson  (legacy OSM polygons, used as geometry source for sub-zones)
+  data/dld_communities_osm.geojson  (legacy OSM polygons, used as geometry source for sub-zones)
             │
             ▼
   data/curated_polygons.geojson  (the new ground truth used by build_*_map.py)
@@ -17,7 +17,7 @@ For each split entry in the override file:
   1. Drop the DM Communities feature for `area_name_en` (since its data is being
      redistributed across the sub-polygons).
   2. Add one new feature per sub-polygon, with geometry copied from
-     `data/dld_communities_raw.geojson[osm_polygon]` and a filter pinning it to
+     `data/dld_communities_osm.geojson[osm_polygon]` and a filter pinning it to
      `area_name_en = X AND master_project_en IN/LIKE Y`.
   3. If keep_remainder=true, also re-add the DM polygon under `remainder_name`
      with a filter that excludes all the master_projects consumed by sub-polygons.
@@ -34,7 +34,7 @@ from shapely.ops import unary_union
 
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 DM_SRC      = os.path.join(ROOT, 'data', 'dld_communities.geojson')
-OSM_SRC     = os.path.join(ROOT, 'data', 'dld_communities_raw.geojson')
+OSM_SRC     = os.path.join(ROOT, 'data', 'dld_communities_osm.geojson')
 OVERRIDE    = os.path.join(ROOT, 'data', 'polygon_overrides.json')
 ALIASES     = os.path.join(ROOT, 'data', 'dm_to_dld_aliases.json')
 TX          = os.path.join(ROOT, 'data', 'tx.parquet')
