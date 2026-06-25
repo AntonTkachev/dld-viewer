@@ -34,8 +34,13 @@ KHDA = ROOT / 'data' / 'khda_schools.csv'
 OSM  = ROOT / 'data' / 'osm_schools.json'
 # GEOJSON polygons used to live as a `const GEOJSON = …;` inline literal in
 # template.html. After the 2.1 MB externalization, they live in this file
-# and template.html just references it via <script src=…>.
-GEOJSON_JS = ROOT / 'data' / 'curated_polygons.js'
+# and template.html just references it via <script src=…>. Listed in
+# priority order — first existing file wins (data/curated_polygons.js was
+# the original externalized location before the move to /polygons/).
+GEOJSON_JS_CANDIDATES = (
+    ROOT / 'polygons' / 'curated.js',
+    ROOT / 'data' / 'curated_polygons.js',
+)
 
 # Geo-sanity threshold: a name-match is rejected if the OSM coords sit more
 # than this far from the centroid of the polygon corresponding to KHDA `area`.
@@ -246,12 +251,15 @@ def _feat_contains(feat, pt):
     return False
 
 def load_geojson_polygons():
-    """Pull the GEOJSON const out of data/curated_polygons.js for polygon lookups.
+    """Pull the GEOJSON const out of polygons/curated.js for polygon lookups.
 
-    Falls back to template.html for callers running on a tree from before
-    the externalization (so the script is forward+backward compatible).
+    Falls back through:
+      1. polygons/curated.js                — current location
+      2. data/curated_polygons.js           — legacy externalized path
+      3. inline `const GEOJSON` in template.html — pre-externalization layout
+    so the script is forward+backward compatible across all three eras.
     """
-    for path in (GEOJSON_JS, HTML):
+    for path in (*GEOJSON_JS_CANDIDATES, HTML):
         if not path.exists():
             continue
         with path.open(encoding='utf-8') as f:

@@ -19,18 +19,13 @@ exclude:
   - scripts/
   - templates/
 
-  # Raw source data inlined into index.html at build time — the runtime
-  # never fetches these. Exclude by file type rather than the whole `data/`
-  # directory so that runtime-fetched assets like data/curated_polygons.js
-  # (externalized from the inline GEOJSON const) stay served. Jekyll's
-  # `include:` directive does NOT override directory-level excludes, so
-  # we have to enumerate the types to keep out.
-  - data/*.geojson
-  - data/*.kml
-  - data/*.csv
-  - data/*.json
-  - data/*.gz
-  - data/*.parquet
+  # Raw source data inlined into index.html at build time. The runtime never
+  # fetches these directly — they exist for the build step only. Keep this
+  # blanket exclude (no per-extension allowlist) so anything new that lands
+  # in data/ is automatically denied. Runtime-fetched assets (e.g. the
+  # externalized GEOJSON polygon set) live in their own top-level dir,
+  # currently /polygons/, which is NOT excluded.
+  - data/
 
   # Working files and tooling.
   - .gitignore
