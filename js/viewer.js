@@ -1272,25 +1272,28 @@ function renderMaskList() {
   for (const id of PRIMARY_MASKS) {
     if (MASKS[id]) list.appendChild(_buildMaskRow(id, MASKS[id]));
   }
-  // Secondary masks — collapsed behind a toggle. Auto-expand when the
-  // currently-selected mask lives in this group so the user can see what's
-  // active.
-  const currentInSecondary = SECONDARY_MASKS.includes(currentMask);
-  const expanded = _maskMoreExpanded || currentInSecondary;
-  const toggle = document.createElement('div');
+  // Secondary masks — collapsed by default; user clicks the bottom button
+  // to "unfold the envelope" and reveal them. State persists across
+  // re-renders within the session but resets on page reload.
+  const expanded = _maskMoreExpanded;
+  if (expanded) {
+    for (const id of SECONDARY_MASKS) {
+      if (MASKS[id]) list.appendChild(_buildMaskRow(id, MASKS[id]));
+    }
+  }
+  // Toggle button — always at the bottom of the list. Down-chevron rotates
+  // 180° via CSS when expanded.
+  const toggle = document.createElement('button');
+  toggle.type = 'button';
   toggle.className = 'mask-more-toggle' + (expanded ? ' expanded' : '');
-  toggle.innerHTML = `<span class="mask-more-caret">${expanded ? '▾' : '▸'}</span><span class="mask-more-label">${t('mask_more')}</span>`;
+  toggle.innerHTML = `<span class="mask-more-label">${t('mask_more')}</span><span class="mask-more-caret" aria-hidden="true">▼</span>`;
+  toggle.setAttribute('aria-expanded', expanded ? 'true' : 'false');
   toggle.addEventListener('click', e => {
     e.stopPropagation();
     _maskMoreExpanded = !expanded;
     renderMaskList();
   });
   list.appendChild(toggle);
-  if (expanded) {
-    for (const id of SECONDARY_MASKS) {
-      if (MASKS[id]) list.appendChild(_buildMaskRow(id, MASKS[id]));
-    }
-  }
   // View toggle now lives as a single fixed-position #view-switch button in
   // the top-right corner (see index.html + _wireViewSwitch below).
 }
