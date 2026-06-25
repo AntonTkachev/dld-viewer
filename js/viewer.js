@@ -653,6 +653,12 @@ const MASKS = {
     ],
   },
 };
+// Mask dropdown layout: 4 primary masks always visible, the rest hidden
+// behind a "more" expander. Order inside each group = display order.
+const PRIMARY_MASKS   = ['yearly_rent', 'growth', 'lifecycle', 'payback'];
+const SECONDARY_MASKS = ['sales', 'rents', 'yearly_sell'];
+let _maskMoreExpanded = false;
+
 // Per-page bootstrap: SEO landing pages (/sales/, /rents/) inject these
 // before viewer.js to preselect the mask + period without changing UI state.
 let currentMask = (typeof window !== 'undefined' && window.__INITIAL_MASK__ && MASKS[window.__INITIAL_MASK__]) ? window.__INITIAL_MASK__ : 'sales';
@@ -1204,62 +1210,86 @@ function updateMaskCurrentLabel() {
   el.textContent = showPer ? (lbl + ' · ' + _periodLabel(mask, currentMaskPeriod)) : lbl;
 }
 
+function _buildMaskRow(id, mask) {
+  const row = document.createElement('div');
+  row.className = 'mask-row' + (id === currentMask ? ' active' : '');
+  row.dataset.mask = id;
+  let periodHTML = '';
+  if (mask.periods.length > 1) {
+    const curP = (id === currentMask) ? currentMaskPeriod : mask.defaultPeriod;
+    const idx  = Math.max(0, mask.periods.indexOf(curP));
+    const maxIdx = mask.periods.length - 1;
+    const ticks = mask.periods.map((p, i) =>
+      `<span class="period-tick${(id===currentMask && i===idx)?' active':''}" data-idx="${i}">${_periodLabel(mask, p)}</span>`
+    ).join('');
+    periodHTML = `<div class="mask-row-periods">
+         <span class="pc-lbl">${t(mask.periodLabelKey || 'mask_period_label')}</span>
+         <div class="period-slider-wrap">
+           <input type="range" class="period-slider" min="0" max="${maxIdx}" step="1" value="${idx}" aria-label="${t(mask.periodLabelKey || 'mask_period_label')}">
+           <div class="period-slider-ticks">${ticks}</div>
+         </div>
+       </div>`;
+  }
+  row.innerHTML = `
+    <div class="mask-row-head">
+      <div class="mask-row-radio"></div>
+      <div class="mask-row-title">${t(mask.labelKey)}</div>
+    </div>
+    <div class="mask-row-desc">${t(mask.descKey)}</div>
+    ${periodHTML}
+  `;
+  row.addEventListener('click', e => {
+    if (e.target.closest('.period-slider-wrap')) return;
+    applyMask(id, (id === currentMask) ? currentMaskPeriod : mask.defaultPeriod);
+    renderMaskList();
+  });
+  const slider = row.querySelector('.period-slider');
+  if (slider) {
+    slider.addEventListener('input', e => {
+      e.stopPropagation();
+      const i = parseInt(slider.value, 10);
+      const p = mask.periods[i];
+      if (p) { applyMask(id, p); renderMaskList(); }
+    });
+    slider.addEventListener('click', e => e.stopPropagation());
+  }
+  row.querySelectorAll('.period-tick').forEach(tick => {
+    tick.addEventListener('click', e => {
+      e.stopPropagation();
+      const i = parseInt(tick.dataset.idx, 10);
+      const p = mask.periods[i];
+      if (p) { applyMask(id, p); renderMaskList(); }
+    });
+  });
+  return row;
+}
+
 function renderMaskList() {
   const list = document.getElementById('mp-mask-list');
   if (!list) return;
   list.innerHTML = '';
-  for (const [id, mask] of Object.entries(MASKS)) {
-    const row = document.createElement('div');
-    row.className = 'mask-row' + (id === currentMask ? ' active' : '');
-    row.dataset.mask = id;
-    let periodHTML = '';
-    if (mask.periods.length > 1) {
-      const curP = (id === currentMask) ? currentMaskPeriod : mask.defaultPeriod;
-      const idx  = Math.max(0, mask.periods.indexOf(curP));
-      const maxIdx = mask.periods.length - 1;
-      const ticks = mask.periods.map((p, i) =>
-        `<span class="period-tick${(id===currentMask && i===idx)?' active':''}" data-idx="${i}">${_periodLabel(mask, p)}</span>`
-      ).join('');
-      periodHTML = `<div class="mask-row-periods">
-           <span class="pc-lbl">${t(mask.periodLabelKey || 'mask_period_label')}</span>
-           <div class="period-slider-wrap">
-             <input type="range" class="period-slider" min="0" max="${maxIdx}" step="1" value="${idx}" aria-label="${t(mask.periodLabelKey || 'mask_period_label')}">
-             <div class="period-slider-ticks">${ticks}</div>
-           </div>
-         </div>`;
+  // Primary masks — always visible.
+  for (const id of PRIMARY_MASKS) {
+    if (MASKS[id]) list.appendChild(_buildMaskRow(id, MASKS[id]));
+  }
+  // Secondary masks — collapsed behind a toggle. Auto-expand when the
+  // currently-selected mask lives in this group so the user can see what's
+  // active.
+  const currentInSecondary = SECONDARY_MASKS.includes(currentMask);
+  const expanded = _maskMoreExpanded || currentInSecondary;
+  const toggle = document.createElement('div');
+  toggle.className = 'mask-more-toggle' + (expanded ? ' expanded' : '');
+  toggle.innerHTML = `<span class="mask-more-caret">${expanded ? '▾' : '▸'}</span><span class="mask-more-label">${t('mask_more')}</span>`;
+  toggle.addEventListener('click', e => {
+    e.stopPropagation();
+    _maskMoreExpanded = !expanded;
+    renderMaskList();
+  });
+  list.appendChild(toggle);
+  if (expanded) {
+    for (const id of SECONDARY_MASKS) {
+      if (MASKS[id]) list.appendChild(_buildMaskRow(id, MASKS[id]));
     }
-    row.innerHTML = `
-      <div class="mask-row-head">
-        <div class="mask-row-radio"></div>
-        <div class="mask-row-title">${t(mask.labelKey)}</div>
-      </div>
-      <div class="mask-row-desc">${t(mask.descKey)}</div>
-      ${periodHTML}
-    `;
-    row.addEventListener('click', e => {
-      if (e.target.closest('.period-slider-wrap')) return;
-      applyMask(id, (id === currentMask) ? currentMaskPeriod : mask.defaultPeriod);
-      renderMaskList();
-    });
-    const slider = row.querySelector('.period-slider');
-    if (slider) {
-      slider.addEventListener('input', e => {
-        e.stopPropagation();
-        const i = parseInt(slider.value, 10);
-        const p = mask.periods[i];
-        if (p) { applyMask(id, p); renderMaskList(); }
-      });
-      slider.addEventListener('click', e => e.stopPropagation());
-    }
-    row.querySelectorAll('.period-tick').forEach(tick => {
-      tick.addEventListener('click', e => {
-        e.stopPropagation();
-        const i = parseInt(tick.dataset.idx, 10);
-        const p = mask.periods[i];
-        if (p) { applyMask(id, p); renderMaskList(); }
-      });
-    });
-    list.appendChild(row);
   }
   // View toggle now lives as a single fixed-position #view-switch button in
   // the top-right corner (see index.html + _wireViewSwitch below).
