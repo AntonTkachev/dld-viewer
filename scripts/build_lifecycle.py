@@ -26,6 +26,7 @@ import csv
 import duckdb
 import gzip
 import json
+import math
 import os
 import re
 import sys
@@ -220,6 +221,7 @@ def compute_pipeline(polys):
     agg = defaultdict(lambda: {
         'units_active': 0, 'units_finished_5y': 0,
         'n_active': 0, 'n_overdue': 0,
+        'chronic_overdue_weight': 0.0,
     })
     with gzip.open(RERA_CSV, 'rt') as f:
         for r in csv.DictReader(f):
@@ -256,6 +258,14 @@ def compute_pipeline(polys):
                 s['units_active'] += volume
                 if end_dt and end_dt < TODAY:
                     s['n_overdue'] += 1
+                    # Chronic-overdue tracker: projects ≥2y past their end_date.
+                    # Geometric weight: base 1.5^(years_late-2), capped at 8x,
+                    # so a 2y-late project = 1.0, a 7+y-late "zombie" = 8.0.
+                    # 35 such projects exist; bulk at 2-4y, long tail to 15y.
+                    years_late = (TODAY - end_dt).days / 365.0
+                    if years_late >= 2:
+                        s['chronic_overdue_weight'] += min(
+                            8.0, 1.5 ** (years_late - 2))
             elif status == 'FINISHED':
                 if comp_dt and comp_dt >= five_yrs_ago:
                     s['units_finished_5y'] += volume
@@ -764,6 +774,30 @@ def main():
             capped_here = True
             pipe_capped_n += 1
 
+        # Volume + delivery-quality modulation of the raw pipe_share.
+        #   volume_boost  — PURE bonus, never below 1.0. Districts with
+        #                   ≤5 active projects get no boost (1.0); above 5,
+        #                   linear ramp up to 1.5 at 20+ active. Lets big
+        #                   pipelines (Downtown Dubai 19 active, Business Bay
+        #                   53) earn extra credit without penalising small-
+        #                   but-real ones (Sobha Hartland 5, Mirdif 1).
+        #   chronic_ratio = chronic_overdue_weight / n_active. Sum of
+        #                   geometric weights (1.5^(years_late-2), capped
+        #                   at 8x per project) from compute_pipeline.
+        #   delivery_pen  = max(0.5, 1 - 0.5 * chronic_ratio). Floor at 0.5
+        #                   so even worst-case districts keep half credit.
+        # Net pipe_effective = pipe_share × volume_boost × delivery_pen.
+        pipe_volume_boost = None
+        pipe_delivery_penalty = None
+        if pipe_rec and pipe_rec['n_active'] > 0:
+            n_act = pipe_rec['n_active']
+            chronic_w = pipe_rec.get('chronic_overdue_weight', 0)
+            pipe_volume_boost = round(
+                1.0 + 0.5 * min(1.0, max(0, n_act - 5) / 15.0), 3)
+            chronic_ratio = chronic_w / n_act
+            pipe_delivery_penalty = round(max(0.5, 1 - 0.5 * chronic_ratio), 3)
+            pipe_share = pipe_share * pipe_volume_boost * pipe_delivery_penalty
+
         # Speculative-failure penalty. When a district has zero residential
         # rental activity AND its price is actually falling, the active
         # pipeline isn't earning credit — it's off-plan supply without
@@ -798,6 +832,12 @@ def main():
             rec['units_active'] = int(pipe_rec['units_active'])
             rec['n_active'] = int(pipe_rec['n_active'])
             rec['n_overdue'] = int(pipe_rec['n_overdue'])
+            if pipe_rec.get('chronic_overdue_weight'):
+                rec['chronic_overdue_weight'] = round(pipe_rec['chronic_overdue_weight'], 2)
+            if pipe_volume_boost is not None:
+                rec['pipe_volume_boost'] = pipe_volume_boost
+            if pipe_delivery_penalty is not None and pipe_delivery_penalty < 1.0:
+                rec['pipe_delivery_penalty'] = pipe_delivery_penalty
         if capped_here:
             rec['pipeline_capped'] = True
         if spec_penalty:
