@@ -7,16 +7,21 @@ setTimeout(() => {
   // (CDN blip, stale cache, broken rebuild), the existing
   // `typeof X !== 'undefined' ? X : {}` fallbacks lower in this file
   // would silently render an empty map — worse UX than failing loud.
-  const REQUIRED_BUNDLES = [
-    'GEOJSON',                    // /polygons/curated.js
-    'AGGREGATES',                 // /transactions/data/choropleth.js
-    'RENT_AGGREGATES',            // /rents/data/choropleth.js
-    'TX_PERIODS', 'RENTS_PERIODS', 'GROWTH_PERIODS',
-    'PAYBACK_PERIODS', 'YEARLY_SELL_PERIODS', 'YEARLY_RENT_PERIODS',
-                                  // /periods/all.js
-    'LIFECYCLE',                  // currently inline; track in same list once externalized
-  ];
-  const missing = REQUIRED_BUNDLES.filter(n => typeof window[n] === 'undefined');
+  // NB: bundles use top-level `const X = …` which sits in the global
+  // lexical environment, NOT on `window`. `typeof window.X` would always
+  // return 'undefined' even when X was successfully defined — use bare
+  // `typeof X` instead, which checks the lexical scope.
+  const missing = [];
+  if (typeof GEOJSON         === 'undefined') missing.push('GEOJSON');
+  if (typeof AGGREGATES      === 'undefined') missing.push('AGGREGATES');
+  if (typeof RENT_AGGREGATES === 'undefined') missing.push('RENT_AGGREGATES');
+  if (typeof TX_PERIODS          === 'undefined') missing.push('TX_PERIODS');
+  if (typeof RENTS_PERIODS       === 'undefined') missing.push('RENTS_PERIODS');
+  if (typeof GROWTH_PERIODS      === 'undefined') missing.push('GROWTH_PERIODS');
+  if (typeof PAYBACK_PERIODS     === 'undefined') missing.push('PAYBACK_PERIODS');
+  if (typeof YEARLY_SELL_PERIODS === 'undefined') missing.push('YEARLY_SELL_PERIODS');
+  if (typeof YEARLY_RENT_PERIODS === 'undefined') missing.push('YEARLY_RENT_PERIODS');
+  if (typeof LIFECYCLE       === 'undefined') missing.push('LIFECYCLE');
   if (missing.length) {
     console.error('viewer.js: required data bundles missing:', missing.join(', '));
     document.body.innerHTML =
