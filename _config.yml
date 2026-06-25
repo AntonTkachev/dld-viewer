@@ -21,9 +21,17 @@ exclude:
 
   # Raw source data inlined into index.html at build time. The runtime never
   # fetches these directly — they exist for the build step only.
+  # EXCEPTION: data/curated_polygons.js is fetched at runtime by the viewer
+  # (externalized from the inline GEOJSON const to cache the 2.1 MB polygon
+  # set once instead of shipping it in every landing). Whitelisted below.
   - data/
 
   # Working files and tooling.
   - .gitignore
   - "*.py"
   - "*.sh"
+
+# Whitelist back specific files from excluded dirs. Jekyll's `include:`
+# overrides `exclude:` for matching paths.
+include:
+  - data/curated_polygons.js
