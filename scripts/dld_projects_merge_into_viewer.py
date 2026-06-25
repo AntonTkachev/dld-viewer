@@ -28,6 +28,9 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parent.parent
 HTML = ROOT / 'template.html'
+# GEOJSON polygons used to live as an inline literal in template.html;
+# now they're externalized into this file (post-2026-06-25).
+GEOJSON_JS = ROOT / 'data' / 'curated_polygons.js'
 SRC  = ROOT / 'data' / 'dld_projects.csv.gz'
 
 # In-flight = projects still in some "not yet done" state. Note: we use the
@@ -83,10 +86,17 @@ def polygon_centroid(geom):
 
 
 def build_polygon_index() -> dict:
-    """{norm(name): (lat, lon, display_name)} from index.html GEOJSON."""
-    with HTML.open() as f:
+    """{norm(name): (lat, lon, display_name)} from the curated GEOJSON.
+
+    Reads data/curated_polygons.js (the externalized const), falling back
+    to the legacy inline literal in template.html if the file is missing.
+    """
+    src = GEOJSON_JS if GEOJSON_JS.exists() else HTML
+    with src.open() as f:
         h = f.read()
-    m = re.search(r'^const GEOJSON = (\{.*?\});$', h, re.M)
+    m = re.search(r'^const GEOJSON = (\{.*?\});\s*$', h, re.M)
+    if not m:
+        raise SystemExit(f'GEOJSON const not found in {src}')
     gj = json.loads(m.group(1))
     out = {}
     for ft in gj['features']:

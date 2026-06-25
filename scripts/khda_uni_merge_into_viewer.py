@@ -20,6 +20,8 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parent.parent
 HTML = ROOT / 'template.html'
+# Externalized GEOJSON literal (was an inline const in template.html before).
+GEOJSON_JS = ROOT / 'data' / 'curated_polygons.js'
 KHDA = ROOT / 'data' / 'khda_universities.csv'
 OSM  = ROOT / 'data' / 'osm_universities.json'
 
@@ -125,12 +127,17 @@ def _feat_contains(feat, pt):
     return False
 
 def load_polygons():
-    with HTML.open(encoding='utf-8') as f:
-        for line in f:
-            if line.startswith('const GEOJSON = '):
-                m = re.match(r'const GEOJSON = (.+);\s*$', line)
-                if m:
-                    return json.loads(m.group(1))['features']
+    # Try the externalized GEOJSON first (post-2026-06-25 layout); fall back
+    # to the legacy inline const in template.html for older trees.
+    for path in (GEOJSON_JS, HTML):
+        if not path.exists():
+            continue
+        with path.open(encoding='utf-8') as f:
+            for line in f:
+                if line.startswith('const GEOJSON = '):
+                    m = re.match(r'const GEOJSON = (.+);\s*$', line)
+                    if m:
+                        return json.loads(m.group(1))['features']
     return []
 
 def find_district(features, lat, lon):
