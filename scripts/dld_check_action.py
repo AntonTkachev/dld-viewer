@@ -27,9 +27,26 @@ CONFIG = os.path.join(ROOT, 'data', 'dld_seen.json')
 
 def list_api(dataset_id):
     url = f'{API_BASE}?datasetId={dataset_id}&page=1&pageSize=200&sortDir=desc'
-    req = urllib.request.Request(url, headers={'User-Agent': UA})
-    with urllib.request.urlopen(req, timeout=TIMEOUT) as r:
-        payload = json.load(r)
+    req = urllib.request.Request(url, headers={
+        'User-Agent': UA,
+        'Accept': 'application/json, text/plain, */*',
+        'Accept-Language': 'en-US,en;q=0.9',
+        'Referer': 'https://data.dubai/',
+    })
+    try:
+        with urllib.request.urlopen(req, timeout=TIMEOUT) as r:
+            body = r.read()
+            status = r.status
+    except urllib.error.HTTPError as e:
+        body = e.read()
+        status = e.code
+    try:
+        payload = json.loads(body)
+    except ValueError as e:
+        snippet = body[:300].decode('utf-8', errors='replace')
+        raise RuntimeError(
+            f'non-JSON response (HTTP {status}); first 300 bytes: {snippet!r}'
+        ) from e
     return sorted(item['file_folder'] for item in payload['data']['metadata'])
 
 
@@ -47,7 +64,7 @@ def main():
         last = entry.get('last_seen', '')
         try:
             folders = list_api(dataset_id)
-        except (urllib.error.URLError, ValueError, KeyError) as e:
+        except (urllib.error.URLError, ValueError, KeyError, RuntimeError) as e:
             print(f'FATAL: API call for {label} ({dataset_id}) failed: {e}',
                   file=sys.stderr)
             return 2
