@@ -56,6 +56,10 @@ COV_MIN = {
     'RENTS_PERIODS':   {'1y':0.70, '3y':0.75, '5y':0.75, '10y':0.75, 'all':0.80},
     'GROWTH_PERIODS':  {'1y':0.45, '3y':0.42, '5y':0.40, '10y':0.40},
     'PAYBACK_PERIODS': {'studio':0.15, '1br':0.20, '2br':0.25, '3br':0.25, '4br_plus':0.15},
+    # Investor is the strictest mask: 1y windows, ready-units-only sale leg,
+    # MIN_SALE=8 / MIN_RENT=15 — coverage sits below payback by design.
+    # Measured July 2026: all 30%, studio 17%, 1br 27%, 2br 27%, 3br 21%, 4br+ 5%.
+    'INVESTOR_PERIODS': {'all':0.22, 'studio':0.10, '1br':0.18, '2br':0.18, '3br':0.13, '4br_plus':0.02},
 }
 
 # Lifecycle is structurally different: one flat {area_key: rec} dict, no
@@ -220,6 +224,7 @@ def main():
         ('RENTS_PERIODS',   ('1y','3y','5y','10y','all'), GOLDEN_SALES),
         ('GROWTH_PERIODS',  ('1y','3y','5y','10y'),       GOLDEN_GROWTH),
         ('PAYBACK_PERIODS', ('1br','2br','3br'),          GOLDEN_PAYBACK),
+        ('INVESTOR_PERIODS', ('all','1br'),               GOLDEN_GROWTH),
     ]
     for const_name, periods, golden in golden_specs:
         for period in periods:
