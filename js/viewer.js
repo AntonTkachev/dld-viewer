@@ -564,32 +564,60 @@ const MASKS = {
       '4br_plus': _INVESTOR_P['4br_plus'] || {},
     },
     pluck: r => ({
-      real_count: r.n_sale || 0,
+      real_count: (r.strategy === 'offplan' ? r.n_offplan : r.n_sale) || 0,
       real_total_aed: 0,
       real_med_price: r.sale_ppsqm || 0,
       real_med_ppsqm: r.rent_ppsqm || 0,
       real_metric: (typeof r.score === 'number') ? r.score : null,
+      real_strategy: r.strategy || null,
       real_yield: (typeof r.yield_pct === 'number') ? r.yield_pct : null,
       real_past1y: (typeof r.past1y_pct === 'number') ? r.past1y_pct : null,
       real_pipeline: (typeof r.pipeline === 'number') ? r.pipeline : null,
+      real_offplan_ppsqm: r.offplan_ppsqm || 0,
+      real_premium: (typeof r.premium_pct === 'number') ? r.premium_pct : null,
+      real_fresh: (typeof r.fresh_share_pct === 'number') ? r.fresh_share_pct : null,
+      real_overdue: (typeof r.overdue_share_pct === 'number') ? r.overdue_share_pct : null,
       real_n_sale: r.n_sale || 0,
       real_n_rent: r.n_rent || 0,
+      real_n_offplan: r.n_offplan || 0,
     }),
     legendKey: 'legend_investor', popupCountKey: 'pp_trans_ytd', showVolume: false,
     metricKey: 'real_metric', scaleMode: 'quantile', allowZero: true,
     periodLabelKey: 'mask_room_label',
     overlay: r => (typeof r.score === 'number') ? String(r.score) : null,
     legendFmt: v => String(Math.round(v)),
+    styleExtra: p => p.real_strategy === 'offplan'
+      ? { dashArray: '5,4', weight: 1.3, color: '#7c3aed' } : null,
     popupRows: (p, t) => {
       if (p.real_metric === null || p.real_metric === undefined) return '';
+      const stratLabel = p.real_strategy === 'offplan' ? t('inv_strat_offplan') : t('inv_strat_rent');
+      const stratColor = p.real_strategy === 'offplan' ? '#7c3aed' : '#0369a1';
+      const head = `
+      <div class="stat"><span class="k">${t('pp_investor_score')}</span><span class="v" style="font-weight:700">${p.real_metric}</span></div>
+      <div class="stat"><span class="k">${t('pp_strategy')}</span><span class="v" style="color:${stratColor};font-weight:600">${stratLabel}</span></div>`;
       const past = (typeof p.real_past1y === 'number')
         ? `<div class="stat"><span class="k">${t('pp_past1y')}</span><span class="v">${p.real_past1y >= 0 ? '+' : ''}${p.real_past1y.toFixed(1)}%</span></div>`
         : '';
+      if (p.real_strategy === 'offplan') {
+        const prem = (typeof p.real_premium === 'number')
+          ? `<div class="stat"><span class="k">${t('pp_premium')}</span><span class="v" style="font-weight:600;color:${p.real_premium <= 5 ? '#15803d' : (p.real_premium > 40 ? '#b45309' : '#0f172a')}">${p.real_premium >= 0 ? '+' : ''}${p.real_premium.toFixed(0)}%</span></div>`
+          : '';
+        const fresh = (typeof p.real_fresh === 'number')
+          ? `<div class="stat"><span class="k">${t('pp_fresh_share')}</span><span class="v">${p.real_fresh}%</span></div>`
+          : '';
+        const od = (typeof p.real_overdue === 'number')
+          ? `<div class="stat"><span class="k">${t('pp_overdue_share')}</span><span class="v"${p.real_overdue > 25 ? ' style="color:#b45309;font-weight:600"' : ''}>${p.real_overdue > 25 ? '⚠ ' : ''}${p.real_overdue.toFixed(0)}%</span></div>`
+          : '';
+        return head + `
+      <div class="stat"><span class="k">${t('pp_offplan_ppsqm')}</span><span class="v">${(p.real_offplan_ppsqm||0).toLocaleString('ru-RU')} AED/м²</span></div>
+      ${prem}${fresh}${od}${past}
+      <div class="stat"><span class="k">${t('pp_n_sale_1y')}</span><span class="v">${(p.real_n_offplan||0).toLocaleString('ru-RU')}</span></div>
+    `;
+      }
       const pipe = (typeof p.real_pipeline === 'number' && p.real_pipeline >= 0.5)
         ? `<div class="stat"><span class="k">${t('pp_supply_share')}</span><span class="v" style="color:#b45309;font-weight:600">⚠ ${Math.round(Math.min(p.real_pipeline, 1) * 100)}%</span></div>`
         : '';
-      return `
-      <div class="stat"><span class="k">${t('pp_investor_score')}</span><span class="v" style="font-weight:700">${p.real_metric}</span></div>
+      return head + `
       <div class="stat"><span class="k">${t('pp_yield')}</span><span class="v" style="font-weight:700">${(p.real_yield || 0).toFixed(1)}%</span></div>
       ${past}
       <div class="stat"><span class="k">${t('pp_sale_ppsqm')}</span><span class="v">${(p.real_med_price||0).toLocaleString('ru-RU')} AED/м²</span></div>
@@ -599,12 +627,16 @@ const MASKS = {
     `;
     },
     tableColumns: [
-      { key: 'name',       labelKey: 'tv_col_district',       type: 'str',     width: '26%' },
-      { key: 'score',      labelKey: 'tv_col_investor_score', type: 'int',     width: '12%', defaultSort: true, defaultSortDir: 'desc' },
-      { key: 'yield_pct',  labelKey: 'tv_col_yield',          type: 'pct_abs', width: '15%' },
-      { key: 'past1y_pct', labelKey: 'tv_col_past1y',         type: 'pct',     width: '15%' },
-      { key: 'sale_ppsqm', labelKey: 'tv_col_sale_ppsqm',     type: 'int',     width: '16%' },
-      { key: 'n_sale',     labelKey: 'tv_col_n_sale_1y',      type: 'int',     width: '16%' },
+      { key: 'name',       labelKey: 'tv_col_district',       type: 'str',     width: '22%' },
+      { key: 'score',      labelKey: 'tv_col_investor_score', type: 'int',     width: '10%', defaultSort: true, defaultSortDir: 'desc' },
+      { key: r => r.strategy ? t(r.strategy === 'offplan' ? 'inv_strat_offplan' : 'inv_strat_rent') : null,
+                           labelKey: 'tv_col_strategy',       type: 'str',     width: '14%' },
+      { key: 'yield_pct',  labelKey: 'tv_col_yield',          type: 'pct_abs', width: '12%' },
+      { key: 'past1y_pct', labelKey: 'tv_col_past1y',         type: 'pct',     width: '12%' },
+      { key: r => r.strategy === 'offplan' ? r.offplan_ppsqm : r.sale_ppsqm,
+                           labelKey: 'tv_col_ppsqm',          type: 'int',     width: '15%' },
+      { key: r => r.strategy === 'offplan' ? r.n_offplan : r.n_sale,
+                           labelKey: 'tv_col_n_sale_1y',      type: 'int',     width: '15%' },
     ],
   },
   yearly_sell: {
@@ -710,10 +742,14 @@ const _MASK_FIELDS = [
   'real_metric','real_med_then_ppsqm','real_n_sale','real_n_rent','real_fallback_yrs',
   'real_price_pct','real_rent_pct','real_pipeline','real_units_active','real_n_overdue',
   'real_post_launch',
+  'real_strategy','real_yield','real_past1y','real_offplan_ppsqm','real_premium',
+  'real_fresh','real_overdue','real_n_offplan',
 ];
 
 const _MASK_FIELDS_NULLABLE = new Set([
   'real_metric', 'real_fallback_yrs', 'real_price_pct', 'real_rent_pct',
+  'real_strategy', 'real_yield', 'real_past1y', 'real_premium',
+  'real_fresh', 'real_overdue',
 ]);
 function _resetMaskFields(p) {
   for (const f of _MASK_FIELDS) p[f] = _MASK_FIELDS_NULLABLE.has(f) ? null : 0;
@@ -1630,7 +1666,8 @@ function renderChoro(){
       if (z) return {weight:0.8,color:'#64748b',fillColor:'url(#nodata-hatch)',fillOpacity:1,dashArray:'4,3'};
       let idx = classify(v, breaks);
       if (mask.invertRamp) idx = RAMP.length - 1 - idx;
-      return {weight:0.6,color:'#1f2933',fillColor:RAMP[idx],fillOpacity:0.7};
+      const st = {weight:0.6,color:'#1f2933',fillColor:RAMP[idx],fillOpacity:0.7};
+      return mask.styleExtra ? Object.assign(st, mask.styleExtra(f.properties)) : st;
     },
     onEachFeature: (f, layer) => {
       layer.on('click', (e) => {
