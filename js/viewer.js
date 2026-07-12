@@ -1980,18 +1980,67 @@ for (const ml of MALLS) {
   m.addTo(mallLayer);
 }
 
+const buildingLayer = L.layerGroup();
+if (typeof BUILDINGS !== 'undefined') {
+  const _bldColor = (d) =>
+      d >= 500 ? '#7a0000'
+    : d >= 100 ? '#cc0000'
+    : d >= 50  ? '#ff7a00'
+    : d >= 20  ? '#f0c000'
+    : '#3a92ff';
+  const _bldRadius = (d) => {
+    const r = 2 + Math.log10(Math.max(1, d)) * 3;
+    return Math.min(12, Math.max(3, r));
+  };
+  const _bldPopup = (b) => `
+    <h3>🏢 ${_h(b.n)} <span class="src-tag src-osm">OSM</span></h3>
+    <div class="muted" style="color:#888;margin-bottom:4px">${_h(b.a)}</div>
+    <div class="stat"><span class="k">${t('bld_deals')}</span><span class="v">${b.d.toLocaleString()}</span></div>
+  `;
+  for (const b of BUILDINGS) {
+    const fill = _bldColor(b.d);
+    const vis = b.v || 'building';
+    let shape;
+    if (vis === 'building' && b.r && b.r.length) {
+      shape = L.polygon(b.r, {
+        color: '#222', weight: 0.6,
+        fillColor: fill, fillOpacity: 0.78,
+      });
+    } else if (vis === 'compound' && b.r && b.r.length) {
+      shape = L.polygon(b.r, {
+        color: fill, weight: 1.5,
+        fillColor: fill, fillOpacity: 0.15,
+        dashArray: '4 3',
+      });
+    } else {
+      shape = L.circleMarker([b.lat, b.lon], {
+        radius: _bldRadius(b.d),
+        color: '#222', weight: 0.6,
+        fillColor: fill, fillOpacity: vis === 'approx' ? 0.5 : 0.78,
+      });
+    }
+    shape.bindPopup(() => _bldPopup(b) + (vis === 'approx'
+      ? '<div class="muted" style="font-size:11px;color:#888;margin-top:6px">≈ approximate location (community-level)</div>'
+      : vis === 'compound'
+      ? '<div class="muted" style="font-size:11px;color:#888;margin-top:6px">compound polygon (multi-tower)</div>'
+      : ''));
+    shape.addTo(buildingLayer);
+  }
+}
+
 applyMask(currentMask, currentMaskPeriod, { pushUrl: false });
 if (currentView === 'table') setView('table', { pushUrl: false, force: true });
 
 function poiBuiltinDefs() {
   return [
-    {key:'metro',   label:t('metro_all'),     count:METRO_STATIONS.length, layer:metroLayer},
-    {key:'schools', label:t('schools'),       count:SCHOOLS.length,        layer:schoolLayer},
-    {key:'unis',    label:t('universities'),  count:UNIVERSITIES.length,   layer:uniLayer},
-    {key:'medical', label:t('medical'),       count:MEDICAL.length,        layer:medicalLayer},
-    {key:'mosques', label:t('mosques'),       count:MOSQUES.length,        layer:mosqueLayer},
-    {key:'proj',    label:t('construction'),  count:PROJECTS.length,       layer:projectLayer},
-    {key:'malls',   label:t('malls'),         count:MALLS.length,          layer:mallLayer},
+    {key:'metro',     label:t('metro_all'),     count:METRO_STATIONS.length, layer:metroLayer},
+    {key:'schools',   label:t('schools'),       count:SCHOOLS.length,        layer:schoolLayer},
+    {key:'unis',      label:t('universities'),  count:UNIVERSITIES.length,   layer:uniLayer},
+    {key:'medical',   label:t('medical'),       count:MEDICAL.length,        layer:medicalLayer},
+    {key:'mosques',   label:t('mosques'),       count:MOSQUES.length,        layer:mosqueLayer},
+    {key:'proj',      label:t('construction'),  count:PROJECTS.length,       layer:projectLayer},
+    {key:'malls',     label:t('malls'),         count:MALLS.length,          layer:mallLayer},
+    {key:'buildings', label:t('buildings'),     count:(typeof BUILDINGS!=='undefined'?BUILDINGS.length:0), layer:buildingLayer},
   ];
 }
 
