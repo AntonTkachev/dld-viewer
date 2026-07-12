@@ -14,3 +14,13 @@ __pycache__/
 
 # khda_refresh.sh log (cron-friendly target inside data/)
 data/.khda_refresh.log
+
+# Work-in-progress OSM Buildings pipeline (not shipped yet)
+buildings/
+data/buildings_geo.json
+data/osm_buildings.json
+scripts/build_buildings_map.py
+scripts/osm_buildings_pull.py
+
+# Local scratch — OAuth client secrets, DB backups, etc. Never commit.
+tails/
