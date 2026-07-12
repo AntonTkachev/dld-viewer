@@ -21,6 +21,7 @@ setTimeout(() => {
   if (typeof PAYBACK_PERIODS     === 'undefined') missing.push('PAYBACK_PERIODS');
   if (typeof YEARLY_SELL_PERIODS === 'undefined') missing.push('YEARLY_SELL_PERIODS');
   if (typeof YEARLY_RENT_PERIODS === 'undefined') missing.push('YEARLY_RENT_PERIODS');
+  if (typeof INVESTOR_PERIODS    === 'undefined') missing.push('INVESTOR_PERIODS');
   if (typeof LIFECYCLE       === 'undefined') missing.push('LIFECYCLE');
   if (missing.length) {
     console.error('viewer.js: required data bundles missing:', missing.join(', '));
@@ -327,6 +328,7 @@ const _LIFECYCLE = (typeof LIFECYCLE       !== 'undefined') ? LIFECYCLE       : 
 const _PAYBACK_P = (typeof PAYBACK_PERIODS !== 'undefined') ? PAYBACK_PERIODS : {};
 const _YSELL_P   = (typeof YEARLY_SELL_PERIODS !== 'undefined') ? YEARLY_SELL_PERIODS : {};
 const _YRENT_P   = (typeof YEARLY_RENT_PERIODS !== 'undefined') ? YEARLY_RENT_PERIODS : {};
+const _INVESTOR_P = (typeof INVESTOR_PERIODS !== 'undefined') ? INVESTOR_PERIODS : {};
 
 (function _stubSplitAggregates() {
   const EMPTY_BUCKET = {n:0,total:0,med:0,mean:0,p25:0,p75:0,p90:0,med_sqm:0,med_ppsqm:0};
@@ -550,6 +552,61 @@ const MASKS = {
       { key: 'n_rent',     labelKey: 'tv_col_n_rent_2y',   type: 'int', width: '14%' },
     ],
   },
+  investor: {
+    labelKey: 'mask_investor', descKey: 'mask_investor_desc',
+    periods: ['all','studio','1br','2br','3br','4br_plus'], defaultPeriod: 'all',
+    data: {
+      'all':      _INVESTOR_P['all']      || {},
+      'studio':   _INVESTOR_P['studio']   || {},
+      '1br':      _INVESTOR_P['1br']      || {},
+      '2br':      _INVESTOR_P['2br']      || {},
+      '3br':      _INVESTOR_P['3br']      || {},
+      '4br_plus': _INVESTOR_P['4br_plus'] || {},
+    },
+    pluck: r => ({
+      real_count: r.n_sale || 0,
+      real_total_aed: 0,
+      real_med_price: r.sale_ppsqm || 0,
+      real_med_ppsqm: r.rent_ppsqm || 0,
+      real_metric: (typeof r.score === 'number') ? r.score : null,
+      real_yield: (typeof r.yield_pct === 'number') ? r.yield_pct : null,
+      real_past1y: (typeof r.past1y_pct === 'number') ? r.past1y_pct : null,
+      real_pipeline: (typeof r.pipeline === 'number') ? r.pipeline : null,
+      real_n_sale: r.n_sale || 0,
+      real_n_rent: r.n_rent || 0,
+    }),
+    legendKey: 'legend_investor', popupCountKey: 'pp_trans_ytd', showVolume: false,
+    metricKey: 'real_metric', scaleMode: 'quantile', allowZero: true,
+    periodLabelKey: 'mask_room_label',
+    overlay: r => (typeof r.score === 'number') ? String(r.score) : null,
+    legendFmt: v => String(Math.round(v)),
+    popupRows: (p, t) => {
+      if (p.real_metric === null || p.real_metric === undefined) return '';
+      const past = (typeof p.real_past1y === 'number')
+        ? `<div class="stat"><span class="k">${t('pp_past1y')}</span><span class="v">${p.real_past1y >= 0 ? '+' : ''}${p.real_past1y.toFixed(1)}%</span></div>`
+        : '';
+      const pipe = (typeof p.real_pipeline === 'number' && p.real_pipeline >= 0.5)
+        ? `<div class="stat"><span class="k">${t('pp_supply_share')}</span><span class="v" style="color:#b45309;font-weight:600">⚠ ${Math.round(Math.min(p.real_pipeline, 1) * 100)}%</span></div>`
+        : '';
+      return `
+      <div class="stat"><span class="k">${t('pp_investor_score')}</span><span class="v" style="font-weight:700">${p.real_metric}</span></div>
+      <div class="stat"><span class="k">${t('pp_yield')}</span><span class="v" style="font-weight:700">${(p.real_yield || 0).toFixed(1)}%</span></div>
+      ${past}
+      <div class="stat"><span class="k">${t('pp_sale_ppsqm')}</span><span class="v">${(p.real_med_price||0).toLocaleString('ru-RU')} AED/м²</span></div>
+      <div class="stat"><span class="k">${t('pp_rent_ppsqm')}</span><span class="v">${(p.real_med_ppsqm||0).toLocaleString('ru-RU')} AED/м²/${t('unit_year_short')}</span></div>
+      ${pipe}
+      <div class="stat"><span class="k">${t('pp_n_sale_1y')}</span><span class="v">${(p.real_n_sale||0).toLocaleString('ru-RU')}</span></div>
+    `;
+    },
+    tableColumns: [
+      { key: 'name',       labelKey: 'tv_col_district',       type: 'str',     width: '26%' },
+      { key: 'score',      labelKey: 'tv_col_investor_score', type: 'int',     width: '12%', defaultSort: true, defaultSortDir: 'desc' },
+      { key: 'yield_pct',  labelKey: 'tv_col_yield',          type: 'pct_abs', width: '15%' },
+      { key: 'past1y_pct', labelKey: 'tv_col_past1y',         type: 'pct',     width: '15%' },
+      { key: 'sale_ppsqm', labelKey: 'tv_col_sale_ppsqm',     type: 'int',     width: '16%' },
+      { key: 'n_sale',     labelKey: 'tv_col_n_sale_1y',      type: 'int',     width: '16%' },
+    ],
+  },
   yearly_sell: {
     labelKey: 'mask_yearly_sell', descKey: 'mask_yearly_sell_desc',
     periods: ['studio','1br','2br','3br','4br_plus','villa'], defaultPeriod: '1br',
@@ -624,7 +681,7 @@ const MASKS = {
   },
 };
 
-const PRIMARY_MASKS   = ['yearly_rent', 'growth', 'lifecycle', 'payback'];
+const PRIMARY_MASKS   = ['investor', 'yearly_rent', 'growth', 'lifecycle', 'payback'];
 const SECONDARY_MASKS = ['sales', 'rents', 'yearly_sell'];
 let _maskMoreExpanded = false;
 
@@ -710,7 +767,7 @@ function setView(view, opts) {
   if (opts.pushUrl !== false) _pushPageUrl(currentMask, view);
 }
 
-const _SEO_MASKS = ['sales', 'rents', 'growth', 'payback', 'lifecycle'];
+const _SEO_MASKS = ['sales', 'rents', 'growth', 'payback', 'lifecycle', 'investor'];
 
 function _isSeoMask(m) { return _SEO_MASKS.indexOf(m) !== -1; }
 
@@ -781,6 +838,7 @@ function _tableFmt(col, v) {
       return n.toLocaleString('ru-RU');
     }
     case 'pct':     return (v >= 0 ? '+' : '') + Number(v).toFixed(1) + '%';
+    case 'pct_abs': return Number(v).toFixed(1) + '%';
     case 'yrs':
     case 'yrs_opt': return Number(v).toFixed(1) + ' ' + t('unit_years');
     case 'phase':   return v;  
