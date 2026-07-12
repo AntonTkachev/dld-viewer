@@ -20,6 +20,7 @@ title/lede so the page doesn't look like thin/duplicate content.
 
 Currently runs only for `business bay` — flip DISTRICTS to expand.
 """
+import datetime
 import json
 import os
 import re
@@ -172,10 +173,14 @@ COPY = {
         'lede_rent_intro':     'В районе {name} {period_h1} зарегистрировано {n} договоров аренды по данным Dubai Land Department.',
         'lede_rent_median':    'Медианная годовая аренда — {v} AED.',
         'lede_rent_ppsqm':     'Стоимость аренды — {v} AED/м²/год.',
-        'title_sales': 'Сделки в {name}{period_title}: {n} транзакций — DXBCompass',
-        'title_rent':  'Аренда в {name}{period_title}: {n} контрактов — DXBCompass',
-        'desc_sales':  'Купля-продажа недвижимости в {name}{period_title}: {n} сделок DLD, медиана, цена за м², топ-проекты, динамика цен по месяцам.',
-        'desc_rent':   'Договоры аренды в {name}{period_title}: {n} контрактов DLD, медианная годовая и месячная аренда, AED/м²/год, разбивка по комнатам (студия/1BR/2BR/3BR/4BR+), типу арендатора и длине контракта.',
+        'title_sales':       'Недвижимость {name}{period_title}: медиана {med} AED — {n} сделок DLD',
+        'title_sales_nomed': 'Недвижимость {name}{period_title}: {n} сделок DLD',
+        'title_rent':        'Аренда в {name}{period_title}: медиана {med} AED/год',
+        'title_rent_nomed':  'Аренда в {name}{period_title}: {n} контрактов DLD',
+        'desc_sales':        'Медианная цена в {name}: {med} AED. Реальные данные Dubai Land Department по {n} сделкам. Топ-проекты, цена за м², динамика по месяцам — бесплатно.',
+        'desc_sales_nomed':  'Рынок недвижимости {name}: {n} реальных сделок Dubai Land Department. Медианные цены, топ-проекты, цена за м², динамика по месяцам — бесплатно.',
+        'desc_rent':         'Медианная годовая аренда в {name}: {med} AED. Реальные данные Dubai Land Department по {n} договорам. Разбивка по комнатам, динамика — бесплатно.',
+        'desc_rent_nomed':   'Аренда в {name}: {n} реальных договоров Dubai Land Department. Медиана по типам (студия, 1BR, 2BR, 3BR, 4BR+), динамика — бесплатно.',
         'list_h1_top_projects_sale': 'Топ-проекты в {name} по продажам',
         'list_h1_top_deals':         'Крупнейшие сделки в {name}',
         'list_h1_recent_sale':       'Последние сделки в {name}',
@@ -263,10 +268,14 @@ COPY = {
         'lede_rent_intro':     'In {name} {period_h1}, {n} rental contracts have been registered according to the Dubai Land Department.',
         'lede_rent_median':    'Median annual rent — {v} AED.',
         'lede_rent_ppsqm':     'Rent per area — {v} AED/m²/year.',
-        'title_sales': 'Property transactions in {name}{period_title}: {n} deals — DXBCompass',
-        'title_rent':  'Rentals in {name}{period_title}: {n} contracts — DXBCompass',
-        'desc_sales':  'Property sales in {name}{period_title}: {n} DLD transactions, median, price per m², top projects, monthly price dynamics.',
-        'desc_rent':   'Rental contracts in {name}{period_title}: {n} DLD contracts, median annual and monthly rent, AED/m²/year, breakdown by rooms (studio/1BR/2BR/3BR/4BR+), tenant type and lease length.',
+        'title_sales':       '{name} property prices{period_title}: median AED {med} — {n} DLD deals',
+        'title_sales_nomed': '{name} property market{period_title}: {n} DLD deals',
+        'title_rent':        '{name} rent{period_title}: median AED {med}/year',
+        'title_rent_nomed':  '{name} rental market{period_title}: {n} DLD contracts',
+        'desc_sales':        'Median property price in {name}: AED {med}. From {n} real Dubai Land Department transactions. Top projects, price per m², monthly trend — free.',
+        'desc_sales_nomed':  'Property market in {name}: {n} real Dubai Land Department transactions. Median prices, top projects, price per m², monthly trend — free.',
+        'desc_rent':         'Median annual rent in {name}: AED {med}. From {n} real Dubai Land Department lease contracts. Studio to 4BR+ prices, monthly trend — free.',
+        'desc_rent_nomed':   'Rental market in {name}: {n} real Dubai Land Department lease contracts. Median rent by room type (studio, 1BR, 2BR, 3BR, 4BR+), monthly trend — free.',
         'list_h1_top_projects_sale': 'Top projects in {name} by sales',
         'list_h1_top_deals':         'Largest transactions in {name}',
         'list_h1_recent_sale':       'Recent transactions in {name}',
@@ -354,10 +363,14 @@ COPY = {
         'lede_rent_intro':     'في حي {name} {period_h1} تم تسجيل {n} عقد إيجار وفقًا لبيانات دائرة الأراضي والأملاك بدبي.',
         'lede_rent_median':    'الإيجار السنوي الوسيط — {v} درهم.',
         'lede_rent_ppsqm':     'الإيجار للمتر — {v} درهم/م²/سنة.',
-        'title_sales': 'صفقات في {name}{period_title}: {n} معاملة — DXBCompass',
-        'title_rent':  'إيجارات في {name}{period_title}: {n} عقدًا — DXBCompass',
-        'desc_sales':  'بيع وشراء العقارات في {name}{period_title}: {n} صفقة DLD، الوسيط، السعر للمتر، أهم المشاريع، ديناميكية الأسعار شهريًا.',
-        'desc_rent':   'عقود الإيجار في {name}{period_title}: {n} عقد DLD، الإيجار السنوي والشهري الوسيط، درهم/م²/سنة، التفصيل حسب الغرف (استوديو/1/2/3/4+)، نوع المستأجر وطول العقد.',
+        'title_sales':       'أسعار العقارات في {name}{period_title}: الوسيط {med} درهم — {n} صفقة DLD',
+        'title_sales_nomed': 'سوق العقارات في {name}{period_title}: {n} صفقة DLD',
+        'title_rent':        'إيجارات {name}{period_title}: الوسيط {med} درهم/سنة',
+        'title_rent_nomed':  'سوق الإيجارات في {name}{period_title}: {n} عقد DLD',
+        'desc_sales':        'متوسط سعر العقار في {name}: {med} درهم. بيانات دائرة الأراضي والأملاك بدبي — {n} صفقة. أهم المشاريع، السعر للمتر، الديناميكية الشهرية — مجانًا.',
+        'desc_sales_nomed':  'سوق العقارات في {name}: {n} صفقة حقيقية من دائرة الأراضي والأملاك بدبي. الأسعار الوسيطة، أهم المشاريع، السعر للمتر، الديناميكية الشهرية — مجانًا.',
+        'desc_rent':         'متوسط الإيجار السنوي في {name}: {med} درهم. بيانات دائرة الأراضي والأملاك بدبي — {n} عقد إيجار. الأسعار من الاستوديو إلى 4+ غرف، ديناميكية شهرية — مجانًا.',
+        'desc_rent_nomed':   'سوق الإيجارات في {name}: {n} عقد إيجار حقيقي من دائرة الأراضي والأملاك بدبي. الإيجار الوسيط حسب الغرف (استوديو، 1، 2، 3، 4+)، ديناميكية شهرية — مجانًا.',
         'list_h1_top_projects_sale': 'أهم المشاريع في {name} حسب المبيعات',
         'list_h1_top_deals':         'أكبر الصفقات في {name}',
         'list_h1_recent_sale':       'آخر الصفقات في {name}',
@@ -445,10 +458,14 @@ COPY = {
         'lede_rent_intro':     '{name} में {period_h1} {n} किराया अनुबंध Dubai Land Department के अनुसार दर्ज हुए।',
         'lede_rent_median':    'औसत वार्षिक किराया — {v} AED।',
         'lede_rent_ppsqm':     'किराया प्रति m² — {v} AED/m²/वर्ष।',
-        'title_sales': '{name} में सौदे{period_title}: {n} लेनदेन — DXBCompass',
-        'title_rent':  '{name} में किराया{period_title}: {n} अनुबंध — DXBCompass',
-        'desc_sales':  '{name} में संपत्ति की खरीद-बिक्री{period_title}: {n} DLD सौदे, औसत, प्रति m² कीमत, शीर्ष परियोजनाएं, मासिक मूल्य गतिशीलता।',
-        'desc_rent':   '{name} में किराया अनुबंध{period_title}: {n} DLD अनुबंध, औसत वार्षिक और मासिक किराया, AED/m²/वर्ष, कमरों (स्टूडियो/1BR/2BR/3BR/4BR+), किरायेदार प्रकार और अनुबंध अवधि के अनुसार विश्लेषण।',
+        'title_sales':       '{name} में संपत्ति के दाम{period_title}: औसत AED {med} — {n} DLD सौदे',
+        'title_sales_nomed': '{name} में संपत्ति बाज़ार{period_title}: {n} DLD सौदे',
+        'title_rent':        '{name} में किराया{period_title}: औसत AED {med}/वर्ष',
+        'title_rent_nomed':  '{name} में किराये का बाज़ार{period_title}: {n} DLD अनुबंध',
+        'desc_sales':        '{name} में औसत संपत्ति मूल्य: AED {med}। Dubai Land Department के वास्तविक आँकड़े — {n} सौदे। शीर्ष परियोजनाएं, प्रति m², मासिक ट्रेंड — मुफ़्त।',
+        'desc_sales_nomed':  '{name} में संपत्ति बाज़ार: Dubai Land Department के {n} वास्तविक सौदे। औसत मूल्य, शीर्ष परियोजनाएं, प्रति m², मासिक ट्रेंड — मुफ़्त।',
+        'desc_rent':         '{name} में औसत वार्षिक किराया: AED {med}। Dubai Land Department के {n} वास्तविक किराया अनुबंध। स्टूडियो से 4BR+ मूल्य, मासिक ट्रेंड — मुफ़्त।',
+        'desc_rent_nomed':   '{name} में किराये का बाज़ार: Dubai Land Department के {n} वास्तविक किराया अनुबंध। कमरों के अनुसार औसत किराया (स्टूडियो, 1BR, 2BR, 3BR, 4BR+), मासिक ट्रेंड — मुफ़्त।',
         'list_h1_top_projects_sale': 'बिक्री के अनुसार {name} में शीर्ष परियोजनाएं',
         'list_h1_top_deals':         '{name} में सबसे बड़े सौदे',
         'list_h1_recent_sale':       '{name} में हाल के सौदे',
@@ -536,10 +553,14 @@ COPY = {
         'lede_rent_intro':     '根据迪拜土地局数据,{name} {period_h1}共登记 {n} 份租赁合同。',
         'lede_rent_median':    '年租金中位数 — {v} AED。',
         'lede_rent_ppsqm':     '租金 — {v} AED/m²/年。',
-        'title_sales': '{name} 交易{period_title}:{n} 笔 — DXBCompass',
-        'title_rent':  '{name} 租赁{period_title}:{n} 份合同 — DXBCompass',
-        'desc_sales':  '{name} 房产买卖{period_title}:{n} 笔 DLD 交易,中位价、每平方米价格、热门项目、月度价格走势。',
-        'desc_rent':   '{name} 租赁合同{period_title}:{n} 份 DLD 合同,年/月租金中位数、AED/m²/年,按户型(开间/1卧/2卧/3卧/4+卧)、租户类型与租约期限细分。',
+        'title_sales':       '{name} 房价{period_title}:中位 AED {med} — {n} 笔 DLD 成交',
+        'title_sales_nomed': '{name} 房产市场{period_title}:{n} 笔 DLD 成交',
+        'title_rent':        '{name} 租金{period_title}:中位 AED {med}/年',
+        'title_rent_nomed':  '{name} 租赁市场{period_title}:{n} 份 DLD 合同',
+        'desc_sales':        '{name} 房产中位价:AED {med}。迪拜土地局真实数据 —{n} 笔成交。热门项目、每平方米价格、月度走势 — 免费。',
+        'desc_sales_nomed':  '{name} 房产市场:{n} 笔迪拜土地局真实成交。中位价、热门项目、每平方米价格、月度走势 — 免费。',
+        'desc_rent':         '{name} 年租金中位数:AED {med}。迪拜土地局真实数据 —{n} 份租约。开间至 4+ 卧价格、月度走势 — 免费。',
+        'desc_rent_nomed':   '{name} 租赁市场:{n} 份迪拜土地局真实租约。按户型(开间、1、2、3、4+ 卧)中位租金、月度走势 — 免费。',
         'list_h1_top_projects_sale': '{name} 销售热门项目',
         'list_h1_top_deals':         '{name} 最大交易',
         'list_h1_recent_sale':       '{name} 最新交易',
@@ -1170,16 +1191,37 @@ def _breadcrumb_ld(items):
             + '</script>')
 
 
-def build_seo_head(mode, name, slug, n, period_code, lang):
+def build_seo_head(mode, name, slug, rec, period_code, lang):
     c = COPY[lang]
+    n = rec.get('n', 0) if isinstance(rec, dict) else int(rec)
+    # Sales aggregates store the median as `med`; the rent intermediate uses
+    # `med_annual`, and the choropleth-shaped aggregate re-exports it as `med`.
+    # Accept either — otherwise 'all-time' rent pages (which use the raw
+    # intermediate as base_rec) miss the median and fall back to _nomed.
+    med = 0
+    if isinstance(rec, dict):
+        med = rec.get('med') or rec.get('med_annual') or 0
     n_s = fmt_int(n, lang)
-    period_title_suffix = PERIOD_SUFFIX[lang][period_code]['title']
+    # For "all-time" pages substitute the current year so snippets look fresh in
+    # SERPs; for windowed pages keep the "over N years" suffix.
+    if period_code == 'all':
+        period_title_suffix = f' {datetime.date.today().year}'
+    else:
+        period_title_suffix = PERIOD_SUFFIX[lang][period_code]['title']
     base_canon = base_url(mode, slug, lang)
     canon = base_canon if period_code == 'all' else base_canon + period_code + '/'
-    title_key = 'title_sales' if mode == 'sale' else 'title_rent'
-    desc_key  = 'desc_sales'  if mode == 'sale' else 'desc_rent'
-    title = c[title_key].format(name=name, period_title=period_title_suffix, n=n_s)
-    desc  = c[desc_key].format(name=name, period_title=period_title_suffix, n=n_s)
+    has_med = bool(med)
+    if mode == 'sale':
+        title_key = 'title_sales' if has_med else 'title_sales_nomed'
+        desc_key  = 'desc_sales'  if has_med else 'desc_sales_nomed'
+    else:
+        title_key = 'title_rent' if has_med else 'title_rent_nomed'
+        desc_key  = 'desc_rent'  if has_med else 'desc_rent_nomed'
+    fmt_kwargs = dict(name=name, period_title=period_title_suffix, n=n_s)
+    if has_med:
+        fmt_kwargs['med'] = fmt_aed(med, lang)
+    title = c[title_key].format(**fmt_kwargs)
+    desc  = c[desc_key].format(**fmt_kwargs)
 
     def period_url(l):
         u = base_url(mode, slug, l)
@@ -1419,7 +1461,7 @@ def main():
                     n_p = rec_for_period.get('n', 0)
                     headline, _ = build_headline(mode, name, period_h1, n_p, lang)
                     lede = build_lede(mode, name, period_h1, rec_for_period, lang)
-                    period_copy[period_code] = {'h1': headline, 'lede': lede, 'n': n_p}
+                    period_copy[period_code] = {'h1': headline, 'lede': lede, 'n': n_p, 'rec': rec_for_period}
 
                 bread_mode = c['mode_sales'] if mode == 'sale' else c['mode_rents']
 
@@ -1440,7 +1482,7 @@ def main():
                     html = html.replace('<html lang="ru">',
                                         f'<html lang="{html_lang}" dir="{html_dir}">')
                     html = html.replace('<!--__SEO_HEAD__-->',
-                                        build_seo_head(mode, name, slug, copy_now['n'], period_code, lang))
+                                        build_seo_head(mode, name, slug, copy_now['rec'], period_code, lang))
                     html = html.replace('__ASSET_BASE__', '')
                     html = html.replace('__BREADCRUMB_DUBAI__', html_escape(c['breadcrumb_dubai']))
                     html = html.replace('__MODE_INDEX_URL__', f'{lang_prefix(lang)}/{prefix}/')
