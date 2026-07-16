@@ -68,6 +68,14 @@ MIN_OFFPLAN = 20   # off-plan sales, 1y window (launch markets are dense)
 MIN_MOM     = 10   # per momentum window, matches build_growth_map.py
 MIN_RERA    = 3    # in-flight projects needed for an overdue read
 
+# A single building must not hijack a district's median. Al Safouh Second:
+# Dubai Jewel Tower dumped 236 of 286 ready sales at ~9.5K AED/m² in a
+# 21-38K district — fake 9% yield, fake −63% momentum, fake +236% off-plan
+# premium, and a top-1 investor score. If one building exceeds this share
+# of a window's sales, that leg is dropped (the district may still score
+# through the other leg).
+MAX_BUILDING_SHARE = 0.5
+
 W_YIELD    = 0.65
 W_REVERSAL = 0.35
 
@@ -126,28 +134,47 @@ def pct_ranks(values):
 
 
 # --- Momentum: district-level unit ppsqm, last 365d vs prior 365d --------
+# Residential rooms only (offices/shops are 'Unit' too and shift the mix),
+# and each window must pass the building-concentration guard.
 mom = con.execute(f"""
 WITH px AS (
   SELECT {KEY} AS k,
          instance_date >= '{d_now_from}' AS is_now,
+         COALESCE(building_name_en, '?') AS b,
          TRY_CAST(meter_sale_price AS DOUBLE) AS ppsqm
   FROM '{TX}'
   WHERE area_name_en IS NOT NULL
     AND trans_group_en = 'Sales'
     AND property_type_en = 'Unit'
+    AND rooms_en IN {_ALL_SALE}
     AND instance_date BETWEEN '{d_prev_from}' AND '{d_to}'
     AND TRY_CAST(meter_sale_price AS DOUBLE) BETWEEN 2000 AND 100000
+),
+bld AS (
+  SELECT k, is_now, b, COUNT(*) AS cnt FROM px GROUP BY 1, 2, 3
+),
+conc AS (
+  SELECT k,
+         MAX(cnt) FILTER (WHERE is_now)::DOUBLE
+           / NULLIF(SUM(cnt) FILTER (WHERE is_now), 0)     AS top_share_now,
+         MAX(cnt) FILTER (WHERE NOT is_now)::DOUBLE
+           / NULLIF(SUM(cnt) FILTER (WHERE NOT is_now), 0) AS top_share_prev
+  FROM bld GROUP BY k
 )
-SELECT k,
+SELECT px.k,
        MEDIAN(ppsqm) FILTER (WHERE is_now)     AS med_now,
        MEDIAN(ppsqm) FILTER (WHERE NOT is_now) AS med_prev,
        COUNT(*) FILTER (WHERE is_now)          AS n_now,
-       COUNT(*) FILTER (WHERE NOT is_now)      AS n_prev
-FROM px GROUP BY k
+       COUNT(*) FILTER (WHERE NOT is_now)      AS n_prev,
+       ANY_VALUE(conc.top_share_now)  AS top_share_now,
+       ANY_VALUE(conc.top_share_prev) AS top_share_prev
+FROM px JOIN conc USING (k) GROUP BY px.k
 """).fetchdf()
 past1y = {}
 for _, r in mom.iterrows():
-    if r['n_now'] >= MIN_MOM and r['n_prev'] >= MIN_MOM and r['med_prev']:
+    if (r['n_now'] >= MIN_MOM and r['n_prev'] >= MIN_MOM and r['med_prev']
+            and r['top_share_now'] <= MAX_BUILDING_SHARE
+            and r['top_share_prev'] <= MAX_BUILDING_SHARE):
         past1y[r['k']] = round((float(r['med_now']) / float(r['med_prev']) - 1) * 100, 1)
 print(f'momentum: {len(past1y)} districts', file=sys.stderr)
 
@@ -191,21 +218,39 @@ else:
 for code, (tx_rooms, rent_subtype) in CLASSES.items():
     # ---- rent leg: ready sales + rentals -------------------------------
     tx = con.execute(f"""
-    SELECT {KEY} AS k,
-           ANY_VALUE({NAME}) AS name,
+    WITH s AS (
+      SELECT {KEY} AS k,
+             {NAME} AS name,
+             COALESCE(building_name_en, '?') AS b,
+             TRY_CAST(meter_sale_price AS DOUBLE) AS ppsqm
+      FROM '{TX}'
+      WHERE area_name_en IS NOT NULL
+        AND trans_group_en = 'Sales'
+        AND property_type_en = 'Unit'
+        AND reg_type_en = 'Existing Properties'
+        AND rooms_en IN {tx_rooms}
+        AND instance_date BETWEEN '{d_now_from}' AND '{d_to}'
+        AND TRY_CAST(meter_sale_price AS DOUBLE) BETWEEN 2000 AND 100000
+    ),
+    conc AS (
+      SELECT k, MAX(cnt)::DOUBLE / SUM(cnt) AS top_share
+      FROM (SELECT k, b, COUNT(*) AS cnt FROM s GROUP BY 1, 2)
+      GROUP BY k
+    )
+    SELECT s.k,
+           ANY_VALUE(s.name) AS name,
            COUNT(*) AS n_sale,
-           MEDIAN(TRY_CAST(meter_sale_price AS DOUBLE)) AS sale_ppsqm
-    FROM '{TX}'
-    WHERE area_name_en IS NOT NULL
-      AND trans_group_en = 'Sales'
-      AND property_type_en = 'Unit'
-      AND reg_type_en = 'Existing Properties'
-      AND rooms_en IN {tx_rooms}
-      AND instance_date BETWEEN '{d_now_from}' AND '{d_to}'
-      AND TRY_CAST(meter_sale_price AS DOUBLE) BETWEEN 2000 AND 100000
-    GROUP BY k
+           MEDIAN(s.ppsqm) AS sale_ppsqm,
+           ANY_VALUE(conc.top_share) AS top_share
+    FROM s JOIN conc USING (k)
+    GROUP BY s.k
     HAVING COUNT(*) >= {MIN_SALE}
     """).fetchdf()
+    n_conc = int((tx['top_share'] > MAX_BUILDING_SHARE).sum())
+    if n_conc:
+        print(f'  {code}: dropped ready leg for {n_conc} districts '
+              f'(one building >{MAX_BUILDING_SHARE:.0%} of sales)', file=sys.stderr)
+    tx = tx[tx['top_share'] <= MAX_BUILDING_SHARE]
 
     rt = con.execute(f"""
     SELECT {KEY} AS k,
