@@ -61,9 +61,12 @@ COV_MIN = {
     # Measured July 2026: all 33%, studio 20%, 1br 30%, 2br 31%, 3br 25%, 4br+ 8%.
     'INVESTOR_PERIODS': {'all':0.25, 'studio':0.14, '1br':0.22, '2br':0.23, '3br':0.18, '4br_plus':0.05},
     # Income = ready+rental districts only (no off-plan leg), so it sits
-    # below the growth mask. Measured July 2026: all 22%, studio 12%,
-    # 1br 20%, 2br 20%, 3br 16%, 4br+ 4%.
-    'INCOME_PERIODS': {'all':0.16, 'studio':0.08, '1br':0.14, '2br':0.14, '3br':0.11, '4br_plus':0.02},
+    # below the growth mask. With the dominant-building-exclude rule and 2y
+    # fallback (July 2026): all 27%, studio 16%, 1br 24%, 2br 25%, 3br 18%,
+    # 4br+ 5%. The ceiling is structural: 51 lifecycle districts are
+    # non-freehold old Dubai (is_free_hold=0, zero unit sales — nothing to
+    # buy) and 12 are villa communities (excluded by design).
+    'INCOME_PERIODS': {'all':0.19, 'studio':0.11, '1br':0.17, '2br':0.18, '3br':0.13, '4br_plus':0.03},
 }
 
 # Lifecycle is structurally different: one flat {area_key: rec} dict, no
