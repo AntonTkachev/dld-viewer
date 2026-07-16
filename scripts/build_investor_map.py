@@ -82,10 +82,12 @@ TX    = os.path.join(ROOT, 'data/tx.parquet')
 RENTS = os.path.join(ROOT, 'data/rents.parquet')
 PROJECTS  = os.path.join(ROOT, 'data/dld_projects.csv.gz')
 LIFECYCLE = os.path.join(ROOT, 'lifecycle/data/all.json')
-OUT        = os.path.join(ROOT, 'investor/data')
-OUT_INCOME = os.path.join(ROOT, 'income/data')
+OUT         = os.path.join(ROOT, 'investor/data')
+OUT_INCOME  = os.path.join(ROOT, 'income/data')
+OUT_FORMULA = os.path.join(ROOT, 'formula/data')
 os.makedirs(OUT, exist_ok=True)
 os.makedirs(OUT_INCOME, exist_ok=True)
+os.makedirs(OUT_FORMULA, exist_ok=True)
 
 TODAY = date.today()
 MIN_SALE    = 8    # ready sales, 1y window
@@ -119,6 +121,29 @@ W_INC_YIELD   = 0.55
 W_INC_TREND   = 0.25
 W_INC_RENEWAL = 0.20
 MIN_TREND_OBS = 30    # rentals per window for a trend read
+
+# formula mask («Дубайская формула») — leveraged cash-on-cash with a
+# checklist of the session-backtested survival rules. Ready markets only.
+F_RATE   = 0.045   # mortgage rate (annuity ignored: interest-only carry view)
+F_LTV    = 0.80    # expat first home ≤5M
+F_COSTS  = 0.075   # 4% DLD + 2% agent + ~1.5% bank/valuation/trustee
+F_CASH   = (1 - F_LTV) + F_COSTS   # cash in as share of price = 0.275
+# Service charge is NOT in DLD data. Proxy as pp of value: SC scales with
+# area, so cheap stock loses more value-percent. Calibrated on known cases
+# (Al Khail ~2.1pp, IC ~2pp, MBR ~1.2pp, Palm ~1.3pp, Bluewaters ~1.4pp):
+def sc_pp(ppsqm):
+    return min(2.2, max(1.1, 1.0 + 8000.0 / ppsqm))
+# checklist thresholds (each is a backtested session finding)
+F_SELF_CARRY = 7.5   # gross yield that survives a −40% rent stress on 80% LTV
+F_DEPOSIT    = 4.5   # scalable UAE cash rate — net yield must beat it unlevered
+F_HOT        = 15.0  # past-1y price growth above this = overheated (reverts)
+F_PEAK       = 92    # price ≤92% of own peak = recovery headroom left
+F_STICKY     = 55    # renewal share ≥55% = sticky tenants
+F_GATE_SALES = 30    # HARD gate: the formula is an executable trade — below
+                     # this many ready deals/yr there is no market to enter
+                     # (kills thin remainder polygons like Marsa Dubai (other)
+                     # where FIVE LUXE rentals met Al Fattan sales in one ratio)
+F_LIQUID     = 50    # checklist ✓: comfortable two-way liquidity
 
 FRESH_MONTHS   = 12   # project age at sale ≤ this ⇒ "fresh launch"
 OFFPLAN_DOMINANT = 0.60  # off-plan share of unit sales ⇒ strategy flips
@@ -350,7 +375,8 @@ for code, (tx_rooms, rent_subtype) in CLASSES.items():
           SELECT {KEY} AS k,
                  {NAME} AS name,
                  COALESCE(building_name_en, '?') AS b,
-                 TRY_CAST(meter_sale_price AS DOUBLE) AS ppsqm
+                 TRY_CAST(meter_sale_price AS DOUBLE) AS ppsqm,
+                 TRY_CAST(procedure_area AS DOUBLE) AS sqm
           FROM '{TX}'
           WHERE area_name_en IS NOT NULL
             AND trans_group_en = 'Sales'
@@ -370,24 +396,27 @@ for code, (tx_rooms, rent_subtype) in CLASSES.items():
                ANY_VALUE(top.top_share) AS top_share,
                COUNT(*) AS n_all,
                MEDIAN(s.ppsqm) AS med_all,
+               MEDIAN(s.sqm) AS sqm_all,
                COUNT(*) FILTER (WHERE s.b != top.top_b) AS n_excl,
-               MEDIAN(s.ppsqm) FILTER (WHERE s.b != top.top_b) AS med_excl
+               MEDIAN(s.ppsqm) FILTER (WHERE s.b != top.top_b) AS med_excl,
+               MEDIAN(s.sqm) FILTER (WHERE s.b != top.top_b) AS sqm_excl
         FROM s JOIN top USING (k)
         GROUP BY s.k
         """).fetchdf()
 
     def pick_ready(df):
-        """{k: (name, n_sale, sale_ppsqm)} applying the concentration rule."""
+        """{k: (name, n_sale, sale_ppsqm, sale_sqm)} applying the concentration rule."""
         out = {}
         for _, r in df.iterrows():
             if r['top_share'] <= MAX_BUILDING_SHARE:
-                n, med = r['n_all'], r['med_all']
+                n, med, sqm = r['n_all'], r['med_all'], r['sqm_all']
             elif r['n_excl'] >= MIN_SALE:
-                n, med = r['n_excl'], r['med_excl']   # dominant building excluded
+                n, med, sqm = r['n_excl'], r['med_excl'], r['sqm_excl']   # dominant excluded
             else:
                 continue
             if n >= MIN_SALE and med == med and med:
-                out[r['k']] = (r['name'], int(n), float(med))
+                out[r['k']] = (r['name'], int(n), float(med),
+                               float(sqm) if sqm == sqm else None)
         return out
 
     ready_1y = pick_ready(ready_sales(d_now_from))
@@ -404,7 +433,9 @@ for code, (tx_rooms, rent_subtype) in CLASSES.items():
            COUNT(*) AS n_rent,
            MEDIAN(TRY_CAST(annual_amount AS DOUBLE) / NULLIF(TRY_CAST(actual_area AS DOUBLE), 0))
              FILTER (WHERE TRY_CAST(annual_amount AS DOUBLE) > 0
-                     AND TRY_CAST(actual_area AS DOUBLE) > 10) AS rent_ppsqm
+                     AND TRY_CAST(actual_area AS DOUBLE) > 10) AS rent_ppsqm,
+           MEDIAN(TRY_CAST(actual_area AS DOUBLE))
+             FILTER (WHERE TRY_CAST(actual_area AS DOUBLE) BETWEEN 10 AND 1000) AS rent_sqm
     FROM '{RENTS}'
     WHERE area_name_en IS NOT NULL
       AND ejari_property_sub_type_en IN {rent_subtype}
@@ -458,12 +489,22 @@ for code, (tx_rooms, rent_subtype) in CLASSES.items():
 
     # ---- assemble per-district records ----------------------------------
     rent_rows = {}
-    for k, (name, n_sale, sale_p) in ready.items():
+    n_mismatch = 0
+    for k, (name, n_sale, sale_p, sale_sqm) in ready.items():
         rtr = rt_map.get(k)
         if rtr is None:
             continue
         rent_p = rtr['rent_ppsqm']
         if rent_p != rent_p or not rent_p:
+            continue
+        # Population-match guard: the rented stock must physically resemble
+        # the sold stock, else the yield is a fiction. Marsa Dubai (other):
+        # rentals were FIVE LUXE serviced ~35m² units, the (post-guard) sale
+        # benchmark was Al Fattan ~120m² flats → fake 11.5% yield.
+        rent_sqm = rtr['rent_sqm']
+        if (sale_sqm and rent_sqm == rent_sqm and rent_sqm
+                and not (1 / 1.8 <= sale_sqm / float(rent_sqm) <= 1.8)):
+            n_mismatch += 1
             continue
         y = float(rent_p) / sale_p * 100
         if not (1.0 <= y <= 20.0):   # data-glitch guard, same bounds as backtest
@@ -476,6 +517,9 @@ for code, (tx_rooms, rent_subtype) in CLASSES.items():
         }
         if tx_windows[k] == '2y':
             rent_rows[k]['window_2y'] = True
+    if n_mismatch:
+        print(f'  {code}: dropped {n_mismatch} districts (rented vs sold stock '
+              f'area mismatch >1.8x)', file=sys.stderr)
     # sale_ppsqm also serves as the off-plan premium benchmark below, so
     # keep a ready-price lookup even for districts that missed the rent leg.
     ready_price = {k: v[2] for k, v in ready.items()}
@@ -647,5 +691,55 @@ for code, (tx_rooms, rent_subtype) in CLASSES.items():
     with open(path, 'w', encoding='utf-8') as f:
         json.dump(inc_rows, f, ensure_ascii=False, separators=(',', ':'))
     print(f'  income/{code}: {len(inc_rows)} polygons  {os.path.getsize(path) // 1024} KB',
+          file=sys.stderr)
+
+    # ---- «Дубайская формула»: leveraged cash-on-cash + rule checklist ----
+    # Ready markets only (the formula has no meaning on a construction pit).
+    fml = {}
+    def formula_rec(rec, k=None):
+        y = rec['yield_pct']
+        net = y - sc_pp(rec['sale_ppsqm'])
+        cash_yield = (net - F_LTV * F_RATE * 100) / F_CASH / 100 * 100
+        r = {
+            'name': rec['name'],
+            'cash_yield_pct': round(cash_yield, 1),
+            'yield_pct': y,
+            'net_yield_pct': round(net, 2),
+            'sale_ppsqm': rec['sale_ppsqm'], 'rent_ppsqm': rec['rent_ppsqm'],
+            'n_sale': rec['n_sale'], 'n_rent': rec['n_rent'],
+        }
+        if rec.get('window_2y'):
+            r['window_2y'] = True
+        checks = {
+            'c_self':    y >= F_SELF_CARRY,
+            'c_deposit': net >= F_DEPOSIT,
+        }
+        if k is not None:
+            p1 = past1y.get(k)
+            checks['c_cool'] = (p1 is not None and p1 <= F_HOT)
+            if p1 is not None:
+                r['past1y_pct'] = p1
+            vp = vs_peak.get(k)
+            checks['c_peak'] = (vp is not None and vp <= F_PEAK)
+            if vp is not None:
+                r['vs_peak_pct'] = vp
+            rn = renewal.get(k)
+            checks['c_sticky'] = (rn is not None and rn >= F_STICKY)
+            if rn is not None:
+                r['renewal_pct'] = rn
+        checks['c_liquid'] = rec['n_sale'] >= F_LIQUID
+        r.update({ck: bool(v) for ck, v in checks.items()})
+        r['n_checks'] = sum(checks.values())
+        return r
+
+    for k, rec in inc_rows.items():
+        if k == '__dubai__':
+            fml['__dubai__'] = formula_rec(rec)
+        elif rec['n_sale'] >= F_GATE_SALES:
+            fml[k] = formula_rec(rec, k)
+    path = os.path.join(OUT_FORMULA, f'{code}.json')
+    with open(path, 'w', encoding='utf-8') as f:
+        json.dump(fml, f, ensure_ascii=False, separators=(',', ':'))
+    print(f'  formula/{code}: {len(fml)} polygons  {os.path.getsize(path) // 1024} KB',
           file=sys.stderr)
 print('done', file=sys.stderr)
