@@ -485,7 +485,9 @@ const MASKS = {
       const pill = `<span style="display:inline-block;padding:2px 8px;border-radius:10px;background:${color};color:${textColor};font-weight:600;font-size:12px">${phaseLabel}</span>`;
       const pricePct = p.real_price_pct;
       const rentPct  = p.real_rent_pct;
-      const pipeShare = (p.real_pipeline * 100).toFixed(0);
+      // real_pipeline is a composite index (share × volume boost × delivery
+      // penalty) and can exceed 1.0 — cap the human-facing "share" at 100%.
+      const pipeShare = (Math.min(p.real_pipeline, 1) * 100).toFixed(0);
       const fmtPct = v => (typeof v === 'number')
         ? ((v >= 0 ? '+' : '') + v.toFixed(1) + '%')
         : '—';
@@ -507,7 +509,7 @@ const MASKS = {
         labelKey: 'tv_col_lifecycle_score',  type: 'phase', width: '20%', defaultSort: true, defaultSortDir: 'desc' },
       { key: 'price_pct',  labelKey: 'tv_col_lifecycle_price',  type: 'pct', width: '16%' },
       { key: 'rent_pct',   labelKey: 'tv_col_lifecycle_rent',   type: 'pct', width: '16%' },
-      { key: r => Math.round((r.pipeline || 0) * 100),
+      { key: r => Math.round(Math.min(r.pipeline || 0, 1) * 100),
                            labelKey: 'tv_col_lifecycle_pipeline', type: 'pct', width: '16%' },
     ],
   },

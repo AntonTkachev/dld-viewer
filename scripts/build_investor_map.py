@@ -204,7 +204,11 @@ if os.path.exists(PROJECTS):
            COUNT(*) AS n_inflight,
            COUNT(*) FILTER (WHERE project_end_date < '{d_chronic}') AS n_chronic
     FROM src
-    WHERE area_name_en IS NOT NULL AND no_of_units > 0
+    WHERE area_name_en IS NOT NULL
+      -- units + villas + lands, matching build_lifecycle.py's volume rule:
+      -- townhouse masters (DAMAC Lagoons) register as LANDS (units=villas=0).
+      -- Villas/lands are excluded from price legs only; delivery risk counts them.
+      AND no_of_units + no_of_villas + no_of_lands > 0
       AND project_status IN ('ACTIVE','NOT_STARTED','PENDING','CONDITIONAL_ACTIVATING')
     GROUP BY k
     """).fetchdf()
