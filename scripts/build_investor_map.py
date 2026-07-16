@@ -1,23 +1,47 @@
 #!/usr/bin/env python3
-"""Per-polygon investor score for the 'инвест-скор' mask.
+"""Per-polygon scores for the TWO investor masks.
 
+The stock-market analogy the split is built on: a rentier earns like a
+dividend investor (cash now, hold forever), a growth investor earns on the
+exit price. In Dubai district data both enter "cheap" (momentum mean-
+reverts everywhere), so the split is about payout, horizon and risk — not
+about opposite entry signals.
+
+MASK 1 — investor/ («Инвестор: рост», capital growth).
 Every scored district carries ONE of two strategies:
 
-  strategy='rent'    — buy ready, hold for yield. Score from the rental leg.
-  strategy='offplan' — enter a launch, hold to handover. Score from the
-                       off-plan leg. Assigned when off-plan is ≥60% of the
-                       district's last-12mo unit sales (or when there is no
-                       scoreable ready+rental market at all).
+  strategy='rent'    — undervalued ready stock, ride the catch-up.
+  strategy='offplan' — enter a launch, hold to handover. Assigned when
+                       off-plan is ≥60% of the district's last-12mo unit
+                       sales (or when there is no scoreable ready market).
 
-RENTAL LEG — backtested on 2014-2024 district-year panels:
+READY LEG — backtested on 2014-2024 district-year panels:
   - Gross rental yield is the strongest forward-return predictor: top
-    quintile averaged +17.0% next-year price growth (+26.2% total return)
-    vs +1.9% bottom; spread positive in 10 of 11 years.
+    quintile averaged +17.0% next-year price growth vs +1.9% bottom;
+    spread positive in 10 of 11 years.
   - 1y price momentum MEAN-REVERTS (+33.6% past → +2.0% forward). Same at
     3y. Deal-volume momentum has NO signal (liquidity ≠ alpha).
-  score = 100 × (0.65 × pct_rank(yield) + 0.35 × pct_rank(−past-1y-growth))
+  - Room-to-peak decides how much of the yield edge converts to price:
+    high-yield districts below 80% of their own historical peak averaged
+    +21.2% forward; the same yield AT the peak averaged +3.9%. Districts
+    with <5 years of ≥30-sale price history get a neutral 0.5 (young ≠
+    exhausted — they averaged +14.7%).
+  score = 100 × (0.45 × pct_rank(yield) + 0.30 × pct_rank(−past-1y-growth)
+               + 0.25 × pct_rank(−price-vs-own-peak))
 
-OFF-PLAN LEG — backtested on 2015+ project launches (≥100 off-plan sales):
+MASK 2 — income/ («Инвестор: рента», cashflow).
+Ready+rental districts only, no strategy flip — a district can appear in
+both masks with different scores (JVC: deep 7%+ rental market AND an
+off-plan wave).
+  - Yield is the income itself.
+  - Rent growth PERSISTS year-to-year (unlike prices): top-quintile
+    rent-growth districts kept growing +4.0% next year, bottom quintile
+    kept falling −1.2%. So the rent trend is a legitimate forward signal.
+  - Renewal share = tenant stickiness → fewer void months.
+  score = 100 × (0.55 × pct_rank(yield) + 0.25 × pct_rank(rent-trend-1y)
+               + 0.20 × pct_rank(renewal-share))
+
+OFF-PLAN LEG (mask 1) — backtested on 2015+ launches (≥100 off-plan sales):
   - Launch price vs district ready stock decides the outcome. Quartile
     launching at/below ready prices realized +25.9% avg by months 24-41;
     quartiles launching +48%/+113% above ready realized only +4-5%.
@@ -40,15 +64,15 @@ Reads lifecycle/data/all.json (run build_lifecycle.py first) for the
 construction-pipeline share, and data/dld_projects.csv.gz for chronic
 overdue (in-flight projects ≥2y past project_end_date).
 
-Output: investor/data/{all,studio,1br,2br,3br,4br_plus}.json per area key:
-  { name, score, strategy,
-    # rent-leg fields (when ready+rental market exists):
-    yield_pct, sale_ppsqm, rent_ppsqm, n_sale, n_rent,
-    # off-plan-leg fields (when off-plan market exists):
-    offplan_ppsqm, n_offplan, premium_pct?, fresh_share_pct?, launch_age_mo?,
-    overdue_share_pct?,
-    # shared:
-    past1y_pct?, pipeline? }
+Output:
+  investor/data/{all,studio,1br,2br,3br,4br_plus}.json per area key:
+    { name, score, strategy,
+      yield_pct, sale_ppsqm, rent_ppsqm, n_sale, n_rent, vs_peak_pct?,
+      offplan_ppsqm, n_offplan, premium_pct?, fresh_share_pct?,
+      launch_age_mo?, overdue_share_pct?, past1y_pct?, pipeline? }
+  income/data/{same classes}.json per area key:
+    { name, score, yield_pct, sale_ppsqm, rent_ppsqm, n_sale, n_rent,
+      rent_trend_pct?, renewal_pct?, past1y_pct?, pipeline? }
 """
 import duckdb, json, sys, os
 from datetime import date, timedelta
@@ -58,8 +82,10 @@ TX    = os.path.join(ROOT, 'data/tx.parquet')
 RENTS = os.path.join(ROOT, 'data/rents.parquet')
 PROJECTS  = os.path.join(ROOT, 'data/dld_projects.csv.gz')
 LIFECYCLE = os.path.join(ROOT, 'lifecycle/data/all.json')
-OUT   = os.path.join(ROOT, 'investor/data')
+OUT        = os.path.join(ROOT, 'investor/data')
+OUT_INCOME = os.path.join(ROOT, 'income/data')
 os.makedirs(OUT, exist_ok=True)
+os.makedirs(OUT_INCOME, exist_ok=True)
 
 TODAY = date.today()
 MIN_SALE    = 8    # ready sales, 1y window
@@ -76,12 +102,23 @@ MIN_RERA    = 3    # in-flight projects needed for an overdue read
 # through the other leg).
 MAX_BUILDING_SHARE = 0.5
 
-W_YIELD    = 0.65
-W_REVERSAL = 0.35
+# growth mask, ready leg
+W_YIELD    = 0.45
+W_REVERSAL = 0.30
+W_PEAK     = 0.25
+MIN_PEAK_YEARS = 5    # yearly-history depth needed for a peak read
+MIN_PEAK_OBS   = 30   # ready sales per year for that year to count
 
+# growth mask, off-plan leg
 W_PREMIUM  = 0.50
 W_FRESH    = 0.30
 W_RELIABLE = 0.20
+
+# income mask
+W_INC_YIELD   = 0.55
+W_INC_TREND   = 0.25
+W_INC_RENEWAL = 0.20
+MIN_TREND_OBS = 30    # rentals per window for a trend read
 
 FRESH_MONTHS   = 12   # project age at sale ≤ this ⇒ "fresh launch"
 OFFPLAN_DOMINANT = 0.60  # off-plan share of unit sales ⇒ strategy flips
@@ -177,6 +214,75 @@ for _, r in mom.iterrows():
             and r['top_share_prev'] <= MAX_BUILDING_SHARE):
         past1y[r['k']] = round((float(r['med_now']) / float(r['med_prev']) - 1) * 100, 1)
 print(f'momentum: {len(past1y)} districts', file=sys.stderr)
+
+# --- Price vs own historical peak (ready residential, district level) ----
+# Peak = best calendar-year median with ≥MIN_PEAK_OBS ready sales; current
+# = last-365d median of the same population. Districts with fewer than
+# MIN_PEAK_YEARS qualifying years get no read (neutral rank later) — a
+# 1-year-old district is "at its peak" by construction, not by exhaustion.
+peak_hist = con.execute(f"""
+WITH s AS (
+  SELECT {KEY} AS k,
+         YEAR(CAST(instance_date AS DATE)) AS y,
+         instance_date >= '{d_now_from}' AS is_cur,
+         TRY_CAST(meter_sale_price AS DOUBLE) AS ppsqm
+  FROM '{TX}'
+  WHERE area_name_en IS NOT NULL
+    AND trans_group_en = 'Sales'
+    AND property_type_en = 'Unit'
+    AND reg_type_en = 'Existing Properties'
+    AND rooms_en IN {_ALL_SALE}
+    AND TRY_CAST(meter_sale_price AS DOUBLE) BETWEEN 2000 AND 100000
+),
+yearly AS (
+  SELECT k, y, MEDIAN(ppsqm) AS med
+  FROM s GROUP BY k, y HAVING COUNT(*) >= {MIN_PEAK_OBS}
+),
+cur AS (
+  SELECT k, MEDIAN(ppsqm) AS cur_med
+  FROM s WHERE is_cur GROUP BY k HAVING COUNT(*) >= {MIN_SALE}
+)
+SELECT y2.k, MAX(y2.med) AS peak, COUNT(*) AS hist_years,
+       ANY_VALUE(cur.cur_med) AS cur_med
+FROM yearly y2 JOIN cur USING (k)
+GROUP BY y2.k
+""").fetchdf()
+vs_peak = {}
+for _, r in peak_hist.iterrows():
+    if r['hist_years'] >= MIN_PEAK_YEARS and r['peak'] and r['cur_med']:
+        vs_peak[r['k']] = round(min(float(r['cur_med']) / float(r['peak']), 1.0) * 100)
+print(f'vs-peak: {len(vs_peak)} districts with ≥{MIN_PEAK_YEARS}y history', file=sys.stderr)
+
+# --- Rent trend + renewal share (residential, district level) ------------
+rq = con.execute(f"""
+WITH r AS (
+  SELECT {KEY} AS k,
+         contract_start_date >= '{d_now_from}' AS is_now,
+         TRIM(contract_reg_type_en) = 'Renew' AS is_renew,
+         TRY_CAST(annual_amount AS DOUBLE)
+           / NULLIF(TRY_CAST(actual_area AS DOUBLE), 0) AS rp
+  FROM '{RENTS}'
+  WHERE area_name_en IS NOT NULL
+    AND TRIM(ejari_property_type_en) IN ('Flat', 'Studio', 'Hotel apartments')
+    AND contract_start_date BETWEEN '{d_prev_from}' AND '{d_to}'
+    AND TRY_CAST(annual_amount AS DOUBLE) > 0
+    AND TRY_CAST(actual_area AS DOUBLE) BETWEEN 10 AND 10000
+)
+SELECT k,
+       MEDIAN(rp) FILTER (WHERE is_now)      AS rp_now,
+       MEDIAN(rp) FILTER (WHERE NOT is_now)  AS rp_prev,
+       COUNT(*)   FILTER (WHERE is_now)      AS n_now,
+       COUNT(*)   FILTER (WHERE NOT is_now)  AS n_prev,
+       AVG(CASE WHEN is_now THEN is_renew::INT END) AS renewal_share
+FROM r GROUP BY k
+""").fetchdf()
+rent_trend, renewal = {}, {}
+for _, r in rq.iterrows():
+    if r['n_now'] >= MIN_TREND_OBS and r['n_prev'] >= MIN_TREND_OBS and r['rp_prev']:
+        rent_trend[r['k']] = round((float(r['rp_now']) / float(r['rp_prev']) - 1) * 100, 1)
+    if r['n_now'] >= MIN_TREND_OBS and r['renewal_share'] == r['renewal_share']:
+        renewal[r['k']] = round(float(r['renewal_share']) * 100)
+print(f'rent trend: {len(rent_trend)} districts; renewal: {len(renewal)}', file=sys.stderr)
 
 # --- Pipeline share from the lifecycle bake (optional enrichment) --------
 pipeline = {}
@@ -358,7 +464,7 @@ for code, (tx_rooms, rent_subtype) in CLASSES.items():
             rec['overdue_share_pct'] = overdue[k]
         op_rows[k] = rec
 
-    # ---- rent-leg score --------------------------------------------------
+    # ---- ready-leg growth score -------------------------------------------
     rk = list(rent_rows.keys())
     if len(rk) > 1:
         y_rank = pct_ranks([rent_rows[k]['yield_pct'] for k in rk])
@@ -367,9 +473,42 @@ for code, (tx_rooms, rent_subtype) in CLASSES.items():
         if len(with_mom) > 1:
             for k, r in zip(with_mom, pct_ranks([-past1y[k] for k in with_mom])):
                 m_rank[k] = r
+        with_peak = [k for k in rk if k in vs_peak]
+        p_rank = {k: 0.5 for k in rk}
+        if len(with_peak) > 1:
+            for k, r in zip(with_peak, pct_ranks([-vs_peak[k] for k in with_peak])):
+                p_rank[k] = r
         for k, yr in zip(rk, y_rank):
             rent_rows[k]['rent_score'] = round(
-                100 * (W_YIELD * yr + W_REVERSAL * m_rank[k]))
+                100 * (W_YIELD * yr + W_REVERSAL * m_rank[k] + W_PEAK * p_rank[k]))
+
+    # ---- income score (separate mask, no strategy flip) --------------------
+    inc_rows = {}
+    if len(rk) > 1:
+        with_tr = [k for k in rk if k in rent_trend]
+        t_rank = {k: 0.5 for k in rk}
+        if len(with_tr) > 1:
+            for k, r in zip(with_tr, pct_ranks([rent_trend[k] for k in with_tr])):
+                t_rank[k] = r
+        with_rn = [k for k in rk if k in renewal]
+        rn_rank = {k: 0.5 for k in rk}
+        if len(with_rn) > 1:
+            for k, r in zip(with_rn, pct_ranks([renewal[k] for k in with_rn])):
+                rn_rank[k] = r
+        for k, yr in zip(rk, y_rank):
+            rec = {f: rent_rows[k][f] for f in
+                   ('name', 'n_sale', 'n_rent', 'sale_ppsqm', 'rent_ppsqm', 'yield_pct')}
+            rec['score'] = round(100 * (W_INC_YIELD * yr + W_INC_TREND * t_rank[k]
+                                        + W_INC_RENEWAL * rn_rank[k]))
+            if k in rent_trend:
+                rec['rent_trend_pct'] = rent_trend[k]
+            if k in renewal:
+                rec['renewal_pct'] = renewal[k]
+            if k in past1y:
+                rec['past1y_pct'] = past1y[k]
+            if k in pipeline:
+                rec['pipeline'] = pipeline[k]
+            inc_rows[k] = rec
 
     # ---- off-plan-leg score ----------------------------------------------
     ok = list(op_rows.keys())
@@ -416,6 +555,8 @@ for code, (tx_rooms, rent_subtype) in CLASSES.items():
         rec['score'] = rec['offplan_score'] if strategy == 'offplan' else rec['rent_score']
         rec.pop('rent_score', None)
         rec.pop('offplan_score', None)
+        if strategy == 'rent' and k in vs_peak:
+            rec['vs_peak_pct'] = vs_peak[k]
         if k in past1y:
             rec['past1y_pct'] = past1y[k]
         if k in pipeline:
@@ -457,6 +598,15 @@ for code, (tx_rooms, rent_subtype) in CLASSES.items():
     n_op = sum(1 for v in out.values() if v.get('strategy') == 'offplan')
     n_rt = sum(1 for v in out.values() if v.get('strategy') == 'rent')
     size_kb = os.path.getsize(path) // 1024
-    print(f'  {code}: {len(out)} polygons (rent {n_rt} / offplan {n_op})  {size_kb} KB',
+    print(f'  growth/{code}: {len(out)} polygons (rent {n_rt} / offplan {n_op})  {size_kb} KB',
+          file=sys.stderr)
+
+    # income mask shares the Dubai reference row (same yield population)
+    if '__dubai__' in out:
+        inc_rows['__dubai__'] = dict(out['__dubai__'])
+    path = os.path.join(OUT_INCOME, f'{code}.json')
+    with open(path, 'w', encoding='utf-8') as f:
+        json.dump(inc_rows, f, ensure_ascii=False, separators=(',', ':'))
+    print(f'  income/{code}: {len(inc_rows)} polygons  {os.path.getsize(path) // 1024} KB',
           file=sys.stderr)
 print('done', file=sys.stderr)
