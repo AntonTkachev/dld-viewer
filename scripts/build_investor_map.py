@@ -159,14 +159,26 @@ print(f'window {d_now_from} … {d_to}; momentum baseline {d_prev_from} … {d_n
 
 
 def pct_ranks(values):
-    """values: list of floats. Returns pct ranks in [0,1], ascending."""
+    """values: list of floats. Returns pct ranks in [0,1], ascending.
+
+    Ties share their MEAN rank — otherwise equal values (e.g. the many
+    districts with 0.0% overdue) get spread across arbitrary positions
+    and a 0.2-weight component turns into ±10 score points of noise.
+    """
     n = len(values)
     if n < 2:
         return [0.5] * n
     order = sorted(range(n), key=lambda i: values[i])
     ranks = [0.0] * n
-    for pos, i in enumerate(order):
-        ranks[i] = pos / (n - 1)
+    i = 0
+    while i < n:
+        j = i
+        while j + 1 < n and values[order[j + 1]] == values[order[i]]:
+            j += 1
+        mean_rank = (i + j) / 2 / (n - 1)
+        for p in range(i, j + 1):
+            ranks[order[p]] = mean_rank
+        i = j + 1
     return ranks
 
 
