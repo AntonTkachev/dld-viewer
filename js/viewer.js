@@ -22,6 +22,7 @@ setTimeout(() => {
   if (typeof YEARLY_SELL_PERIODS === 'undefined') missing.push('YEARLY_SELL_PERIODS');
   if (typeof YEARLY_RENT_PERIODS === 'undefined') missing.push('YEARLY_RENT_PERIODS');
   if (typeof INVESTOR_PERIODS    === 'undefined') missing.push('INVESTOR_PERIODS');
+  if (typeof INCOME_PERIODS      === 'undefined') missing.push('INCOME_PERIODS');
   if (typeof LIFECYCLE       === 'undefined') missing.push('LIFECYCLE');
   if (missing.length) {
     console.error('viewer.js: required data bundles missing:', missing.join(', '));
@@ -329,6 +330,7 @@ const _PAYBACK_P = (typeof PAYBACK_PERIODS !== 'undefined') ? PAYBACK_PERIODS : 
 const _YSELL_P   = (typeof YEARLY_SELL_PERIODS !== 'undefined') ? YEARLY_SELL_PERIODS : {};
 const _YRENT_P   = (typeof YEARLY_RENT_PERIODS !== 'undefined') ? YEARLY_RENT_PERIODS : {};
 const _INVESTOR_P = (typeof INVESTOR_PERIODS !== 'undefined') ? INVESTOR_PERIODS : {};
+const _INCOME_P   = (typeof INCOME_PERIODS   !== 'undefined') ? INCOME_PERIODS   : {};
 
 (function _stubSplitAggregates() {
   const EMPTY_BUCKET = {n:0,total:0,med:0,mean:0,p25:0,p75:0,p90:0,med_sqm:0,med_ppsqm:0};
@@ -579,6 +581,7 @@ const MASKS = {
       real_premium: (typeof r.premium_pct === 'number') ? r.premium_pct : null,
       real_fresh: (typeof r.fresh_share_pct === 'number') ? r.fresh_share_pct : null,
       real_overdue: (typeof r.overdue_share_pct === 'number') ? r.overdue_share_pct : null,
+      real_vs_peak: (typeof r.vs_peak_pct === 'number') ? r.vs_peak_pct : null,
       real_n_sale: r.n_sale || 0,
       real_n_rent: r.n_rent || 0,
       real_n_offplan: r.n_offplan || 0,
@@ -619,9 +622,12 @@ const MASKS = {
       const pipe = (typeof p.real_pipeline === 'number' && p.real_pipeline >= 0.5)
         ? `<div class="stat"><span class="k">${t('pp_supply_share')}</span><span class="v" style="color:#b45309;font-weight:600">⚠ ${Math.round(Math.min(p.real_pipeline, 1) * 100)}%</span></div>`
         : '';
+      const peak = (typeof p.real_vs_peak === 'number')
+        ? `<div class="stat"><span class="k">${t('pp_vs_peak')}</span><span class="v"${p.real_vs_peak >= 95 ? ' style="color:#b45309"' : ''}>${p.real_vs_peak}%</span></div>`
+        : '';
       return head + `
       <div class="stat"><span class="k">${t('pp_yield')}</span><span class="v" style="font-weight:700">${(p.real_yield || 0).toFixed(1)}%</span></div>
-      ${past}
+      ${past}${peak}
       <div class="stat"><span class="k">${t('pp_sale_ppsqm')}</span><span class="v">${(p.real_med_price||0).toLocaleString('ru-RU')} AED/м²</span></div>
       <div class="stat"><span class="k">${t('pp_rent_ppsqm')}</span><span class="v">${(p.real_med_ppsqm||0).toLocaleString('ru-RU')} AED/м²/${t('unit_year_short')}</span></div>
       ${pipe}
@@ -639,6 +645,61 @@ const MASKS = {
                            labelKey: 'tv_col_ppsqm',          type: 'int',     width: '15%' },
       { key: r => r.strategy === 'offplan' ? r.n_offplan : r.n_sale,
                            labelKey: 'tv_col_n_sale_1y',      type: 'int',     width: '15%' },
+    ],
+  },
+  income: {
+    labelKey: 'mask_income', descKey: 'mask_income_desc',
+    periods: ['all','studio','1br','2br','3br','4br_plus'], defaultPeriod: 'all',
+    data: {
+      'all':      _INCOME_P['all']      || {},
+      'studio':   _INCOME_P['studio']   || {},
+      '1br':      _INCOME_P['1br']      || {},
+      '2br':      _INCOME_P['2br']      || {},
+      '3br':      _INCOME_P['3br']      || {},
+      '4br_plus': _INCOME_P['4br_plus'] || {},
+    },
+    pluck: r => ({
+      real_count: r.n_rent || 0,
+      real_total_aed: 0,
+      real_med_price: r.sale_ppsqm || 0,
+      real_med_ppsqm: r.rent_ppsqm || 0,
+      real_metric: (typeof r.score === 'number') ? r.score : null,
+      real_yield: (typeof r.yield_pct === 'number') ? r.yield_pct : null,
+      real_rent_trend: (typeof r.rent_trend_pct === 'number') ? r.rent_trend_pct : null,
+      real_renewal: (typeof r.renewal_pct === 'number') ? r.renewal_pct : null,
+      real_n_sale: r.n_sale || 0,
+      real_n_rent: r.n_rent || 0,
+    }),
+    legendKey: 'legend_income', popupCountKey: 'rent_sc_contracts', showVolume: false,
+    metricKey: 'real_metric', scaleMode: 'quantile', allowZero: true,
+    periodLabelKey: 'mask_room_label',
+    overlay: r => (typeof r.score === 'number') ? String(r.score) : null,
+    legendFmt: v => String(Math.round(v)),
+    popupRows: (p, t) => {
+      if (p.real_metric === null || p.real_metric === undefined) return '';
+      const trend = (typeof p.real_rent_trend === 'number')
+        ? `<div class="stat"><span class="k">${t('pp_rent_trend')}</span><span class="v">${p.real_rent_trend >= 0 ? '+' : ''}${p.real_rent_trend.toFixed(1)}%</span></div>`
+        : '';
+      const renew = (typeof p.real_renewal === 'number')
+        ? `<div class="stat"><span class="k">${t('pp_renewal')}</span><span class="v">${p.real_renewal}%</span></div>`
+        : '';
+      return `
+      <div class="stat"><span class="k">${t('pp_investor_score')}</span><span class="v" style="font-weight:700">${p.real_metric}</span></div>
+      <div class="stat"><span class="k">${t('pp_yield')}</span><span class="v" style="font-weight:700">${(p.real_yield || 0).toFixed(1)}%</span></div>
+      ${trend}${renew}
+      <div class="stat"><span class="k">${t('pp_sale_ppsqm')}</span><span class="v">${(p.real_med_price||0).toLocaleString('ru-RU')} AED/м²</span></div>
+      <div class="stat"><span class="k">${t('pp_rent_ppsqm')}</span><span class="v">${(p.real_med_ppsqm||0).toLocaleString('ru-RU')} AED/м²/${t('unit_year_short')}</span></div>
+      <div class="stat"><span class="k">${t('pp_n_rent_1y')}</span><span class="v">${(p.real_n_rent||0).toLocaleString('ru-RU')}</span></div>
+    `;
+    },
+    tableColumns: [
+      { key: 'name',           labelKey: 'tv_col_district',       type: 'str',     width: '24%' },
+      { key: 'score',          labelKey: 'tv_col_investor_score', type: 'int',     width: '11%', defaultSort: true, defaultSortDir: 'desc' },
+      { key: 'yield_pct',      labelKey: 'tv_col_yield',          type: 'pct_abs', width: '13%' },
+      { key: 'rent_trend_pct', labelKey: 'tv_col_rent_trend',     type: 'pct',     width: '13%' },
+      { key: 'renewal_pct',    labelKey: 'tv_col_renewal',        type: 'pct_abs', width: '13%' },
+      { key: 'rent_ppsqm',     labelKey: 'tv_col_rent_ppsqm',     type: 'int',     width: '13%' },
+      { key: 'n_rent',         labelKey: 'tv_col_n_rent_1y',      type: 'int',     width: '13%' },
     ],
   },
   yearly_sell: {
@@ -715,7 +776,7 @@ const MASKS = {
   },
 };
 
-const PRIMARY_MASKS   = ['investor', 'yearly_rent', 'growth', 'lifecycle', 'payback'];
+const PRIMARY_MASKS   = ['investor', 'income', 'yearly_rent', 'growth', 'lifecycle', 'payback'];
 const SECONDARY_MASKS = ['sales', 'rents', 'yearly_sell'];
 let _maskMoreExpanded = false;
 
@@ -745,13 +806,14 @@ const _MASK_FIELDS = [
   'real_price_pct','real_rent_pct','real_pipeline','real_units_active','real_n_overdue',
   'real_post_launch',
   'real_strategy','real_yield','real_past1y','real_offplan_ppsqm','real_premium',
-  'real_fresh','real_overdue','real_n_offplan',
+  'real_fresh','real_overdue','real_n_offplan','real_vs_peak','real_rent_trend',
+  'real_renewal',
 ];
 
 const _MASK_FIELDS_NULLABLE = new Set([
   'real_metric', 'real_fallback_yrs', 'real_price_pct', 'real_rent_pct',
   'real_strategy', 'real_yield', 'real_past1y', 'real_premium',
-  'real_fresh', 'real_overdue',
+  'real_fresh', 'real_overdue', 'real_vs_peak', 'real_rent_trend', 'real_renewal',
 ]);
 function _resetMaskFields(p) {
   for (const f of _MASK_FIELDS) p[f] = _MASK_FIELDS_NULLABLE.has(f) ? null : 0;
@@ -805,7 +867,7 @@ function setView(view, opts) {
   if (opts.pushUrl !== false) _pushPageUrl(currentMask, view);
 }
 
-const _SEO_MASKS = ['sales', 'rents', 'growth', 'payback', 'lifecycle', 'investor'];
+const _SEO_MASKS = ['sales', 'rents', 'growth', 'payback', 'lifecycle', 'investor', 'income'];
 
 function _isSeoMask(m) { return _SEO_MASKS.indexOf(m) !== -1; }
 

@@ -60,6 +60,10 @@ COV_MIN = {
     # 1y window, MIN 8/15) and off-plan entry (≥20 off-plan sales, 1y window).
     # Measured July 2026: all 33%, studio 20%, 1br 30%, 2br 31%, 3br 25%, 4br+ 8%.
     'INVESTOR_PERIODS': {'all':0.25, 'studio':0.14, '1br':0.22, '2br':0.23, '3br':0.18, '4br_plus':0.05},
+    # Income = ready+rental districts only (no off-plan leg), so it sits
+    # below the growth mask. Measured July 2026: all 22%, studio 12%,
+    # 1br 20%, 2br 20%, 3br 16%, 4br+ 4%.
+    'INCOME_PERIODS': {'all':0.16, 'studio':0.08, '1br':0.14, '2br':0.14, '3br':0.11, '4br_plus':0.02},
 }
 
 # Lifecycle is structurally different: one flat {area_key: rec} dict, no
@@ -225,6 +229,7 @@ def main():
         ('GROWTH_PERIODS',  ('1y','3y','5y','10y'),       GOLDEN_GROWTH),
         ('PAYBACK_PERIODS', ('1br','2br','3br'),          GOLDEN_PAYBACK),
         ('INVESTOR_PERIODS', ('all','1br'),               GOLDEN_GROWTH),
+        ('INCOME_PERIODS',   ('all','1br'),               GOLDEN_GROWTH),
     ]
     for const_name, periods, golden in golden_specs:
         for period in periods:

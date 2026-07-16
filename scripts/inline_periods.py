@@ -18,6 +18,7 @@ Sources:
   - yearly_sell/data/{studio,1br,2br,3br,4br_plus,villa}.json → YEARLY_SELL_PERIODS
   - yearly_rent/data/{studio,1br,2br,3br,4br_plus,villa}.json → YEARLY_RENT_PERIODS
   - investor/data/{all,studio,1br,2br,3br,4br_plus}.json → INVESTOR_PERIODS
+  - income/data/{all,studio,1br,2br,3br,4br_plus}.json → INCOME_PERIODS
   - lifecycle/data/all.json                    → LIFECYCLE
 
 LIFECYCLE moved into this bundle 2026-06-25 (was inlined separately via
@@ -69,6 +70,8 @@ yearly_rent_periods = load_dir('yearly_rent',
                                ('studio','1br','2br','3br','4br_plus','villa'))
 investor_periods = load_dir('investor',
                             ('all','studio','1br','2br','3br','4br_plus'))
+income_periods = load_dir('income',
+                          ('all','studio','1br','2br','3br','4br_plus'))
 
 # Lifecycle: single flat {area_key: rec} dict, not period-bucketed.
 lifecycle_path = os.path.join(ROOT, 'lifecycle', 'data', 'all.json')
@@ -87,6 +90,7 @@ INLINES = [
     ('YEARLY_SELL_PERIODS', yearly_sell_periods),
     ('YEARLY_RENT_PERIODS', yearly_rent_periods),
     ('INVESTOR_PERIODS',    investor_periods),
+    ('INCOME_PERIODS',      income_periods),
     ('LIFECYCLE',           lifecycle_data),
 ]
 NAMES = [n for n, _ in INLINES]
