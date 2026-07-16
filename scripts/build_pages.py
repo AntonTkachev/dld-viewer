@@ -330,6 +330,53 @@ PAGES = {
             zh='迪拜社区租金收益评分',
         ),
     ),
+    'formula': dict(
+        initial_mask='formula',
+        initial_period='all',
+        og_image='/og/formula.png',
+        title=dict(
+            ru='Дубайская формула: где квартира с ипотекой платит за себя — DXBCompass',
+            en='The Dubai formula: where a mortgaged flat pays for itself — DXBCompass',
+            ar='معادلة دبي: أين تدفع الشقة المرهونة تكاليف نفسها — DXBCompass',
+            hi='दुबई फ़ॉर्मूला: कहाँ मॉर्टगेज वाला फ्लैट खुद के लिए भुगतान करता है — DXBCompass',
+            zh='迪拜公式：哪里的按揭公寓能自己养活自己 — DXBCompass',
+        ),
+        desc=dict(
+            ru='Годовая доходность на вложенный кэш с ипотекой (LTV 80%, ставка 4.5%) по '
+               'районам Дубая + чек-лист выживания: самонесущая рента, отсутствие перегрева, '
+               'запас до пика, липкие арендаторы, ликвидность. Только готовое жильё, '
+               'разрез по типам квартир.',
+            en='Annual return on invested cash with a mortgage (80% LTV, 4.5% rate) across '
+               'Dubai districts + a survival checklist: self-carrying rent, no overheating, '
+               'room to peak, sticky tenants, liquidity. Ready stock only, by apartment type.',
+            ar='العائد السنوي على النقد المستثمر مع رهن عقاري (80% تمويل، 4.5%) عبر أحياء '
+               'دبي + قائمة تحقق البقاء: إيجار ذاتي التمويل، لا فورة أسعار، مسافة عن الذروة، '
+               'مستأجرون ملتزمون، سيولة. عقارات جاهزة فقط.',
+            hi='दुबई जिलों में मॉर्टगेज के साथ निवेशित नकद पर वार्षिक रिटर्न (80% LTV, 4.5%) + '
+               'सर्वाइवल चेकलिस्ट: सेल्फ-कैरीइंग किराया, ओवरहीटिंग नहीं, शिखर तक दूरी, टिकाऊ '
+               'किरायेदार, लिक्विडिटी। केवल तैयार स्टॉक।',
+            zh='迪拜各社区按揭下投入现金的年回报率（80% LTV，4.5% 利率）+ 生存清单：租金自持、'
+               '未过热、距峰值有空间、稳定租户、流动性。仅限现房，按户型细分。',
+        ),
+        keywords=dict(
+            ru='доходность на вложенный капитал Дубай, ипотека Дубай инвестиции, cash on cash '
+               'Дубай, квартира окупает ипотеку Дубай, куда вложить с ипотекой Дубай',
+            en='Dubai cash on cash return, Dubai mortgage investment, Dubai property pays for '
+               'itself, Dubai buy-to-let mortgage, Dubai leveraged rental yield',
+            ar='عائد النقد في دبي، استثمار الرهن العقاري دبي، شقة تدفع عن نفسها دبي، '
+               'الشراء للتأجير بالرهن دبي',
+            hi='दुबई कैश ऑन कैश रिटर्न, दुबई मॉर्टगेज निवेश, दुबई संपत्ति खुद भुगतान करती है, '
+               'दुबई लीवरेज्ड किराया यील्ड',
+            zh='迪拜现金回报率, 迪拜按揭投资, 迪拜以租养贷, 迪拜杠杆租金收益',
+        ),
+        dataset_name=dict(
+            ru='Дубайская формула: доходность на кэш с ипотекой',
+            en='The Dubai formula: leveraged cash-on-cash by district',
+            ar='معادلة دبي: العائد على النقد بالرهن حسب الحي',
+            hi='दुबई फ़ॉर्मूला: जिले के अनुसार लीवरेज्ड नकद रिटर्न',
+            zh='迪拜公式：各社区按揭现金回报率',
+        ),
+    ),
     'payback': dict(
         initial_mask='payback',
         initial_period='1br',

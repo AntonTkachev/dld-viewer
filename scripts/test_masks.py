@@ -67,6 +67,10 @@ COV_MIN = {
     # non-freehold old Dubai (is_free_hold=0, zero unit sales — nothing to
     # buy) and 12 are villa communities (excluded by design).
     'INCOME_PERIODS': {'all':0.19, 'studio':0.11, '1br':0.17, '2br':0.18, '3br':0.13, '4br_plus':0.03},
+    # Formula = income districts that also pass the hard executable-trade
+    # gates (>=30 ready deals/yr, rented-vs-sold stock area match).
+    # Measured July 2026: all 21%, studio 12%, 1br 18%, 2br 19%, 3br 9%, 4br+ 2%.
+    'FORMULA_PERIODS': {'all':0.15, 'studio':0.08, '1br':0.13, '2br':0.13, '3br':0.06, '4br_plus':0.01},
 }
 
 # Lifecycle is structurally different: one flat {area_key: rec} dict, no
@@ -233,6 +237,7 @@ def main():
         ('PAYBACK_PERIODS', ('1br','2br','3br'),          GOLDEN_PAYBACK),
         ('INVESTOR_PERIODS', ('all','1br'),               GOLDEN_GROWTH),
         ('INCOME_PERIODS',   ('all','1br'),               GOLDEN_GROWTH),
+        ('FORMULA_PERIODS',  ('all',), ['jumeirah village circle', 'business bay', 'dubai marina']),
     ]
     for const_name, periods, golden in golden_specs:
         for period in periods:

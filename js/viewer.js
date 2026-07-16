@@ -23,6 +23,7 @@ setTimeout(() => {
   if (typeof YEARLY_RENT_PERIODS === 'undefined') missing.push('YEARLY_RENT_PERIODS');
   if (typeof INVESTOR_PERIODS    === 'undefined') missing.push('INVESTOR_PERIODS');
   if (typeof INCOME_PERIODS      === 'undefined') missing.push('INCOME_PERIODS');
+  if (typeof FORMULA_PERIODS     === 'undefined') missing.push('FORMULA_PERIODS');
   if (typeof LIFECYCLE       === 'undefined') missing.push('LIFECYCLE');
   if (missing.length) {
     console.error('viewer.js: required data bundles missing:', missing.join(', '));
@@ -331,6 +332,7 @@ const _YSELL_P   = (typeof YEARLY_SELL_PERIODS !== 'undefined') ? YEARLY_SELL_PE
 const _YRENT_P   = (typeof YEARLY_RENT_PERIODS !== 'undefined') ? YEARLY_RENT_PERIODS : {};
 const _INVESTOR_P = (typeof INVESTOR_PERIODS !== 'undefined') ? INVESTOR_PERIODS : {};
 const _INCOME_P   = (typeof INCOME_PERIODS   !== 'undefined') ? INCOME_PERIODS   : {};
+const _FORMULA_P  = (typeof FORMULA_PERIODS  !== 'undefined') ? FORMULA_PERIODS  : {};
 
 (function _stubSplitAggregates() {
   const EMPTY_BUCKET = {n:0,total:0,med:0,mean:0,p25:0,p75:0,p90:0,med_sqm:0,med_ppsqm:0};
@@ -647,6 +649,69 @@ const MASKS = {
                            labelKey: 'tv_col_n_sale_1y',      type: 'int',     width: '15%' },
     ],
   },
+  formula: {
+    labelKey: 'mask_formula', descKey: 'mask_formula_desc',
+    periods: ['all','studio','1br','2br','3br','4br_plus'], defaultPeriod: 'all',
+    data: {
+      'all':      _FORMULA_P['all']      || {},
+      'studio':   _FORMULA_P['studio']   || {},
+      '1br':      _FORMULA_P['1br']      || {},
+      '2br':      _FORMULA_P['2br']      || {},
+      '3br':      _FORMULA_P['3br']      || {},
+      '4br_plus': _FORMULA_P['4br_plus'] || {},
+    },
+    pluck: r => ({
+      real_count: r.n_sale || 0,
+      real_total_aed: 0,
+      real_med_price: r.sale_ppsqm || 0,
+      real_med_ppsqm: r.rent_ppsqm || 0,
+      real_metric: (typeof r.cash_yield_pct === 'number') ? r.cash_yield_pct : null,
+      real_yield: (typeof r.yield_pct === 'number') ? r.yield_pct : null,
+      real_net_yield: (typeof r.net_yield_pct === 'number') ? r.net_yield_pct : null,
+      real_past1y: (typeof r.past1y_pct === 'number') ? r.past1y_pct : null,
+      real_vs_peak: (typeof r.vs_peak_pct === 'number') ? r.vs_peak_pct : null,
+      real_renewal: (typeof r.renewal_pct === 'number') ? r.renewal_pct : null,
+      real_n_checks: (typeof r.n_checks === 'number') ? r.n_checks : null,
+      real_checks: [r.c_self, r.c_deposit, r.c_cool, r.c_peak, r.c_sticky, r.c_liquid]
+        .map(b => b ? '1' : '0').join(''),
+      real_n_sale: r.n_sale || 0,
+      real_n_rent: r.n_rent || 0,
+    }),
+    legendKey: 'legend_formula', popupCountKey: 'pp_trans_ytd', showVolume: false,
+    metricKey: 'real_metric', scaleMode: 'quantile', allowZero: true,
+    periodLabelKey: 'mask_room_label',
+    overlay: r => (typeof r.cash_yield_pct === 'number')
+      ? r.cash_yield_pct.toFixed(0) + '%' : null,
+    legendFmt: v => (v >= 0 ? '' : '−') + Math.abs(v).toFixed(0) + '%',
+    popupRows: (p, t) => {
+      if (p.real_metric === null || p.real_metric === undefined) return '';
+      const mark = ok => ok
+        ? '<span style="color:#15803d;font-weight:700">✓</span>'
+        : '<span style="color:#b45309;font-weight:700">✗</span>';
+      const c = p.real_checks || '000000';
+      const fmt = (v, suf) => (v === null || v === undefined) ? '—' : v + suf;
+      const row = (i, label, val) =>
+        `<div class="stat"><span class="k">${mark(c[i] === '1')} ${label}</span><span class="v">${val}</span></div>`;
+      return `
+      <div class="stat"><span class="k">${t('pp_cash_yield')}</span><span class="v" style="font-weight:700;font-size:15px">${p.real_metric >= 0 ? '+' : ''}${p.real_metric.toFixed(1)}%/${t('unit_year_short')}</span></div>
+      ${row(0, t('fx_self'),    fmt(p.real_yield && p.real_yield.toFixed(1), '%'))}
+      ${row(1, t('fx_deposit'), fmt(p.real_net_yield && p.real_net_yield.toFixed(1), '%'))}
+      ${row(2, t('fx_cool'),    (typeof p.real_past1y === 'number') ? ((p.real_past1y >= 0 ? '+' : '') + p.real_past1y.toFixed(1) + '%') : '—')}
+      ${row(3, t('fx_peak'),    fmt(p.real_vs_peak, '%'))}
+      ${row(4, t('fx_sticky'),  fmt(p.real_renewal, '%'))}
+      ${row(5, t('fx_liquid'),  (p.real_n_sale || 0).toLocaleString('ru-RU'))}
+      <div class="stat" style="opacity:.65;font-size:11px"><span class="k">${t('fx_assumptions')}</span><span class="v">${p.real_n_checks}/6</span></div>
+    `;
+    },
+    tableColumns: [
+      { key: 'name',           labelKey: 'tv_col_district',   type: 'str',     width: '26%' },
+      { key: 'cash_yield_pct', labelKey: 'tv_col_cash_yield', type: 'pct',     width: '15%', defaultSort: true, defaultSortDir: 'desc' },
+      { key: 'n_checks',       labelKey: 'tv_col_checks',     type: 'int',     width: '12%' },
+      { key: 'yield_pct',      labelKey: 'tv_col_yield',      type: 'pct_abs', width: '13%' },
+      { key: 'past1y_pct',     labelKey: 'tv_col_past1y',     type: 'pct',     width: '14%' },
+      { key: 'n_sale',         labelKey: 'tv_col_n_sale_1y',  type: 'int',     width: '14%' },
+    ],
+  },
   income: {
     labelKey: 'mask_income', descKey: 'mask_income_desc',
     periods: ['all','studio','1br','2br','3br','4br_plus'], defaultPeriod: 'all',
@@ -776,7 +841,7 @@ const MASKS = {
   },
 };
 
-const PRIMARY_MASKS   = ['investor', 'income', 'yearly_rent', 'growth', 'lifecycle', 'payback'];
+const PRIMARY_MASKS   = ['formula', 'investor', 'income', 'yearly_rent', 'growth', 'lifecycle', 'payback'];
 const SECONDARY_MASKS = ['sales', 'rents', 'yearly_sell'];
 let _maskMoreExpanded = false;
 
@@ -807,13 +872,14 @@ const _MASK_FIELDS = [
   'real_post_launch',
   'real_strategy','real_yield','real_past1y','real_offplan_ppsqm','real_premium',
   'real_fresh','real_overdue','real_n_offplan','real_vs_peak','real_rent_trend',
-  'real_renewal',
+  'real_renewal','real_net_yield','real_n_checks','real_checks',
 ];
 
 const _MASK_FIELDS_NULLABLE = new Set([
   'real_metric', 'real_fallback_yrs', 'real_price_pct', 'real_rent_pct',
   'real_strategy', 'real_yield', 'real_past1y', 'real_premium',
   'real_fresh', 'real_overdue', 'real_vs_peak', 'real_rent_trend', 'real_renewal',
+  'real_net_yield', 'real_n_checks',
 ]);
 function _resetMaskFields(p) {
   for (const f of _MASK_FIELDS) p[f] = _MASK_FIELDS_NULLABLE.has(f) ? null : 0;
@@ -867,7 +933,7 @@ function setView(view, opts) {
   if (opts.pushUrl !== false) _pushPageUrl(currentMask, view);
 }
 
-const _SEO_MASKS = ['sales', 'rents', 'growth', 'payback', 'lifecycle', 'investor', 'income'];
+const _SEO_MASKS = ['sales', 'rents', 'growth', 'payback', 'lifecycle', 'investor', 'income', 'formula'];
 
 function _isSeoMask(m) { return _SEO_MASKS.indexOf(m) !== -1; }
 
