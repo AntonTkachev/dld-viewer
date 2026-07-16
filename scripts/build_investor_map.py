@@ -327,40 +327,65 @@ else:
 
 for code, (tx_rooms, rent_subtype) in CLASSES.items():
     # ---- rent leg: ready sales + rentals -------------------------------
-    tx = con.execute(f"""
-    WITH s AS (
-      SELECT {KEY} AS k,
-             {NAME} AS name,
-             COALESCE(building_name_en, '?') AS b,
-             TRY_CAST(meter_sale_price AS DOUBLE) AS ppsqm
-      FROM '{TX}'
-      WHERE area_name_en IS NOT NULL
-        AND trans_group_en = 'Sales'
-        AND property_type_en = 'Unit'
-        AND reg_type_en = 'Existing Properties'
-        AND rooms_en IN {tx_rooms}
-        AND instance_date BETWEEN '{d_now_from}' AND '{d_to}'
-        AND TRY_CAST(meter_sale_price AS DOUBLE) BETWEEN 2000 AND 100000
-    ),
-    conc AS (
-      SELECT k, MAX(cnt)::DOUBLE / SUM(cnt) AS top_share
-      FROM (SELECT k, b, COUNT(*) AS cnt FROM s GROUP BY 1, 2)
-      GROUP BY k
-    )
-    SELECT s.k,
-           ANY_VALUE(s.name) AS name,
-           COUNT(*) AS n_sale,
-           MEDIAN(s.ppsqm) AS sale_ppsqm,
-           ANY_VALUE(conc.top_share) AS top_share
-    FROM s JOIN conc USING (k)
-    GROUP BY s.k
-    HAVING COUNT(*) >= {MIN_SALE}
-    """).fetchdf()
-    n_conc = int((tx['top_share'] > MAX_BUILDING_SHARE).sum())
-    if n_conc:
-        print(f'  {code}: dropped ready leg for {n_conc} districts '
-              f'(one building >{MAX_BUILDING_SHARE:.0%} of sales)', file=sys.stderr)
-    tx = tx[tx['top_share'] <= MAX_BUILDING_SHARE]
+    # When one building exceeds MAX_BUILDING_SHARE of a window's sales
+    # (Dubai Jewel Tower mode), the district isn't dropped anymore: the
+    # dominant building is EXCLUDED and the median recomputed from the
+    # rest — if enough remains. Thin districts (<MIN_SALE in 1y) fall
+    # back to a 2y window before giving up.
+    def ready_sales(dfrom):
+        return con.execute(f"""
+        WITH s AS (
+          SELECT {KEY} AS k,
+                 {NAME} AS name,
+                 COALESCE(building_name_en, '?') AS b,
+                 TRY_CAST(meter_sale_price AS DOUBLE) AS ppsqm
+          FROM '{TX}'
+          WHERE area_name_en IS NOT NULL
+            AND trans_group_en = 'Sales'
+            AND property_type_en = 'Unit'
+            AND reg_type_en = 'Existing Properties'
+            AND rooms_en IN {tx_rooms}
+            AND instance_date BETWEEN '{dfrom}' AND '{d_to}'
+            AND TRY_CAST(meter_sale_price AS DOUBLE) BETWEEN 2000 AND 100000
+        ),
+        top AS (
+          SELECT k, ARG_MAX(b, cnt) AS top_b, MAX(cnt)::DOUBLE / SUM(cnt) AS top_share
+          FROM (SELECT k, b, COUNT(*) AS cnt FROM s GROUP BY 1, 2)
+          GROUP BY k
+        )
+        SELECT s.k,
+               ANY_VALUE(s.name) AS name,
+               ANY_VALUE(top.top_share) AS top_share,
+               COUNT(*) AS n_all,
+               MEDIAN(s.ppsqm) AS med_all,
+               COUNT(*) FILTER (WHERE s.b != top.top_b) AS n_excl,
+               MEDIAN(s.ppsqm) FILTER (WHERE s.b != top.top_b) AS med_excl
+        FROM s JOIN top USING (k)
+        GROUP BY s.k
+        """).fetchdf()
+
+    def pick_ready(df):
+        """{k: (name, n_sale, sale_ppsqm)} applying the concentration rule."""
+        out = {}
+        for _, r in df.iterrows():
+            if r['top_share'] <= MAX_BUILDING_SHARE:
+                n, med = r['n_all'], r['med_all']
+            elif r['n_excl'] >= MIN_SALE:
+                n, med = r['n_excl'], r['med_excl']   # dominant building excluded
+            else:
+                continue
+            if n >= MIN_SALE and med == med and med:
+                out[r['k']] = (r['name'], int(n), float(med))
+        return out
+
+    ready_1y = pick_ready(ready_sales(d_now_from))
+    ready_2y = pick_ready(ready_sales(d_prev_from))
+    ready = dict(ready_2y)
+    ready.update(ready_1y)   # 1y wins; 2y only fills the thin districts
+    n_fb = len(set(ready) - set(ready_1y))
+    print(f'  {code}: ready leg {len(ready_1y)} districts on 1y '
+          f'+ {n_fb} via 2y fallback', file=sys.stderr)
+    tx_windows = {k: ('1y' if k in ready_1y else '2y') for k in ready}
 
     rt = con.execute(f"""
     SELECT {KEY} AS k,
@@ -421,27 +446,27 @@ for code, (tx_rooms, rent_subtype) in CLASSES.items():
 
     # ---- assemble per-district records ----------------------------------
     rent_rows = {}
-    for _, txr in tx.iterrows():
-        k = txr['k']
+    for k, (name, n_sale, sale_p) in ready.items():
         rtr = rt_map.get(k)
         if rtr is None:
             continue
-        sale_p, rent_p = txr['sale_ppsqm'], rtr['rent_ppsqm']
-        if sale_p != sale_p or rent_p != rent_p or not sale_p or not rent_p:
+        rent_p = rtr['rent_ppsqm']
+        if rent_p != rent_p or not rent_p:
             continue
-        y = float(rent_p) / float(sale_p) * 100
+        y = float(rent_p) / sale_p * 100
         if not (1.0 <= y <= 20.0):   # data-glitch guard, same bounds as backtest
             continue
         rent_rows[k] = {
-            'name': txr['name'],
-            'n_sale': int(txr['n_sale']), 'n_rent': int(rtr['n_rent']),
+            'name': name,
+            'n_sale': n_sale, 'n_rent': int(rtr['n_rent']),
             'sale_ppsqm': int(sale_p), 'rent_ppsqm': int(rent_p),
             'yield_pct': round(y, 2),
         }
+        if tx_windows[k] == '2y':
+            rent_rows[k]['window_2y'] = True
     # sale_ppsqm also serves as the off-plan premium benchmark below, so
     # keep a ready-price lookup even for districts that missed the rent leg.
-    ready_price = {r['k']: float(r['sale_ppsqm']) for _, r in tx.iterrows()
-                   if r['sale_ppsqm'] == r['sale_ppsqm'] and r['sale_ppsqm']}
+    ready_price = {k: v[2] for k, v in ready.items()}
 
     op_rows = {}
     for _, o in op.iterrows():
@@ -498,6 +523,8 @@ for code, (tx_rooms, rent_subtype) in CLASSES.items():
         for k, yr in zip(rk, y_rank):
             rec = {f: rent_rows[k][f] for f in
                    ('name', 'n_sale', 'n_rent', 'sale_ppsqm', 'rent_ppsqm', 'yield_pct')}
+            if rent_rows[k].get('window_2y'):
+                rec['window_2y'] = True
             rec['score'] = round(100 * (W_INC_YIELD * yr + W_INC_TREND * t_rank[k]
                                         + W_INC_RENEWAL * rn_rank[k]))
             if k in rent_trend:
