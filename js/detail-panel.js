@@ -424,7 +424,10 @@
     const paths = (kind === 'sale' && rec.vintage_paths && Object.keys(rec.vintage_paths).length >= 2) ? `
         <div style="margin-top:10px">
           <div style="font-size:11px;color:#666;margin-bottom:2px">${t('vin_paths')}</div>
-          <div class="dp-chart" style="height:210px"><canvas id="ch-vintage-paths"></canvas></div>
+          <div class="dp-chart" style="height:210px">
+            <button class="chart-expand-btn" type="button" data-dp-expand="vintage_paths" data-dp-source="sale" title="${t('chart_expand')}" aria-label="${t('chart_expand')}">⛶</button>
+            <canvas id="ch-vintage-paths"></canvas>
+          </div>
         </div>` : '';
     return `
       <div class="dp-section">
@@ -930,12 +933,114 @@
     }
     const overlay = document.getElementById('dp-cm-measure-overlay');
     if (overlay) overlay.remove();
+    const engines = el.querySelector('#dp-cm-engines');
+    if (engines) engines.style.display = '';
     el.classList.remove('open');
     delete el.dataset.metric;
     delete el.dataset.source;
   }
+  function openVintagePathsModal() {
+    const rec = S.sale;
+    const vp = rec && (rec.vintage_paths_m || rec.vintage_paths);
+    if (!vp) return;
+    const monthly = !!rec.vintage_paths_m;
+    const cohorts = Object.keys(vp).sort().filter(y => vp[y].length >= (monthly ? 12 : 3));
+    if (cohorts.length < 2) return;
+
+    const el = _modalDOM();
+    el.dataset.metric = 'vintage_paths';
+    el.dataset.source = 'sale';
+    el.querySelector('#dp-cm-title').textContent = t('vin_paths');
+    const controls = el.querySelector('#dp-cm-controls');
+    if (controls) controls.style.display = 'none';
+    const engines = el.querySelector('#dp-cm-engines');
+    if (engines) engines.style.display = 'none';
+
+    const axis = [...new Set(cohorts.flatMap(c => vp[c].map(p => p.d)))].sort();
+    const m = cohorts.length;
+    // NaN-tolerant trailing MA: cohort arrays live on a shared axis with
+    // leading NaNs and gap months — the shared movingAverage() keeps a
+    // running sum that a single NaN poisons permanently.
+    const maNan = (arr, w) => arr.map((_, i) => {
+      let s = 0, c = 0;
+      for (let j = Math.max(0, i - w + 1); j <= i; j++) {
+        const v = arr[j];
+        if (Number.isFinite(v)) { s += v; c++; }
+      }
+      return c >= Math.max(2, Math.ceil(w / 2)) ? s / c : NaN;
+    });
+    const perf = [];
+    const datasets = cohorts.map((c, i) => {
+      const byD = new Map(vp[c].map(p => [p.d, p]));
+      const raw = axis.map(d => { const p = byD.get(d); return p ? p.med : NaN; });
+      // Purchase baseline = the cohort's first 12 months (its seed year).
+      const seedVals = vp[c].filter(p => p.d.slice(0, 4) === c).map(p => p.med);
+      const buy = seedVals.length
+        ? seedVals.reduce((a, b) => a + b, 0) / seedVals.length
+        : vp[c][0].med;
+      const w = monthly ? _maWindow(vp[c].length) : 1;
+      const smooth = w > 1 ? maNan(raw, w) : raw;
+      const lastReal = [...vp[c]].reverse()[0];
+      perf.push({ c, buy, last: lastReal.med, ret: buy ? (lastReal.med / buy - 1) * 100 : null });
+      return {
+        label: c,
+        data: smooth.map(v => Number.isFinite(v) ? Math.round(v) : null),
+        borderColor: `hsl(${255 - Math.round(i / Math.max(m - 1, 1) * 235)}, 62%, 46%)`,
+        backgroundColor: 'transparent',
+        borderWidth: 1.8,
+        pointRadius: 0,
+        tension: 0.25,
+        spanGaps: true,
+        _buy: buy,
+        _raw: raw,
+      };
+    });
+
+    const ranked = perf.filter(p => p.ret !== null).sort((a, b) => b.ret - a.ret);
+    const badges = [];
+    if (ranked.length) {
+      const bst = ranked[0], wst = ranked[ranked.length - 1];
+      badges.push(`<span class="cm-badge pos">${t('vin_best')}: ${bst.c} ${bst.ret >= 0 ? '+' : ''}${Math.round(bst.ret)}%</span>`);
+      badges.push(`<span class="cm-badge ${wst.ret >= 0 ? 'muted' : 'neg'}">${t('vin_worst')}: ${wst.c} ${wst.ret >= 0 ? '+' : ''}${Math.round(wst.ret)}%</span>`);
+    }
+    if (monthly) badges.push(`<span class="cm-badge muted">${t('vin_smoothing')}</span>`);
+    el.querySelector('#dp-cm-badges').innerHTML = badges.join('');
+
+    if (S.modalChart) { S.modalChart.destroy(); S.modalChart = null; }
+    if (S.echartsInstance) { S.echartsInstance.dispose(); S.echartsInstance = null; }
+    const ec = el.querySelector('#dp-cm-echarts');
+    if (ec) ec.style.display = 'none';
+    const canvas = el.querySelector('#dp-cm-canvas');
+    canvas.style.display = '';
+    el.classList.add('open');
+
+    S.modalChart = new Chart(canvas, {
+      type: 'line',
+      data: { labels: axis.map(d => monthly ? d : d), datasets },
+      options: {
+        responsive: true, maintainAspectRatio: false,
+        interaction: { intersect: false, mode: 'nearest', axis: 'x' },
+        plugins: {
+          legend: { display: true, position: 'bottom', labels: { boxWidth: 12, font: { size: 11 } } },
+          tooltip: { callbacks: { label: c => {
+            const rawV = c.dataset._raw && c.dataset._raw[c.dataIndex];
+            const v = Number.isFinite(rawV) ? rawV : c.parsed.y;
+            const buy = c.dataset._buy;
+            const rel = buy ? Math.round((v / buy - 1) * 100) : null;
+            return ' ' + c.dataset.label + ': ' + fmtInt(v) + ' AED/м²'
+              + (rel === null ? '' : ' (' + (rel >= 0 ? '+' : '') + rel + '% ' + t('vin_since_buy') + ')');
+          } } },
+        },
+        scales: {
+          x: { ticks: { font: { size: 11 }, maxRotation: 0, autoSkip: true, maxTicksLimit: 18 } },
+          y: { ticks: { font: { size: 11 }, callback: v => fmtInt(v) } },
+        },
+      },
+    });
+  }
   function openChartModal(metric, source) {
     source = source || 'sale';
+    if (metric === 'vintage_paths') { openVintagePathsModal(); return; }
     const cd = source === 'rent' ? S.rentChartData : S.chartData;
     if (!cd || !cd[metric]) return;
     const m = cd[metric];
