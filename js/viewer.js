@@ -1026,16 +1026,27 @@ function _tableSort(rows, col, dir) {
 const PAGE_SIZE = 25;
 
 function _renderTvPages() {
-  const el = document.getElementById('tv-pages');
-  if (!el) return;
-  el.innerHTML = '';
+  const dd = document.getElementById('tv-mask-dd');
+  const menu = document.getElementById('tv-mask-menu');
+  const cur = document.getElementById('tv-mask-current');
+  const btnLbl = document.getElementById('tv-mask-btn-label');
+  if (!dd || !menu || !cur) return;
+
+  if (btnLbl) btnLbl.textContent = t('mp_label_mask') || 'Показатель';
+
+  const curMask = MASKS[currentMask];
+  cur.textContent = curMask ? t(curMask.labelKey) : '—';
+
+  menu.innerHTML = '';
   for (const m of _SEO_MASKS) {
     const mk = MASKS[m];
     if (!mk) continue;
     const isCurrent = (m === currentMask);
     const a = document.createElement('a');
-    a.className = 'tv-page-pill' + (isCurrent ? ' active' : '');
-    a.textContent = t(mk.labelKey);
+    a.className = 'tv-mask-item' + (isCurrent ? ' active' : '');
+    const desc = t(mk.descKey);
+    const descAttr = desc ? desc.replace(/"/g, '&quot;') : '';
+    a.innerHTML = `<span class="tv-mask-item-dot"></span><span class="tv-mask-item-title"${descAttr ? ` data-tip="${descAttr}"` : ''}>${t(mk.labelKey)}${descAttr ? '<span class="tv-mask-item-hint" aria-hidden="true">?</span>' : ''}</span>`;
     if (isCurrent) {
       a.setAttribute('aria-current', 'page');
     } else {
@@ -1043,15 +1054,26 @@ function _renderTvPages() {
       if (href) a.href = href;
       a.addEventListener('click', e => {
         e.preventDefault();
+        dd.classList.remove('open');
         applyMask(m, mk.defaultPeriod);
       });
     }
-    el.appendChild(a);
+    menu.appendChild(a);
   }
-  // Auto-scroll the active pill into view so users always see where they are
-  const active = el.querySelector('.tv-page-pill.active');
-  if (active && active.scrollIntoView) {
-    try { active.scrollIntoView({ inline: 'nearest', block: 'nearest' }); } catch (_) {}
+
+  const btn = document.getElementById('tv-mask-btn');
+  if (btn && !btn._wired) {
+    btn._wired = true;
+    btn.addEventListener('click', e => {
+      e.stopPropagation();
+      dd.classList.toggle('open');
+    });
+    document.addEventListener('click', e => {
+      if (!e.target.closest('#tv-mask-dd')) dd.classList.remove('open');
+    });
+    document.addEventListener('keydown', e => {
+      if (e.key === 'Escape') dd.classList.remove('open');
+    });
   }
 }
 
@@ -1082,10 +1104,13 @@ function _renderTvPeriods() {
 function _renderTvPager(page, totalPages, total) {
   const el = document.getElementById('tv-pager');
   if (!el) return;
-  if (totalPages <= 1) { el.innerHTML = ''; return; }
+  if (totalPages <= 1) {
+    el.innerHTML = `<span class="tv-pager-info">${total.toLocaleString('ru-RU')} ${t('tv_count_label')}</span>`;
+    return;
+  }
 
   const btns = [];
-  
+
   btns.push(`<button class="tv-pager-btn${page<=1?' disabled':''}" data-page="${page-1}">‹</button>`);
 
   const windowSize = 1;
@@ -1256,9 +1281,6 @@ function renderTable() {
 
   tbl.className = 'mask-' + currentMask;
   tbl.innerHTML = `<colgroup>${cols}</colgroup><thead><tr>${ths}</tr></thead><tbody>${dubaiHtml}${bodyHtml}</tbody>`;
-
-  const cnt = document.getElementById('tv-count');
-  if (cnt) cnt.textContent = total.toLocaleString('ru-RU') + ' ' + t('tv_count_label');
 
   _renderTvPager(state.page, totalPages, total);
 
