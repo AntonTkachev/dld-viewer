@@ -421,12 +421,12 @@
             <div style="font-size:11px;color:#666;margin-bottom:2px">${t('vin_history')}</div>
             <div class="dp-chart" style="height:170px"><canvas id="ch-vintage-tl"></canvas></div>
           </div>` : '';
-    const paths = (kind === 'sale' && rec.vintage_paths && Object.keys(rec.vintage_paths).length >= 2) ? `
+    const paths = (rec.vintage_paths && Object.keys(rec.vintage_paths).length >= 2) ? `
         <div style="margin-top:10px">
-          <div style="font-size:11px;color:#666;margin-bottom:2px">${t('vin_paths')}</div>
+          <div style="font-size:11px;color:#666;margin-bottom:2px">${t(kind === 'rent' ? 'vin_paths_rent' : 'vin_paths')}</div>
           <div class="dp-chart" style="height:210px">
-            <button class="chart-expand-btn" type="button" data-dp-expand="vintage_paths" data-dp-source="sale" title="${t('chart_expand')}" aria-label="${t('chart_expand')}">⛶</button>
-            <canvas id="ch-vintage-paths"></canvas>
+            <button class="chart-expand-btn" type="button" data-dp-expand="vintage_paths" data-dp-source="${kind}" title="${t('chart_expand')}" aria-label="${t('chart_expand')}">⛶</button>
+            <canvas id="ch-vintage-paths-${kind}"></canvas>
           </div>
         </div>` : '';
     return `
@@ -439,10 +439,12 @@
         <div style="font-size:11px;color:#666;margin-top:4px">${t('vintage_hint')}</div>
       </div>`;
   }
-  function renderVintagePaths(rec) {
-    const ctx = document.getElementById('ch-vintage-paths');
+  function renderVintagePaths(rec, kind) {
+    kind = kind || 'sale';
+    const ctx = document.getElementById('ch-vintage-paths-' + kind);
     const vp = rec && rec.vintage_paths;
     if (!ctx || !vp) return;
+    const unit = kind === 'rent' ? ' AED/м²/' + t('unit_year_short') : ' AED/м²';
     // Every 2nd cohort keeps the fan readable; each line = the buildings
     // that traded in year Y, followed from Y to today.
     const cohorts = Object.keys(vp).sort().filter(y => (+y) % 2 === 0 && vp[y].length >= 3);
@@ -475,7 +477,7 @@
           tooltip: { callbacks: { label: c => {
             const buy = c.dataset._buy;
             const rel = buy ? Math.round((c.parsed.y / buy - 1) * 100) : null;
-            return ' ' + c.dataset.label + ': ' + fmtInt(c.parsed.y) + ' AED/м²'
+            return ' ' + c.dataset.label + ': ' + fmtInt(c.parsed.y) + unit
               + (rel === null || c.label === c.dataset.label ? '' : ' (' + (rel >= 0 ? '+' : '') + rel + '% ' + t('vin_since_buy') + ')');
           } } },
         },
@@ -939,18 +941,20 @@
     delete el.dataset.metric;
     delete el.dataset.source;
   }
-  function openVintagePathsModal() {
-    const rec = S.sale;
+  function openVintagePathsModal(source) {
+    source = source || 'sale';
+    const rec = source === 'rent' ? S.rent : S.sale;
     const vp = rec && (rec.vintage_paths_m || rec.vintage_paths);
     if (!vp) return;
     const monthly = !!rec.vintage_paths_m;
+    const unit = source === 'rent' ? ' AED/м²/' + t('unit_year_short') : ' AED/м²';
     const cohorts = Object.keys(vp).sort().filter(y => vp[y].length >= (monthly ? 12 : 3));
     if (cohorts.length < 2) return;
 
     const el = _modalDOM();
     el.dataset.metric = 'vintage_paths';
-    el.dataset.source = 'sale';
-    el.querySelector('#dp-cm-title').textContent = t('vin_paths');
+    el.dataset.source = source;
+    el.querySelector('#dp-cm-title').textContent = t(source === 'rent' ? 'vin_paths_rent' : 'vin_paths');
     const controls = el.querySelector('#dp-cm-controls');
     if (controls) controls.style.display = 'none';
     const engines = el.querySelector('#dp-cm-engines');
@@ -1027,7 +1031,7 @@
             const v = Number.isFinite(rawV) ? rawV : c.parsed.y;
             const buy = c.dataset._buy;
             const rel = buy ? Math.round((v / buy - 1) * 100) : null;
-            return ' ' + c.dataset.label + ': ' + fmtInt(v) + ' AED/м²'
+            return ' ' + c.dataset.label + ': ' + fmtInt(v) + unit
               + (rel === null ? '' : ' (' + (rel >= 0 ? '+' : '') + rel + '% ' + t('vin_since_buy') + ')');
           } } },
         },
@@ -1040,7 +1044,7 @@
   }
   function openChartModal(metric, source) {
     source = source || 'sale';
-    if (metric === 'vintage_paths') { openVintagePathsModal(); return; }
+    if (metric === 'vintage_paths') { openVintagePathsModal(source); return; }
     const cd = source === 'rent' ? S.rentChartData : S.chartData;
     if (!cd || !cd[metric]) return;
     const m = cd[metric];
@@ -1740,7 +1744,7 @@
     try { renderRoomBreakdownChart(a); } catch(e) { console.error('rooms chart:', e); }
     try { renderVintageChart(a, 'sale'); } catch(e) { console.error('vintage chart:', e); }
     try { renderVintageTimeline(a); } catch(e) { console.error('vintage timeline:', e); }
-    try { renderVintagePaths(a); } catch(e) { console.error('vintage paths:', e); }
+    try { renderVintagePaths(a, 'sale'); } catch(e) { console.error('vintage paths:', e); }
     try { renderInsightDonuts(a);    } catch(e) { console.error('donuts:', e); }
   }
 
@@ -1848,6 +1852,7 @@
       try { renderRoomBreakdownChart(r); } catch(e) { console.error('rent rooms chart:', e); }
     }
     try { renderVintageChart(r, 'rent'); } catch(e) { console.error('rent vintage chart:', e); }
+    try { renderVintagePaths(r, 'rent'); } catch(e) { console.error('rent vintage paths:', e); }
     
     try {
       _renderDonut('ch-rent-donut-subtype',  _rentSubtypeDonutData(r));
