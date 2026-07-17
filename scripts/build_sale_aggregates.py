@@ -452,6 +452,47 @@ for k, entry in out.items():
             if mh:
                 entry['trend_pct'] = round((mt - mh) / mh * 100, 1)
 
+# ─── Vintage: ready prices by building-age cohort (last 365d) ──────────
+# The district median is refreshed by new stock every year (same-building
+# change 2014→2026 was +1.9% while the index did +41%). These cohorts show
+# what buildings of each age actually trade at TODAY — the steps a specific
+# apartment's price walks down as it ages. Age = years since the building's
+# first ready sale.
+print('vintage cohorts...', file=sys.stderr)
+_VIN_SQL = """
+WITH s AS (
+  SELECT {sel_k} bn, YEAR(d::DATE) AS y, d::DATE AS dd, val/sqm AS ppsqm
+  FROM tx
+  WHERE pt = 'Unit' AND reg = 'Existing Properties' AND bn IS NOT NULL
+    AND rooms IN ('Studio','1 B/R','2 B/R','3 B/R','4 B/R','PENTHOUSE')
+    AND sqm BETWEEN 10 AND 1000
+    AND val/sqm BETWEEN 2000 AND 100000
+),
+birth AS (SELECT {grp_k} bn, MIN(y) AS birth_y FROM s GROUP BY {grp_all}),
+cur AS (
+  SELECT {sel_sk} CASE WHEN s.y - birth.birth_y <= 3 THEN 'v0_3'
+              WHEN s.y - birth.birth_y <= 8 THEN 'v4_8'
+              ELSE 'v9p' END AS b,
+         s.ppsqm
+  FROM s JOIN birth USING ({join_k} bn)
+  WHERE s.dd >= current_date - INTERVAL 365 DAY
+)
+SELECT {sel_ck} b, COUNT(*) AS n, ROUND(MEDIAN(ppsqm)) AS med
+FROM cur GROUP BY {grp_cur} HAVING COUNT(*) >= 8
+"""
+vin = q(_VIN_SQL.format(sel_k='k,', grp_k='k,', grp_all='1, 2', sel_sk='s.k,',
+                        join_k='k,', sel_ck='k,', grp_cur='1, 2'))
+for _, r in vin.iterrows():
+    e = out.get(r['k'])
+    if e is not None:
+        e.setdefault('vintage', {})[r['b']] = {'n': safe_int(r['n']), 'ppsqm': safe_int(r['med'])}
+dubai_vintage = {}
+for _, r in q(_VIN_SQL.format(sel_k='', grp_k='', grp_all='1', sel_sk='',
+                              join_k='', sel_ck='', grp_cur='1')).iterrows():
+    dubai_vintage[r['b']] = {'n': safe_int(r['n']), 'ppsqm': safe_int(r['med'])}
+print(f'  vintage: {sum(1 for e in out.values() if e.get("vintage"))} districts',
+      file=sys.stderr)
+
 # ─── __dubai__ ────────────────────────────────────────────────
 print('__dubai__...', file=sys.stderr)
 d_tot = con.execute(f"""
@@ -488,6 +529,7 @@ dubai = {
     'timeline':[], 'top_projects':[], 'top_deals':[], 'recent':[],
     'by_rooms_unit':{k:{'n':0,'vol':0} for k in ROOM_ORDER},
     'timeline_by_rooms':{k:[] for k in ROOM_ORDER},
+    'vintage': dubai_vintage,
     'trend_pct': 0,
 }
 

@@ -324,6 +324,46 @@ for k, e in out.items():
 # Filter low-volume areas
 out = {k: v for k, v in out.items() if v['n'] >= 5}
 
+# ─── Vintage: rent by project-age cohort (last 365d) ────────────────────
+# Rent premium of new stock decays like the price premium (112% → 90% of
+# district over ~12y). Age = years since the project's first Ejari contract.
+print('vintage cohorts...', file=sys.stderr)
+_VIN_SQL = """
+WITH s AS (
+  SELECT {sel_k} proj, YEAR(d::DATE) AS y, d::DATE AS dd, amt/sqm AS rp
+  FROM r
+  WHERE TRIM(sub) IN ('Flat','Studio') AND proj != ''
+    AND sqm BETWEEN 10 AND 1000 AND amt > 0
+    AND d::DATE <= current_date
+),
+birth AS (SELECT {grp_k} proj, MIN(y) AS birth_y FROM s GROUP BY {grp_all}),
+cur AS (
+  SELECT {sel_sk} CASE WHEN s.y - birth.birth_y <= 3 THEN 'v0_3'
+              WHEN s.y - birth.birth_y <= 8 THEN 'v4_8'
+              ELSE 'v9p' END AS b,
+         s.rp
+  FROM s JOIN birth USING ({join_k} proj)
+  WHERE s.dd >= current_date - INTERVAL 365 DAY
+)
+SELECT {sel_ck} b, COUNT(*) AS n, ROUND(MEDIAN(rp)) AS med
+FROM cur GROUP BY {grp_cur} HAVING COUNT(*) >= 20
+"""
+vin = con.execute(_VIN_SQL.format(sel_k='k,', grp_k='k,', grp_all='1, 2',
+                                  sel_sk='s.k,', join_k='k,', sel_ck='k,',
+                                  grp_cur='1, 2')).fetchdf()
+for _, row in vin.iterrows():
+    e = out.get(row['k'])
+    if e is not None:
+        e.setdefault('vintage', {})[row['b']] = {'n': safe_int(row['n']),
+                                                 'ppsqm': safe_int(row['med'])}
+dubai_vintage = {}
+for _, row in con.execute(_VIN_SQL.format(sel_k='', grp_k='', grp_all='1',
+                                          sel_sk='', join_k='', sel_ck='',
+                                          grp_cur='1')).fetchdf().iterrows():
+    dubai_vintage[row['b']] = {'n': safe_int(row['n']), 'ppsqm': safe_int(row['med'])}
+print(f'  vintage: {sum(1 for e in out.values() if e.get("vintage"))} districts',
+      file=sys.stderr)
+
 # ─── __dubai__ overview ──────────────────────────────────────────
 print('__dubai__...', file=sys.stderr)
 d_tot = con.execute("""
@@ -402,6 +442,7 @@ dubai = {
                       'vol':   safe_int(row['vol']),
                       'ppsqm': safe_int(row['ppsqm'])}
                     for _, row in d_tl.iterrows()],
+    'vintage':     dubai_vintage,
     'trend_pct':   0,
 }
 series = [p for p in dubai['timeline'] if p['d'] <= TODAY_MONTH]

@@ -400,6 +400,64 @@
     });
   }
 
+  const VINTAGE_ORDER = ['v0_3', 'v4_8', 'v9p'];
+  const VINTAGE_COLORS = { v0_3: '#16a34a', v4_8: '#0ea5e9', v9p: '#64748b' };
+  function _vintageBuckets(rec) {
+    const v = rec && rec.vintage;
+    if (!v) return null;
+    const present = VINTAGE_ORDER.filter(b => v[b] && v[b].ppsqm);
+    return present.length >= 2 ? present : null;
+  }
+  function renderVintageSection(rec, kind) {
+    if (!_vintageBuckets(rec)) return '';
+    return `
+      <div class="dp-section">
+        <h3>${t('dp_section_vintage')}</h3>
+        <div class="dp-chart" style="height:170px">
+          <canvas id="ch-vintage-${kind}"></canvas>
+        </div>
+        <div style="font-size:11px;color:#666;margin-top:4px">${t('vintage_hint')}</div>
+      </div>`;
+  }
+  function renderVintageChart(rec, kind) {
+    const ctx = document.getElementById('ch-vintage-' + kind);
+    const present = _vintageBuckets(rec);
+    if (!ctx || !present) return;
+    const labels = { v0_3: t('vin_new'), v4_8: t('vin_mid'), v9p: t('vin_old') };
+    const vals = present.map(b => rec.vintage[b].ppsqm);
+    const ns   = present.map(b => rec.vintage[b].n);
+    const base = rec.vintage[present[0]].ppsqm;
+    const unit = kind === 'rent' ? ' AED/м²/' + t('unit_year_short') : ' AED/м²';
+    const ch = new Chart(ctx, {
+      type: 'bar',
+      data: {
+        labels: present.map(b => labels[b]),
+        datasets: [{
+          data: vals,
+          backgroundColor: present.map(b => VINTAGE_COLORS[b]),
+          borderWidth: 0,
+          barPercentage: 0.55,
+        }],
+      },
+      options: {
+        responsive: true, maintainAspectRatio: false,
+        plugins: {
+          legend: { display: false },
+          tooltip: { callbacks: { label: c => {
+            const i = c.dataIndex;
+            const rel = base ? Math.round((vals[i] / base - 1) * 100) : 0;
+            const relTxt = i === 0 ? '' : ' · ' + (rel >= 0 ? '+' : '') + rel + '% ' + t('vin_vs_new');
+            return ' ' + fmtInt(vals[i]) + unit + ' · n=' + fmtInt(ns[i]) + relTxt;
+          } } },
+        },
+        scales: {
+          x: { ticks: { font: { size: 11 } } },
+          y: { ticks: { font: { size: 10 } }, beginAtZero: true },
+        },
+      },
+    });
+    S.activeCharts.push(ch);
+  }
   function renderBodySale(a) {
     return `
       <div class="period-chips" id="dp-period-chips">${renderPeriodChips()}</div>
@@ -434,6 +492,8 @@
       </div>
 
       ${renderRoomBreakdown(a)}
+
+      ${renderVintageSection(a, 'sale')}
 
       <div class="dp-section">
         <h3>${t("sp_section_insights")}</h3>
@@ -530,6 +590,8 @@
       </div>
 
       ${hasRooms ? renderRoomBreakdown(r) : ''}
+
+      ${renderVintageSection(r, 'rent')}
 
       <div class="dp-section">
         <h3>${t("sp_section_insights")}</h3>
@@ -1434,6 +1496,7 @@
   function renderSaleCharts(a) {
     renderTimelineCharts(a);
     try { renderRoomBreakdownChart(a); } catch(e) { console.error('rooms chart:', e); }
+    try { renderVintageChart(a, 'sale'); } catch(e) { console.error('vintage chart:', e); }
     try { renderInsightDonuts(a);    } catch(e) { console.error('donuts:', e); }
   }
 
@@ -1540,6 +1603,7 @@
     if (r.by_rooms_unit && Object.keys(r.by_rooms_unit).length) {
       try { renderRoomBreakdownChart(r); } catch(e) { console.error('rent rooms chart:', e); }
     }
+    try { renderVintageChart(r, 'rent'); } catch(e) { console.error('rent vintage chart:', e); }
     
     try {
       _renderDonut('ch-rent-donut-subtype',  _rentSubtypeDonutData(r));
