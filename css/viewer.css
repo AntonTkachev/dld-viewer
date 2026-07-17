@@ -130,6 +130,9 @@
   .chart-modal-badges .cm-badge.neg{background:#fef2f2;color:#b91c1c;border-color:#fecaca}
   .chart-modal-badges .cm-badge.muted{background:#f8fafc;color:#475569;border-color:#e2e8f0}
   .chart-modal-close{background:#fff;border:1px solid #d6dde6;border-radius:6px;padding:4px 10px;font-size:13px;cursor:pointer;flex-shrink:0}
+  .chart-modal-controls{display:flex;flex-direction:column;gap:6px;padding:8px 16px;border-bottom:1px solid #e1e6ec;background:#fafbfc}
+  .chart-modal-controls .period-chips,.chart-modal-controls .room-chips{display:flex;flex-wrap:wrap;gap:6px;margin:0}
+  .chart-modal-controls .room-chips:empty{display:none}
   .chart-modal-body{flex:1;padding:16px;position:relative;min-height:0}
   .chart-modal-body canvas{width:100%!important;height:100%!important}
   .dp-collapsible{margin:8px 0 4px;border-top:1px solid #eef0f3;padding-top:8px}
