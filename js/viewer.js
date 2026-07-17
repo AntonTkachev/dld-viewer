@@ -1048,6 +1048,11 @@ function _renderTvPages() {
     }
     el.appendChild(a);
   }
+  // Auto-scroll the active pill into view so users always see where they are
+  const active = el.querySelector('.tv-page-pill.active');
+  if (active && active.scrollIntoView) {
+    try { active.scrollIntoView({ inline: 'nearest', block: 'nearest' }); } catch (_) {}
+  }
 }
 
 function _renderTvPeriods() {
@@ -1179,7 +1184,7 @@ function renderTable() {
     const cls = (numCls + sortedCls).trim();
     const label = t(c.labelKey);
 
-    return `<th data-col="${ident}"${cls ? ' class="' + cls + '"' : ''} title="${_h(label)}">${_h(label)}</th>`;
+    return `<th data-col="${ident}"${cls ? ' class="' + cls + '"' : ''} data-tip="${_h(label)}">${_h(label)}</th>`;
   }).join('');
 
   const renderCell = (c, rec, isDubai) => {
@@ -1444,6 +1449,38 @@ function renderMaskList() {
   const viewSwitch = document.getElementById('view-switch');
   if (viewSwitch) {
     viewSwitch.addEventListener('click', () => setView(currentView === 'map' ? 'table' : 'map'));
+  }
+
+  // Instant tooltip for truncated column headers (native title has 500ms delay).
+  const tblRoot = document.getElementById('tv-table');
+  if (tblRoot) {
+    let tip = document.getElementById('tv-th-tooltip');
+    if (!tip) {
+      tip = document.createElement('div');
+      tip.id = 'tv-th-tooltip';
+      document.body.appendChild(tip);
+    }
+    const show = (th) => {
+      const text = th.dataset.tip;
+      if (!text) return;
+      tip.textContent = text;
+      const r = th.getBoundingClientRect();
+      tip.style.display = 'block';
+      const w = tip.offsetWidth;
+      let left = r.left + r.width/2 - w/2;
+      left = Math.max(6, Math.min(window.innerWidth - w - 6, left));
+      tip.style.left = left + 'px';
+      tip.style.top = (r.bottom + 4) + 'px';
+    };
+    const hide = () => { tip.style.display = 'none'; };
+    tblRoot.addEventListener('mouseover', e => {
+      const th = e.target.closest('th[data-tip]');
+      if (th) show(th);
+    });
+    tblRoot.addEventListener('mouseout', e => {
+      if (e.target.closest('th[data-tip]')) hide();
+    });
+    document.getElementById('tv-scroll')?.addEventListener('scroll', hide);
   }
 })();
 function _refreshViewSwitchLabel() {
