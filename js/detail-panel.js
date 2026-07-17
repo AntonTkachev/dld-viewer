@@ -344,6 +344,8 @@
     const ser = S.roomChartData;
     const hidden = S.roomBreakdownHidden || new Set();
     const el = _modalDOM();
+    const controls = el.querySelector('#dp-cm-controls');
+    if (controls) controls.style.display = 'none';
     el.querySelector('#dp-cm-title').textContent = t('rooms_breakdown_title');
     
     const totals = ser.buckets.map(b => Object.values(b.totals).reduce((s,v)=>s+v,0));
@@ -355,6 +357,7 @@
     if (trend) badges.push(`<span class="cm-badge ${trend.slope>=0?'pos':'neg'}">${t('ch_trend')}: ${trend.slope>=0?'↑':'↓'} ${Math.abs(trend.slope).toFixed(1)}/bin</span>`);
     el.querySelector('#dp-cm-badges').innerHTML = badges.join('');
     if (S.modalChart) { S.modalChart.destroy(); S.modalChart = null; }
+    el.classList.add('open');
     const ctx = el.querySelector('#dp-cm-canvas');
     const datasets = ser.used.map(k => ({
       type: 'bar',
@@ -393,7 +396,6 @@
         },
       },
     });
-    el.classList.add('open');
   }
 
   function renderBodySale(a) {
@@ -690,6 +692,10 @@
           <div class="chart-modal-badges" id="dp-cm-badges"></div>
           <button class="chart-modal-close" id="dp-cm-close" type="button" aria-label="Close">✕</button>
         </div>
+        <div class="chart-modal-controls" id="dp-cm-controls">
+          <div class="period-chips" id="dp-cm-periods"></div>
+          <div class="room-chips" id="dp-cm-rooms"></div>
+        </div>
         <div class="chart-modal-body"><canvas id="dp-cm-canvas"></canvas></div>
       </div>`;
     document.body.appendChild(el);
@@ -700,6 +706,7 @@
     if (!el) return;
     if (S.modalChart) { S.modalChart.destroy(); S.modalChart = null; }
     el.classList.remove('open');
+    delete el.dataset.metric;
   }
   function openChartModal(metric) {
     const cd = S.chartData;
@@ -737,7 +744,14 @@
     const redFill = 'rgba(239,68,68,0.18)';
 
     const el = _modalDOM();
+    el.dataset.metric = metric;
     el.querySelector('#dp-cm-title').textContent = m.label;
+    const controls = el.querySelector('#dp-cm-controls');
+    if (controls) controls.style.display = '';
+    const pchips = el.querySelector('#dp-cm-periods');
+    if (pchips) pchips.innerHTML = renderPeriodChips();
+    const rchips = el.querySelector('#dp-cm-rooms');
+    if (rchips) rchips.innerHTML = S.sale ? renderRoomChips(S.sale) : '';
     const badges = [];
     if (yoy != null)        badges.push(`<span class="cm-badge ${yoy>=0?'pos':'neg'}">YoY: ${(yoy>=0?'+':'')}${yoy.toFixed(1)}%</span>`);
     if (lastSpread != null) badges.push(`<span class="cm-badge ${lastSpread>=0?'pos':'neg'}">vs MA${w}: ${(lastSpread>=0?'+':'')}${lastSpread.toFixed(1)}%</span>`);
@@ -747,6 +761,7 @@
     el.querySelector('#dp-cm-badges').innerHTML = badges.join('');
 
     if (S.modalChart) { S.modalChart.destroy(); S.modalChart = null; }
+    el.classList.add('open');
     const ctx = el.querySelector('#dp-cm-canvas');
     S.modalChart = new Chart(ctx, {
       type: 'line',
@@ -803,7 +818,6 @@
         },
       },
     });
-    el.classList.add('open');
   }
 
   const DONUT_FALLBACK_COLORS = ['#1d4ed8','#0ea5e9','#22c55e','#eab308','#f97316','#ef4444','#a855f7','#ec4899','#14b8a6','#64748b'];
@@ -967,6 +981,8 @@
       payment:  'donut_payment_title_full',
     }[kind];
     const el = _modalDOM();
+    const controls = el.querySelector('#dp-cm-controls');
+    if (controls) controls.style.display = 'none';
     el.querySelector('#dp-cm-title').textContent = t(titleKey);
     const total = d.values.reduce((s,v)=>s+v,0);
     const leadIdx = d.values.indexOf(Math.max(...d.values));
@@ -979,6 +995,7 @@
     ];
     el.querySelector('#dp-cm-badges').innerHTML = badges.join('');
     if (S.modalChart) { S.modalChart.destroy(); S.modalChart = null; }
+    el.classList.add('open');
     const ctx = el.querySelector('#dp-cm-canvas');
     S.modalChart = new Chart(ctx, {
       type: 'doughnut',
@@ -999,7 +1016,6 @@
         },
       },
     });
-    el.classList.add('open');
   }
   function renderSaleCharts(a) {
     renderTimelineCharts(a);
@@ -1129,9 +1145,12 @@
         return;
       }
       
+      const modalEl = document.getElementById('dp-chart-modal');
+      const inPanel = (node) => (S.container && S.container.contains(node)) || (modalEl && modalEl.contains(node));
+
       const periodBtn = e.target.closest('[data-dp-set-period]');
-      if (periodBtn && S.container && S.container.contains(periodBtn)) {
-        
+      if (periodBtn && inPanel(periodBtn)) {
+
         if (e.metaKey || e.ctrlKey || e.shiftKey || e.button === 1) return;
         e.preventDefault();
         const p = periodBtn.dataset.dpSetPeriod;
@@ -1146,9 +1165,9 @@
         }
         return;
       }
-      
+
       const roomBtn = e.target.closest('[data-dp-set-room]');
-      if (roomBtn && S.container && S.container.contains(roomBtn)) {
+      if (roomBtn && inPanel(roomBtn)) {
         const k = roomBtn.dataset.dpSetRoom;
         if (S.roomFilter !== k) {
           S.roomFilter = k;
@@ -1222,6 +1241,11 @@
     destroyTimelineCharts();
     renderTimelineCharts(S.sale);
     refreshRoomBreakdown();
+
+    const modalEl = document.getElementById('dp-chart-modal');
+    if (modalEl && modalEl.classList.contains('open') && modalEl.dataset.metric) {
+      openChartModal(modalEl.dataset.metric);
+    }
   }
   function refreshRent() {
     if (!S.rent) return;
