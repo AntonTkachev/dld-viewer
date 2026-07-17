@@ -14,6 +14,8 @@
     timelineCharts: [],
     rentTimelineCharts: [],
     modalChart: null,
+    modalEngine: (typeof localStorage !== 'undefined' && localStorage.getItem('dp-modal-engine')) || 'chartjs',
+    echartsInstance: null,
   };
 
   function _roomsRec() { return S.sale || S.rent; }
@@ -690,13 +692,20 @@
         <div class="chart-modal-head">
           <h3 id="dp-cm-title">…</h3>
           <div class="chart-modal-badges" id="dp-cm-badges"></div>
+          <div class="chart-modal-engines" id="dp-cm-engines">
+            <button class="cm-engine active" type="button" data-dp-engine="chartjs">Chart.js</button>
+            <button class="cm-engine" type="button" data-dp-engine="echarts">ECharts</button>
+          </div>
           <button class="chart-modal-close" id="dp-cm-close" type="button" aria-label="Close">✕</button>
         </div>
         <div class="chart-modal-controls" id="dp-cm-controls">
           <div class="period-chips" id="dp-cm-periods"></div>
           <div class="room-chips" id="dp-cm-rooms"></div>
         </div>
-        <div class="chart-modal-body"><canvas id="dp-cm-canvas"></canvas></div>
+        <div class="chart-modal-body">
+          <canvas id="dp-cm-canvas"></canvas>
+          <div id="dp-cm-echarts" class="chart-modal-echarts" style="display:none"></div>
+        </div>
       </div>`;
     document.body.appendChild(el);
     return el;
@@ -705,6 +714,7 @@
     const el = document.getElementById('dp-chart-modal');
     if (!el) return;
     if (S.modalChart) { S.modalChart.destroy(); S.modalChart = null; }
+    if (S.echartsInstance) { S.echartsInstance.dispose(); S.echartsInstance = null; }
     el.classList.remove('open');
     delete el.dataset.metric;
   }
@@ -761,24 +771,38 @@
     el.querySelector('#dp-cm-badges').innerHTML = badges.join('');
 
     if (S.modalChart) { S.modalChart.destroy(); S.modalChart = null; }
+    if (S.echartsInstance) { S.echartsInstance.dispose(); S.echartsInstance = null; }
     el.classList.add('open');
-    const ctx = el.querySelector('#dp-cm-canvas');
+
+    // Sync engine toggle UI
+    el.querySelectorAll('.cm-engine').forEach(btn => {
+      btn.classList.toggle('active', btn.dataset.dpEngine === S.modalEngine);
+    });
+    const canvasEl = el.querySelector('#dp-cm-canvas');
+    const echartsEl = el.querySelector('#dp-cm-echarts');
+
+    if (S.modalEngine === 'echarts' && typeof echarts !== 'undefined') {
+      canvasEl.style.display = 'none';
+      echartsEl.style.display = '';
+      _renderModalECharts({ el: echartsEl, labels, data, ma, upper, lower, trendLine, median, w, color, m });
+    } else {
+      canvasEl.style.display = '';
+      echartsEl.style.display = 'none';
+      _renderModalChartJs({ ctx: canvasEl, labels, data, ma, upper, lower, trendLine, median, w, color, m, grnLine, redLine, grnFill, redFill });
+    }
+  }
+
+  function _renderModalChartJs({ ctx, labels, data, ma, upper, lower, trendLine, median, w, color, m, grnLine, redLine, grnFill, redFill }) {
     S.modalChart = new Chart(ctx, {
       type: 'line',
       data: {
         labels,
         datasets: [
-          
           { label: 'lower', data: lower, borderWidth: 0, pointRadius: 0, fill: false, order: 6 },
-          
           { label: t('ch_channel'), data: upper, borderColor: 'rgba(148,163,184,0.55)', borderWidth: 1, borderDash:[3,3], pointRadius: 0, fill: '-1', backgroundColor: 'rgba(148,163,184,0.10)', order: 5 },
-          
           { label: t('ch_ma') + ` (${w})`, data: ma, borderColor: '#64748b', borderWidth: 1.5, borderDash: [6,4], pointRadius: 0, fill: false, order: 4 },
-          
           ...(trendLine ? [{ label: t('ch_trend'), data: trendLine, borderColor: '#0f172a', borderWidth: 1.2, borderDash:[2,3], pointRadius: 0, fill: false, order: 3 }] : []),
-          
           ...(median != null ? [{ label: t('ch_median'), data: data.map(()=>median), borderColor: 'rgba(29,78,216,0.55)', borderWidth: 1, borderDash:[1,2], pointRadius: 0, fill: false, order: 2 }] : []),
-          
           {
             label: m.label,
             data,
@@ -786,14 +810,12 @@
             borderWidth: 2.5,
             pointRadius: 2.2,
             pointHoverRadius: 4,
-
             fill: { target: 2, above: grnFill, below: redFill },
-            
             segment: {
               borderColor: ctx => {
                 const i = ctx.p0DataIndex;
                 if (i >= ma.length - 1) return color;
-                const v0 = data[i], v1 = data[i+1];
+                const v1 = data[i+1];
                 if (!Number.isFinite(ma[i+1])) return color;
                 if (v1 > ma[i+1]) return grnLine;
                 if (v1 < ma[i+1]) return redLine;
@@ -818,6 +840,143 @@
         },
       },
     });
+  }
+
+  function _renderModalECharts({ el, labels, data, ma, upper, lower, trendLine, median, w, color, m }) {
+    const clean = arr => arr.map(v => Number.isFinite(v) ? v : null);
+    const bandOffset = ma.map((v, i) => Number.isFinite(v) && Number.isFinite(upper[i]) ? upper[i] - v : null);
+    const inst = echarts.init(el, null, { renderer: 'canvas' });
+    S.echartsInstance = inst;
+
+    // Segmented main series: split into green (above MA) / red (below MA) sub-series
+    const above = data.map((v, i) => (Number.isFinite(ma[i]) && v >= ma[i]) ? v : null);
+    const below = data.map((v, i) => (Number.isFinite(ma[i]) && v <  ma[i]) ? v : null);
+
+    inst.setOption({
+      grid: { left: 56, right: 24, top: 18, bottom: 44 },
+      tooltip: {
+        trigger: 'axis',
+        axisPointer: { type: 'line', lineStyle: { color: '#94a3b8' } },
+        backgroundColor: 'rgba(15,23,42,0.94)',
+        borderColor: 'transparent',
+        textStyle: { color: '#f1f5f9', fontSize: 12 },
+        padding: [8, 12],
+        formatter: params => {
+          const pName = params[0].name;
+          const hidden = new Set(['band-anchor', t('ch_channel'), 'above-ma', 'below-ma']);
+          const idx = params[0].dataIndex;
+          const bandU = Number.isFinite(upper[idx]) ? Math.round(upper[idx]) : null;
+          const bandL = Number.isFinite(lower[idx]) ? Math.round(lower[idx]) : null;
+          const rows = params
+            .filter(p => p.value != null && !hidden.has(p.seriesName))
+            .map(p => `<div style="display:flex;justify-content:space-between;gap:12px">
+              <span>${p.marker} ${p.seriesName}</span>
+              <span style="font-variant-numeric:tabular-nums;font-weight:600">${m.fmtTip(Math.round(p.value))}</span>
+            </div>`)
+            .join('');
+          const bandRow = (bandU != null && bandL != null)
+            ? `<div style="display:flex;justify-content:space-between;gap:12px;opacity:.75">
+                 <span>${t('ch_channel')}</span>
+                 <span style="font-variant-numeric:tabular-nums">${m.fmtTip(bandL)} – ${m.fmtTip(bandU)}</span>
+               </div>`
+            : '';
+          return `<div style="opacity:.75;font-size:11px;margin-bottom:4px">${pName}</div>${rows}${bandRow}`;
+        },
+      },
+      legend: {
+        bottom: 0, itemGap: 16, textStyle: { fontSize: 11, color: '#475569' },
+        icon: 'roundRect', itemWidth: 12, itemHeight: 8,
+        data: [
+          m.label,
+          t('ch_ma') + ` (${w})`,
+          ...(trendLine ? [t('ch_trend')] : []),
+          ...(median != null ? [t('ch_median')] : []),
+          t('ch_channel'),
+        ],
+      },
+      xAxis: {
+        type: 'category', data: labels,
+        axisLabel: { fontSize: 10, color: '#64748b' },
+        axisLine: { lineStyle: { color: '#e2e8f0' } },
+        axisTick: { show: false },
+      },
+      yAxis: {
+        type: 'value',
+        axisLabel: { fontSize: 10, color: '#64748b', formatter: m.fmtY },
+        splitLine: { lineStyle: { color: '#f1f5f9' } },
+        axisLine: { show: false }, axisTick: { show: false },
+      },
+      series: [
+        // Bollinger band (anchor + stackable delta = filled area between lower and upper)
+        {
+          name: 'band-anchor', type: 'line', data: clean(lower),
+          lineStyle: { opacity: 0 }, symbol: 'none', stack: 'band', silent: true,
+          areaStyle: { opacity: 0 },
+        },
+        {
+          name: t('ch_channel'), type: 'line', data: clean(bandOffset),
+          lineStyle: { opacity: 0 }, symbol: 'none', stack: 'band', silent: true,
+          itemStyle: { color: 'rgba(148,163,184,0.7)' },
+          areaStyle: { color: 'rgba(148,163,184,0.14)' },
+        },
+        // Moving average
+        {
+          name: t('ch_ma') + ` (${w})`, type: 'line', data: clean(ma),
+          smooth: true, symbol: 'none',
+          itemStyle: { color: '#64748b' },
+          lineStyle: { color: '#64748b', width: 1.4, type: 'dashed' },
+        },
+        // Trend line
+        ...(trendLine ? [{
+          name: t('ch_trend'), type: 'line', data: clean(trendLine),
+          smooth: false, symbol: 'none',
+          itemStyle: { color: '#0f172a' },
+          lineStyle: { color: '#0f172a', width: 1.2, type: [3, 4] },
+        }] : []),
+        // Median line
+        ...(median != null ? [{
+          name: t('ch_median'), type: 'line', data: data.map(() => median),
+          symbol: 'none',
+          itemStyle: { color: 'rgba(29,78,216,0.7)' },
+          lineStyle: { color: 'rgba(29,78,216,0.5)', width: 1, type: [2, 3] },
+        }] : []),
+        // Main series with gradient area under
+        {
+          name: m.label, type: 'line', data,
+          smooth: true, symbol: 'circle', symbolSize: 5,
+          itemStyle: { color },
+          lineStyle: { color, width: 2.5, shadowColor: color, shadowBlur: 6, shadowOffsetY: 2 },
+          areaStyle: {
+            color: new echarts.graphic.LinearGradient(0, 0, 0, 1, [
+              { offset: 0, color: color + 'CC' },
+              { offset: 1, color: color + '10' },
+            ]),
+          },
+          emphasis: { focus: 'series', scale: 1.4 },
+        },
+        // Green overlay: points above MA (highlight)
+        {
+          name: 'above-ma', type: 'line', data: above,
+          symbol: 'circle', symbolSize: 6, showSymbol: true,
+          lineStyle: { opacity: 0 }, itemStyle: { color: '#22c55e' },
+          tooltip: { show: false }, silent: true,
+        },
+        // Red overlay: points below MA
+        {
+          name: 'below-ma', type: 'line', data: below,
+          symbol: 'circle', symbolSize: 6, showSymbol: true,
+          lineStyle: { opacity: 0 }, itemStyle: { color: '#ef4444' },
+          tooltip: { show: false }, silent: true,
+        },
+      ],
+      animationDuration: 420, animationEasing: 'cubicOut',
+    });
+
+    // Auto-resize when window changes
+    if (!el._echartsResizeHooked) {
+      el._echartsResizeHooked = true;
+      window.addEventListener('resize', () => S.echartsInstance && S.echartsInstance.resize());
+    }
   }
 
   const DONUT_FALLBACK_COLORS = ['#1d4ed8','#0ea5e9','#22c55e','#eab308','#f97316','#ef4444','#a855f7','#ec4899','#14b8a6','#64748b'];
@@ -1162,6 +1321,17 @@
           refreshSale();
           refreshRent();
           if (S.onPeriodChange) S.onPeriodChange(p);
+        }
+        return;
+      }
+
+      const engineBtn = e.target.closest('[data-dp-engine]');
+      if (engineBtn && modalEl && modalEl.contains(engineBtn)) {
+        const eng = engineBtn.dataset.dpEngine;
+        if (S.modalEngine !== eng) {
+          S.modalEngine = eng;
+          try { localStorage.setItem('dp-modal-engine', eng); } catch (_) {}
+          if (modalEl.dataset.metric) openChartModal(modalEl.dataset.metric);
         }
         return;
       }

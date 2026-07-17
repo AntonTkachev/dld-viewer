@@ -130,10 +130,16 @@
   .chart-modal-badges .cm-badge.neg{background:#fef2f2;color:#b91c1c;border-color:#fecaca}
   .chart-modal-badges .cm-badge.muted{background:#f8fafc;color:#475569;border-color:#e2e8f0}
   .chart-modal-close{background:#fff;border:1px solid #d6dde6;border-radius:6px;padding:4px 10px;font-size:13px;cursor:pointer;flex-shrink:0}
+  .chart-modal-engines{display:inline-flex;border:1px solid #d6dde6;border-radius:6px;overflow:hidden;flex-shrink:0}
+  .chart-modal-engines .cm-engine{background:#fff;border:0;padding:4px 10px;font-size:11.5px;font-weight:600;color:#475569;cursor:pointer;font-family:inherit;line-height:1.2}
+  .chart-modal-engines .cm-engine + .cm-engine{border-left:1px solid #d6dde6}
+  .chart-modal-engines .cm-engine.active{background:#0f172a;color:#fff}
+  .chart-modal-engines .cm-engine:hover:not(.active){background:#f1f5fb}
   .chart-modal-controls{display:flex;flex-direction:column;gap:6px;padding:8px 16px;border-bottom:1px solid #e1e6ec;background:#fafbfc}
   .chart-modal-controls .period-chips,.chart-modal-controls .room-chips{display:flex;flex-wrap:wrap;gap:6px;margin:0}
   .chart-modal-controls .room-chips:empty{display:none}
   .chart-modal-body{flex:1;padding:16px;position:relative;min-height:0}
+  .chart-modal-echarts{width:100%;height:100%}
   .chart-modal-body canvas{width:100%!important;height:100%!important}
   .dp-collapsible{margin:8px 0 4px;border-top:1px solid #eef0f3;padding-top:8px}
   .dp-collapsible > summary{cursor:pointer;list-style:none;font-size:13px;font-weight:600;color:#1f2933;padding:6px 4px;margin:-6px -4px;border-radius:4px;display:flex;align-items:center;gap:6px;user-select:none}
