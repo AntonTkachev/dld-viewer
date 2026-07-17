@@ -784,11 +784,13 @@
     const roomsSource = source === 'rent' ? S.rent : S.sale;
     if (rchips) rchips.innerHTML = roomsSource ? renderRoomChips(roomsSource) : '';
     const badges = [];
-    if (yoy != null)        badges.push(`<span class="cm-badge ${yoy>=0?'pos':'neg'}">YoY: ${(yoy>=0?'+':'')}${yoy.toFixed(1)}%</span>`);
-    if (lastSpread != null) badges.push(`<span class="cm-badge ${lastSpread>=0?'pos':'neg'}">vs MA${w}: ${(lastSpread>=0?'+':'')}${lastSpread.toFixed(1)}%</span>`);
-    if (vol != null)        badges.push(`<span class="cm-badge muted">σ/μ: ${vol.toFixed(0)}%</span>`);
-    if (trend)              badges.push(`<span class="cm-badge ${trend.slope>=0?'pos':'neg'}">${t('ch_trend')}: ${trend.slope>=0?'↑':'↓'}</span>`);
-    badges.push(`<span class="cm-badge muted">n=${data.length}</span>`);
+    const badge = (cls, label, val, tip) =>
+      `<span class="cm-badge ${cls}" data-tip="${_h(tip)}"><span class="cm-badge-label">${_h(label)}</span> <span class="cm-badge-val">${val}</span></span>`;
+    if (yoy != null)        badges.push(badge(yoy>=0?'pos':'neg',       t('bd_yoy'),   (yoy>=0?'+':'')+yoy.toFixed(1)+'%',                 t('bd_yoy_tip')));
+    if (lastSpread != null) badges.push(badge(lastSpread>=0?'pos':'neg', t('bd_vsma').replace('{w}', w), (lastSpread>=0?'+':'')+lastSpread.toFixed(1)+'%', t('bd_vsma_tip').replace('{w}', w)));
+    if (vol != null)        badges.push(badge('muted',                   t('bd_vol'),   vol.toFixed(0)+'%',                                 t('bd_vol_tip')));
+    if (trend)              badges.push(badge(trend.slope>=0?'pos':'neg', t('bd_trend'), trend.slope>=0?t('bd_trend_up'):t('bd_trend_dn'), t('bd_trend_tip')));
+    badges.push(badge('muted', t('bd_n'), data.length, t('bd_n_tip')));
     el.querySelector('#dp-cm-badges').innerHTML = badges.join('');
 
     if (S.modalChart) { S.modalChart.destroy(); S.modalChart = null; }
