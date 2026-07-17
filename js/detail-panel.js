@@ -421,14 +421,68 @@
             <div style="font-size:11px;color:#666;margin-bottom:2px">${t('vin_history')}</div>
             <div class="dp-chart" style="height:170px"><canvas id="ch-vintage-tl"></canvas></div>
           </div>` : '';
+    const paths = (kind === 'sale' && rec.vintage_paths && Object.keys(rec.vintage_paths).length >= 2) ? `
+        <div style="margin-top:10px">
+          <div style="font-size:11px;color:#666;margin-bottom:2px">${t('vin_paths')}</div>
+          <div class="dp-chart" style="height:210px"><canvas id="ch-vintage-paths"></canvas></div>
+        </div>` : '';
     return `
       <div class="dp-section">
         <h3>${t('dp_section_vintage')}</h3>
         <div style="display:grid;grid-template-columns:${hasTl ? '1fr 2fr' : '1fr'};gap:10px">
           ${bars}${tl}
         </div>
+        ${paths}
         <div style="font-size:11px;color:#666;margin-top:4px">${t('vintage_hint')}</div>
       </div>`;
+  }
+  function renderVintagePaths(rec) {
+    const ctx = document.getElementById('ch-vintage-paths');
+    const vp = rec && rec.vintage_paths;
+    if (!ctx || !vp) return;
+    // Every 2nd cohort keeps the fan readable; each line = the buildings
+    // that traded in year Y, followed from Y to today.
+    const cohorts = Object.keys(vp).sort().filter(y => (+y) % 2 === 0 && vp[y].length >= 3);
+    if (cohorts.length < 2) return;
+    const years = [...new Set(cohorts.flatMap(c => vp[c].map(p => p.d)))].sort();
+    const m = cohorts.length;
+    const datasets = cohorts.map((c, i) => {
+      const byYear = new Map(vp[c].map(p => [p.d, p]));
+      const buy = vp[c][0].med;
+      return {
+        label: c,
+        data: years.map(y => { const p = byYear.get(y); return p ? p.med : null; }),
+        borderColor: `hsl(${255 - Math.round(i / Math.max(m - 1, 1) * 235)}, 62%, 46%)`,
+        backgroundColor: 'transparent',
+        borderWidth: 1.6,
+        pointRadius: 0.5,
+        tension: 0.25,
+        spanGaps: true,
+        _buy: buy,
+      };
+    });
+    const ch = new Chart(ctx, {
+      type: 'line',
+      data: { labels: years, datasets },
+      options: {
+        responsive: true, maintainAspectRatio: false,
+        interaction: { intersect: false, mode: 'index' },
+        plugins: {
+          legend: { display: true, position: 'bottom', labels: { boxWidth: 10, font: { size: 9 } } },
+          tooltip: { callbacks: { label: c => {
+            const buy = c.dataset._buy;
+            const rel = buy ? Math.round((c.parsed.y / buy - 1) * 100) : null;
+            return ' ' + c.dataset.label + ': ' + fmtInt(c.parsed.y) + ' AED/м²'
+              + (rel === null || c.label === c.dataset.label ? '' : ' (' + (rel >= 0 ? '+' : '') + rel + '% ' + t('vin_since_buy') + ')');
+          } } },
+        },
+        scales: {
+          x: { ticks: { font: { size: 10 }, maxRotation: 0, autoSkip: true } },
+          y: { ticks: { font: { size: 10 } } },
+        },
+      },
+    });
+    S.activeCharts.push(ch);
   }
   function _vintageTimelineSeries(a) {
     const vt = a.vintage_timeline;
@@ -1581,6 +1635,7 @@
     try { renderRoomBreakdownChart(a); } catch(e) { console.error('rooms chart:', e); }
     try { renderVintageChart(a, 'sale'); } catch(e) { console.error('vintage chart:', e); }
     try { renderVintageTimeline(a); } catch(e) { console.error('vintage timeline:', e); }
+    try { renderVintagePaths(a); } catch(e) { console.error('vintage paths:', e); }
     try { renderInsightDonuts(a);    } catch(e) { console.error('donuts:', e); }
   }
 

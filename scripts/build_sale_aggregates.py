@@ -541,6 +541,51 @@ print(f'  vintage timeline: {n_vtl:,} points across '
       f'{sum(1 for e in out.values() if e.get("vintage_timeline"))} districts',
       file=sys.stderr)
 
+# ─── Vintage paths: the buyer's journey per purchase-year cohort ─────────
+# «Купил в 2015 — сколько стоит сейчас»: fix the set of buildings that
+# traded ready in year Y, then track the median ppsqm of THOSE SAME
+# buildings every following year. Unlike the age-cohort timeline (a
+# cross-section that swaps buildings as they age), each path follows one
+# frozen cohort — the closest open data gets to a repeat-sales index.
+print('vintage paths...', file=sys.stderr)
+_PATH_SQL = """
+WITH s AS (
+  SELECT {sel_k} bn, YEAR(d::DATE) AS y, val/sqm AS ppsqm
+  FROM tx
+  WHERE pt = 'Unit' AND reg = 'Existing Properties' AND bn IS NOT NULL
+    AND rooms IN ('Studio','1 B/R','2 B/R','3 B/R','4 B/R','PENTHOUSE')
+    AND sqm BETWEEN 10 AND 1000
+    AND val/sqm BETWEEN 2000 AND 100000
+),
+seed AS (
+  SELECT DISTINCT {sel_k} bn, y AS cy FROM s
+  WHERE y BETWEEN 2008 AND YEAR(current_date) - 1
+)
+SELECT {sel_pk} seed.cy, s.y, COUNT(*) AS n, ROUND(MEDIAN(s.ppsqm)) AS med
+FROM s JOIN seed ON {join_cond} seed.bn = s.bn AND s.y >= seed.cy
+GROUP BY {grp} HAVING COUNT(*) >= 5
+ORDER BY seed.cy, s.y
+"""
+paths = q(_PATH_SQL.format(sel_k='k,', sel_pk='s.k,',
+                           join_cond='seed.k = s.k AND', grp='1, 2, 3'))
+n_vp = 0
+for _, r in paths.iterrows():
+    e = out.get(r['k'])
+    if e is None:
+        continue
+    vp = e.setdefault('vintage_paths', {})
+    vp.setdefault(str(int(r['cy'])), []).append(
+        {'d': str(int(r['y'])), 'n': safe_int(r['n']), 'med': safe_int(r['med'])})
+    n_vp += 1
+dubai_paths = {}
+for _, r in q(_PATH_SQL.format(sel_k='', sel_pk='',
+                               join_cond='', grp='1, 2')).iterrows():
+    dubai_paths.setdefault(str(int(r['cy'])), []).append(
+        {'d': str(int(r['y'])), 'n': safe_int(r['n']), 'med': safe_int(r['med'])})
+print(f'  vintage paths: {n_vp:,} points across '
+      f'{sum(1 for e in out.values() if e.get("vintage_paths"))} districts',
+      file=sys.stderr)
+
 # ─── __dubai__ ────────────────────────────────────────────────
 print('__dubai__...', file=sys.stderr)
 d_tot = con.execute(f"""
@@ -578,6 +623,7 @@ dubai = {
     'by_rooms_unit':{k:{'n':0,'vol':0} for k in ROOM_ORDER},
     'timeline_by_rooms':{k:[] for k in ROOM_ORDER},
     'vintage': dubai_vintage,
+    'vintage_paths': dubai_paths,
     'trend_pct': 0,
 }
 
