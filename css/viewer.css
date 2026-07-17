@@ -139,7 +139,8 @@
   .chart-modal-controls .period-chips,.chart-modal-controls .room-chips{display:flex;flex-wrap:wrap;gap:6px;margin:0}
   .chart-modal-controls .room-chips:empty{display:none}
   .chart-modal-body{flex:1;padding:16px;position:relative;min-height:0}
-  .chart-modal-echarts{width:100%;height:100%}
+  .chart-modal-echarts{width:100%;height:100%;cursor:crosshair}
+  #dp-cm-measure-overlay{user-select:none}
   .chart-modal-body canvas{width:100%!important;height:100%!important}
   .dp-collapsible{margin:8px 0 4px;border-top:1px solid #eef0f3;padding-top:8px}
   .dp-collapsible > summary{cursor:pointer;list-style:none;font-size:13px;font-weight:600;color:#1f2933;padding:6px 4px;margin:-6px -4px;border-radius:4px;display:flex;align-items:center;gap:6px;user-select:none}
