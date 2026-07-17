@@ -514,11 +514,17 @@
         <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
           <div>
             <div style="font-size:11px;color:#666;margin-bottom:2px">${t("sp_subsection_count")}</div>
-            <div class="dp-chart" style="height:180px"><canvas id="ch-rent-count"></canvas></div>
+            <div class="dp-chart" style="height:180px">
+              <button class="chart-expand-btn" type="button" data-dp-expand="count" data-dp-source="rent" title="${t('chart_expand')}" aria-label="${t('chart_expand')}">⛶</button>
+              <canvas id="ch-rent-count"></canvas>
+            </div>
           </div>
           <div>
             <div style="font-size:11px;color:#666;margin-bottom:2px">${t("rent_th_med")}</div>
-            <div class="dp-chart" style="height:180px"><canvas id="ch-rent-med"></canvas></div>
+            <div class="dp-chart" style="height:180px">
+              <button class="chart-expand-btn" type="button" data-dp-expand="med" data-dp-source="rent" title="${t('chart_expand')}" aria-label="${t('chart_expand')}">⛶</button>
+              <canvas id="ch-rent-med"></canvas>
+            </div>
           </div>
         </div>
       </div>
@@ -723,9 +729,11 @@
     if (overlay) overlay.remove();
     el.classList.remove('open');
     delete el.dataset.metric;
+    delete el.dataset.source;
   }
-  function openChartModal(metric) {
-    const cd = S.chartData;
+  function openChartModal(metric, source) {
+    source = source || 'sale';
+    const cd = source === 'rent' ? S.rentChartData : S.chartData;
     if (!cd || !cd[metric]) return;
     const m = cd[metric];
     const labels = cd.labels.slice();
@@ -761,13 +769,15 @@
 
     const el = _modalDOM();
     el.dataset.metric = metric;
+    el.dataset.source = source;
     el.querySelector('#dp-cm-title').textContent = m.label;
     const controls = el.querySelector('#dp-cm-controls');
     if (controls) controls.style.display = '';
     const pchips = el.querySelector('#dp-cm-periods');
     if (pchips) pchips.innerHTML = renderPeriodChips();
     const rchips = el.querySelector('#dp-cm-rooms');
-    if (rchips) rchips.innerHTML = S.sale ? renderRoomChips(S.sale) : '';
+    const roomsSource = source === 'rent' ? S.rent : S.sale;
+    if (rchips) rchips.innerHTML = roomsSource ? renderRoomChips(roomsSource) : '';
     const badges = [];
     if (yoy != null)        badges.push(`<span class="cm-badge ${yoy>=0?'pos':'neg'}">YoY: ${(yoy>=0?'+':'')}${yoy.toFixed(1)}%</span>`);
     if (lastSpread != null) badges.push(`<span class="cm-badge ${lastSpread>=0?'pos':'neg'}">vs MA${w}: ${(lastSpread>=0?'+':'')}${lastSpread.toFixed(1)}%</span>`);
@@ -1436,11 +1446,21 @@
       ? r.timeline_by_rooms[S.roomFilter]
       : (r.timeline || []);
     const series = periodSlice(tlSource);
-    const labels = series.map(p => p.d);
+    const labels = series.map(p => p.d.length === 10 ? p.d.slice(5) : p.d);
+    const fullLabels = series.map(p => p.d);
     const color = '#0ea5e9';
     const bg = 'rgba(14,165,233,.14)';
     const monthly = (S.rentUnit === 'monthly');
     const medVals = series.map(p => monthly ? Math.round((p.med || 0) / 12) : (p.med || 0));
+    const cntVals = series.map(p => p.n);
+
+    S.rentChartData = {
+      labels: labels.slice(),
+      fullLabels,
+      count: { values: cntVals, fmtY: v => v,        fmtTip: v => fmtInt(v) + ' ' + t('ch_count').toLowerCase(), label: t('sp_subsection_count') },
+      med:   { values: medVals, fmtY: fmtAxisAed,    fmtTip: fmtAedDP,                                            label: t('rent_th_med') },
+      color,
+    };
     const mkChart = (id, data, fmtY, tooltipFmt) => {
       const ctx = document.getElementById(id);
       if (!ctx) return;
@@ -1522,7 +1542,7 @@
         if (S.modalEngine !== eng) {
           S.modalEngine = eng;
           try { localStorage.setItem('dp-modal-engine', eng); } catch (_) {}
-          if (modalEl.dataset.metric) openChartModal(modalEl.dataset.metric);
+          if (modalEl.dataset.metric) openChartModal(modalEl.dataset.metric, modalEl.dataset.source || 'sale');
         }
         return;
       }
@@ -1551,7 +1571,7 @@
       const expandBtn = e.target.closest('[data-dp-expand]');
       if (expandBtn && S.container && S.container.contains(expandBtn)) {
         e.preventDefault();
-        openChartModal(expandBtn.dataset.dpExpand);
+        openChartModal(expandBtn.dataset.dpExpand, expandBtn.dataset.dpSource || 'sale');
         return;
       }
       
@@ -1604,8 +1624,8 @@
     refreshRoomBreakdown();
 
     const modalEl = document.getElementById('dp-chart-modal');
-    if (modalEl && modalEl.classList.contains('open') && modalEl.dataset.metric) {
-      openChartModal(modalEl.dataset.metric);
+    if (modalEl && modalEl.classList.contains('open') && modalEl.dataset.metric && (modalEl.dataset.source || 'sale') === 'sale') {
+      openChartModal(modalEl.dataset.metric, 'sale');
     }
   }
   function refreshRent() {
@@ -1616,11 +1636,16 @@
     if (stEl) stEl.innerHTML = renderStatsRent(S.rent);
     const rc = S.container.querySelector('#dp-room-chips-rent');
     if (rc) rc.innerHTML = renderRoomChips(S.rent);
-    
+
     if (S.container.querySelector('#ch-rent-count')) {
       destroyRentCharts();
       renderRentCharts(S.rent);
       refreshRoomBreakdown();
+    }
+
+    const modalEl = document.getElementById('dp-chart-modal');
+    if (modalEl && modalEl.classList.contains('open') && modalEl.dataset.metric && modalEl.dataset.source === 'rent') {
+      openChartModal(modalEl.dataset.metric, 'rent');
     }
   }
 
