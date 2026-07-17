@@ -1121,11 +1121,21 @@
         lines.push(`<div style="opacity:.55;font-size:10px;margin-top:8px;line-height:1.4">${t('ch_measure_hint') || 'Тяните курсор в сторону для сравнения'}</div>`);
       }
 
-      // Position info panel — prefer right side if there's room, else left
+      // Position info panel — right of the range, else left of it, else pinned to a corner
       const chartW = inst.getWidth();
       const panelW = 200;
-      const preferRight = Math.max(aPx, cPx) < chartW - panelW - 20;
-      const panelX = preferRight ? Math.max(aPx, cPx) + 12 : Math.min(aPx, cPx) - panelW - 12;
+      const rightPx = Math.max(aPx, cPx);
+      const leftPx  = Math.min(aPx, cPx);
+      const gap = 12;
+      let panelX;
+      if (chartW - rightPx - gap >= panelW + 8) {
+        panelX = rightPx + gap;
+      } else if (leftPx - gap >= panelW + 8) {
+        panelX = leftPx - panelW - gap;
+      } else {
+        // Both sides too tight — dock top-right of the chart above the range
+        panelX = chartW - panelW - gap;
+      }
       const panelY = gTop + 8;
 
       const graphics = [
