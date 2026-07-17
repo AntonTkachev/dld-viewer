@@ -493,6 +493,54 @@ for _, r in q(_VIN_SQL.format(sel_k='', grp_k='', grp_all='1', sel_sk='',
 print(f'  vintage: {sum(1 for e in out.values() if e.get("vintage"))} districts',
       file=sys.stderr)
 
+# ─── Vintage timeline: monthly cohort medians per room class ────────────
+# Powers the age-cohort history chart in the detail panel — same period +
+# room chips as the price timeline. Age is evaluated at SALE time, so a
+# building migrates from the ≤3y line to the 4-8y line as it ages.
+print('vintage timeline...', file=sys.stderr)
+vin_tl = q("""
+WITH s AS (
+  SELECT k, bn, YEAR(d::DATE) AS y, strftime(d::DATE, '%Y-%m') AS m,
+         CASE rooms WHEN 'Studio' THEN 'studio' WHEN '1 B/R' THEN '1br'
+                    WHEN '2 B/R' THEN '2br' WHEN '3 B/R' THEN '3br'
+                    ELSE 'other' END AS room,
+         val/sqm AS ppsqm
+  FROM tx
+  WHERE pt = 'Unit' AND reg = 'Existing Properties' AND bn IS NOT NULL
+    AND rooms IN ('Studio','1 B/R','2 B/R','3 B/R','4 B/R','PENTHOUSE')
+    AND sqm BETWEEN 10 AND 1000
+    AND val/sqm BETWEEN 2000 AND 100000
+),
+birth AS (SELECT k, bn, MIN(y) AS birth_y FROM s GROUP BY 1, 2),
+cur AS (
+  SELECT s.k, s.m, s.room,
+         CASE WHEN s.y - birth.birth_y <= 3 THEN 'v0_3'
+              WHEN s.y - birth.birth_y <= 8 THEN 'v4_8'
+              ELSE 'v9p' END AS b,
+         s.ppsqm
+  FROM s JOIN birth USING (k, bn)
+)
+SELECT k, room, b, m, COUNT(*) AS n, ROUND(MEDIAN(ppsqm)) AS med
+FROM cur WHERE room != 'other'
+GROUP BY 1, 2, 3, 4 HAVING COUNT(*) >= 5
+UNION ALL
+SELECT k, 'all' AS room, b, m, COUNT(*) AS n, ROUND(MEDIAN(ppsqm)) AS med
+FROM cur GROUP BY 1, 3, 4 HAVING COUNT(*) >= 5
+ORDER BY m
+""")
+n_vtl = 0
+for _, r in vin_tl.iterrows():
+    e = out.get(r['k'])
+    if e is None:
+        continue
+    vt = e.setdefault('vintage_timeline', {})
+    vt.setdefault(r['room'], {}).setdefault(r['b'], []).append(
+        {'d': r['m'], 'n': safe_int(r['n']), 'med': safe_int(r['med'])})
+    n_vtl += 1
+print(f'  vintage timeline: {n_vtl:,} points across '
+      f'{sum(1 for e in out.values() if e.get("vintage_timeline"))} districts',
+      file=sys.stderr)
+
 # ─── __dubai__ ────────────────────────────────────────────────
 print('__dubai__...', file=sys.stderr)
 d_tot = con.execute(f"""
