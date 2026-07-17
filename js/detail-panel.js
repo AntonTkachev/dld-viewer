@@ -645,11 +645,10 @@
     const series = periodSlice(roomTimelineFor(a));
     const labels = series.map(p => p.d.length === 10 ? p.d.slice(5) : p.d);
     const baseColor = ROOM_COLORS[S.roomFilter] || '#1d4ed8';
-    // Per-metric colors: avg=indigo (price), count=sky (activity), volume=teal (accumulated money)
-    // When a specific room is selected, all three inherit that room's hue for consistency.
-    const perMetric = (S.roomFilter && S.roomFilter !== 'all')
-      ? { avg: baseColor, count: baseColor, volume: baseColor }
-      : { avg: '#4f46e5', count: '#0284c7', volume: '#0d9488' };
+    // Per-metric colors: avg=indigo (price), count=sky (activity), volume=teal (accumulated money).
+    // Kept independent of the room filter so the three timeline charts always read as three
+    // distinct series regardless of whether you're looking at Все / Studio / 1BR / 2BR / …
+    const perMetric = { avg: '#4f46e5', count: '#0284c7', volume: '#0d9488' };
 
     S.chartData = {
       labels: labels.slice(),
