@@ -803,15 +803,53 @@
     const canvasEl = el.querySelector('#dp-cm-canvas');
     const echartsEl = el.querySelector('#dp-cm-echarts');
 
-    if (S.modalEngine === 'echarts' && typeof echarts !== 'undefined') {
+    if (S.modalEngine === 'echarts') {
       canvasEl.style.display = 'none';
       echartsEl.style.display = '';
-      _renderModalECharts({ el: echartsEl, labels, data, ma, upper, lower, trendLine, median, w, color, m });
+      echartsEl.innerHTML = `<div style="display:flex;align-items:center;justify-content:center;height:100%;color:#94a3b8;font-size:13px">${t('chart_loading') || 'Loading…'}</div>`;
+      _ensureECharts().then(() => {
+        // If the modal was closed or switched to Chart.js while loading, bail out
+        const still = document.getElementById('dp-chart-modal');
+        if (!still || !still.classList.contains('open') || S.modalEngine !== 'echarts' || still.dataset.metric !== metric || (still.dataset.source || 'sale') !== source) return;
+        echartsEl.innerHTML = '';
+        _renderModalECharts({ el: echartsEl, labels, data, ma, upper, lower, trendLine, median, w, color, m });
+      }).catch(err => {
+        echartsEl.innerHTML = `<div style="padding:20px;color:#dc2626;font-size:12px">ECharts failed to load. Reverting to Chart.js.</div>`;
+        console.error('ECharts load failed:', err);
+        S.modalEngine = 'chartjs';
+        el.querySelectorAll('.cm-engine').forEach(btn => btn.classList.toggle('active', btn.dataset.dpEngine === 'chartjs'));
+        canvasEl.style.display = '';
+        echartsEl.style.display = 'none';
+        _renderModalChartJs({ ctx: canvasEl, labels, data, ma, upper, lower, trendLine, median, w, color, m, grnLine, redLine, grnFill, redFill });
+      });
     } else {
       canvasEl.style.display = '';
       echartsEl.style.display = 'none';
       _renderModalChartJs({ ctx: canvasEl, labels, data, ma, upper, lower, trendLine, median, w, color, m, grnLine, redLine, grnFill, redFill });
     }
+  }
+
+  let _echartsPromise = null;
+  function _ensureECharts() {
+    if (typeof echarts !== 'undefined') return Promise.resolve();
+    if (_echartsPromise) return _echartsPromise;
+    _echartsPromise = new Promise((resolve, reject) => {
+      const existing = document.querySelector('script[data-dp-echarts]');
+      if (existing) {
+        existing.addEventListener('load', () => resolve(), { once: true });
+        existing.addEventListener('error', reject, { once: true });
+        return;
+      }
+      const s = document.createElement('script');
+      s.src = 'https://cdn.jsdelivr.net/npm/echarts@5.5.1/dist/echarts.min.js';
+      s.crossOrigin = 'anonymous';
+      s.integrity = 'sha384-Mx5lkUEQPM1pOJCwFtUICyX45KNojXbkWdYhkKUKsbv391mavbfoAmONbzkgYPzR';
+      s.setAttribute('data-dp-echarts', '1');
+      s.onload = () => resolve();
+      s.onerror = reject;
+      document.head.appendChild(s);
+    });
+    return _echartsPromise;
   }
 
   function _renderModalChartJs({ ctx, labels, data, ma, upper, lower, trendLine, median, w, color, m, grnLine, redLine, grnFill, redFill }) {
