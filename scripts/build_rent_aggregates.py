@@ -364,6 +364,55 @@ for _, row in con.execute(_VIN_SQL.format(sel_k='', grp_k='', grp_all='1',
 print(f'  vintage: {sum(1 for e in out.values() if e.get("vintage"))} districts',
       file=sys.stderr)
 
+# ─── Vintage paths: the landlord's journey per cohort year ───────────────
+# «Сдаю с года N — какую ренту мой дом приносил дальше»: freeze the set of
+# projects renting in year Y, track THEIR median AED/m²/yr since. Yearly
+# for the inline fan, monthly (even cohorts) for the fullscreen modal.
+print('vintage paths...', file=sys.stderr)
+_PATH_SQL = """
+WITH s AS (
+  SELECT {sel_k} proj, YEAR(d::DATE) AS y, {period_col} AS pd, amt/sqm AS rp
+  FROM r
+  WHERE TRIM(sub) IN ('Flat','Studio') AND proj != ''
+    AND sqm BETWEEN 10 AND 1000 AND amt > 0
+    AND d::DATE <= current_date
+),
+seed AS (
+  SELECT DISTINCT {sel_k} proj, y AS cy FROM s
+  WHERE y BETWEEN 2010 AND YEAR(current_date) - 1 {cohort_filter}
+)
+SELECT {sel_pk} seed.cy, s.pd, COUNT(*) AS n, ROUND(MEDIAN(s.rp)) AS med
+FROM s JOIN seed ON {join_cond} seed.proj = s.proj AND s.y >= seed.cy
+GROUP BY {grp} HAVING COUNT(*) >= {min_n}
+ORDER BY seed.cy, s.pd
+"""
+def _bake_paths(field, period_col, cohort_filter, min_n):
+    rows = con.execute(_PATH_SQL.format(
+        sel_k='k,', sel_pk='s.k,', join_cond='seed.k = s.k AND',
+        grp='1, 2, 3', period_col=period_col, cohort_filter=cohort_filter,
+        min_n=min_n)).fetchdf()
+    n_pts = 0
+    for _, row in rows.iterrows():
+        e = out.get(row['k'])
+        if e is None:
+            continue
+        e.setdefault(field, {}).setdefault(str(int(row['cy'])), []).append(
+            {'d': str(row['pd']), 'n': safe_int(row['n']), 'med': safe_int(row['med'])})
+        n_pts += 1
+    dub = {}
+    for _, row in con.execute(_PATH_SQL.format(
+            sel_k='', sel_pk='', join_cond='', grp='1, 2',
+            period_col=period_col, cohort_filter=cohort_filter,
+            min_n=min_n)).fetchdf().iterrows():
+        dub.setdefault(str(int(row['cy'])), []).append(
+            {'d': str(row['pd']), 'n': safe_int(row['n']), 'med': safe_int(row['med'])})
+    print(f'  {field}: {n_pts:,} points', file=sys.stderr)
+    return dub
+
+dubai_paths   = _bake_paths('vintage_paths', 'YEAR(d::DATE)', '', 20)
+dubai_paths_m = _bake_paths('vintage_paths_m', "strftime(d::DATE, '%Y-%m')",
+                            'AND y % 2 = 0', 10)
+
 # ─── __dubai__ overview ──────────────────────────────────────────
 print('__dubai__...', file=sys.stderr)
 d_tot = con.execute("""
@@ -443,6 +492,8 @@ dubai = {
                       'ppsqm': safe_int(row['ppsqm'])}
                     for _, row in d_tl.iterrows()],
     'vintage':     dubai_vintage,
+    'vintage_paths':   dubai_paths,
+    'vintage_paths_m': dubai_paths_m,
     'trend_pct':   0,
 }
 series = [p for p in dubai['timeline'] if p['d'] <= TODAY_MONTH]
