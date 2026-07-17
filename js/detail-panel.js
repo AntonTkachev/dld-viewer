@@ -410,6 +410,13 @@
         <div class="room-chips" id="dp-room-chips">${renderRoomChips(a)}</div>
         <div style="display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px">
           <div>
+            <div style="font-size:11px;color:#666;margin-bottom:2px">${t("sp_subsection_avg")}</div>
+            <div class="dp-chart" style="height:180px">
+              <button class="chart-expand-btn" type="button" data-dp-expand="avg" title="${t('chart_expand')}" aria-label="${t('chart_expand')}">⛶</button>
+              <canvas id="ch-timeline-avg"></canvas>
+            </div>
+          </div>
+          <div>
             <div style="font-size:11px;color:#666;margin-bottom:2px">${t("sp_subsection_count")}</div>
             <div class="dp-chart" style="height:180px">
               <button class="chart-expand-btn" type="button" data-dp-expand="count" title="${t('chart_expand')}" aria-label="${t('chart_expand')}">⛶</button>
@@ -421,13 +428,6 @@
             <div class="dp-chart" style="height:180px">
               <button class="chart-expand-btn" type="button" data-dp-expand="volume" title="${t('chart_expand')}" aria-label="${t('chart_expand')}">⛶</button>
               <canvas id="ch-timeline-volume"></canvas>
-            </div>
-          </div>
-          <div>
-            <div style="font-size:11px;color:#666;margin-bottom:2px">${t("sp_subsection_avg")}</div>
-            <div class="dp-chart" style="height:180px">
-              <button class="chart-expand-btn" type="button" data-dp-expand="avg" title="${t('chart_expand')}" aria-label="${t('chart_expand')}">⛶</button>
-              <canvas id="ch-timeline-avg"></canvas>
             </div>
           </div>
         </div>
@@ -644,20 +644,25 @@
   function renderTimelineCharts(a) {
     const series = periodSlice(roomTimelineFor(a));
     const labels = series.map(p => p.d.length === 10 ? p.d.slice(5) : p.d);
-    const color  = ROOM_COLORS[S.roomFilter] || '#1d4ed8';
-    const bg = rgba(color, .14);
+    const baseColor = ROOM_COLORS[S.roomFilter] || '#1d4ed8';
+    // Per-metric colors: avg=indigo (price), count=sky (activity), volume=teal (accumulated money)
+    // When a specific room is selected, all three inherit that room's hue for consistency.
+    const perMetric = (S.roomFilter && S.roomFilter !== 'all')
+      ? { avg: baseColor, count: baseColor, volume: baseColor }
+      : { avg: '#4f46e5', count: '#0284c7', volume: '#0d9488' };
 
     S.chartData = {
       labels: labels.slice(),
       fullLabels: series.map(p => p.d),
-      count:  { values: series.map(p => p.n),                                    fmtY: v => v,        fmtTip: v => fmtInt(v) + ' ' + t('ch_count').toLowerCase(), label: t('sp_subsection_count') },
-      volume: { values: series.map(p => p.vol || 0),                             fmtY: fmtAxisAed,    fmtTip: fmtAedDP,                                                label: t('sp_subsection_volume') },
-      avg:    { values: series.map(p => p.n ? Math.round(p.vol / p.n) : 0),      fmtY: fmtAxisAed,    fmtTip: fmtAedDP,                                                label: t('sp_subsection_avg') },
-      color,
+      count:  { values: series.map(p => p.n),                                    fmtY: v => v,        fmtTip: v => fmtInt(v) + ' ' + t('ch_count').toLowerCase(), label: t('sp_subsection_count'),  color: perMetric.count },
+      volume: { values: series.map(p => p.vol || 0),                             fmtY: fmtAxisAed,    fmtTip: fmtAedDP,                                                label: t('sp_subsection_volume'), color: perMetric.volume },
+      avg:    { values: series.map(p => p.n ? Math.round(p.vol / p.n) : 0),      fmtY: fmtAxisAed,    fmtTip: fmtAedDP,                                                label: t('sp_subsection_avg'),    color: perMetric.avg },
+      color: baseColor,
     };
-    const mkChart = (id, data, fmtY, tooltipFmt) => {
+    const mkChart = (id, data, fmtY, tooltipFmt, color) => {
       const ctx = document.getElementById(id);
       if (!ctx) return;
+      const bg = rgba(color, .14);
       const ch = new Chart(ctx, {
         type:'line',
         data:{ labels, datasets:[{ data, borderColor:color, backgroundColor:bg, tension:.3, pointRadius:1.5, fill:true }]},
@@ -674,9 +679,9 @@
       S.activeCharts.push(ch);
       S.timelineCharts.push(ch);
     };
-    mkChart('ch-timeline-count',  S.chartData.count.values,  S.chartData.count.fmtY,  S.chartData.count.fmtTip);
-    mkChart('ch-timeline-volume', S.chartData.volume.values, S.chartData.volume.fmtY, S.chartData.volume.fmtTip);
-    mkChart('ch-timeline-avg',    S.chartData.avg.values,    S.chartData.avg.fmtY,    S.chartData.avg.fmtTip);
+    mkChart('ch-timeline-avg',    S.chartData.avg.values,    S.chartData.avg.fmtY,    S.chartData.avg.fmtTip,    S.chartData.avg.color);
+    mkChart('ch-timeline-count',  S.chartData.count.values,  S.chartData.count.fmtY,  S.chartData.count.fmtTip,  S.chartData.count.color);
+    mkChart('ch-timeline-volume', S.chartData.volume.values, S.chartData.volume.fmtY, S.chartData.volume.fmtTip, S.chartData.volume.color);
   }
 
   function _maWindow(n) {
@@ -761,7 +766,7 @@
     const stdAll = Math.sqrt(data.reduce((s,v)=>s+(v-meanVal)**2,0)/data.length);
     const vol = meanVal ? (stdAll / meanVal) * 100 : null;
 
-    const color = cd.color || '#1d4ed8';
+    const color = m.color || cd.color || '#1d4ed8';
     const grnLine = 'rgba(34,197,94,1)';
     const redLine = 'rgba(239,68,68,1)';
     const grnFill = 'rgba(34,197,94,0.16)';
