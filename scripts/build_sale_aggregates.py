@@ -586,6 +586,46 @@ print(f'  vintage paths: {n_vp:,} points across '
       f'{sum(1 for e in out.values() if e.get("vintage_paths"))} districts',
       file=sys.stderr)
 
+# Monthly variant for the fullscreen modal (even-year cohorts only — the
+# inline fan shows the same subset, and monthly × all cohorts would double
+# the payload for lines nobody draws).
+_PATH_M_SQL = """
+WITH s AS (
+  SELECT {sel_k} bn, YEAR(d::DATE) AS y, strftime(d::DATE, '%Y-%m') AS m,
+         val/sqm AS ppsqm
+  FROM tx
+  WHERE pt = 'Unit' AND reg = 'Existing Properties' AND bn IS NOT NULL
+    AND rooms IN ('Studio','1 B/R','2 B/R','3 B/R','4 B/R','PENTHOUSE')
+    AND sqm BETWEEN 10 AND 1000
+    AND val/sqm BETWEEN 2000 AND 100000
+),
+seed AS (
+  SELECT DISTINCT {sel_k} bn, y AS cy FROM s
+  WHERE y BETWEEN 2008 AND YEAR(current_date) - 1 AND y % 2 = 0
+)
+SELECT {sel_pk} seed.cy, s.m, COUNT(*) AS n, ROUND(MEDIAN(s.ppsqm)) AS med
+FROM s JOIN seed ON {join_cond} seed.bn = s.bn AND s.y >= seed.cy
+GROUP BY {grp} HAVING COUNT(*) >= 5
+ORDER BY seed.cy, s.m
+"""
+paths_m = q(_PATH_M_SQL.format(sel_k='k,', sel_pk='s.k,',
+                               join_cond='seed.k = s.k AND', grp='1, 2, 3'))
+n_vpm = 0
+for _, r in paths_m.iterrows():
+    e = out.get(r['k'])
+    if e is None:
+        continue
+    vp = e.setdefault('vintage_paths_m', {})
+    vp.setdefault(str(int(r['cy'])), []).append(
+        {'d': r['m'], 'n': safe_int(r['n']), 'med': safe_int(r['med'])})
+    n_vpm += 1
+dubai_paths_m = {}
+for _, r in q(_PATH_M_SQL.format(sel_k='', sel_pk='',
+                                 join_cond='', grp='1, 2')).iterrows():
+    dubai_paths_m.setdefault(str(int(r['cy'])), []).append(
+        {'d': r['m'], 'n': safe_int(r['n']), 'med': safe_int(r['med'])})
+print(f'  vintage paths monthly: {n_vpm:,} points', file=sys.stderr)
+
 # ─── __dubai__ ────────────────────────────────────────────────
 print('__dubai__...', file=sys.stderr)
 d_tot = con.execute(f"""
@@ -624,6 +664,7 @@ dubai = {
     'timeline_by_rooms':{k:[] for k in ROOM_ORDER},
     'vintage': dubai_vintage,
     'vintage_paths': dubai_paths,
+    'vintage_paths_m': dubai_paths_m,
     'trend_pct': 0,
 }
 
