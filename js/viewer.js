@@ -1366,12 +1366,13 @@ function _buildMaskRow(id, mask) {
          </div>
        </div>`;
   }
+  const desc = t(mask.descKey);
+  const descAttr = desc ? ` data-tip="${desc.replace(/"/g, '&quot;')}"` : '';
   row.innerHTML = `
     <div class="mask-row-head">
       <div class="mask-row-radio"></div>
-      <div class="mask-row-title">${t(mask.labelKey)}</div>
+      <div class="mask-row-title"${descAttr}>${t(mask.labelKey)}<span class="mask-row-hint" aria-hidden="true">?</span></div>
     </div>
-    <div class="mask-row-desc">${t(mask.descKey)}</div>
     ${periodHTML}
   `;
   row.addEventListener('click', e => {
