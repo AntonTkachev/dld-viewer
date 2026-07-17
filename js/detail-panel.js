@@ -410,14 +410,97 @@
   }
   function renderVintageSection(rec, kind) {
     if (!_vintageBuckets(rec)) return '';
+    const hasTl = kind === 'sale' && rec.vintage_timeline;
+    const bars = `
+          <div>
+            ${hasTl ? `<div style="font-size:11px;color:#666;margin-bottom:2px">${t('vin_now')}</div>` : ''}
+            <div class="dp-chart" style="height:170px"><canvas id="ch-vintage-${kind}"></canvas></div>
+          </div>`;
+    const tl = hasTl ? `
+          <div>
+            <div style="font-size:11px;color:#666;margin-bottom:2px">${t('vin_history')}</div>
+            <div class="dp-chart" style="height:170px"><canvas id="ch-vintage-tl"></canvas></div>
+          </div>` : '';
     return `
       <div class="dp-section">
         <h3>${t('dp_section_vintage')}</h3>
-        <div class="dp-chart" style="height:170px">
-          <canvas id="ch-vintage-${kind}"></canvas>
+        <div style="display:grid;grid-template-columns:${hasTl ? '1fr 2fr' : '1fr'};gap:10px">
+          ${bars}${tl}
         </div>
         <div style="font-size:11px;color:#666;margin-top:4px">${t('vintage_hint')}</div>
       </div>`;
+  }
+  function _vintageTimelineSeries(a) {
+    const vt = a.vintage_timeline;
+    if (!vt) return null;
+    const room = vt[S.roomFilter] ? S.roomFilter : 'all';
+    const byB = vt[room];
+    if (!byB) return null;
+    const sliced = {};
+    const months = new Set();
+    for (const b of VINTAGE_ORDER) {
+      const s = periodSlice(byB[b] || []);
+      if (s.length) {
+        sliced[b] = new Map(s.map(p => [p.d, p]));
+        s.forEach(p => months.add(p.d));
+      }
+    }
+    const keys = VINTAGE_ORDER.filter(b => sliced[b]);
+    if (keys.length < 2) return null;
+    const ref = [...months].sort();
+    const bs = ref.length <= 24 ? 1 : ref.length <= 48 ? 3 : ref.length <= 96 ? 6 : 12;
+    const labels = [];
+    const data = {};
+    keys.forEach(b => { data[b] = []; });
+    for (let i = 0; i < ref.length; i += bs) {
+      const slab = ref.slice(i, i + bs);
+      labels.push(bs === 1 ? slab[0].slice(2) : bs === 12 ? slab[0].slice(0, 4) : slab[0].slice(2));
+      for (const b of keys) {
+        let n = 0, wsum = 0;
+        for (const m of slab) {
+          const p = sliced[b].get(m);
+          if (p) { n += p.n; wsum += p.med * p.n; }
+        }
+        data[b].push(n ? Math.round(wsum / n) : null);
+      }
+    }
+    return { labels, data, keys };
+  }
+  function renderVintageTimeline(a) {
+    const ctx = document.getElementById('ch-vintage-tl');
+    if (!ctx) return;
+    const ser = _vintageTimelineSeries(a);
+    if (!ser) return;
+    const names = { v0_3: t('vin_new'), v4_8: t('vin_mid'), v9p: t('vin_old') };
+    const ch = new Chart(ctx, {
+      type: 'line',
+      data: {
+        labels: ser.labels,
+        datasets: ser.keys.map(b => ({
+          label: names[b],
+          data: ser.data[b],
+          borderColor: VINTAGE_COLORS[b],
+          backgroundColor: 'transparent',
+          borderWidth: 1.8,
+          pointRadius: 0.5,
+          tension: 0.3,
+          spanGaps: true,
+        })),
+      },
+      options: {
+        responsive: true, maintainAspectRatio: false,
+        interaction: { intersect: false, mode: 'index' },
+        plugins: {
+          legend: { display: true, position: 'bottom', labels: { boxWidth: 12, font: { size: 10 } } },
+          tooltip: { callbacks: { label: c => ' ' + c.dataset.label + ': ' + fmtInt(c.parsed.y) + ' AED/м²' } },
+        },
+        scales: {
+          x: { ticks: { font: { size: 10 }, maxRotation: 0, autoSkip: true, maxTicksLimit: 10 } },
+          y: { ticks: { font: { size: 10 } } },
+        },
+      },
+    });
+    S.activeCharts.push(ch);
   }
   function renderVintageChart(rec, kind) {
     const ctx = document.getElementById('ch-vintage-' + kind);
@@ -1497,6 +1580,7 @@
     renderTimelineCharts(a);
     try { renderRoomBreakdownChart(a); } catch(e) { console.error('rooms chart:', e); }
     try { renderVintageChart(a, 'sale'); } catch(e) { console.error('vintage chart:', e); }
+    try { renderVintageTimeline(a); } catch(e) { console.error('vintage timeline:', e); }
     try { renderInsightDonuts(a);    } catch(e) { console.error('donuts:', e); }
   }
 
