@@ -714,7 +714,13 @@
     const el = document.getElementById('dp-chart-modal');
     if (!el) return;
     if (S.modalChart) { S.modalChart.destroy(); S.modalChart = null; }
-    if (S.echartsInstance) { S.echartsInstance.dispose(); S.echartsInstance = null; }
+    if (S.echartsInstance) {
+      if (S.echartsInstance._measureTeardown) S.echartsInstance._measureTeardown();
+      S.echartsInstance.dispose();
+      S.echartsInstance = null;
+    }
+    const overlay = document.getElementById('dp-cm-measure-overlay');
+    if (overlay) overlay.remove();
     el.classList.remove('open');
     delete el.dataset.metric;
   }
@@ -771,7 +777,13 @@
     el.querySelector('#dp-cm-badges').innerHTML = badges.join('');
 
     if (S.modalChart) { S.modalChart.destroy(); S.modalChart = null; }
-    if (S.echartsInstance) { S.echartsInstance.dispose(); S.echartsInstance = null; }
+    if (S.echartsInstance) {
+      if (S.echartsInstance._measureTeardown) S.echartsInstance._measureTeardown();
+      S.echartsInstance.dispose();
+      S.echartsInstance = null;
+    }
+    const _oldOverlay = document.getElementById('dp-cm-measure-overlay');
+    if (_oldOverlay) _oldOverlay.remove();
     el.classList.add('open');
 
     // Sync engine toggle UI
@@ -977,6 +989,185 @@
       el._echartsResizeHooked = true;
       window.addEventListener('resize', () => S.echartsInstance && S.echartsInstance.resize());
     }
+
+    _installEChartsMeasureTool(inst, { labels, data, color, m });
+  }
+
+  function _installEChartsMeasureTool(inst, { labels, data, color, m }) {
+    let anchorIdx = null;
+    let currentIdx = null;
+    let dragging = false;
+
+    const clampIdx = i => Math.max(0, Math.min(labels.length - 1, i));
+
+    const idxAt = (offsetX, offsetY) => {
+      if (!inst.containPixel({ gridIndex: 0 }, [offsetX, offsetY])) return null;
+      const gridRect = inst.getModel().getComponent('grid', 0).coordinateSystem.getRect();
+      if (!gridRect || labels.length < 2) return null;
+      const t = (offsetX - gridRect.x) / gridRect.width;
+      const idx = t * (labels.length - 1);
+      if (!Number.isFinite(idx)) return null;
+      return clampIdx(Math.round(idx));
+    };
+
+    const paint = () => {
+      if (anchorIdx == null) {
+        inst.setOption({ graphic: [] }, { replaceMerge: 'graphic' });
+        return;
+      }
+      const grid = inst.getModel().getComponent('grid', 0).coordinateSystem.getRect();
+      const gTop = grid.y;
+      const gBottom = grid.y + grid.height;
+
+      const idxToPx = i => grid.x + (labels.length > 1 ? (i / (labels.length - 1)) * grid.width : grid.width / 2);
+      const yToPx = v => {
+        const px = inst.convertToPixel({ yAxisIndex: 0 }, v);
+        return Number.isFinite(px) ? px : null;
+      };
+
+      const aPx = idxToPx(anchorIdx);
+      const aVal = data[anchorIdx];
+      const aValPx = Number.isFinite(aVal) ? yToPx(aVal) : null;
+
+      const cIdx = currentIdx != null ? currentIdx : anchorIdx;
+      const cPx = idxToPx(cIdx);
+      const cVal = data[cIdx];
+      const cValPx = Number.isFinite(cVal) ? yToPx(cVal) : null;
+
+      const isRange = cIdx !== anchorIdx;
+      const dx = cPx - aPx;
+      const delta = (Number.isFinite(aVal) && Number.isFinite(cVal)) ? cVal - aVal : null;
+      const pctDelta = (delta != null && aVal) ? (delta / aVal) * 100 : null;
+      const monthsDelta = cIdx - anchorIdx;
+      const deltaColor = delta == null ? '#334155' : (delta >= 0 ? '#16a34a' : '#dc2626');
+      const deltaBg = delta == null ? '#f1f5f9' : (delta >= 0 ? '#dcfce7' : '#fee2e2');
+
+      // Info panel content
+      const fmt = v => Number.isFinite(v) ? m.fmtTip(Math.round(v)) : '—';
+      const sign = v => v == null ? '' : (v > 0 ? '+' : '');
+      const lines = [];
+      lines.push(`<div style="opacity:.7;font-size:10px">${t('ch_measure_from') || 'От'}</div>`);
+      lines.push(`<div style="font-weight:600">${labels[anchorIdx]}</div>`);
+      lines.push(`<div style="font-variant-numeric:tabular-nums">${fmt(aVal)}</div>`);
+      if (isRange) {
+        lines.push(`<div style="opacity:.7;font-size:10px;margin-top:6px">${t('ch_measure_to') || 'До'}</div>`);
+        lines.push(`<div style="font-weight:600">${labels[cIdx]}</div>`);
+        lines.push(`<div style="font-variant-numeric:tabular-nums">${fmt(cVal)}</div>`);
+        if (delta != null) {
+          lines.push(`<div style="margin-top:8px;padding:4px 6px;border-radius:4px;background:${deltaBg};color:${deltaColor};font-weight:600;font-variant-numeric:tabular-nums">
+            ${sign(delta)}${fmt(delta)} (${sign(pctDelta)}${pctDelta.toFixed(1)}%)
+          </div>`);
+        }
+        const monthsLabel = Math.abs(monthsDelta) === 1
+          ? (t('ch_measure_month') || 'мес.')
+          : (t('ch_measure_months') || 'мес.');
+        lines.push(`<div style="opacity:.65;font-size:10px;margin-top:4px">Δ ${Math.abs(monthsDelta)} ${monthsLabel}</div>`);
+      } else {
+        lines.push(`<div style="opacity:.55;font-size:10px;margin-top:8px;line-height:1.4">${t('ch_measure_hint') || 'Тяните курсор в сторону для сравнения'}</div>`);
+      }
+
+      // Position info panel — prefer right side if there's room, else left
+      const chartW = inst.getWidth();
+      const panelW = 200;
+      const preferRight = Math.max(aPx, cPx) < chartW - panelW - 20;
+      const panelX = preferRight ? Math.max(aPx, cPx) + 12 : Math.min(aPx, cPx) - panelW - 12;
+      const panelY = gTop + 8;
+
+      const graphics = [
+        // Span rectangle (only when range)
+        ...(isRange ? [{
+          type: 'rect',
+          shape: { x: Math.min(aPx, cPx), y: gTop, width: Math.abs(dx), height: gBottom - gTop },
+          style: { fill: 'rgba(29,78,216,0.06)', stroke: 'transparent' },
+          silent: true, z: 5,
+        }] : []),
+        // Anchor vertical line
+        {
+          type: 'line',
+          shape: { x1: aPx, y1: gTop, x2: aPx, y2: gBottom },
+          style: { stroke: color, lineWidth: 1.5, lineDash: [4, 3] },
+          silent: true, z: 6,
+        },
+        // Anchor value dot
+        ...(aValPx != null ? [{
+          type: 'circle',
+          shape: { cx: aPx, cy: aValPx, r: 5 },
+          style: { fill: color, stroke: '#fff', lineWidth: 2 },
+          silent: true, z: 7,
+        }] : []),
+        // Current vertical line + dot (when different)
+        ...(isRange ? [
+          {
+            type: 'line',
+            shape: { x1: cPx, y1: gTop, x2: cPx, y2: gBottom },
+            style: { stroke: deltaColor, lineWidth: 1.5, lineDash: [4, 3] },
+            silent: true, z: 6,
+          },
+          ...(cValPx != null ? [{
+            type: 'circle',
+            shape: { cx: cPx, cy: cValPx, r: 5 },
+            style: { fill: deltaColor, stroke: '#fff', lineWidth: 2 },
+            silent: true, z: 7,
+          }] : []),
+        ] : []),
+      ];
+
+      inst.setOption({ graphic: graphics }, { replaceMerge: 'graphic' });
+      _paintMeasureHtml(inst, panelX, panelY, panelW, lines.join(''));
+    };
+
+    const zr = inst.getZr();
+
+    zr.on('mousedown', (e) => {
+      const idx = idxAt(e.offsetX, e.offsetY);
+      if (idx == null) return;
+      anchorIdx = idx;
+      currentIdx = idx;
+      dragging = true;
+      paint();
+    });
+
+    zr.on('mousemove', (e) => {
+      if (!dragging) return;
+      const idx = idxAt(e.offsetX, e.offsetY);
+      if (idx == null) return;
+      currentIdx = idx;
+      paint();
+    });
+
+    zr.on('mouseup', () => {
+      dragging = false;
+    });
+
+    zr.on('globalout', () => {
+      dragging = false;
+    });
+
+    // Store cleanup for engine switching
+    inst._measureTeardown = () => {
+      const overlay = document.getElementById('dp-cm-measure-overlay');
+      if (overlay) overlay.remove();
+      anchorIdx = null;
+      currentIdx = null;
+      dragging = false;
+    };
+  }
+
+  function _paintMeasureHtml(inst, x, y, w, html) {
+    const container = inst.getDom();
+    // ensure relative positioning so absolute child is anchored correctly
+    if (getComputedStyle(container).position === 'static') container.style.position = 'relative';
+    let overlay = document.getElementById('dp-cm-measure-overlay');
+    if (!overlay) {
+      overlay = document.createElement('div');
+      overlay.id = 'dp-cm-measure-overlay';
+      overlay.style.cssText = 'position:absolute;pointer-events:none;padding:10px;font-size:11px;line-height:1.35;color:#0f172a;box-sizing:border-box;background:rgba(255,255,255,0.98);border:1px solid #e2e8f0;border-radius:6px;box-shadow:0 3px 12px rgba(15,23,42,0.12)';
+      container.appendChild(overlay);
+    }
+    overlay.style.left = x + 'px';
+    overlay.style.top = y + 'px';
+    overlay.style.width = w + 'px';
+    overlay.innerHTML = html;
   }
 
   const DONUT_FALLBACK_COLORS = ['#1d4ed8','#0ea5e9','#22c55e','#eab308','#f97316','#ef4444','#a855f7','#ec4899','#14b8a6','#64748b'];
