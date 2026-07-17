@@ -45,10 +45,14 @@
 <div id="map"></div>
 <div id="table-view">
   <div class="tv-toolbar">
-    <div class="tv-pages" id="tv-pages"></div>
+    <div class="tv-mask-dd" id="tv-mask-dd">
+      <button class="tv-mask-btn" type="button" id="tv-mask-btn">
+        <span class="tv-mask-k" id="tv-mask-btn-label">Показатель</span><span class="tv-mask-current" id="tv-mask-current">—</span><span class="tv-mask-caret">▾</span>
+      </button>
+      <div class="tv-mask-menu" id="tv-mask-menu"></div>
+    </div>
     <div class="tv-periods" id="tv-periods"></div>
     <input id="tv-search" type="text" placeholder="Поиск..." autocomplete="off" spellcheck="false">
-    <span class="tv-count" id="tv-count"></span>
   </div>
   <div class="tv-hint" id="tv-hint"></div>
   <div class="tv-scroll"><table id="tv-table"></table></div>
