@@ -21,6 +21,7 @@ title/lede so the page doesn't look like thin/duplicate content.
 Currently runs only for `business bay` — flip DISTRICTS to expand.
 """
 import datetime
+import hashlib
 import json
 import os
 import re
@@ -1438,26 +1439,28 @@ def main():
                     continue
                 period_aggs = tx_periods if mode == 'sale' else rents_periods
 
-                # data.json is shared across languages, lives under the RU
-                # canonical path. Only the RU pass writes it.
+                # Build data.json bundle once per (key, mode) — shared across
+                # all language passes. Hash it for cache-busting the DATA_URL.
+                free_rec, premium_rec = split_tiers(base_rec)
+                mode_key = 'sales' if mode == 'sale' else 'rent'
+                bundle = {mode_key: free_rec}
+                if premium_rec:
+                    bundle[mode_key + '_premium'] = premium_rec
+                bundle_bytes = json.dumps(
+                    bundle, ensure_ascii=False, separators=(',', ':')).encode()
+                data_hash = hashlib.md5(bundle_bytes).hexdigest()[:8]
+
+                # data.json lives at the language-neutral root path. Only the
+                # RU pass writes it (all languages share one file).
                 if lang == 'ru':
                     mode_dir_ru = os.path.join(ROOT, prefix, slug)
                     os.makedirs(mode_dir_ru, exist_ok=True)
-                    # Two-tier shape: `<mode>` = free fields (forever-public,
-                    # for SEO), `<mode>_premium` = paid-tier fields. Future
-                    # auth gate strips the `_premium` block server-side for
-                    # un-paid users; the renderer treats it as optional.
-                    free_rec, premium_rec = split_tiers(base_rec)
-                    mode_key = 'sales' if mode == 'sale' else 'rent'
-                    bundle = {mode_key: free_rec}
-                    if premium_rec:
-                        bundle[mode_key + '_premium'] = premium_rec
                     json_path = os.path.join(mode_dir_ru, 'data.json')
-                    with open(json_path, 'w', encoding='utf-8') as f:
-                        json.dump(bundle, f, ensure_ascii=False, separators=(',', ':'))
+                    with open(json_path, 'wb') as f:
+                        f.write(bundle_bytes)
 
                 bu = base_path(mode, slug, lang)
-                data_u = data_url(mode, slug)
+                data_u = data_url(mode, slug) + '?v=' + data_hash
                 mode_dir = os.path.join(out_root(lang), prefix, slug)
                 os.makedirs(mode_dir, exist_ok=True)
 
