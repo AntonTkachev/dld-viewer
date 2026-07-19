@@ -262,17 +262,17 @@
   }
   .tv-toolbar{display:flex;align-items:center;flex-wrap:nowrap;gap:8px 10px;padding:9px 14px;border-bottom:1px solid #e5e7eb;flex-shrink:0;background:#fff;min-width:0}
   .tv-hint{font-size:11px;color:#64748b;padding:5px 14px;border-bottom:1px solid #f1f5f9;background:#fafbfc;flex-shrink:0;line-height:1.35}
-  .tv-mask-dd{position:relative;flex-shrink:0}
+  .tv-mask-dd,.tv-period-dd{position:relative;flex-shrink:0}
   .tv-mask-btn{display:inline-flex;align-items:center;gap:6px;padding:4px 10px;border:1px solid #d6dde6;background:#fff;color:#374151;font-family:inherit;font-size:11.5px;font-weight:600;border-radius:6px;cursor:pointer;white-space:nowrap;transition:background .12s,border-color .12s,color .12s}
   .tv-mask-btn:hover{background:#f1f5fb;border-color:#9bb6e2}
-  .tv-mask-dd.open .tv-mask-btn{background:#eef3fc;border-color:#1d4ed8;color:#1d4ed8}
+  .tv-mask-dd.open .tv-mask-btn,.tv-period-dd.open .tv-mask-btn{background:#eef3fc;border-color:#1d4ed8;color:#1d4ed8}
   .tv-mask-btn .tv-mask-k{color:#888;font-weight:500}
   .tv-mask-btn .tv-mask-current{background:#f0f3f6;color:#0f172a;padding:1px 7px;border-radius:10px;font-weight:600}
-  .tv-mask-dd.open .tv-mask-btn .tv-mask-current{background:#dbe4f7;color:#1d4ed8}
+  .tv-mask-dd.open .tv-mask-btn .tv-mask-current,.tv-period-dd.open .tv-mask-btn .tv-mask-current{background:#dbe4f7;color:#1d4ed8}
   .tv-mask-btn .tv-mask-caret{font-size:10px;color:#999;transition:transform .12s}
-  .tv-mask-dd.open .tv-mask-btn .tv-mask-caret{color:#1d4ed8;transform:rotate(180deg)}
+  .tv-mask-dd.open .tv-mask-btn .tv-mask-caret,.tv-period-dd.open .tv-mask-btn .tv-mask-caret{color:#1d4ed8;transform:rotate(180deg)}
   .tv-mask-menu{display:none;position:absolute;top:calc(100% + 6px);inset-inline-start:0;z-index:1300;min-width:260px;max-width:360px;max-height:calc(100vh - 120px);overflow-y:auto;overscroll-behavior:contain;background:#fff;border:1px solid #e5e7eb;border-radius:8px;box-shadow:0 10px 30px rgba(15,23,42,.18);padding:6px}
-  .tv-mask-dd.open .tv-mask-menu{display:block}
+  .tv-mask-dd.open .tv-mask-menu,.tv-period-dd.open .tv-mask-menu{display:block}
   .tv-mask-item{display:flex;align-items:center;gap:8px;padding:7px 10px;border-radius:6px;text-decoration:none;color:#1f2933;font-size:12.5px;font-weight:600;cursor:pointer;transition:background .12s}
   .tv-mask-item:hover:not(.active){background:#f4f6f9}
   .tv-mask-item.active{background:#eef3fc;color:#1d4ed8;cursor:default}
@@ -284,14 +284,6 @@
   .tv-mask-item-title:hover .tv-mask-item-hint{background:#94a3b8;color:#fff}
   .tv-mask-item-title[data-tip]:hover::after{content:attr(data-tip);position:absolute;top:calc(100% + 8px);inset-inline-start:0;background:#0f172a;color:#f1f5f9;padding:8px 10px;border-radius:6px;font-size:11.5px;font-weight:400;line-height:1.4;white-space:normal;width:max-content;max-width:300px;z-index:10000;pointer-events:none;box-shadow:0 6px 20px rgba(15,23,42,.25)}
   .tv-mask-item-title[data-tip]:hover::before{content:'';position:absolute;top:calc(100% + 3px);inset-inline-start:14px;border:5px solid transparent;border-bottom-color:#0f172a;z-index:10001}
-  .tv-periods{display:flex;gap:3px;flex-wrap:nowrap;align-items:center;min-width:0;flex-shrink:1;overflow-x:auto;overscroll-behavior-x:contain;scrollbar-width:thin}
-  .tv-periods::-webkit-scrollbar{height:4px}
-  .tv-periods::-webkit-scrollbar-thumb{background:#cbd5e1;border-radius:2px}
-  .tv-periods > *{flex-shrink:0}
-  .tv-periods-k{font-size:11px;color:#888;margin-right:2px}
-  .tv-period-chip{background:#fff;border:1px solid #d6dde6;color:#374151;padding:3px 9px;border-radius:12px;font-size:11.5px;font-weight:500;cursor:pointer;font-family:inherit;transition:background .12s,border-color .12s,color .12s}
-  .tv-period-chip:hover:not(.active){background:#f1f5fb;border-color:#9bb6e2}
-  .tv-period-chip.active{background:#1d4ed8;border-color:#1d4ed8;color:#fff;cursor:default}
   #tv-search{flex:0 1 200px;min-width:110px;padding:5px 10px;border:1px solid #d6dde6;border-radius:6px;font-size:12.5px;font-family:inherit}
   #tv-search:focus{outline:none;border-color:#1d4ed8;box-shadow:0 0 0 2px rgba(29,78,216,0.15)}
   #view-switch{position:fixed;top:14px;inset-inline-end:14px;z-index:1200;background:#1d4ed8;color:#fff;border:0;border-radius:6px;padding:7px 14px;font-size:12.5px;font-weight:600;cursor:pointer;font-family:inherit;box-shadow:0 2px 6px rgba(0,0,0,.15)}
