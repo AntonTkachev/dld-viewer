@@ -400,8 +400,8 @@
     });
   }
 
-  const VINTAGE_ORDER = ['v0_3', 'v4_8', 'v9p'];
-  const VINTAGE_COLORS = { v0_3: '#16a34a', v4_8: '#0ea5e9', v9p: '#64748b' };
+  const VINTAGE_ORDER = ['v0_1', 'v2_4', 'v5_10', 'v11p'];
+  const VINTAGE_COLORS = { v0_1: '#16a34a', v2_4: '#0ea5e9', v5_10: '#f59e0b', v11p: '#64748b' };
   function _vintageBuckets(rec) {
     const v = rec && rec.vintage;
     if (!v) return null;
@@ -410,17 +410,6 @@
   }
   function renderVintageSection(rec, kind) {
     if (!_vintageBuckets(rec)) return '';
-    const hasTl = kind === 'sale' && rec.vintage_timeline;
-    const bars = `
-          <div>
-            ${hasTl ? `<div style="font-size:11px;color:#666;margin-bottom:2px">${t('vin_now')}</div>` : ''}
-            <div class="dp-chart" style="height:170px"><canvas id="ch-vintage-${kind}"></canvas></div>
-          </div>`;
-    const tl = hasTl ? `
-          <div>
-            <div style="font-size:11px;color:#666;margin-bottom:2px">${t('vin_history')}</div>
-            <div class="dp-chart" style="height:170px"><canvas id="ch-vintage-tl"></canvas></div>
-          </div>` : '';
     const paths = (rec.vintage_paths && Object.keys(rec.vintage_paths).length >= 2) ? `
         <div style="margin-top:10px">
           <div style="font-size:11px;color:#666;margin-bottom:2px">${t(kind === 'rent' ? 'vin_paths_rent' : 'vin_paths')}</div>
@@ -432,9 +421,7 @@
     return `
       <div class="dp-section">
         <h3>${t('dp_section_vintage')}</h3>
-        <div style="display:grid;grid-template-columns:${hasTl ? '1fr 2fr' : '1fr'};gap:10px">
-          ${bars}${tl}
-        </div>
+        <div class="dp-chart" style="height:170px"><canvas id="ch-vintage-${kind}"></canvas></div>
         ${paths}
         <div style="font-size:11px;color:#666;margin-top:4px">${t('vintage_hint')}</div>
       </div>`;
@@ -525,47 +512,11 @@
     }
     return { labels, data, keys };
   }
-  function renderVintageTimeline(a) {
-    const ctx = document.getElementById('ch-vintage-tl');
-    if (!ctx) return;
-    const ser = _vintageTimelineSeries(a);
-    if (!ser) return;
-    const names = { v0_3: t('vin_new'), v4_8: t('vin_mid'), v9p: t('vin_old') };
-    const ch = new Chart(ctx, {
-      type: 'line',
-      data: {
-        labels: ser.labels,
-        datasets: ser.keys.map(b => ({
-          label: names[b],
-          data: ser.data[b],
-          borderColor: VINTAGE_COLORS[b],
-          backgroundColor: 'transparent',
-          borderWidth: 1.8,
-          pointRadius: 0.5,
-          tension: 0.3,
-          spanGaps: true,
-        })),
-      },
-      options: {
-        responsive: true, maintainAspectRatio: false,
-        interaction: { intersect: false, mode: 'index' },
-        plugins: {
-          legend: { display: true, position: 'bottom', labels: { boxWidth: 12, font: { size: 10 } } },
-          tooltip: { callbacks: { label: c => ' ' + c.dataset.label + ': ' + fmtInt(c.parsed.y) + ' AED/м²' } },
-        },
-        scales: {
-          x: { ticks: { font: { size: 10 }, maxRotation: 0, autoSkip: true, maxTicksLimit: 10 } },
-          y: { ticks: { font: { size: 10 } } },
-        },
-      },
-    });
-    S.activeCharts.push(ch);
-  }
   function renderVintageChart(rec, kind) {
     const ctx = document.getElementById('ch-vintage-' + kind);
     const present = _vintageBuckets(rec);
     if (!ctx || !present) return;
-    const labels = { v0_3: t('vin_new'), v4_8: t('vin_mid'), v9p: t('vin_old') };
+    const labels = { v0_1: t('vin_0_1'), v2_4: t('vin_2_4'), v5_10: t('vin_5_10'), v11p: t('vin_11p') };
     const vals = present.map(b => rec.vintage[b].ppsqm);
     const ns   = present.map(b => rec.vintage[b].n);
     const base = rec.vintage[present[0]].ppsqm;
@@ -588,7 +539,7 @@
           tooltip: { callbacks: { label: c => {
             const i = c.dataIndex;
             const rel = base ? Math.round((vals[i] / base - 1) * 100) : 0;
-            const relTxt = i === 0 ? '' : ' · ' + (rel >= 0 ? '+' : '') + rel + '% ' + t('vin_vs_new');
+            const relTxt = i === 0 ? '' : ' · ' + (rel >= 0 ? '+' : '') + rel + '% vs ≤1 г.';
             return ' ' + fmtInt(vals[i]) + unit + ' · n=' + fmtInt(ns[i]) + relTxt;
           } } },
         },
@@ -1743,7 +1694,6 @@
     renderTimelineCharts(a);
     try { renderRoomBreakdownChart(a); } catch(e) { console.error('rooms chart:', e); }
     try { renderVintageChart(a, 'sale'); } catch(e) { console.error('vintage chart:', e); }
-    try { renderVintageTimeline(a); } catch(e) { console.error('vintage timeline:', e); }
     try { renderVintagePaths(a, 'sale'); } catch(e) { console.error('vintage paths:', e); }
     try { renderInsightDonuts(a);    } catch(e) { console.error('donuts:', e); }
   }

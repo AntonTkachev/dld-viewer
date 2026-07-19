@@ -338,9 +338,10 @@ WITH s AS (
 ),
 birth AS (SELECT {grp_k} proj, MIN(y) AS birth_y FROM s GROUP BY {grp_all}),
 cur AS (
-  SELECT {sel_sk} CASE WHEN s.y - birth.birth_y <= 3 THEN 'v0_3'
-              WHEN s.y - birth.birth_y <= 8 THEN 'v4_8'
-              ELSE 'v9p' END AS b,
+  SELECT {sel_sk} CASE WHEN s.y - birth.birth_y <= 1  THEN 'v0_1'
+              WHEN s.y - birth.birth_y <= 4  THEN 'v2_4'
+              WHEN s.y - birth.birth_y <= 10 THEN 'v5_10'
+              ELSE 'v11p' END AS b,
          s.rp
   FROM s JOIN birth USING ({join_k} proj)
   WHERE s.dd >= current_date - INTERVAL 365 DAY
