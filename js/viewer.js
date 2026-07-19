@@ -184,7 +184,11 @@ function _districtModePrefix(mask) {
   return (mask === 'rents' || mask === 'yearly_rent') ? 'rents' : 'sales';
 }
 function _districtHrefForKey(key, name, legacyKey, masterKey) {
-  if (!key || key === '__dubai__') return _langUrlPrefix() + '/';
+  if (!key) return _langUrlPrefix() + '/';
+  if (key === '__dubai__') {
+    const mode = _districtModePrefix(typeof currentMask !== 'undefined' ? currentMask : 'sales');
+    return _langUrlPrefix() + '/' + mode + '/dubai/';
+  }
 
   const hasReal = (a, k) => a && a[k] && a[k].name && !a[k]._isStub;
   const mode = _districtModePrefix(typeof currentMask !== 'undefined' ? currentMask : 'sales');
@@ -1078,26 +1082,56 @@ function _renderTvPages() {
 }
 
 function _renderTvPeriods() {
-  const el = document.getElementById('tv-periods');
-  if (!el) return;
+  const dd = document.getElementById('tv-period-dd');
+  const menu = document.getElementById('tv-period-menu');
+  const cur = document.getElementById('tv-period-current');
+  const btnLbl = document.getElementById('tv-period-btn-label');
+  if (!dd || !menu || !cur) return;
+
   const mask = MASKS[currentMask];
-  el.innerHTML = '';
-  if (!mask || mask.periods.length <= 1) return;
-  const lbl = document.createElement('span');
-  lbl.className = 'tv-periods-k';
-  lbl.textContent = t(mask.periodLabelKey || 'mask_period_label');
-  el.appendChild(lbl);
+  if (!mask || mask.periods.length <= 1) {
+    dd.style.display = 'none';
+    return;
+  }
+  dd.style.display = '';
+
+  if (btnLbl) btnLbl.textContent = t(mask.periodLabelKey || 'mask_period_label');
+  cur.textContent = _periodLabel(mask, currentMaskPeriod);
+
+  menu.innerHTML = '';
   for (const p of mask.periods) {
-    const btn = document.createElement('button');
-    btn.type = 'button';
-    btn.className = 'tv-period-chip' + (p === currentMaskPeriod ? ' active' : '');
-    btn.textContent = _periodLabel(mask, p);
-    btn.addEventListener('click', () => {
-      const state = _tableState[currentMask] || (_tableState[currentMask] = {});
-      state.page = 1;
-      applyMask(currentMask, p);
+    const isCurrent = (p === currentMaskPeriod);
+    const a = document.createElement('a');
+    a.className = 'tv-mask-item' + (isCurrent ? ' active' : '');
+    a.innerHTML = `<span class="tv-mask-item-dot"></span><span class="tv-mask-item-title">${_h(_periodLabel(mask, p))}</span>`;
+    if (isCurrent) {
+      a.setAttribute('aria-current', 'true');
+    } else {
+      a.href = '#';
+      a.addEventListener('click', e => {
+        e.preventDefault();
+        dd.classList.remove('open');
+        const state = _tableState[currentMask] || (_tableState[currentMask] = {});
+        state.page = 1;
+        applyMask(currentMask, p);
+      });
+    }
+    menu.appendChild(a);
+  }
+
+  const btn = document.getElementById('tv-period-btn');
+  if (btn && !btn._wired) {
+    btn._wired = true;
+    btn.addEventListener('click', e => {
+      e.stopPropagation();
+      dd.classList.toggle('open');
     });
-    el.appendChild(btn);
+    document.addEventListener('click', e => {
+      if (!e.target.closest('#tv-period-dd')) dd.classList.remove('open');
+    });
+    document.addEventListener('keydown', e => {
+      if (e.key === 'Escape') dd.classList.remove('open');
+    });
   }
 }
 
@@ -1237,7 +1271,7 @@ function renderTable() {
       const hasPolygon = isDubai || (areaKey && _FEAT_BY_KEY.has(areaKey));
       if (areaKey && hasPolygon) {
 
-        const href = isDubai ? '' : (_districtHrefForKey(areaKey) || '');
+        const href = _districtHrefForKey(areaKey) || '';
         const hrefAttr = href ? ` href="${_h(href)}"` : '';
         return `<td${cls ? ' class="' + cls + '"' : ''}${titleAttr}><a class="tv-district-link" data-key="${_h(areaKey)}"${hrefAttr}>${cellHtml}</a></td>`;
       }
