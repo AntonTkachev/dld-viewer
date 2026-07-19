@@ -1235,6 +1235,7 @@ def build_seo_head(mode, name, slug, rec, period_code, lang):
                     '@type': 'Place',
                     'name': f'{name}, Dubai',
                     'url': canon,
+                    'image': f'{BASE_URL}/og/cover.png',
                     'containedInPlace': {'@type': 'Place', 'name': 'Dubai, UAE'},
                 }, ensure_ascii=False)
                 + '</script>')
