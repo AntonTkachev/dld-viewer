@@ -1397,11 +1397,13 @@ def main():
         template_list = f.read()
 
     # If DISTRICTS isn't pinned, build every real district from the unioned
-    # AGGREGATES + RENT_AGGREGATES keysets. Skip `__dubai__`-style markers.
+    # AGGREGATES + RENT_AGGREGATES keysets. Skip other `__…__` markers
+    # (`__period__` metadata) but keep `__dubai__` — it renders as the
+    # city-wide landing at /<lang>/{sales,rents}/dubai/.
     districts = DISTRICTS
     if districts is None:
-        keys = (set(agg.keys()) | set(rent.keys())) - {'__dubai__'}
-        keys = [k for k in keys if not k.startswith('_')]
+        keys = set(agg.keys()) | set(rent.keys())
+        keys = [k for k in keys if k == '__dubai__' or not k.startswith('_')]
         districts = sorted(keys)
         print(f'building all {len(districts)} districts × {len(LANGUAGES)} langs', file=sys.stderr)
 
@@ -1412,15 +1414,23 @@ def main():
         if not sale_rec and not rent_rec:
             print(f'  {key}: skipping (not in aggregates)', file=sys.stderr)
             continue
-        name = (sale_rec.get('name') or rent_rec.get('name')) or key.title()
-        slug = slugify(name)
+        if key == '__dubai__':
+            name = 'Dubai'
+            slug = 'dubai'
+        else:
+            name = (sale_rec.get('name') or rent_rec.get('name')) or key.title()
+            slug = slugify(name)
 
         for lang in LANGUAGES:
             c = COPY[lang]
             html_lang = c['html_lang']
             html_dir = c.get('html_dir', 'ltr')
-            about_html = build_about(name, sale_rec, rent_rec, lang)
-            district_faq_html = build_district_faq(name, sale_rec, rent_rec, lang)
+            # For the city-wide landing use the localized "Dubai" name in
+            # every text touchpoint (H1, lede, About, FAQ) so RU readers see
+            # "Дубай" rather than the raw English key.
+            display_name = c['breadcrumb_dubai'] if key == '__dubai__' else name
+            about_html = build_about(display_name, sale_rec, rent_rec, lang)
+            district_faq_html = build_district_faq(display_name, sale_rec, rent_rec, lang)
 
             for mode, prefix in MODES:
                 base_rec = sale_rec if mode == 'sale' else rent_rec
@@ -1459,8 +1469,8 @@ def main():
                     if not rec_for_period.get('n') and period_code != 'all':
                         rec_for_period = base_rec
                     n_p = rec_for_period.get('n', 0)
-                    headline, _ = build_headline(mode, name, period_h1, n_p, lang)
-                    lede = build_lede(mode, name, period_h1, rec_for_period, lang)
+                    headline, _ = build_headline(mode, display_name, period_h1, n_p, lang)
+                    lede = build_lede(mode, display_name, period_h1, rec_for_period, lang)
                     period_copy[period_code] = {'h1': headline, 'lede': lede, 'n': n_p, 'rec': rec_for_period}
 
                 bread_mode = c['mode_sales'] if mode == 'sale' else c['mode_rents']
@@ -1482,7 +1492,7 @@ def main():
                     html = html.replace('<html lang="ru">',
                                         f'<html lang="{html_lang}" dir="{html_dir}">')
                     html = html.replace('<!--__SEO_HEAD__-->',
-                                        build_seo_head(mode, name, slug, copy_now['rec'], period_code, lang))
+                                        build_seo_head(mode, display_name, slug, copy_now['rec'], period_code, lang))
                     html = html.replace('__ASSET_BASE__', '')
                     html = html.replace('__BREADCRUMB_DUBAI__', html_escape(c['breadcrumb_dubai']))
                     html = html.replace('__MODE_INDEX_URL__', f'{lang_prefix(lang)}/{prefix}/')
