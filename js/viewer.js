@@ -423,12 +423,14 @@ const MASKS = {
   },
   growth: {
     labelKey: 'mask_growth', descKey: 'mask_growth_desc',
-    periods: ['1y','3y','5y','10y'], defaultPeriod: '5y',
+    periods: ['1y','3y','5y','10y','15y','all'], defaultPeriod: '5y',
     data: {
       '1y':  _GROWTH_P['1y']  || {},
       '3y':  _GROWTH_P['3y']  || {},
       '5y':  _GROWTH_P['5y']  || {},
       '10y': _GROWTH_P['10y'] || {},
+      '15y': _GROWTH_P['15y'] || {},
+      'all': _GROWTH_P['all'] || {},
     },
     pluck: r => ({
       real_count: r.n || 0, real_total_aed: 0,
@@ -546,20 +548,28 @@ const MASKS = {
     overlay: r => (typeof r.years !== 'number') ? null : r.years.toFixed(1),
     legendFmt: v => v.toFixed(1),
     periodLabelKey: 'mask_room_label',
-    popupRows: (p, t) => p.real_metric === null || p.real_metric === undefined ? '' : `
+    popupRows: (p, t) => {
+      if (p.real_metric === null || p.real_metric === undefined) return '';
+      const yld = (p.real_med_price && p.real_med_ppsqm)
+        ? (p.real_med_ppsqm / p.real_med_price * 100).toFixed(1) + '%'
+        : '—';
+      return `
       <div class="stat"><span class="k">${t('pp_payback_years')}</span><span class="v" style="font-weight:700">${p.real_metric.toFixed(1)} ${t('unit_years')}</span></div>
+      <div class="stat"><span class="k">${t('tv_col_yield')}</span><span class="v" style="font-weight:700">${yld}</span></div>
       <div class="stat"><span class="k">${t('pp_sale_ppsqm')}</span><span class="v">${(p.real_med_price||0).toLocaleString('ru-RU')} AED/м²</span></div>
       <div class="stat"><span class="k">${t('pp_rent_ppsqm')}</span><span class="v">${(p.real_med_ppsqm||0).toLocaleString('ru-RU')} AED/м²/${t('unit_year_short')}</span></div>
       <div class="stat"><span class="k">${t('pp_n_sale')}</span><span class="v">${(p.real_n_sale||0).toLocaleString('ru-RU')}</span></div>
       <div class="stat"><span class="k">${t('pp_n_rent')}</span><span class="v">${(p.real_n_rent||0).toLocaleString('ru-RU')}</span></div>
-    `,
+    `; },
     tableColumns: [
-      { key: 'name',       labelKey: 'tv_col_district',    type: 'str', width: '28%' },
-      { key: 'years',      labelKey: 'tv_col_payback_yrs', type: 'yrs', width: '14%', defaultSort: true, defaultSortDir: 'asc' },
-      { key: 'sale_ppsqm', labelKey: 'tv_col_sale_ppsqm',  type: 'int', width: '15%' },
-      { key: 'rent_ppsqm', labelKey: 'tv_col_rent_ppsqm',  type: 'int', width: '15%' },
-      { key: 'n_sale',     labelKey: 'tv_col_n_sale_2y',   type: 'int', width: '14%' },
-      { key: 'n_rent',     labelKey: 'tv_col_n_rent_2y',   type: 'int', width: '14%' },
+      { key: 'name',       labelKey: 'tv_col_district',    type: 'str',     width: '26%' },
+      { key: 'years',      labelKey: 'tv_col_payback_yrs', type: 'yrs',     width: '13%', defaultSort: true, defaultSortDir: 'asc' },
+      { key: r => (r.sale_ppsqm && r.rent_ppsqm) ? Math.round(r.rent_ppsqm / r.sale_ppsqm * 1000) / 10 : null,
+        labelKey: 'tv_col_yield',                          type: 'pct_abs', width: '11%' },
+      { key: 'sale_ppsqm', labelKey: 'tv_col_sale_ppsqm',  type: 'int',     width: '14%' },
+      { key: 'rent_ppsqm', labelKey: 'tv_col_rent_ppsqm',  type: 'int',     width: '14%' },
+      { key: 'n_sale',     labelKey: 'tv_col_n_sale_2y',   type: 'int',     width: '11%' },
+      { key: 'n_rent',     labelKey: 'tv_col_n_rent_2y',   type: 'int',     width: '11%' },
     ],
   },
   investor: {

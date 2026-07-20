@@ -53,6 +53,7 @@ for code, (tx_rooms, rent_subtype) in CLASSES.items():
     FROM '{TX}'
     WHERE area_name_en IS NOT NULL
       AND rooms_en IN {tx_rooms}
+      AND trans_group_en = 'Sales'
       AND instance_date BETWEEN '{dfrom}' AND '{dto}'
     GROUP BY k
     HAVING COUNT(*) >= {MIN_OBS}
@@ -100,6 +101,7 @@ for code, (tx_rooms, rent_subtype) in CLASSES.items():
     FROM '{TX}'
     WHERE area_name_en IS NOT NULL
       AND rooms_en IN {tx_rooms}
+      AND trans_group_en = 'Sales'
       AND instance_date BETWEEN '{dfrom}' AND '{dto}'
     """).fetchdf().iloc[0]
     d_rt = con.execute(f"""
