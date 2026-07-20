@@ -4,6 +4,20 @@
 
   "splits": [
     {
+      "_comment": "Zaabeel Second — DLD admin shell that spans two physically separate communities divided by the Dubai Water Canal. D3 (Dubai Design District by Meraas/Dubai Holding) is west of canal; Za'abeel residences (Downtown Views II, One Za'abeel, Address Zabeel) are north. master_project_en='Business Park' is DLD's internal name for the D3 masterplan. Polygon from fam-erp public API (matches Meraas D3 boundary), added to osm_subcommunities.json as manual entry.",
+      "area_name_en": "Zaabeel Second",
+      "keep_remainder": true,
+      "remainder_name": "Za'abeel",
+      "sub_polygons": [
+        {
+          "name": "Dubai Design District",
+          "name_ar": "دبي ديزاين ديستريكت",
+          "osm_polygon": "Dubai Design District",
+          "master_projects": ["Business Park"]
+        }
+      ]
+    },
+    {
       "_comment": "Marsa Dubai — the canonical case. 137k tx blob → 4 distinct waterfront communities buyers know by name.",
       "area_name_en": "Marsa Dubai",
       "keep_remainder": true,
