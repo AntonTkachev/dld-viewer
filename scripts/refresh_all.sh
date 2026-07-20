@@ -63,6 +63,9 @@ $PY scripts/merge_curated_polygons_into_viewer.py
 phase "8. Per-district SEO pages (read index.html as template)"
 $PY scripts/build_district_pages.py
 
+phase "8b. Per-building search data (search-index.json + buildings/{slug}/data.json)"
+$PY scripts/build_building_pages.py
+
 phase "9. Locale SEO landings + table views"
 $PY scripts/build_pages.py
 
