@@ -432,8 +432,9 @@ for code, (tx_rooms, rent_subtype) in CLASSES.items():
     SELECT {KEY} AS k,
            COUNT(*) AS n_rent,
            MEDIAN(TRY_CAST(annual_amount AS DOUBLE) / NULLIF(TRY_CAST(actual_area AS DOUBLE), 0))
-             FILTER (WHERE TRY_CAST(annual_amount AS DOUBLE) > 0
-                     AND TRY_CAST(actual_area AS DOUBLE) > 10) AS rent_ppsqm,
+             FILTER (WHERE TRY_CAST(actual_area AS DOUBLE) > 10
+                     AND TRY_CAST(annual_amount AS DOUBLE) / TRY_CAST(actual_area AS DOUBLE)
+                         BETWEEN 100 AND 25000) AS rent_ppsqm,
            MEDIAN(TRY_CAST(actual_area AS DOUBLE))
              FILTER (WHERE TRY_CAST(actual_area AS DOUBLE) BETWEEN 10 AND 1000) AS rent_sqm
     FROM '{RENTS}'
