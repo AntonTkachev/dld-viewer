@@ -1,0 +1,489 @@
+<!DOCTYPE html>
+<html lang="en" dir="ltr">
+<head>
+<script>if(location.hostname.endsWith('.github.io')){location.replace('https://dxbcompass.com'+(location.pathname.replace(/^\/dld-viewer/,'')||'/')+location.search+location.hash);}</script>
+<meta charset="UTF-8">
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline' https://www.googletagmanager.com; style-src 'self' 'unsafe-inline'; img-src 'self' data: https://*.google-analytics.com; connect-src 'self' https://dxbcompass.com https://*.google-analytics.com https://*.analytics.google.com https://*.g.doubleclick.net; font-src 'self'; frame-ancestors 'none'; base-uri 'self'; form-action 'self'">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<link rel="icon" type="image/svg+xml" href="/favicon.svg">
+<link rel="icon" type="image/png" sizes="192x192" href="/icon-192.png">
+<link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png">
+<title>Dubai Buildings Directory — DXBCompass</title>
+<meta name="description" content="Browse and filter Dubai residential buildings by completion year, developer, and area. View sales and rental history for each tower.">
+<link rel="canonical" href="https://dxbcompass.com/buildings/">
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="DXBCompass">
+<meta property="og:url" content="https://dxbcompass.com/buildings/">
+<meta property="og:title" content="Dubai Buildings Directory — DXBCompass">
+<meta property="og:description" content="Browse 4,700+ Dubai residential buildings with sales history, completion year, and developer info.">
+<meta property="og:image" content="https://dxbcompass.com/og/cover.png">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="robots" content="index,follow">
+<script async src="https://www.googletagmanager.com/gtag/js?id=G-5G3EY3Y2KG"></script>
+<script>window.dataLayer=window.dataLayer||[];function gtag(){dataLayer.push(arguments);}gtag('js',new Date());gtag('config','G-5G3EY3Y2KG');</script>
+<link rel="stylesheet" href="/css/viewer.css">
+<style>
+  html, body { background: #f8fafc; min-height: 100%; }
+  .wrap { max-width: 1100px; margin: 0 auto; padding: 18px 20px 64px; }
+  .breadcrumb { font-size: 13px; color: #6b7280; margin-bottom: 10px; }
+  .breadcrumb a { color: #1d4ed8; text-decoration: none; }
+  .breadcrumb a:hover { text-decoration: underline; }
+  h1 { font-size: 24px; margin: 0 0 4px; line-height: 1.25; }
+  .lede { font-size: 14px; color: #6b7280; margin: 0 0 20px; }
+
+  /* ── Filter bar — single flex row ── */
+  .filters {
+    display: flex; flex-wrap: wrap; gap: 10px; align-items: flex-end;
+    background: #fff; border: 1px solid #e5e7eb; border-radius: 12px;
+    padding: 14px 16px; margin-bottom: 16px;
+  }
+  .fg { display: flex; flex-direction: column; gap: 3px; }
+  .fg label {
+    font-size: 10.5px; color: #6b7280; text-transform: uppercase;
+    letter-spacing: .05em; font-weight: 600;
+  }
+  .fg input, .fg select {
+    height: 34px; padding: 0 10px; font-size: 13px; font-family: inherit;
+    border: 1px solid #d1d5db; border-radius: 8px; background: #fff;
+    color: #111; outline: none; transition: border-color .15s; box-sizing: border-box;
+  }
+  .fg input:focus, .fg select:focus { border-color: #1d4ed8; }
+  .fg-name  input { width: 200px; }
+  .fg-area  input { width: 180px; }
+  .fg-yr    { gap: 3px; }
+  .yr-row   { display: flex; align-items: center; gap: 5px; }
+  .yr-num   { width: 74px; height: 34px; padding: 0 8px; font-size: 13px; font-family: inherit;
+              border: 1px solid #d1d5db; border-radius: 8px; background: #fff;
+              color: #111; outline: none; box-sizing: border-box; }
+  .yr-num:focus { border-color: #1d4ed8; }
+  .yr-sep   { color: #94a3b8; font-size: 13px; flex-shrink: 0; }
+
+  /* ── Developer combobox ── */
+  .fg-dev { position: relative; }
+  .fg-dev input {
+    width: 210px; padding-right: 28px; cursor: default;
+  }
+  .fg-dev input.has-selection { color: #111; font-weight: 500; }
+  .fg-dev input::placeholder { color: #94a3b8; font-weight: 400; }
+  .dev-arrow {
+    position: absolute; right: 8px; bottom: 8px;
+    pointer-events: none; color: #94a3b8; font-size: 11px;
+  }
+  .dev-dropdown {
+    display: none; position: absolute; top: calc(100% + 4px); left: 0;
+    min-width: 260px; z-index: 400;
+    background: #fff; border: 1px solid #e5e7eb; border-radius: 10px;
+    box-shadow: 0 8px 28px rgba(0,0,0,.12); max-height: 320px;
+    overflow-y: auto; overflow-x: hidden;
+  }
+  .dev-dropdown.open { display: block; }
+
+  /* search within dropdown */
+  .dev-search-wrap {
+    padding: 8px 10px 6px; border-bottom: 1px solid #f3f4f6; position: sticky;
+    top: 0; background: #fff; z-index: 1;
+  }
+  .dev-search {
+    width: 100%; box-sizing: border-box; height: 30px; padding: 0 9px;
+    font-size: 12.5px; font-family: inherit; border: 1px solid #e5e7eb;
+    border-radius: 6px; background: #f8fafc; outline: none; color: #111;
+  }
+  .dev-search:focus { border-color: #1d4ed8; background: #fff; }
+
+  /* selected chips strip */
+  .dev-chips {
+    display: flex; flex-wrap: wrap; gap: 4px; padding: 7px 10px 4px;
+    border-bottom: 1px solid #f3f4f6; min-height: 0;
+  }
+  .dev-chips:empty { display: none; }
+  .dev-chip {
+    display: inline-flex; align-items: center; gap: 3px;
+    padding: 2px 7px 2px 8px; border-radius: 5px;
+    font-size: 11.5px; font-weight: 500; white-space: nowrap;
+    background: #eff6ff; border: 1px solid #bfdbfe; color: #1d4ed8;
+  }
+  .dev-chip.zone { background: #ede9fe; border-color: #c4b5fd; color: #6d28d9; }
+  .chip-x {
+    cursor: pointer; font-size: 13px; line-height: 1; opacity: .55;
+    border: none; background: none; padding: 0; color: inherit; font-family: inherit;
+  }
+  .chip-x:hover { opacity: 1; }
+
+  .dev-grp-label {
+    padding: 6px 11px 3px; font-size: 10px; font-weight: 700; color: #94a3b8;
+    text-transform: uppercase; letter-spacing: .06em;
+    position: sticky; top: 44px; background: #fff; z-index: 1;
+  }
+  .dev-opt {
+    display: flex; align-items: center; gap: 8px;
+    padding: 8px 12px; cursor: pointer; font-size: 13px; color: #111;
+    border-bottom: 1px solid #f9fafb; user-select: none;
+  }
+  .dev-opt:last-child { border-bottom: none; }
+  .dev-opt:hover { background: #f8fafc; }
+  .dev-opt.sel { background: #f0fdf4; }
+  .dev-opt-check { color: #16a34a; font-size: 12px; flex-shrink: 0; width: 14px; }
+  .dev-opt-name  { flex: 1; }
+  .dev-opt-badge {
+    font-size: 10px; font-weight: 600; padding: 1px 5px; border-radius: 4px;
+    background: #ede9fe; color: #6d28d9; flex-shrink: 0;
+  }
+  .dev-empty { padding: 12px; text-align: center; font-size: 13px; color: #94a3b8; }
+
+  .btn-reset {
+    height: 34px; padding: 0 14px; font-size: 13px; font-family: inherit;
+    border: 1px solid #e5e7eb; border-radius: 8px; background: #f9fafb;
+    color: #374151; cursor: pointer; transition: background .12s; flex-shrink: 0;
+  }
+  .btn-reset:hover { background: #f3f4f6; }
+
+  /* ── Results & sort ── */
+  .results-bar {
+    display: flex; justify-content: space-between; align-items: center;
+    font-size: 13px; color: #6b7280; margin-bottom: 10px;
+  }
+  .sort-wrap { display: flex; gap: 6px; align-items: center; }
+  .sort-wrap select {
+    height: 30px; padding: 0 8px; font-size: 12px; font-family: inherit;
+    border: 1px solid #d1d5db; border-radius: 6px; background: #fff;
+  }
+
+  /* ── Table ── */
+  .tbl-wrap { background: #fff; border: 1px solid #e5e7eb; border-radius: 12px; overflow: hidden; }
+  table { width: 100%; border-collapse: collapse; }
+  thead th {
+    padding: 10px 12px; font-size: 11px; text-transform: uppercase;
+    letter-spacing: .04em; color: #6b7280; font-weight: 600;
+    border-bottom: 1px solid #e5e7eb; text-align: left;
+    white-space: nowrap; background: #f8fafc;
+  }
+  thead th.r { text-align: right; }
+  thead th.sortable {
+    cursor: pointer; user-select: none;
+  }
+  thead th.sortable:hover { color: #374151; }
+  thead th.sort-active { color: #1d4ed8; }
+  .sort-icon { display: inline-block; margin-left: 3px; font-size: 10px; opacity: .5; }
+  thead th.sort-active .sort-icon { opacity: 1; }
+  tbody tr { border-bottom: 1px solid #f3f4f6; transition: background .1s; cursor: pointer; }
+  tbody tr:last-child { border-bottom: none; }
+  tbody tr:hover { background: #eff6ff; }
+  tbody td { padding: 9px 12px; font-size: 13px; color: #111; vertical-align: middle; }
+  tbody td.r { text-align: right; color: #374151; font-variant-numeric: tabular-nums; }
+  .td-name { font-weight: 500; }
+  .td-area { color: #6b7280; font-size: 11.5px; margin-top: 2px; }
+  .badge-zone {
+    display: inline-block; font-size: 10px; font-weight: 600;
+    padding: 1px 5px; border-radius: 4px; margin-left: 5px;
+    background: #ede9fe; color: #6d28d9; vertical-align: middle; white-space: nowrap;
+  }
+  .mute { color: #94a3b8; font-style: italic; }
+
+  /* ── Pagination ── */
+  .pager {
+    display: flex; justify-content: center; align-items: center;
+    gap: 8px; margin-top: 18px; font-size: 13px;
+  }
+  .pager button {
+    padding: 6px 14px; border: 1px solid #d1d5db; border-radius: 7px;
+    background: #fff; color: #374151; cursor: pointer; font-size: 13px;
+    font-family: inherit; transition: background .12s;
+  }
+  .pager button:hover:not(:disabled) { background: #f3f4f6; }
+  .pager button:disabled { opacity: .4; cursor: default; }
+  .pager .pi { color: #6b7280; }
+  .empty { padding: 40px 0; text-align: center; color: #94a3b8; font-size: 14px; }
+
+  @media (max-width: 700px) {
+    .fg-name input, .fg-area input { width: 100%; }
+    .fg-dev input { width: 100%; }
+    .filters { flex-direction: column; align-items: stretch; }
+    .col-dev, .col-yr { display: none; }
+  }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div class="breadcrumb"><a href="/">DXBCompass</a> / Buildings</div>
+  <h1>Dubai Buildings Directory</h1>
+  <p class="lede" id="lede">Loading…</p>
+
+  <div class="filters">
+    <div class="fg fg-name">
+      <label>Building name</label>
+      <input id="fName" type="text" placeholder="Marina Gate, Burj…" autocomplete="off" spellcheck="false">
+    </div>
+    <div class="fg fg-area">
+      <label>Area</label>
+      <input id="fArea" type="text" placeholder="Dubai Marina, JVC…" autocomplete="off" spellcheck="false">
+    </div>
+    <div class="fg fg-yr">
+      <label>Built</label>
+      <div class="yr-row">
+        <input class="yr-num" id="fYr1" type="number" placeholder="from" min="1960" max="2040">
+        <span class="yr-sep">—</span>
+        <input class="yr-num" id="fYr2" type="number" placeholder="to" min="1960" max="2040">
+      </div>
+    </div>
+    <div class="fg fg-dev">
+      <label>Developer / Zone</label>
+      <input id="devTrigger" type="text" readonly placeholder="All developers & zones" autocomplete="off">
+      <span class="dev-arrow">▾</span>
+      <div class="dev-dropdown" id="devDropdown">
+        <div class="dev-search-wrap">
+          <input class="dev-search" id="devSearch" type="text" placeholder="Search…" autocomplete="off">
+        </div>
+        <div class="dev-chips" id="devChips"></div>
+        <div id="devList"></div>
+      </div>
+    </div>
+    <button class="btn-reset" id="btnReset">Reset</button>
+  </div>
+
+  <div class="results-bar">
+    <span id="resultCount"></span>
+    <div class="sort-wrap">
+      <label for="sortBy" style="font-size:12px;color:#6b7280;">Sort:</label>
+      <select id="sortBy">
+        <option value="tx">Most transactions</option>
+        <option value="yr_asc">Oldest first</option>
+        <option value="yr_desc">Newest first</option>
+        <option value="az">Name A–Z</option>
+      </select>
+    </div>
+  </div>
+
+  <div class="tbl-wrap">
+    <table>
+      <thead>
+        <tr>
+          <th>Building</th>
+          <th class="col-yr r sortable" id="thBuilt">Built <span class="sort-icon" id="builtIcon">↕</span></th>
+          <th class="col-dev">Developer / Zone</th>
+          <th class="r">Sales</th>
+          <th class="r">Rents</th>
+        </tr>
+      </thead>
+      <tbody id="tBody"></tbody>
+    </table>
+    <div class="empty" id="emptyMsg" style="display:none;">No buildings match these filters.</div>
+  </div>
+
+  <div class="pager" id="pager" style="display:none;">
+    <button id="pPrev">← Prev</button>
+    <span class="pi" id="pInfo"></span>
+    <button id="pNext">Next →</button>
+  </div>
+</div>
+
+<script>
+const PAGE = 100;
+let ALL = [], FILTERED = [], DEV_LIST = [], page = 0;
+let selectedDevs = new Set();
+let yrSort = null; // null | 'asc' | 'desc'
+
+const fName     = document.getElementById('fName');
+const fArea     = document.getElementById('fArea');
+const fYr1      = document.getElementById('fYr1');
+const fYr2      = document.getElementById('fYr2');
+const thBuilt   = document.getElementById('thBuilt');
+const builtIcon = document.getElementById('builtIcon');
+const devTrigger= document.getElementById('devTrigger');
+const devDrop   = document.getElementById('devDropdown');
+const devSearch = document.getElementById('devSearch');
+const devChips  = document.getElementById('devChips');
+const devList   = document.getElementById('devList');
+const sortBy    = document.getElementById('sortBy');
+const tBody     = document.getElementById('tBody');
+const pager     = document.getElementById('pager');
+const pInfo     = document.getElementById('pInfo');
+const pPrev     = document.getElementById('pPrev');
+const pNext     = document.getElementById('pNext');
+const emptyMsg  = document.getElementById('emptyMsg');
+const resCount  = document.getElementById('resultCount');
+
+function esc(s){ return (s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
+function lc(s) { return (s||'').toLowerCase(); }
+
+// ── Year filter ───────────────────────────────────────────────────────────────
+function yrPass(byr){
+  const lo = parseInt(fYr1.value) || null;
+  const hi = parseInt(fYr2.value) || null;
+  if (!lo && !hi) return true;
+  if (byr == null) return true; // unknown year is not excluded
+  if (lo && byr < lo) return false;
+  if (hi && byr > hi) return false;
+  return true;
+}
+
+// ── Built column sort ─────────────────────────────────────────────────────────
+thBuilt.addEventListener('click', () => {
+  yrSort = yrSort === 'asc' ? 'desc' : 'asc';
+  sortBy.value = yrSort === 'asc' ? 'yr_asc' : 'yr_desc';
+  builtIcon.textContent = yrSort === 'asc' ? '↑' : '↓';
+  thBuilt.classList.add('sort-active');
+  page = 0; applyFilters();
+});
+sortBy.addEventListener('change', () => {
+  if (!sortBy.value.startsWith('yr')){ yrSort=null; builtIcon.textContent='↕'; thBuilt.classList.remove('sort-active'); }
+  page=0; applyFilters();
+});
+
+// ── Developer dropdown ────────────────────────────────────────────────────────
+function buildDevList(){
+  const brands = new Set(), zones = new Set();
+  ALL.forEach(b => { if (b.dev) (b.dz ? zones : brands).add(b.dev); });
+  DEV_LIST = [
+    ...[...brands].sort().map(n => ({name: n, isZone: false})),
+    ...[...zones].sort().map(n => ({name: n, isZone: true})),
+  ];
+}
+
+function renderDevList(){
+  const q = lc(devSearch.value);
+  const items = q ? DEV_LIST.filter(d => lc(d.name).includes(q)) : DEV_LIST;
+  if (!items.length){ devList.innerHTML = '<div class="dev-empty">No matches</div>'; return; }
+  const brands = items.filter(d => !d.isZone);
+  const zones  = items.filter(d => d.isZone);
+  let h = '';
+  if (brands.length){
+    if (!q) h += '<div class="dev-grp-label">Brand developers</div>';
+    brands.forEach(d => h += optHtml(d));
+  }
+  if (zones.length){
+    if (!q) h += '<div class="dev-grp-label">Zone / master developers</div>';
+    zones.forEach(d => h += optHtml(d));
+  }
+  devList.innerHTML = h;
+}
+function optHtml(d){
+  const s = selectedDevs.has(d.name);
+  return `<div class="dev-opt${s?' sel':''}" data-dev="${esc(d.name)}">
+    <span class="dev-opt-check">${s?'✓':''}</span>
+    <span class="dev-opt-name">${esc(d.name)}</span>
+    ${d.isZone ? '<span class="dev-opt-badge">Zone</span>' : ''}
+  </div>`;
+}
+
+function renderChips(){
+  if (!selectedDevs.size){ devChips.innerHTML = ''; return; }
+  devChips.innerHTML = [...selectedDevs].map(name => {
+    const d = DEV_LIST.find(x => x.name === name);
+    return `<span class="dev-chip${d&&d.isZone?' zone':''}">${esc(name)}<button class="chip-x" data-dev="${esc(name)}">×</button></span>`;
+  }).join('');
+}
+
+function updateTriggerText(){
+  if (!selectedDevs.size){
+    devTrigger.value = '';
+    devTrigger.placeholder = 'All developers & zones';
+    devTrigger.classList.remove('has-selection');
+  } else {
+    const names = [...selectedDevs];
+    const text = names.length === 1 ? names[0] : names.slice(0,2).join(', ') + (names.length > 2 ? ` +${names.length-2}` : '');
+    devTrigger.value = text;
+    devTrigger.classList.add('has-selection');
+  }
+}
+
+function toggleDev(name){
+  if (selectedDevs.has(name)) selectedDevs.delete(name);
+  else selectedDevs.add(name);
+  renderChips();
+  renderDevList();
+  updateTriggerText();
+  applyFilters();
+}
+
+// Open/close
+devTrigger.addEventListener('mousedown', e => {
+  e.preventDefault();
+  const wasOpen = devDrop.classList.contains('open');
+  devDrop.classList.toggle('open', !wasOpen);
+  if (!wasOpen){ devSearch.value=''; renderDevList(); devSearch.focus(); }
+});
+devSearch.addEventListener('input', renderDevList);
+devList.addEventListener('mousedown', e => {
+  e.preventDefault();
+  const opt = e.target.closest('.dev-opt');
+  if (opt) toggleDev(opt.dataset.dev);
+});
+devChips.addEventListener('mousedown', e => {
+  e.preventDefault();
+  const x = e.target.closest('.chip-x');
+  if (x) toggleDev(x.dataset.dev);
+});
+document.addEventListener('mousedown', e => {
+  if (!e.target.closest('.fg-dev')) devDrop.classList.remove('open');
+});
+
+// ── Filter ────────────────────────────────────────────────────────────────────
+function applyFilters(){
+  const name = lc(fName.value), area = lc(fArea.value);
+  FILTERED = ALL.filter(b =>
+    (!name || lc(b.n).includes(name)) &&
+    (!area || lc(b.a).includes(area)) &&
+    yrPass(b.yr) &&
+    (!selectedDevs.size || selectedDevs.has(b.dev))
+  );
+  const s = sortBy.value;
+  FILTERED.sort((a,b) =>
+    s==='tx' ? b.tx - a.tx :
+    s==='az' ? a.n.localeCompare(b.n) :
+    s==='yr_asc'  ? (a.yr??9999)-(b.yr??9999) :
+                    (b.yr??-1)-(a.yr??-1)
+  );
+  page = 0; render();
+}
+
+function fmt(n){ return n!=null ? n.toLocaleString() : '—'; }
+
+function render(){
+  const total = FILTERED.length;
+  const pages = Math.max(1, Math.ceil(total/PAGE));
+  page = Math.min(page, pages-1);
+  const slice = FILTERED.slice(page*PAGE, page*PAGE+PAGE);
+  resCount.textContent = total.toLocaleString() + ' building' + (total!==1?'s':'');
+  if (!slice.length){
+    tBody.innerHTML=''; emptyMsg.style.display=''; pager.style.display='none'; return;
+  }
+  emptyMsg.style.display='none';
+  tBody.innerHTML = slice.map(b => `<tr onclick="location.href='/search/#${b.s}'">
+    <td class="td-name">${esc(b.n)}<div class="td-area">${esc(b.a)}</div></td>
+    <td class="r col-yr">${b.yr!=null ? b.yr : '<span class="mute">—</span>'}</td>
+    <td class="col-dev">${b.dev
+      ? esc(b.dev)+(b.dz?'<span class="badge-zone">Zone</span>':'')
+      : '<span class="mute">—</span>'}</td>
+    <td class="r">${fmt(b.tx)}</td>
+    <td class="r">${b.rn ? fmt(b.rn) : '<span class="mute">—</span>'}</td>
+  </tr>`).join('');
+  if (pages>1){
+    pager.style.display='';
+    pInfo.textContent=`Page ${page+1} of ${pages}`;
+    pPrev.disabled=page===0; pNext.disabled=page>=pages-1;
+  } else { pager.style.display='none'; }
+}
+
+[fName,fArea,fYr1,fYr2].forEach(el => el.addEventListener('input', ()=>{page=0;applyFilters();}));
+pPrev.addEventListener('click', ()=>{page--;render();window.scrollTo(0,0);});
+pNext.addEventListener('click', ()=>{page++;render();window.scrollTo(0,0);});
+document.getElementById('btnReset').addEventListener('click', ()=>{
+  fName.value=''; fArea.value=''; fYr1.value=''; fYr2.value='';
+  selectedDevs.clear(); renderChips(); updateTriggerText();
+  yrSort=null; builtIcon.textContent='↕'; thBuilt.classList.remove('sort-active');
+  sortBy.value='tx'; page=0; applyFilters();
+});
+
+fetch('/buildings/search-index.json')
+  .then(r=>{ if(!r.ok) throw 0; return r.json(); })
+  .then(data=>{
+    ALL=data;
+    document.getElementById('lede').textContent = ALL.length.toLocaleString()+' buildings with DLD transaction history.';
+    buildDevList(); applyFilters();
+  })
+  .catch(()=>{ document.getElementById('lede').textContent='Failed to load building index.'; });
+</script>
+</body>
+</html>

@@ -1,184 +1,209 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="en" dir="ltr">
 <head>
 <script>if(location.hostname.endsWith('.github.io')){location.replace('https://dxbcompass.com'+(location.pathname.replace(/^\/dld-viewer/,'')||'/')+location.search+location.hash);}</script>
-<meta charset="utf-8">
-<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta charset="UTF-8">
 <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net https://www.googletagmanager.com; style-src 'self' 'unsafe-inline'; img-src 'self' data: https://*.google-analytics.com; connect-src 'self' https://dxbcompass.com https://*.google-analytics.com https://*.analytics.google.com https://*.g.doubleclick.net; font-src 'self'; frame-ancestors 'none'; base-uri 'self'; form-action 'self'">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<link rel="icon" type="image/svg+xml" href="/favicon.svg">
+<link rel="icon" type="image/png" sizes="192x192" href="/icon-192.png">
+<link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png">
 <title>Building Search — DXBCompass</title>
-<meta name="description" content="Search Dubai real estate prices by building or tower name. Sales history and rental contracts from DLD data, broken down by bedroom type and off-plan vs ready market.">
+<meta name="description" content="Search Dubai real estate prices by building or tower name. Sales and rental history from DLD data, by bedroom type, year, and off-plan vs ready market.">
 <link rel="canonical" href="https://dxbcompass.com/search/">
 <meta property="og:type" content="website">
 <meta property="og:site_name" content="DXBCompass">
 <meta property="og:url" content="https://dxbcompass.com/search/">
 <meta property="og:title" content="Building Search — DXBCompass">
-<meta property="og:description" content="Search Dubai real estate prices by building or tower name.">
+<meta property="og:description" content="Find sales and rental history for any Dubai building or tower.">
 <meta property="og:image" content="https://dxbcompass.com/og/cover.png">
 <meta property="og:image:width" content="1200">
 <meta property="og:image:height" content="630">
 <meta name="twitter:card" content="summary_large_image">
 <meta name="robots" content="index,follow">
-<link rel="icon" type="image/svg+xml" href="/favicon.svg">
-<link rel="icon" type="image/png" sizes="192x192" href="/icon-192.png">
-<link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png">
 <script async src="https://www.googletagmanager.com/gtag/js?id=G-5G3EY3Y2KG"></script>
 <script>window.dataLayer=window.dataLayer||[];function gtag(){dataLayer.push(arguments);}gtag('js',new Date());gtag('config','G-5G3EY3Y2KG');</script>
+<link rel="stylesheet" href="/css/viewer.css">
 <style>
-:root {
-  --blue: #1d4ed8; --blue2: #3b82f6; --blue-l: #60a5fa;
-  --amber: #d97706; --gray: #6b7280; --gray-l: #9ca3af;
-  --bg: #f3f4f6; --card: #fff; --border: #e5e7eb;
-  --text: #111827; --text2: #374151;
-}
-* { box-sizing: border-box; margin: 0; padding: 0; }
-body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-       background: var(--bg); color: var(--text); min-height: 100vh; }
-a { color: var(--blue); text-decoration: none; }
-a:hover { text-decoration: underline; }
+  html, body { background: #f8fafc; min-height: 100%; }
+  .wrap { max-width: 1080px; margin: 0 auto; padding: 18px 20px 64px; }
+  .breadcrumb { font-size: 13px; color: #6b7280; margin-bottom: 10px; }
+  .breadcrumb a { color: #1d4ed8; text-decoration: none; }
+  .breadcrumb a:hover { text-decoration: underline; }
+  h1 { font-size: 24px; margin: 0 0 4px; line-height: 1.25; }
+  .lede { font-size: 14px; color: #6b7280; margin: 0 0 20px; }
+  .panel { background: #fff; border: 1px solid #e5e7eb; border-radius: 12px; padding: 18px 20px; margin-bottom: 16px; }
+  .err { color: #b91c1c; padding: 16px; font-size: 14px; }
 
-.page { max-width: 920px; margin: 0 auto; padding: 1.4rem 1rem 5rem; }
+  /* ── Search ── */
+  .search-wrap { position: relative; margin-bottom: 20px; }
+  #q {
+    width: 100%; padding: 10px 14px 10px 40px; font-size: 15px;
+    border: 2px solid #e5e7eb; border-radius: 10px; outline: none;
+    background: #fff; color: #111; font-family: inherit; box-sizing: border-box;
+    transition: border-color .15s;
+  }
+  #q:focus { border-color: #1d4ed8; }
+  #q::placeholder { color: #94a3b8; }
+  .search-icon { position: absolute; left: 13px; top: 50%; transform: translateY(-50%); color: #94a3b8; pointer-events: none; }
+  #hint { font-size: 12px; color: #94a3b8; margin: -14px 0 20px; min-height: 1em; }
+  #suggestions {
+    position: absolute; top: calc(100% + 4px); left: 0; right: 0; z-index: 200;
+    background: #fff; border: 1px solid #e5e7eb; border-radius: 10px;
+    box-shadow: 0 6px 24px rgba(0,0,0,.12); max-height: 360px; overflow-y: auto;
+    display: none;
+  }
+  .sug-item { padding: 9px 14px; cursor: pointer; display: flex; justify-content: space-between; align-items: center; gap: 8px; border-bottom: 1px solid #f3f4f6; }
+  .sug-item:last-child { border-bottom: none; }
+  .sug-item:hover, .sug-item.active { background: #eff6ff; }
+  .sug-name { font-size: 13.5px; font-weight: 500; color: #111; }
+  .sug-area { font-size: 11.5px; color: #6b7280; margin-top: 1px; }
+  .sug-cnt  { font-size: 11px; color: #94a3b8; white-space: nowrap; }
 
-/* ── Header ── */
-.top-nav { display: flex; align-items: center; gap: 1rem; margin-bottom: 1.6rem; flex-wrap: wrap; }
-.back { font-size: 0.88rem; color: var(--gray); display: flex; align-items: center; gap: 0.25rem; }
-.back:hover { color: var(--blue); text-decoration: none; }
-.site-title { font-weight: 700; font-size: 1rem; color: var(--text2); }
-.site-title span { color: var(--blue); }
+  /* ── Building header ── */
+  .bld-title { font-size: 22px; font-weight: 700; margin: 0 0 3px; }
+  .bld-sub   { font-size: 13px; color: #6b7280; margin: 0 0 14px; }
+  .about-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(130px, 1fr)); gap: 8px; }
+  .about-stat { padding: 8px 12px; background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 8px; }
+  .about-stat .k { font-size: 10.5px; color: #6b7280; text-transform: uppercase; letter-spacing: .04em; margin-bottom: 3px; }
+  .about-stat .v { font-size: 15px; font-weight: 600; color: #0f172a; font-variant-numeric: tabular-nums; }
 
-h1 { font-size: 1.55rem; font-weight: 700; margin-bottom: 0.3rem; }
-.subtitle { color: var(--gray); font-size: 0.93rem; margin-bottom: 1.5rem; }
+  /* ── Section header ── */
+  .sec-head { display: flex; align-items: baseline; justify-content: space-between; gap: 10px; margin-bottom: 10px; flex-wrap: wrap; }
+  .sec-head h3 { font-size: 13px; font-weight: 700; color: #475569; text-transform: uppercase; letter-spacing: .04em; margin: 0; }
 
-/* ── Search box ── */
-.search-wrap { position: relative; margin-bottom: 0.5rem; }
-#q {
-  width: 100%; padding: 0.85rem 1.1rem 0.85rem 2.8rem; font-size: 1.05rem;
-  border: 2px solid var(--border); border-radius: 10px; outline: none;
-  background: var(--card); color: var(--text); transition: border-color 0.15s;
-}
-#q:focus { border-color: var(--blue); }
-#q::placeholder { color: var(--gray-l); }
-.search-icon {
-  position: absolute; left: 0.9rem; top: 50%; transform: translateY(-50%);
-  color: var(--gray-l); font-size: 1.1rem; pointer-events: none;
-}
-#hint { font-size: 0.8rem; color: var(--gray-l); margin-bottom: 1.5rem; min-height: 1.2em; }
+  /* ── AED/m² vs AED/sqft toggle ── */
+  .unit-toggle { display: inline-flex; border: 1px solid #d6dde6; border-radius: 6px; overflow: hidden; }
+  .unit-btn { background: #fff; border: 0; padding: 4px 11px; font-size: 11.5px; font-weight: 600; color: #475569; cursor: pointer; font-family: inherit; line-height: 1.3; }
+  .unit-btn + .unit-btn { border-left: 1px solid #d6dde6; }
+  .unit-btn.active { background: #0f172a; color: #fff; }
+  .unit-btn:hover:not(.active) { background: #f1f5fb; }
 
-#suggestions {
-  position: absolute; top: calc(100% + 4px); left: 0; right: 0; z-index: 200;
-  background: var(--card); border: 1px solid var(--border); border-radius: 10px;
-  box-shadow: 0 6px 24px rgba(0,0,0,0.13); max-height: 340px; overflow-y: auto;
-  display: none;
-}
-.sug-item {
-  padding: 0.65rem 1rem; cursor: pointer; display: flex;
-  justify-content: space-between; align-items: center;
-  border-bottom: 1px solid #f3f4f6; gap: 0.5rem;
-}
-.sug-item:last-child { border-bottom: none; }
-.sug-item:hover, .sug-item.active { background: #eff6ff; }
-.sug-name { font-size: 0.94rem; font-weight: 500; }
-.sug-area { font-size: 0.78rem; color: var(--gray); }
-.sug-counts { font-size: 0.75rem; color: var(--gray-l); white-space: nowrap; text-align: right; }
+  /* ── Charts ── */
+  .dp-chart { position: relative; height: 220px; margin: 8px 0 0; }
+  .dp-chart canvas { width: 100% !important; height: 100% !important; }
+  .dp-chart-tall { position: relative; height: 260px; margin: 8px 0 0; }
+  .dp-chart-tall canvas { width: 100% !important; height: 100% !important; }
 
-/* ── Result panel ── */
-#result { display: none; }
+  /* ── Sales history (collapsible) ── */
+  .tx-summary {
+    display: flex; align-items: center; justify-content: space-between;
+    cursor: pointer; list-style: none; gap: 10px;
+  }
+  .tx-summary::-webkit-details-marker { display: none; }
+  .tx-summary h3 { font-size: 13px; font-weight: 700; color: #475569; text-transform: uppercase; letter-spacing: .04em; margin: 0; }
+  .tx-summary .tx-caret { font-size: 11px; color: #94a3b8; margin-left: 4px; transition: transform .15s; }
+  details[open] .tx-caret { transform: rotate(180deg); }
+  .tx-summary-right { display: flex; align-items: center; gap: 10px; }
 
-.bld-header { background: var(--card); border: 1px solid var(--border); border-radius: 12px; padding: 1.2rem 1.4rem; margin-bottom: 1.1rem; }
-.bld-name { font-size: 1.3rem; font-weight: 700; margin-bottom: 0.2rem; }
-.bld-meta { font-size: 0.85rem; color: var(--gray); margin-bottom: 0.9rem; }
-.stats-row { display: flex; gap: 0.7rem; flex-wrap: wrap; }
-.stat-chip { background: var(--bg); border: 1px solid var(--border); border-radius: 8px; padding: 0.45rem 0.85rem; font-size: 0.82rem; line-height: 1.4; }
-.stat-chip strong { display: block; font-size: 1.05rem; color: var(--blue); line-height: 1.2; }
+  /* ── Transaction table pagination ── */
+  .pager { display: flex; gap: 8px; align-items: center; margin-top: 10px; font-size: 12.5px; color: #6b7280; }
+  .pager button { background: #fff; border: 1px solid #e5e7eb; border-radius: 6px; padding: 4px 12px; cursor: pointer; font-size: 12px; font-family: inherit; color: #374151; }
+  .pager button:hover { background: #f3f4f6; }
+  .pager button:disabled { opacity: .4; cursor: default; }
 
-/* ── Unit toggle ── */
-.unit-toggle { display: flex; align-items: center; gap: 0.3rem; margin-bottom: 1rem; }
-.unit-toggle span { font-size: 0.8rem; color: var(--gray); }
-.unit-btn {
-  font-size: 0.8rem; padding: 0.3rem 0.7rem; border-radius: 6px;
-  border: 1px solid var(--border); background: var(--card);
-  cursor: pointer; color: var(--gray); transition: all 0.12s;
-}
-.unit-btn.active { background: var(--blue); color: #fff; border-color: var(--blue); font-weight: 600; }
-
-/* ── Chart cards ── */
-.chart-card {
-  background: var(--card); border: 1px solid var(--border); border-radius: 12px;
-  padding: 1.15rem 1.2rem 1rem; margin-bottom: 1rem;
-}
-.chart-card h3 { font-size: 0.97rem; font-weight: 600; margin-bottom: 0.15rem; }
-.chart-note { font-size: 0.76rem; color: var(--gray); margin-bottom: 0.8rem; }
-
-.legend { display: flex; flex-wrap: wrap; gap: 0.4rem 0.9rem; margin-bottom: 0.75rem; }
-.leg { display: flex; align-items: center; gap: 0.3rem; font-size: 0.78rem; color: var(--text2); cursor: pointer; }
-.leg-dot { width: 10px; height: 10px; border-radius: 50%; flex-shrink: 0; }
-
-canvas { max-height: 260px; }
-
-.no-data { color: var(--gray); font-size: 0.88rem; padding: 1.5rem 0; text-align: center; }
-
-.loading { color: var(--gray-l); font-size: 0.9rem; padding: 1rem 0; }
-
-@media (max-width: 500px) {
-  h1 { font-size: 1.25rem; }
-  .chart-card { padding: 0.9rem 0.8rem; }
-  canvas { max-height: 200px; }
-  .bld-name { font-size: 1.1rem; }
-}
+  /* ── Misc ── */
+  .rent-note { font-size: 11.5px; color: #94a3b8; margin: 0 0 10px; }
 </style>
 </head>
 <body>
-<div class="page">
+<div class="wrap">
 
-  <nav class="top-nav">
-    <a class="back" href="/en/sales/">← Map</a>
-    <span class="site-title">DXB<span>Compass</span></span>
-  </nav>
+  <div class="breadcrumb"><a href="/en/sales/">← Map</a> / Building Search</div>
 
   <h1>Building &amp; Tower Search</h1>
-  <p class="subtitle">Sales history and rental data for individual buildings in Dubai — by bedroom type, year, and market segment.</p>
+  <p class="lede">Sales and rental history for any Dubai building — by bedroom type, year, off-plan vs ready market.</p>
 
+  <!-- ── Search ── -->
   <div class="search-wrap">
     <span class="search-icon">🔍</span>
-    <input id="q" type="text" placeholder="Type a building or tower name…" autocomplete="off" spellcheck="false" aria-label="Building search">
-    <div id="suggestions" role="listbox"></div>
+    <input id="q" type="text" placeholder="Type a building or tower name…" autocomplete="off" spellcheck="false">
+    <div id="suggestions"></div>
   </div>
   <div id="hint">Loading index…</div>
 
-  <div id="result">
-    <div class="bld-header">
-      <div class="bld-name" id="bld-name"></div>
-      <div class="bld-meta" id="bld-meta"></div>
-      <div class="stats-row" id="stats-row"></div>
+  <!-- ═══ RESULT ═══════════════════════════════════════════════════════ -->
+  <div id="result" style="display:none">
+
+    <!-- Building header -->
+    <div class="panel">
+      <div class="bld-title" id="bld-name"></div>
+      <div class="bld-sub"  id="bld-sub"></div>
+      <div class="about-grid" id="bld-stats"></div>
     </div>
 
-    <div class="unit-toggle">
-      <span>Price unit:</span>
-      <button class="unit-btn active" id="btn-sqm" type="button">AED/m²</button>
-      <button class="unit-btn" id="btn-sqft" type="button">AED/sqft</button>
+    <!-- Room + period chips + unit toggle -->
+    <div class="panel" style="padding:14px 20px">
+      <div class="room-chips" id="room-chips" style="margin-bottom:8px"></div>
+      <div style="display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap">
+        <div class="period-chips" id="period-chips" style="margin:0"></div>
+        <div class="unit-toggle">
+          <button class="unit-btn active" id="btn-sqm"  type="button">AED / m²</button>
+          <button class="unit-btn"        id="btn-sqft" type="button">AED / sqft</button>
+        </div>
+      </div>
     </div>
 
-    <div class="chart-card" id="sales-card">
-      <h3>Sales — median price <span class="unit-label">AED/m²</span></h3>
-      <div class="chart-note">By bedroom type. Yearly median from DLD transaction register.</div>
-      <div class="legend" id="sales-legend"></div>
-      <canvas id="sales-chart"></canvas>
+    <!-- Sales price chart -->
+    <div class="panel" id="sales-chart-panel">
+      <div class="sec-head">
+        <h3>Sales — median <span id="unit-label-1">AED / m²</span></h3>
+      </div>
+      <div class="dp-stats" id="sales-stats"></div>
+      <div class="dp-chart-tall"><canvas id="ch-price"></canvas></div>
     </div>
 
-    <div class="chart-card" id="offplan-card">
-      <h3>Off-plan vs Ready — price &amp; volume</h3>
-      <div class="chart-note">Lines show median <span class="unit-label">AED/m²</span> per segment; bars show transaction count (right axis).</div>
-      <canvas id="offplan-chart"></canvas>
+    <!-- Off-plan vs Ready (combined: bars for count, lines for price) -->
+    <div class="panel" id="offplan-panel">
+      <div class="sec-head">
+        <h3>Off-plan vs Ready — price &amp; volume</h3>
+        <span id="op-unit-label" style="font-size:11px;color:#6b7280">AED / m²</span>
+      </div>
+      <div class="dp-chart-tall"><canvas id="ch-offplan"></canvas></div>
     </div>
 
-    <div class="chart-card" id="rents-card">
-      <h3>Rents — median annual contract (AED)</h3>
-      <div class="chart-note">By bedroom type. Source: Ejari register (project level).</div>
-      <div class="legend" id="rents-legend"></div>
-      <canvas id="rents-chart"></canvas>
+    <!-- Rents chart -->
+    <div class="panel" id="rents-panel">
+      <div class="sec-head"><h3>Rents — median annual (AED)</h3></div>
+      <p class="rent-note">Ejari register, project level. Bedroom filter applies.</p>
+      <div class="dp-stats" id="rents-stats"></div>
+      <div class="dp-chart"><canvas id="ch-rent"></canvas></div>
     </div>
-  </div>
 
-</div><!-- .page -->
+    <!-- Sales history (collapsed by default) -->
+    <div class="panel" id="tx-panel">
+      <details id="tx-details">
+        <summary class="tx-summary">
+          <div style="display:flex;align-items:center;gap:6px">
+            <h3>Sales history</h3>
+            <span class="tx-caret">▼</span>
+          </div>
+          <div class="tx-summary-right">
+            <span id="tx-count-label" style="font-size:12px;color:#94a3b8"></span>
+          </div>
+        </summary>
+        <div style="overflow-x:auto;margin-top:14px">
+          <table class="dp-table">
+            <thead>
+              <tr>
+                <th>Date</th>
+                <th>Market</th>
+                <th class="num">Price (AED)</th>
+                <th class="num">AED/sqft</th>
+                <th class="num">Beds</th>
+                <th class="num">Area (sqft)</th>
+              </tr>
+            </thead>
+            <tbody id="tx-body"></tbody>
+          </table>
+        </div>
+        <div class="pager" id="tx-pager"></div>
+      </details>
+    </div>
+
+  </div><!-- #result -->
+
+</div><!-- .wrap -->
 
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
 <script>
@@ -186,33 +211,32 @@ canvas { max-height: 260px; }
 
 // ── Constants ─────────────────────────────────────────────────────────────────
 const SQM_TO_SQFT = 10.7639;
-
-const ROOM_COLORS = {
-  studio: '#9ca3af',
-  '1br':  '#60a5fa',
-  '2br':  '#3b82f6',
-  '3br':  '#1d4ed8',
-  '4br+': '#1e3a8a',
-  villa:  '#d97706',
-  other:  '#a78bfa',
-};
-const ROOM_LABEL = {
-  studio:'Studio', '1br':'1 BR', '2br':'2 BR', '3br':'3 BR',
-  '4br+':'4+ BR',  villa:'Villa', other:'Other',
-};
-const ROOM_ORDER = ['studio','1br','2br','3br','4br+','villa','other'];
-
-const OFFPLAN_COLOR = '#f59e0b';
-const READY_COLOR   = '#1d4ed8';
+const MONTHS      = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+const ROOM_ORDER  = ['all','studio','1br','2br','3br','4br+','villa','other'];
+const ROOM_COLORS = { all:'#1d4ed8', studio:'#9ca3af', '1br':'#60a5fa', '2br':'#3b82f6', '3br':'#1d4ed8', '4br+':'#1e3a8a', villa:'#d97706', other:'#a78bfa' };
+const ROOM_LABEL  = { all:'All', studio:'Studio', '1br':'1 BR', '2br':'2 BR', '3br':'3 BR', '4br+':'4+ BR', villa:'Villa', other:'Other' };
+const BEDS_LABEL  = { studio:'Studio', '1br':'1', '2br':'2', '3br':'3', '4br+':'4+', villa:'Villa', other:'—' };
+const PERIODS     = [
+  { k:'1y',  label:'1Y',  yrs:1  },
+  { k:'3y',  label:'3Y',  yrs:3  },
+  { k:'5y',  label:'5Y',  yrs:5  },
+  { k:'10y', label:'10Y', yrs:10 },
+  { k:'all', label:'All', yrs:null },
+];
+const TX_PAGE = 25;
 
 // ── State ─────────────────────────────────────────────────────────────────────
-let INDEX = null;
-let activeCharts = [];
+let INDEX  = null;
+let DATA   = null;
+let room   = 'all';
+let period = 'all';
+let sqft   = false;
+let charts = [];
+let txPage = 0;
 let currentSlug = null;
-let currentData = null;
-let useSqft = false;
+let focusIdx = -1;
 
-// ── DOM refs ──────────────────────────────────────────────────────────────────
+// ── DOM ───────────────────────────────────────────────────────────────────────
 const qEl      = document.getElementById('q');
 const sugEl    = document.getElementById('suggestions');
 const hintEl   = document.getElementById('hint');
@@ -221,20 +245,13 @@ const resultEl = document.getElementById('result');
 // ── Load index ────────────────────────────────────────────────────────────────
 fetch('/buildings/search-index.json')
   .then(r => { if (!r.ok) throw r.status; return r.json(); })
-  .then(data => {
-    INDEX = data;
-    hintEl.textContent = `${data.length.toLocaleString()} buildings indexed`;
-  })
+  .then(d  => { INDEX = d; hintEl.textContent = d.length.toLocaleString() + ' buildings indexed'; tryHash(); })
   .catch(() => { hintEl.textContent = 'Index unavailable'; });
 
 // ── Search ────────────────────────────────────────────────────────────────────
-let focusIdx = -1;
-
-qEl.addEventListener('input', onInput);
+qEl.addEventListener('input',   onInput);
 qEl.addEventListener('keydown', onKey);
-document.addEventListener('click', e => {
-  if (!e.target.closest('.search-wrap')) closeSug();
-});
+document.addEventListener('click', e => { if (!e.target.closest('.search-wrap')) closeSug(); });
 
 function onInput() {
   const q = qEl.value.trim();
@@ -245,384 +262,450 @@ function onInput() {
   sugEl.style.display = 'block';
   focusIdx = -1;
 }
-
 function filterIndex(q, max) {
   const tokens = q.toLowerCase().split(/\s+/).filter(Boolean);
   const res = [];
   for (const b of INDEX) {
-    const bn = b.n.toLowerCase();
-    if (tokens.every(t => bn.includes(t))) {
-      res.push(b);
-      if (res.length >= max) break;
-    }
+    if (tokens.every(t => b.n.toLowerCase().includes(t))) { res.push(b); if (res.length >= max) break; }
   }
   return res;
 }
-
 function renderSug(items) {
-  sugEl.innerHTML = items.map((b, i) => {
-    const counts = [
-      b.tx ? fmtNum(b.tx) + ' sales' : '',
-      b.rn ? fmtNum(b.rn) + ' rents' : '',
-    ].filter(Boolean).join(' · ');
-    return `<div class="sug-item" tabindex="-1" role="option"
-                 data-slug="${esc(b.s)}" data-name="${esc(b.n)}" data-i="${i}">
-      <div>
-        <div class="sug-name">${esc(b.n)}</div>
-        <div class="sug-area">${esc(b.a)}</div>
-      </div>
-      <div class="sug-counts">${counts}</div>
+  sugEl.innerHTML = items.map(b => {
+    const cnt = [b.tx && fmtNum(b.tx)+' sales', b.rn && fmtNum(b.rn)+' rents'].filter(Boolean).join(' · ');
+    return `<div class="sug-item" data-slug="${h(b.s)}" data-name="${h(b.n)}">
+      <div><div class="sug-name">${h(b.n)}</div><div class="sug-area">${h(b.a)}</div></div>
+      <div class="sug-cnt">${cnt}</div>
     </div>`;
   }).join('');
-  sugEl.querySelectorAll('.sug-item').forEach(el => {
-    el.addEventListener('click', () => pick(el.dataset.slug, el.dataset.name));
-  });
+  sugEl.querySelectorAll('.sug-item').forEach(el =>
+    el.addEventListener('click', () => pick(el.dataset.slug, el.dataset.name))
+  );
 }
-
 function onKey(e) {
   const items = sugEl.querySelectorAll('.sug-item');
   if (!items.length || sugEl.style.display === 'none') return;
-  if (e.key === 'ArrowDown') {
-    focusIdx = Math.min(focusIdx + 1, items.length - 1);
-    setFocus(items); e.preventDefault();
-  } else if (e.key === 'ArrowUp') {
-    focusIdx = Math.max(focusIdx - 1, 0);
-    setFocus(items); e.preventDefault();
-  } else if (e.key === 'Enter' && focusIdx >= 0) {
-    const el = items[focusIdx];
-    pick(el.dataset.slug, el.dataset.name); e.preventDefault();
-  } else if (e.key === 'Escape') {
-    closeSug();
-  }
+  if (e.key === 'ArrowDown')  { focusIdx = Math.min(focusIdx+1, items.length-1); moveFocus(items); e.preventDefault(); }
+  else if (e.key === 'ArrowUp')   { focusIdx = Math.max(focusIdx-1, 0); moveFocus(items); e.preventDefault(); }
+  else if (e.key === 'Enter' && focusIdx >= 0) { pick(items[focusIdx].dataset.slug, items[focusIdx].dataset.name); e.preventDefault(); }
+  else if (e.key === 'Escape') closeSug();
 }
-
-function setFocus(items) {
+function moveFocus(items) {
   items.forEach((el, i) => el.classList.toggle('active', i === focusIdx));
-  if (focusIdx >= 0) items[focusIdx].scrollIntoView({ block: 'nearest' });
+  if (focusIdx >= 0) items[focusIdx].scrollIntoView({ block:'nearest' });
 }
-
 function closeSug() { sugEl.style.display = 'none'; }
 
-// ── Load building data ────────────────────────────────────────────────────────
+// ── Load building ─────────────────────────────────────────────────────────────
 function pick(slug, name) {
   closeSug();
   qEl.value = name;
   if (slug === currentSlug) return;
   currentSlug = slug;
   history.replaceState(null, '', '/search/#' + slug);
-  showLoading();
-  fetch(`/buildings/${slug}/data.json`)
+  resultEl.style.display = 'none';
+  room = 'all'; period = 'all'; txPage = 0;
+  fetchBuilding(slug);
+}
+function fetchBuilding(slug) {
+  fetch('/buildings/' + slug + '/data.json')
     .then(r => { if (!r.ok) throw new Error('HTTP ' + r.status); return r.json(); })
-    .then(d => { currentData = d; renderBuilding(d); })
-    .catch(err => showError(err.message));
-}
-
-function showLoading() {
-  destroyCharts();
-  document.getElementById('bld-name').textContent = '…';
-  document.getElementById('bld-meta').textContent = '';
-  document.getElementById('stats-row').innerHTML = '';
-  resultEl.style.display = 'block';
-}
-
-function showError(msg) {
-  document.getElementById('bld-name').textContent = 'Data not available';
-  document.getElementById('bld-meta').textContent = msg || '';
+    .then(d  => { DATA = d; renderAll(); })
+    .catch(err => {
+      resultEl.style.display = 'block';
+      document.getElementById('bld-name').innerHTML = '<span class="err">Data not available: ' + h(err.message) + '</span>';
+    });
 }
 
 // ── Unit toggle ───────────────────────────────────────────────────────────────
-document.getElementById('btn-sqm').addEventListener('click', () => setUnit(false));
+document.getElementById('btn-sqm').addEventListener('click',  () => setUnit(false));
 document.getElementById('btn-sqft').addEventListener('click', () => setUnit(true));
-
-function setUnit(sqft) {
-  useSqft = sqft;
-  document.getElementById('btn-sqm').classList.toggle('active', !sqft);
-  document.getElementById('btn-sqft').classList.toggle('active', sqft);
-  // Update label text
-  document.querySelectorAll('.unit-label').forEach(el => {
-    el.textContent = sqft ? 'AED/sqft' : 'AED/m²';
-  });
-  if (currentData) renderBuilding(currentData);
+function setUnit(v) {
+  sqft = v;
+  document.getElementById('btn-sqm').classList.toggle('active', !v);
+  document.getElementById('btn-sqft').classList.toggle('active',  v);
+  document.getElementById('unit-label-1').textContent = v ? 'AED / sqft' : 'AED / m²';
+  document.getElementById('op-unit-label').textContent = v ? 'AED / sqft' : 'AED / m²';
+  if (DATA) renderAll();
 }
 
-// ── Render ────────────────────────────────────────────────────────────────────
-function renderBuilding(d) {
+// ── Main render ───────────────────────────────────────────────────────────────
+function renderAll() {
   destroyCharts();
-
-  document.getElementById('bld-name').textContent = d.name;
-  const metaParts = [d.area];
-  if (d.proj && d.proj !== d.name) metaParts.push(d.proj);
-  document.getElementById('bld-meta').textContent = metaParts.filter(Boolean).join(' · ');
-
-  // Stats chips
-  const chips = [];
-  if (d.sn) chips.push(`<div class="stat-chip"><strong>${fmtNum(d.sn)}</strong>Sales</div>`);
-  if (d.rn) chips.push(`<div class="stat-chip"><strong>${fmtNum(d.rn)}</strong>Rent contracts</div>`);
-  const lastSale = d.sy && d.sy.length ? d.sy[d.sy.length - 1] : null;
-  if (lastSale && lastSale.ppsqm) {
-    const val = useSqft ? round1(lastSale.ppsqm / SQM_TO_SQFT) : lastSale.ppsqm;
-    const unit = useSqft ? 'AED/sqft' : 'AED/m²';
-    chips.push(`<div class="stat-chip"><strong>${fmtAED(val)}</strong>${unit} (${lastSale.y})</div>`);
-  }
-  const lastRent = d.ry && d.ry.length ? d.ry[d.ry.length - 1] : null;
-  if (lastRent && lastRent.rent) {
-    chips.push(`<div class="stat-chip"><strong>${fmtAED(lastRent.rent)}</strong>Median rent/yr (${lastRent.y})</div>`);
-  }
-  document.getElementById('stats-row').innerHTML = chips.join('');
-
-  renderSalesChart(d);
-  renderOffplanChart(d);
-  renderRentsChart(d);
-
+  renderHeader();
+  renderRoomChips();
+  renderPeriodChips();
+  renderSalesPanel();
+  renderOffplanPanel();
+  renderRentsPanel();
+  renderTxTable();
   resultEl.style.display = 'block';
+  // keep details closed when switching buildings
+  const det = document.getElementById('tx-details');
+  if (det) det.removeAttribute('open');
 }
 
-function ppsqmToUnit(v) {
-  if (v == null) return null;
-  return useSqft ? round1(v / SQM_TO_SQFT) : v;
-}
-
-function round1(v) { return Math.round(v * 10) / 10; }
-
-// Sales price chart
-function renderSalesChart(d) {
-  const canvas = document.getElementById('sales-chart');
-  const legend = document.getElementById('sales-legend');
-  const card   = document.getElementById('sales-card');
-
-  if (!d.sy || !d.sy.length) { card.innerHTML = '<p class="no-data">No sales data</p>'; return; }
-  card.style.display = 'block';
-
-  const years = allYears(d.sy, ...Object.values(d.sr || {}));
-
-  const datasets = [];
-
-  // Overall line
-  datasets.push({
-    label: 'All', order: 10,
-    data: years.map(y => ppsqmToUnit(findY(d.sy, y)?.ppsqm)),
-    borderColor: '#374151', backgroundColor: 'transparent',
-    borderWidth: 2.5, pointRadius: 3, tension: 0.3, spanGaps: true,
-  });
-
-  // Per-room lines
-  for (const room of ROOM_ORDER) {
-    const rows = (d.sr || {})[room];
-    if (!rows) continue;
-    datasets.push({
-      label: ROOM_LABEL[room],
-      data: years.map(y => ppsqmToUnit(findY(rows, y)?.ppsqm)),
-      borderColor: ROOM_COLORS[room], backgroundColor: 'transparent',
-      borderWidth: 1.5, pointRadius: 2, tension: 0.3, spanGaps: true,
-    });
-  }
-
-  legend.innerHTML = datasets.map(ds =>
-    `<span class="leg"><span class="leg-dot" style="background:${ds.borderColor}"></span>${esc(ds.label)}</span>`
+function renderHeader() {
+  document.getElementById('bld-name').textContent = DATA.name;
+  const sub = [DATA.area, DATA.proj && DATA.proj !== DATA.name ? DATA.proj : ''].filter(Boolean).join(' · ');
+  document.getElementById('bld-sub').textContent = sub;
+  const lastSale = (DATA.sy || []).slice(-1)[0];
+  const lastRent = (DATA.ry || []).slice(-1)[0];
+  const stats = [];
+  if (DATA.sn) stats.push({ k:'Sales', v: fmtNum(DATA.sn) });
+  if (DATA.rn) stats.push({ k:'Rent contracts', v: fmtNum(DATA.rn) });
+  if (lastSale?.ppsqm) stats.push({ k:(sqft ? 'AED/sqft' : 'AED/m²')+' ('+lastSale.y+')', v: fmtAED(toUnit(lastSale.ppsqm)) });
+  if (lastRent?.rent)  stats.push({ k:'Median rent/yr ('+lastRent.y+')', v: fmtAED(lastRent.rent) + ' AED' });
+  document.getElementById('bld-stats').innerHTML = stats.map(s =>
+    `<div class="about-stat"><div class="k">${h(s.k)}</div><div class="v">${h(s.v)}</div></div>`
   ).join('');
-
-  const unitLabel = useSqft ? 'AED/sqft' : 'AED/m²';
-  activeCharts.push(new Chart(canvas, {
-    type: 'line',
-    data: { labels: years.map(String), datasets },
-    options: {
-      responsive: true, maintainAspectRatio: true,
-      interaction: { mode: 'index', intersect: false },
-      plugins: {
-        legend: { display: false },
-        tooltip: { callbacks: { label: ctx => ctx.parsed.y != null ? `${ctx.dataset.label}: ${fmtAED(ctx.parsed.y)} ${unitLabel}` : null } },
-      },
-      scales: {
-        x: { grid: { display: false } },
-        y: {
-          ticks: { callback: v => fmtK(v) },
-          title: { display: true, text: unitLabel, font: { size: 11 } },
-        },
-      },
-    },
-  }));
 }
 
-// Off-plan vs ready chart
-function renderOffplanChart(d) {
-  const canvas = document.getElementById('offplan-chart');
-  const card   = document.getElementById('offplan-card');
+function renderRoomChips() {
+  const rows = ROOM_ORDER.filter(r =>
+    r === 'all' || (DATA.sr[r]?.length) || (DATA.rr[r]?.length)
+  );
+  document.getElementById('room-chips').innerHTML = rows.map(r => {
+    const active = r === room;
+    const col    = ROOM_COLORS[r];
+    const style  = active ? ` style="background:${col};border-color:${col};color:#fff"` : '';
+    const n      = r === 'all' ? DATA.sn : ((DATA.sr[r] || []).reduce((s, x) => s + x.n, 0));
+    return `<button class="room-chip${active?' active':''}" data-room="${r}"${style}>${h(ROOM_LABEL[r])}<span class="chip-n">${fmtNum(n)}</span></button>`;
+  }).join('');
+  document.getElementById('room-chips').querySelectorAll('.room-chip').forEach(el =>
+    el.addEventListener('click', () => { room = el.dataset.room; txPage = 0; renderAll(); })
+  );
+}
 
-  if (!d.sy || !d.sy.length || !d.sy.some(r => r.op > 0)) {
-    card.style.display = 'none'; return;
+function renderPeriodChips() {
+  document.getElementById('period-chips').innerHTML =
+    '<span class="pc-lbl">Period:</span>' +
+    PERIODS.map(p => `<button class="period-chip${p.k===period?' active':''}" data-p="${p.k}">${p.label}</button>`).join('');
+  document.getElementById('period-chips').querySelectorAll('.period-chip').forEach(el =>
+    el.addEventListener('click', () => { period = el.dataset.p; renderAll(); })
+  );
+}
+
+// ── Sales chart (combo: volume bars + price lines with op/rd split) ──────────
+function renderSalesPanel() {
+  const panel  = document.getElementById('sales-chart-panel');
+  const cut    = yearCutoff();
+  const uLbl   = sqft ? 'AED/sqft' : 'AED/m²';
+  const syData = (DATA.sy || []).filter(r => r.y >= cut);
+
+  if (room !== 'all') {
+    // ── Specific room: solid ready line + dashed off-plan line + count bars ──
+    const data = (DATA.sr[room] || []).filter(r => r.y >= cut);
+    if (!data.length) { panel.style.display = 'none'; return; }
+    panel.style.display = 'block';
+
+    const col    = ROOM_COLORS[room];
+    const years  = data.map(r => String(r.y));
+    const counts = data.map(r => r.n || 0);
+    const pAll   = data.map(r => r.ppsqm    != null ? toUnit(r.ppsqm)    : null);
+    const pOp    = data.map(r => r.op_ppsqm != null ? toUnit(r.op_ppsqm) : null);
+    const pRd    = data.map(r => r.rd_ppsqm != null ? toUnit(r.rd_ppsqm) : null);
+    const hasOp  = pOp.some(v => v != null);
+
+    const n   = counts.reduce((s, v) => s + v, 0);
+    const med = (meds => meds.length ? Math.round(meds.reduce((a,b)=>a+b,0)/meds.length) : null)(pAll.filter(Boolean));
+
+    document.getElementById('sales-stats').innerHTML = [
+      { k:'Transactions', v: fmtNum(n), cls:'dp-stat--count' },
+      med ? { k:'Avg median '+uLbl, v: fmtAED(med), cls:'dp-stat--ppsqm' } : null,
+    ].filter(Boolean).map(s =>
+      `<div class="dp-stat ${s.cls}"><div class="k">${s.k}</div><div class="v">${s.v}</div></div>`
+    ).join('');
+
+    const datasets = [
+      { type:'bar', label:'Transactions', data:counts, backgroundColor:col+'44', yAxisID:'yVol', order:3 },
+    ];
+    if (hasOp) {
+      datasets.push({ type:'line', label:'Off-plan '+uLbl, data:pOp, borderColor:col, backgroundColor:'transparent',
+        yAxisID:'yPrice', borderDash:[5,4], pointRadius:3, tension:.3, spanGaps:true, borderWidth:2, order:1 });
+      datasets.push({ type:'line', label:'Ready '+uLbl, data:pRd, borderColor:col, backgroundColor:'transparent',
+        yAxisID:'yPrice', pointRadius:3, tension:.3, spanGaps:true, borderWidth:2, order:1 });
+    } else {
+      datasets.push({ type:'line', label:uLbl, data:pAll, borderColor:col, backgroundColor:'transparent',
+        yAxisID:'yPrice', pointRadius:4, tension:.3, spanGaps:true, borderWidth:2.5, order:1 });
+    }
+
+    charts.push(new Chart(document.getElementById('ch-price'), {
+      data: { labels: years, datasets },
+      options: comboSalesOpts(uLbl, hasOp),
+    }));
+
+  } else {
+    // ── All: op/rd lines (dashed/solid, same "all" blue) + stacked bars ───
+    if (!syData.length) { panel.style.display = 'none'; return; }
+    panel.style.display = 'block';
+
+    const col   = ROOM_COLORS['all'];
+    const years = syData.map(r => String(r.y));
+    const nOp   = syData.map(r => r.op || 0);
+    const nRd   = syData.map(r => r.rd || 0);
+    const pOp   = syData.map(r => r.op_ppsqm != null ? toUnit(r.op_ppsqm) : null);
+    const pRd   = syData.map(r => r.rd_ppsqm != null ? toUnit(r.rd_ppsqm) : null);
+    const hasOp = pOp.some(v => v != null);
+    const totalN = syData.reduce((s, r) => s + r.n, 0);
+
+    document.getElementById('sales-stats').innerHTML =
+      `<div class="dp-stat dp-stat--count"><div class="k">Transactions</div><div class="v">${fmtNum(totalN)}</div></div>`;
+
+    const datasets = [
+      { type:'bar', label:'Off-plan count', data:nOp, backgroundColor:'rgba(245,158,11,0.35)', yAxisID:'yVol', stack:'vol', order:3 },
+      { type:'bar', label:'Ready count',    data:nRd, backgroundColor:col+'33',                yAxisID:'yVol', stack:'vol', order:3 },
+    ];
+    if (hasOp) {
+      datasets.push({ type:'line', label:'Off-plan '+uLbl, data:pOp, borderColor:col, backgroundColor:'transparent',
+        yAxisID:'yPrice', borderDash:[5,4], pointRadius:3, tension:.3, spanGaps:true, borderWidth:2, order:1 });
+    }
+    datasets.push({ type:'line', label:'Ready '+uLbl, data:pRd, borderColor:col, backgroundColor:'transparent',
+      yAxisID:'yPrice', pointRadius:3, tension:.3, spanGaps:true, borderWidth:2, order:1 });
+
+    charts.push(new Chart(document.getElementById('ch-price'), {
+      data: { labels: years, datasets },
+      options: comboSalesOpts(uLbl, true),
+    }));
   }
-  card.style.display = 'block';
+}
 
-  const years = d.sy.map(r => r.y);
-  const unitLabel = useSqft ? 'AED/sqft' : 'AED/m²';
+function comboSalesOpts(uLbl, showLegend) {
+  return {
+    responsive: true, maintainAspectRatio: false,
+    interaction: { mode:'index', intersect:false },
+    plugins: {
+      legend: { display:showLegend, position:'bottom', labels:{ boxWidth:10, font:{size:10}, padding:10 } },
+      tooltip: { callbacks: {
+        label: ctx => {
+          const v = ctx.parsed.y;
+          if (v == null) return null;
+          if (ctx.dataset.yAxisID === 'yPrice') return ` ${ctx.dataset.label}: ${fmtAED(v)}`;
+          return ` ${ctx.dataset.label}: ${Math.round(v).toLocaleString()}`;
+        },
+      }},
+    },
+    scales: {
+      x: { stacked:true, grid:{display:false}, ticks:{font:{size:9}, maxRotation:0, autoSkip:true, maxTicksLimit:10} },
+      yPrice: {
+        type:'linear', position:'left', beginAtZero:false,
+        ticks:{ font:{size:9}, callback: v => fmtK(v) },
+        title:{ display:true, text:uLbl, font:{size:9} },
+      },
+      yVol: {
+        type:'linear', position:'right', stacked:true,
+        grid:{ drawOnChartArea:false },
+        ticks:{ font:{size:9}, callback: v => fmtK(v) },
+        title:{ display:true, text:'Count', font:{size:9} },
+      },
+    },
+  };
+}
 
-  const datasets = [
-    {
-      label: `Off-plan (${unitLabel})`,
-      data: years.map(y => ppsqmToUnit(findY(d.sy, y)?.op_ppsqm)),
-      borderColor: OFFPLAN_COLOR, backgroundColor: 'transparent',
-      borderWidth: 2, pointRadius: 3, tension: 0.3, spanGaps: true, yAxisID: 'y',
-    },
-    {
-      label: `Ready (${unitLabel})`,
-      data: years.map(y => ppsqmToUnit(findY(d.sy, y)?.rd_ppsqm)),
-      borderColor: READY_COLOR, backgroundColor: 'transparent',
-      borderWidth: 2, pointRadius: 3, tension: 0.3, spanGaps: true, yAxisID: 'y',
-    },
-    {
-      label: 'Off-plan (count)',
-      type: 'bar',
-      data: years.map(y => findY(d.sy, y)?.op ?? 0),
-      borderColor: OFFPLAN_COLOR + '88', backgroundColor: OFFPLAN_COLOR + '33',
-      borderWidth: 1, yAxisID: 'y2', order: 10,
-    },
-    {
-      label: 'Ready (count)',
-      type: 'bar',
-      data: years.map(y => findY(d.sy, y)?.rd ?? 0),
-      borderColor: READY_COLOR + '88', backgroundColor: READY_COLOR + '33',
-      borderWidth: 1, yAxisID: 'y2', order: 11,
-    },
-  ];
+// ── Off-plan vs Ready — combined chart (bars + lines, dual Y) ─────────────────
+function renderOffplanPanel() {
+  const panel   = document.getElementById('offplan-panel');
+  const cut     = yearCutoff();
+  const allData = (DATA.sy || []).filter(r => r.y >= cut);
+  if (!allData.some(r => r.op > 0)) { panel.style.display = 'none'; return; }
+  panel.style.display = 'block';
 
-  activeCharts.push(new Chart(canvas, {
-    type: 'line',
-    data: { labels: years.map(String), datasets },
+  const uLbl    = sqft ? 'AED/sqft' : 'AED/m²';
+  document.getElementById('op-unit-label').textContent = uLbl;
+
+  const years   = allData.map(r => String(r.y));
+  const nOp     = allData.map(r => r.op || 0);
+  const nRd     = allData.map(r => r.rd || 0);
+  const pOp     = allData.map(r => r.op_ppsqm != null ? toUnit(r.op_ppsqm) : null);
+  const pRd     = allData.map(r => r.rd_ppsqm != null ? toUnit(r.rd_ppsqm) : null);
+
+  charts.push(new Chart(document.getElementById('ch-offplan'), {
+    data: {
+      labels: years,
+      datasets: [
+        // stacked bars (count) — right Y axis
+        { type:'bar',  label:'Off-plan count', data:nOp, backgroundColor:'rgba(245,158,11,0.35)', yAxisID:'yVol', stack:'vol', order:3 },
+        { type:'bar',  label:'Ready count',    data:nRd, backgroundColor:'rgba(29,78,216,0.20)',  yAxisID:'yVol', stack:'vol', order:3 },
+        // price lines — left Y axis
+        { type:'line', label:'Off-plan '+uLbl, data:pOp, borderColor:'#d97706', backgroundColor:'transparent', yAxisID:'yPrice', pointRadius:3, tension:.3, spanGaps:true, borderWidth:2, order:1 },
+        { type:'line', label:'Ready '+uLbl,    data:pRd, borderColor:'#1d4ed8', backgroundColor:'transparent', yAxisID:'yPrice', pointRadius:3, tension:.3, spanGaps:true, borderWidth:2, order:1 },
+      ],
+    },
     options: {
-      responsive: true, maintainAspectRatio: true,
-      interaction: { mode: 'index', intersect: false },
+      responsive: true, maintainAspectRatio: false,
+      interaction: { mode:'index', intersect:false },
       plugins: {
-        legend: { display: true, position: 'top', labels: { boxWidth: 12, font: { size: 11 } } },
-        tooltip: {
-          callbacks: {
-            label: ctx => {
-              if (ctx.parsed.y == null) return null;
-              return ctx.dataset.label.includes('count')
-                ? `${ctx.dataset.label}: ${ctx.parsed.y}`
-                : `${ctx.dataset.label}: ${fmtAED(ctx.parsed.y)}`;
-            },
+        legend: { display:true, position:'bottom', labels:{ boxWidth:10, font:{size:10}, padding:10 } },
+        tooltip: { callbacks: {
+          label: ctx => {
+            const v = ctx.parsed.y;
+            if (v == null) return null;
+            if (ctx.dataset.yAxisID === 'yPrice') return ` ${ctx.dataset.label}: ${fmtAED(v)}`;
+            return ` ${ctx.dataset.label}: ${v.toLocaleString()}`;
           },
-        },
+        }},
       },
       scales: {
-        x: { grid: { display: false } },
-        y: {
-          position: 'left',
-          ticks: { callback: v => fmtK(v) },
-          title: { display: true, text: unitLabel, font: { size: 11 } },
+        x: { stacked:true, grid:{display:false}, ticks:{font:{size:9}, maxRotation:0, autoSkip:true, maxTicksLimit:10} },
+        yPrice: {
+          type:'linear', position:'left',
+          beginAtZero: false,
+          ticks:{ font:{size:9}, callback: v => fmtK(v) },
+          title:{ display:true, text:uLbl, font:{size:9} },
         },
-        y2: {
-          position: 'right',
-          grid: { drawOnChartArea: false },
-          title: { display: true, text: 'Count', font: { size: 11 } },
+        yVol: {
+          type:'linear', position:'right', stacked:true,
+          grid:{ drawOnChartArea:false },
+          ticks:{ font:{size:9}, callback: v => fmtK(v) },
+          title:{ display:true, text:'Count', font:{size:9} },
         },
       },
     },
   }));
 }
 
-// Rents chart
-function renderRentsChart(d) {
-  const canvas = document.getElementById('rents-chart');
-  const legend = document.getElementById('rents-legend');
-  const card   = document.getElementById('rents-card');
+// ── Rents chart ───────────────────────────────────────────────────────────────
+function renderRentsPanel() {
+  const panel = document.getElementById('rents-panel');
+  const cut   = yearCutoff();
+  const data  = rentDataFor(room).filter(r => r.y >= cut);
+  if (!data.length) { panel.style.display = 'none'; return; }
+  panel.style.display = 'block';
 
-  if (!d.ry || !d.ry.length) { card.style.display = 'none'; return; }
-  card.style.display = 'block';
+  const years  = data.map(r => String(r.y));
+  const values = data.map(r => r.rent || null);
+  const n      = data.reduce((s, r) => s + (r.n||0), 0);
+  const meds   = values.filter(Boolean);
+  const med    = meds.length ? Math.round(meds.reduce((a,b)=>a+b,0)/meds.length) : null;
+  const col    = ROOM_COLORS[room] || '#1d4ed8';
 
-  const years = allYears(d.ry, ...Object.values(d.rr || {}));
-
-  const datasets = [{
-    label: 'All', order: 10,
-    data: years.map(y => findY(d.ry, y)?.rent ?? null),
-    borderColor: '#374151', backgroundColor: 'transparent',
-    borderWidth: 2.5, pointRadius: 3, tension: 0.3, spanGaps: true,
-  }];
-
-  for (const room of ROOM_ORDER) {
-    const rows = (d.rr || {})[room];
-    if (!rows) continue;
-    datasets.push({
-      label: ROOM_LABEL[room],
-      data: years.map(y => findY(rows, y)?.rent ?? null),
-      borderColor: ROOM_COLORS[room], backgroundColor: 'transparent',
-      borderWidth: 1.5, pointRadius: 2, tension: 0.3, spanGaps: true,
-    });
-  }
-
-  legend.innerHTML = datasets.map(ds =>
-    `<span class="leg"><span class="leg-dot" style="background:${ds.borderColor}"></span>${esc(ds.label)}</span>`
+  document.getElementById('rents-stats').innerHTML = [
+    { k:'Contracts (filtered)', v: fmtNum(n),  cls:'dp-stat--count' },
+    med ? { k:'Avg median rent/yr', v: fmtAED(med)+' AED', cls:'dp-stat--avg' } : null,
+  ].filter(Boolean).map(s =>
+    `<div class="dp-stat ${s.cls}"><div class="k">${s.k}</div><div class="v">${s.v}</div></div>`
   ).join('');
 
-  activeCharts.push(new Chart(canvas, {
+  charts.push(new Chart(document.getElementById('ch-rent'), {
     type: 'line',
-    data: { labels: years.map(String), datasets },
-    options: {
-      responsive: true, maintainAspectRatio: true,
-      interaction: { mode: 'index', intersect: false },
-      plugins: {
-        legend: { display: false },
-        tooltip: { callbacks: { label: ctx => ctx.parsed.y != null ? `${ctx.dataset.label}: ${fmtAED(ctx.parsed.y)} AED/yr` : null } },
-      },
-      scales: {
-        x: { grid: { display: false } },
-        y: {
-          ticks: { callback: v => fmtK(v) },
-          title: { display: true, text: 'AED / year', font: { size: 11 } },
-        },
-      },
-    },
+    data: { labels: years, datasets: [{
+      data: values, borderColor: col,
+      backgroundColor: col + '22', fill: true,
+      tension: .3, pointRadius: 4, spanGaps: true, borderWidth: 2.5,
+    }]},
+    options: chartLineOpts('AED / year', false),
   }));
 }
 
-// ── Utility ───────────────────────────────────────────────────────────────────
-function destroyCharts() { activeCharts.forEach(c => c.destroy()); activeCharts = []; }
+// ── Transaction table ─────────────────────────────────────────────────────────
+function renderTxTable() {
+  const panel = document.getElementById('tx-panel');
+  let txs = DATA.txs || [];
+  if (room !== 'all') txs = txs.filter(t => t.r === room);
+  if (period !== 'all') {
+    const p = PERIODS.find(x => x.k === period);
+    if (p?.yrs) { const cut = new Date().getFullYear() - p.yrs; txs = txs.filter(t => parseInt(t.d) >= cut); }
+  }
+  if (!txs.length) { panel.style.display = 'none'; return; }
+  panel.style.display = 'block';
 
-function allYears(...arrays) {
-  const s = new Set();
-  for (const a of arrays) if (Array.isArray(a)) a.forEach(r => s.add(r.y));
-  return [...s].sort((a, b) => a - b);
+  document.getElementById('tx-count-label').textContent = txs.length.toLocaleString() + ' transactions';
+
+  const slice = txs.slice(txPage * TX_PAGE, (txPage+1) * TX_PAGE);
+  document.getElementById('tx-body').innerHTML = slice.map(tx => {
+    const sqftArea = tx.sqm ? Math.round(tx.sqm * SQM_TO_SQFT) : null;
+    const ppsqft   = tx.sqm && tx.p ? Math.round(tx.p / (tx.sqm * SQM_TO_SQFT)) : null;
+    const badge    = tx.op
+      ? '<span class="dp-tag-op dp-tag-op-Off-Plan">OFF-PLAN</span>'
+      : '<span class="dp-tag-op dp-tag-op-Ready">Ready</span>';
+    return `<tr>
+      <td>${h(fmtDate(tx.d))}</td>
+      <td>${badge}</td>
+      <td class="num" style="font-weight:600">${tx.p ? fmtAEDFull(tx.p) : '—'}</td>
+      <td class="num">${ppsqft ? ppsqft.toLocaleString() : '—'}</td>
+      <td class="num">${h(BEDS_LABEL[tx.r] || '—')}</td>
+      <td class="num">${sqftArea ? sqftArea.toLocaleString() : '—'}</td>
+    </tr>`;
+  }).join('');
+
+  const pages = Math.ceil(txs.length / TX_PAGE);
+  document.getElementById('tx-pager').innerHTML = pages <= 1 ? '' : `
+    <button id="pg-prev" ${txPage===0 ? 'disabled' : ''}>← Prev</button>
+    <span>Page ${txPage+1} of ${pages}</span>
+    <button id="pg-next" ${txPage>=pages-1 ? 'disabled' : ''}>Next →</button>
+  `;
+  const prev = document.getElementById('pg-prev');
+  const next = document.getElementById('pg-next');
+  if (prev) prev.addEventListener('click', () => { txPage--; renderTxTable(); });
+  if (next) next.addEventListener('click', () => { txPage++; renderTxTable(); });
 }
 
-function findY(arr, y) { return arr.find(r => r.y === y); }
+// ── Data helpers ──────────────────────────────────────────────────────────────
+function yearCutoff() {
+  if (period === 'all') return 0;
+  const p = PERIODS.find(x => x.k === period);
+  return p?.yrs ? new Date().getFullYear() - p.yrs : 0;
+}
+function rentDataFor(r) { return r === 'all' ? (DATA.ry || []) : (DATA.rr[r] || []); }
 
+// ── Chart helpers ─────────────────────────────────────────────────────────────
+function chartLineOpts(yLabel, showLegend) {
+  return {
+    responsive: true, maintainAspectRatio: false,
+    interaction: { mode:'index', intersect:false },
+    plugins: {
+      legend: { display: showLegend, position:'bottom', labels:{ boxWidth:10, font:{size:10}, padding:10 } },
+      tooltip: { callbacks: { label: ctx => ctx.parsed.y != null ? ` ${ctx.dataset.label ?? ''} ${fmtAED(ctx.parsed.y)} ${yLabel}` : null } },
+    },
+    scales: {
+      x: { grid:{display:false}, ticks:{font:{size:10}, maxRotation:0, autoSkip:true, maxTicksLimit:10} },
+      y: { beginAtZero:false, ticks:{font:{size:10}, callback: v => fmtK(v)}, title:{display:true, text:yLabel, font:{size:10}} },
+    },
+  };
+}
+
+function destroyCharts() { charts.forEach(c => c.destroy()); charts = []; }
+function toUnit(v) { return v == null ? null : (sqft ? Math.round(v / SQM_TO_SQFT * 10) / 10 : v); }
+
+// ── Formatters ────────────────────────────────────────────────────────────────
 function fmtNum(n) {
-  if (n >= 1e6) return (n / 1e6).toFixed(1).replace(/\.0$/, '') + 'M';
-  if (n >= 1e3) return (n / 1e3).toFixed(1).replace(/\.0$/, '') + 'K';
-  return String(n);
+  if (n == null) return '—';
+  if (n >= 1e6) return (n/1e6).toFixed(1).replace(/\.0$/,'') + 'M';
+  if (n >= 1e3) return (n/1e3).toFixed(1).replace(/\.0$/,'') + 'K';
+  return n.toLocaleString();
 }
-
 function fmtAED(v) {
-  if (v == null) return '—';
-  if (v >= 1e6) return (v / 1e6).toFixed(2).replace(/\.?0+$/, '') + 'M';
-  if (v >= 1e3) return Math.round(v / 1e3) + 'K';
+  if (!v) return '—';
+  if (v >= 1e6) return (v/1e6).toFixed(2).replace(/\.?0+$/,'') + 'M';
+  if (v >= 1e3) return Math.round(v/1e3) + 'K';
   return String(Math.round(v));
 }
-
+function fmtAEDFull(v) { return v ? Math.round(v).toLocaleString('en-US') : '—'; }
 function fmtK(v) {
-  if (v >= 1e6) return (v / 1e6).toFixed(1) + 'M';
-  if (v >= 1e3) return Math.round(v / 1e3) + 'K';
+  if (v >= 1e6) return (v/1e6).toFixed(1) + 'M';
+  if (v >= 1e3) return Math.round(v/1e3) + 'K';
   return v;
 }
-
-function esc(s) {
-  return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+function fmtDate(d) {
+  if (!d) return '—';
+  const s = String(d);
+  if (s.length >= 10) {
+    const mo = parseInt(s.slice(5,7)) - 1;
+    return `${parseInt(s.slice(8,10))} ${MONTHS[mo]} ${s.slice(0,4)}`;
+  }
+  return s;
+}
+function h(s) {
+  return String(s == null ? '' : s).replace(/[&<>"']/g, c =>
+    ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'})[c]);
 }
 
-// ── Hash routing (e.g. /search/#burj-khalifa) ─────────────────────────────────
-function tryHashLoad() {
+// ── Hash routing ──────────────────────────────────────────────────────────────
+function tryHash() {
   const slug = location.hash.slice(1);
   if (!slug || !INDEX) return;
-  const match = INDEX.find(b => b.s === slug);
-  if (match) pick(match.s, match.n);
-}
-
-if (location.hash) {
-  if (INDEX) {
-    tryHashLoad();
-  } else {
-    const t = setInterval(() => { if (INDEX) { clearInterval(t); tryHashLoad(); } }, 100);
-  }
+  const m = INDEX.find(b => b.s === slug);
+  if (m) { qEl.value = m.n; pick(m.s, m.n); }
 }
 </script>
 </body>
