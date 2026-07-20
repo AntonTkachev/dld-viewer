@@ -54,7 +54,7 @@ GOLDEN_PAYBACK = GOLDEN_GROWTH
 COV_MIN = {
     'TX_PERIODS':      {'1y':0.70, '3y':0.75, '5y':0.75, '10y':0.75, 'all':0.80},
     'RENTS_PERIODS':   {'1y':0.70, '3y':0.75, '5y':0.75, '10y':0.75, 'all':0.80},
-    'GROWTH_PERIODS':  {'1y':0.45, '3y':0.42, '5y':0.40, '10y':0.40},
+    'GROWTH_PERIODS':  {'1y':0.45, '3y':0.42, '5y':0.40, '10y':0.40, '15y':0.35, 'all':0.45},
     'PAYBACK_PERIODS': {'studio':0.15, '1br':0.20, '2br':0.25, '3br':0.25, '4br_plus':0.15},
     # Investor scores two strategy pools: buy-to-let (ready sales + rentals,
     # 1y window, MIN 8/15) and off-plan entry (≥20 off-plan sales, 1y window).
@@ -233,7 +233,7 @@ def main():
     golden_specs = [
         ('TX_PERIODS',      ('1y','3y','5y','10y','all'), GOLDEN_SALES),
         ('RENTS_PERIODS',   ('1y','3y','5y','10y','all'), GOLDEN_SALES),
-        ('GROWTH_PERIODS',  ('1y','3y','5y','10y'),       GOLDEN_GROWTH),
+        ('GROWTH_PERIODS',  ('1y','3y','5y','10y','15y','all'), GOLDEN_GROWTH),
         ('PAYBACK_PERIODS', ('1br','2br','3br'),          GOLDEN_PAYBACK),
         ('INVESTOR_PERIODS', ('all','1br'),               GOLDEN_GROWTH),
         ('INCOME_PERIODS',   ('all','1br'),               GOLDEN_GROWTH),

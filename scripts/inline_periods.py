@@ -13,7 +13,7 @@ from ~1.1 MB raw to ~670 KB raw.
 Sources:
   - transactions/data/{1y,3y,5y,10y,all}.json  → TX_PERIODS
   - rents/data/{1y,3y,5y,10y,all}.json         → RENTS_PERIODS
-  - growth/data/{1y,3y,5y,10y}.json            → GROWTH_PERIODS
+  - growth/data/{1y,3y,5y,10y,15y,all}.json    → GROWTH_PERIODS
   - payback/data/{studio,1br,2br,3br,4br_plus}.json → PAYBACK_PERIODS
   - yearly_sell/data/{studio,1br,2br,3br,4br_plus,villa}.json → YEARLY_SELL_PERIODS
   - yearly_rent/data/{studio,1br,2br,3br,4br_plus,villa}.json → YEARLY_RENT_PERIODS
@@ -63,7 +63,7 @@ def load_dir(subdir, codes):
 
 tx_periods      = load_dir('transactions', ('1y','3y','5y','10y','all'))
 rents_periods   = load_dir('rents',        ('1y','3y','5y','10y','all'))
-growth_periods  = load_dir('growth',       ('1y','3y','5y','10y'))
+growth_periods  = load_dir('growth',       ('1y','3y','5y','10y','15y','all'))
 payback_periods = load_dir('payback',      ('studio','1br','2br','3br','4br_plus'))
 yearly_sell_periods = load_dir('yearly_sell',
                                ('studio','1br','2br','3br','4br_plus','villa'))
