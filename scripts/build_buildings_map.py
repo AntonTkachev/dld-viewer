@@ -136,7 +136,7 @@ def tokens(s: str):
     s = s.lower()
     s = re.sub(r"\bl\.?l\.?c\.?\b", '', s)
     s = re.sub(r"[^a-z0-9 ]+", ' ', s)
-    return {t for t in s.split() if t and t not in STOP and len(t) > 1}
+    return {t for t in s.split() if t and t not in STOP and (len(t) > 1 or t.isdecimal())}
 
 
 def norm_key(s: str) -> str:
@@ -218,6 +218,18 @@ def fallback_coord(d: dict, poi_coords: dict):
 def load_osm() -> list:
     with OSM_JSON.open(encoding='utf-8') as f:
         return json.load(f)
+
+
+def bbox_area_m2(rings: list) -> float:
+    """Bounding-box area in m² for a list of rings [[lat,lon],...]."""
+    lats = [p[0] for ring in rings for p in ring]
+    lons = [p[1] for ring in rings for p in ring]
+    if not lats:
+        return 0.0
+    mid = sum(lats) / len(lats)
+    dlat = (max(lats) - min(lats)) * 111_000
+    dlon = (max(lons) - min(lons)) * 111_000 * math.cos(math.radians(mid))
+    return dlat * dlon
 
 
 def haversine_km(a_lat, a_lon, b_lat, b_lon):
@@ -379,7 +391,11 @@ def match_one(dld_name: str,
         close = difflib.get_close_matches(a, list(by_alpha_b.keys()),
                                           n=1, cutoff=SEQMATCH_THRESHOLD)
         if close:
-            return by_alpha_b[close[0]], 'seqmatch'
+            cand = by_alpha_b[close[0]]
+            # Require at least one distinctive token in common to avoid e.g.
+            # "AMARIS Residences" matching "Samari Residences" on alpha alone.
+            if tokens(dld_name) & tokens(cand.get('name', '')):
+                return cand, 'seqmatch'
 
     # 4. project_name fallback — Skycourts Tower A → Skycourts compound.
     # Only useful when project ≠ master (otherwise the OSM hit would be a
@@ -472,6 +488,12 @@ def main() -> int:
                 dist = haversine_km(c[0], c[1], osm_row['lat'], osm_row['lon'])
                 if dist > GEO_SANITY_KM:
                     geo_rejected += 1
+                    osm_row = None
+            # Reject compound matches to huge polygons (whole community/district).
+            # 300 000 m² ≈ 300 × 1 000 m site — too large to represent one building.
+            if osm_row is not None and kind in ('project_exact', 'project_seqmatch'):
+                area_m2 = bbox_area_m2(osm_row.get('rings') or [])
+                if area_m2 > 300_000:
                     osm_row = None
         if osm_row is None:
             unmatched.append(d)
