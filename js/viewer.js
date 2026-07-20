@@ -66,12 +66,21 @@ setTimeout(() => {
     b.addEventListener('click', () => {
       const lvl = parseInt(b.dataset.minLevel, 10);
       if (lvl !== minLevel) {
+        const prevLevel = minLevel;
         minLevel = lvl;
         document.querySelectorAll('#mp-level-list .ls-btn').forEach(x => {
           x.classList.toggle('active', parseInt(x.dataset.minLevel,10) === minLevel);
         });
         const cur = document.getElementById('mp-level-current');
         if (cur) cur.textContent = b.textContent;
+        // Building level (99): auto-show buildings layer; leaving it: auto-hide
+        if (lvl === 99 && !map.hasLayer(buildingLayer)) {
+          buildingLayer.addTo(map);
+          if (typeof renderPoiList === 'function') renderPoiList();
+        } else if (prevLevel === 99 && lvl !== 99 && map.hasLayer(buildingLayer)) {
+          map.removeLayer(buildingLayer);
+          if (typeof renderPoiList === 'function') renderPoiList();
+        }
         if (typeof renderChoro === 'function') renderChoro();
       }
       document.getElementById('mp-level').classList.remove('open');
@@ -1637,16 +1646,23 @@ function _featContains(f, pt){
   }
 })();
 
+const _SEARCH_ALIASES = {
+  'dubai harbour':             ['emaar beachfront', 'emaar beach front'],
+  'madinat dubai almelaheyah': ['mina rashid', 'rashid yachts', 'rashid yachts and marina'],
+  'um suqaim third':           ['madinat jumeirah living', 'mjl'],
+};
+
 let _searchIndex = null;
 function _buildSearchIndex(){
   return GEOJSON.features
     .filter(f => f.properties.name)
     .map(f => ({
-      name:   f.properties.name,
-      nameAr: f.properties.name_ar || '',
-      rc:     f.properties.real_count || 0,
-      level:  f._level || 0,
-      feat:   f,
+      name:    f.properties.name,
+      nameAr:  f.properties.name_ar || '',
+      aliases: _SEARCH_ALIASES[f.properties.key] || [],
+      rc:      f.properties.real_count || 0,
+      level:   f._level || 0,
+      feat:    f,
     }))
     .sort((a,b) => a.name.toLowerCase().localeCompare(b.name.toLowerCase()));
 }
@@ -1656,11 +1672,15 @@ function _renderSearchResults(query){
   let items = _searchIndex;
   if (q) {
     items = _searchIndex.filter(x =>
-      x.name.toLowerCase().includes(q) || (x.nameAr && x.nameAr.includes(query)));
-    
+      x.name.toLowerCase().includes(q) ||
+      (x.nameAr && x.nameAr.includes(query)) ||
+      x.aliases.some(a => a.includes(q)));
+
     items.sort((a,b) => {
-      const ap = a.name.toLowerCase().startsWith(q) ? 0 : 1;
-      const bp = b.name.toLowerCase().startsWith(q) ? 0 : 1;
+      const nameMatch = n => n.toLowerCase().startsWith(q) ? 0 : 1;
+      const aliasMatch = x => x.aliases.some(a => a.startsWith(q)) ? 0 : 1;
+      const ap = Math.min(nameMatch(a.name), aliasMatch(a));
+      const bp = Math.min(nameMatch(b.name), aliasMatch(b));
       if (ap !== bp) return ap - bp;
       return a.name.toLowerCase().localeCompare(b.name.toLowerCase());
     });
