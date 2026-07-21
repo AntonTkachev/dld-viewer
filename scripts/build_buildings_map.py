@@ -122,12 +122,14 @@ _SUFFIX_RE = re.compile(
     re.IGNORECASE,
 )
 
-# Roman numeral → Arabic numeral mapping for standalone tokens. Lets
-# "THE WIND TOWER II" match OSM "Wind Tower 2" after tower→STOP.
-# 'i' (single char) is already filtered by the len>1 guard, so we start at ii.
+# Token normalization: Roman numerals and English number words → Arabic digits.
+# Lets "THE WIND TOWER II" match "Wind Tower 2" and "WIND ONE" match "Wind Tower 1".
+# 'i' (single char) is filtered by the len>1 guard, so we start at ii/two.
 _ROMAN = {
     'ii': '2', 'iii': '3', 'iv': '4', 'v': '5',
     'vi': '6', 'vii': '7', 'viii': '8', 'ix': '9', 'x': '10',
+    'one': '1', 'two': '2', 'three': '3', 'four': '4', 'five': '5',
+    'six': '6', 'seven': '7', 'eight': '8', 'nine': '9', 'ten': '10',
 }
 
 
@@ -436,7 +438,8 @@ def jaccard(a: set, b: set) -> float:
 def match_one(dld_name: str,
               by_exact_b, by_alpha_b, token_rows_b, by_ar_b,
               by_exact_c, by_alpha_c,
-              dld_name_ar='', dld_project='', dld_master=''):
+              dld_name_ar='', dld_project='', dld_master='',
+              area_centroid=None):
     """Return (osm_row, match_kind) or (None, None).
 
     Direct name matches (steps 1-3) are restricted to building-tagged OSM
@@ -452,7 +455,7 @@ def match_one(dld_name: str,
         if len(unique_ids) > 1:
             # Multiple distinct OSM buildings share the same norm_key
             # (e.g. "Silverene Tower A" and "Silverene Tower B" both → {'silverene'}).
-            # Prefer the one whose trailing sub-unit letter/number matches DLD.
+            # 1) Prefer the one whose trailing sub-unit letter/number matches DLD.
             dld_sub = _trailing_subunit(dld_name)
             if dld_sub:
                 sub_hits = [h for h in hits
@@ -461,22 +464,67 @@ def match_one(dld_name: str,
                 sub_unique = {h.get('osm_id') for h in sub_hits}
                 if len(sub_unique) == 1:
                     return sub_hits[0], 'exact'
+            # 2) Fall back to geo-proximity: pick the building closest to the
+            #    DLD area centroid. Avoids returning "Al Murjan Tower" (Sharjah)
+            #    when "Murjan" (Dubai Marina) is the correct hit for Marsa Dubai.
+            if area_centroid:
+                seen_geo = set()
+                unique_hits = []
+                for h in hits:
+                    oid = h.get('osm_id')
+                    if oid not in seen_geo:
+                        seen_geo.add(oid)
+                        unique_hits.append(h)
+                closest = min(unique_hits,
+                              key=lambda h: haversine_km(area_centroid[0], area_centroid[1],
+                                                          h['lat'], h['lon']))
+                return closest, 'exact'
         return hits[0], 'exact'
-
-    # 1b. Exact Arabic — buildings only.
-    if dld_name_ar:
-        kar = norm_ar(dld_name_ar)
-        if kar and by_ar_b.get(kar):
-            return by_ar_b[kar][0], 'exact_ar'
 
     # 1c-pre. Alpha exact: same character sequence after removing all non-alphanum.
     # Catches compound-word splits like "GOLDCREST VIEWS 2" ↔ "Gold Crest Views 2"
-    # where alpha strings are identical but norm_key tokenizations differ.
-    # Must run before Jaccard because Jaccard sometimes picks an unrelated building
-    # with higher J due to shared common tokens (e.g. '2', 'views').
+    # and run-together DLD names like "ALNAKHEEL 1" ↔ "Al Nakheel 1".
+    # Must run BEFORE Arabic exact so English alpha match wins over wrong Arabic
+    # match when OSM only has one Arabic building for a numbered series.
     a_pre = alpha(dld_name)
     if a_pre and by_alpha_b.get(a_pre):
         return by_alpha_b[a_pre], 'alpha_exact'
+
+    # 1b. Exact Arabic — buildings only.
+    # Sub-unit disambiguation: when multiple Arabic buildings share the same
+    # norm_ar key (digits stripped), prefer the one whose trailing number matches.
+    # When only one Arabic candidate exists but its sub-unit number differs from
+    # DLD's, skip the Arabic match (fall through to fuzzy steps) — avoids
+    # "ALJAZ 3" wrongly matching the only Arabic building "الجاز 2".
+    if dld_name_ar:
+        kar = norm_ar(dld_name_ar)
+        ar_hits = by_ar_b.get(kar, [])
+        if ar_hits:
+            ar_unique_ids = {h.get('osm_id') for h in ar_hits}
+            dld_ar_sub = _trailing_subunit(dld_name_ar)
+            if len(ar_unique_ids) > 1:
+                if dld_ar_sub:
+                    ar_sub_hits = [h for h in ar_hits
+                                   if _trailing_subunit(
+                                       h.get('name:ar') or h.get('name_ar') or h.get('name') or '')
+                                      == dld_ar_sub]
+                    ar_sub_unique = {h.get('osm_id') for h in ar_sub_hits}
+                    if len(ar_sub_unique) == 1:
+                        return ar_sub_hits[0], 'exact_ar'
+                return ar_hits[0], 'exact_ar'
+            else:
+                # Single Arabic candidate: only accept when sub-unit matches (or
+                # neither side has a sub-unit designator).
+                if dld_ar_sub:
+                    osm_ar_sub = _trailing_subunit(
+                        ar_hits[0].get('name:ar') or ar_hits[0].get('name_ar') or
+                        ar_hits[0].get('name') or '')
+                    if osm_ar_sub and osm_ar_sub != dld_ar_sub:
+                        pass  # mismatch → skip, fall through to fuzzy steps
+                    else:
+                        return ar_hits[0], 'exact_ar'
+                else:
+                    return ar_hits[0], 'exact_ar'
 
     # 2. Jaccard ≥ threshold (EN tokens) — buildings only.
     dt = tokens(dld_name)
@@ -492,11 +540,17 @@ def match_one(dld_name: str,
     # 2b. Token-subset: all DLD tokens appear in some OSM building's token set.
     # Catches abbreviated DLD names, e.g. "Grande" → "Grande Signature Residences".
     # Accept only when there is a single best candidate (unambiguous subset).
+    # Deduplicate by osm_id — token_rows_b indexes each OSM building once per
+    # name_field, so the same building can appear multiple times with equal j.
     if dt:
+        seen_sub = set()
         subset_hits = []
         for tt, osm in token_rows_b:
             if dt < tt:  # proper subset only (equal sets already caught above)
-                subset_hits.append((jaccard(dt, tt), osm))
+                oid = osm.get('osm_id')
+                if oid not in seen_sub:
+                    seen_sub.add(oid)
+                    subset_hits.append((jaccard(dt, tt), osm))
         if subset_hits:
             subset_hits.sort(key=lambda x: -x[0])
             if len(subset_hits) == 1 or subset_hits[0][0] > subset_hits[1][0]:
@@ -505,15 +559,19 @@ def match_one(dld_name: str,
     # 2c. Reverse subset: all OSM tokens appear in DLD token set.
     # Catches OSM using shorter/abbreviated names, e.g.:
     #   DLD "PARK ISLAND BLAKELY" → OSM "Blakely Tower" ({'blakely'} ⊂ DLD)
-    #   DLD "Binghatti Aquarise - TOWER A" → OSM "Aquarise" ({'aquarise'} ⊂ DLD)
-    # Guard: skip when all OSM tokens are pure numbers — those are too ambiguous
-    # (e.g. OSM "88" ⊂ DLD "MED 88" would bypass the DG-prefix centroid logic).
+    #   DLD "AL SEEF 1" → OSM "Al Seef Tower" ({'seef'} ⊂ DLD {'seef','1'})
+    # Guard: skip when all OSM tokens are pure numbers — those are too ambiguous.
+    # Deduplicate by osm_id (same fix as 2b above).
     # Same unambiguous-best guard as 2b.
     if dt:
+        seen_rev = set()
         rev_hits = []
         for tt, osm in token_rows_b:
             if tt and tt < dt and not all(t.isdecimal() for t in tt):
-                rev_hits.append((jaccard(dt, tt), osm))
+                oid = osm.get('osm_id')
+                if oid not in seen_rev:
+                    seen_rev.add(oid)
+                    rev_hits.append((jaccard(dt, tt), osm))
         if rev_hits:
             rev_hits.sort(key=lambda x: -x[0])
             if len(rev_hits) == 1 or rev_hits[0][0] > rev_hits[1][0]:
@@ -626,7 +684,8 @@ def main() -> int:
     for d in dld:
         osm_row, kind = match_one(d['name'], *indices,
                                   d.get('name_ar', ''),
-                                  d.get('project', ''), d.get('master', ''))
+                                  d.get('project', ''), d.get('master', ''),
+                                  area_centroid=centroids.get(d['area']))
         if osm_row is None:
             m = _DG_PREFIX_RE.match(d['name'])
             if m:
@@ -642,7 +701,8 @@ def main() -> int:
                                        key=lambda b: haversine_km(c[0], c[1], b['lat'], b['lon']))
                     osm_row, kind = cands[0], 'dg_prefix_exact'
                 else:
-                    osm_row, kind = match_one(m.group(2), *indices)
+                    osm_row, kind = match_one(m.group(2), *indices,
+                                              area_centroid=centroids.get(d['area']))
                     if osm_row is not None:
                         kind = f'dg_prefix_{kind}'
         if osm_row is not None:
