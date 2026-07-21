@@ -419,6 +419,19 @@ def match_one(dld_name: str,
         if best[0] >= JACCARD_THRESHOLD and best[1]:
             return best[1], 'jaccard'
 
+    # 2b. Token-subset: all DLD tokens appear in some OSM building's token set.
+    # Catches abbreviated DLD names, e.g. "Grande" → "Grande Signature Residences".
+    # Accept only when there is a single best candidate (unambiguous subset).
+    if dt:
+        subset_hits = []
+        for tt, osm in token_rows_b:
+            if dt < tt:  # proper subset only (equal sets already caught above)
+                subset_hits.append((jaccard(dt, tt), osm))
+        if subset_hits:
+            subset_hits.sort(key=lambda x: -x[0])
+            if len(subset_hits) == 1 or subset_hits[0][0] > subset_hits[1][0]:
+                return subset_hits[0][1], 'subset'
+
     # 3. SequenceMatcher on alpha-only — buildings only.
     a = alpha(dld_name)
     if a:
@@ -471,7 +484,7 @@ def report(matched: list, unmatched: list) -> None:
     print(f'\n=== Match coverage ({MIN_DEALS}+ deals filter) ===')
     print(f'DLD buildings: {total}')
     print(f'  matched:   {len(matched)} ({len(matched)/total*100:.1f}%)')
-    for k in ('exact', 'exact_ar', 'jaccard', 'seqmatch',
+    for k in ('exact', 'exact_ar', 'jaccard', 'subset', 'seqmatch',
               'project_exact', 'project_seqmatch', 'master_exact',
               'landmark_fallback', 'dg_prefix_exact', 'dg_prefix_jaccard'):
         if by_kind.get(k):
