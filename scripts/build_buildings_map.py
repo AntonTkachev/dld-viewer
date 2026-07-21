@@ -519,9 +519,21 @@ def main() -> int:
         if osm_row is None:
             m = _DG_PREFIX_RE.match(d['name'])
             if m:
-                osm_row, kind = match_one(m.group(2), *indices)
-                if osm_row is not None:
-                    kind = f'dg_prefix_{kind}'
+                # Try closest candidate to area centroid first (avoids picking a
+                # same-numbered building in a different part of Dubai).
+                by_exact_b = indices[0]
+                num_key = norm_key(m.group(2))
+                cands = by_exact_b.get(num_key, [])
+                if cands:
+                    c = centroids.get(d['area'])
+                    if c and len(cands) > 1:
+                        cands = sorted(cands,
+                                       key=lambda b: haversine_km(c[0], c[1], b['lat'], b['lon']))
+                    osm_row, kind = cands[0], 'dg_prefix_exact'
+                else:
+                    osm_row, kind = match_one(m.group(2), *indices)
+                    if osm_row is not None:
+                        kind = f'dg_prefix_{kind}'
         if osm_row is not None:
             # Geo-sanity applies to ALL match kinds. We previously exempted
             # project_* in the belief that a project might cluster outside
