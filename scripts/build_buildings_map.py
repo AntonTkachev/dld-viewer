@@ -426,10 +426,18 @@ def match_one(dld_name: str,
                                           n=1, cutoff=SEQMATCH_THRESHOLD)
         if close:
             cand = by_alpha_b[close[0]]
-            # Require at least one distinctive token in common to avoid e.g.
-            # "AMARIS Residences" matching "Samari Residences" on alpha alone.
-            if tokens(dld_name) & tokens(cand.get('name', '')):
+            # Token guard: require at least one distinctive token in common.
+            # Exception: if alpha strings are identical (e.g. "MAG218" vs "MAG 218"
+            # differ only in spacing), accept without token overlap.
+            if close[0] == a or tokens(dld_name) & tokens(cand.get('name', '')):
                 return cand, 'seqmatch'
+
+    # 1c. Exact norm-key match against compound index (buildings-only step 1
+    # missed it). E.g. "Skycourts Tower A" norm='skycourts' matches compound
+    # "Skycourts Towers" norm='skycourts'. Treated as project_exact so the
+    # 300k m² area guard and compound vis apply.
+    if k and by_exact_c.get(k):
+        return by_exact_c[k][0], 'project_exact'
 
     # 4. project_name fallback — Skycourts Tower A → Skycourts compound.
     # Only useful when project ≠ master (otherwise the OSM hit would be a
@@ -589,6 +597,18 @@ def main() -> int:
         coords_fallback = json.load(COORDS_JSON.open(encoding='utf-8'))
     coords_by_name_slug = {v['slug']: v for v in coords_fallback.values()}
 
+    # Non-building OSM types that Nominatim may return for a building query.
+    # These are reliable false positives — skip them so Google ROOFTOP can win.
+    _NOM_BAD_TYPES = {
+        'restaurant', 'cafe', 'bar', 'pub', 'fast_food', 'food_court',
+        'shop', 'supermarket', 'mall',
+        'bus_stop', 'bus_station', 'parking',
+        'park', 'garden', 'playground',
+        'school', 'hospital', 'clinic',
+        'place_of_worship', 'mosque',
+        'atm', 'bank',
+    }
+
     already_matched = {f"{slugify(m['area'])}--{slugify(m['name'])}" for m in matched}
     coords_added = 0
     still_unmatched = []
@@ -596,6 +616,11 @@ def main() -> int:
         name_slug = slugify(d['name'])
         rec = coords_by_name_slug.get(name_slug)
         if rec and rec.get('lat') and rec.get('lon'):
+            # Skip Nominatim results that matched a non-building POI — these block
+            # the correct Google ROOFTOP result from being used in the next pass.
+            if rec.get('source') == 'nominatim' and rec.get('nom_type', '') in _NOM_BAD_TYPES:
+                still_unmatched.append(d)
+                continue
             full_slug = f"{slugify(d['area'])}--{slugify(d['name'])}"
             if full_slug not in already_matched:
                 matched.append({
@@ -654,21 +679,30 @@ def main() -> int:
         print(f'Google fallback added: {google_added} buildings (point coords)')
 
     # PIP pass: upgrade approx→polygon by checking if the point coord falls
-    # inside an OSM building footprint. Uses both named (osm_buildings.json)
-    # and unnamed footprints (osm_unnamed_footprints.json — fetched by centroid match).
+    # inside an OSM building footprint.
+    # Priority: osm_all_footprints.json (comprehensive, ~366K) > per-build
+    # centroid-fetch unnamed + named. If the full file exists, use it exclusively
+    # (it already contains everything in the smaller files).
     OSM_JSON      = ROOT / 'data' / 'osm_buildings.json'
     UNNAMED_JSON  = ROOT / 'data' / 'osm_unnamed_footprints.json'
+    ALL_JSON      = ROOT / 'data' / 'osm_all_footprints.json'
     osm_footprints = []
-    if OSM_JSON.exists():
-        osm_all = json.load(OSM_JSON.open(encoding='utf-8'))
-        osm_footprints = [{'osm_id': b['osm_id'], 'lat': b['lat'], 'lon': b['lon'],
-                           'rings': b['rings']}
-                          for b in osm_all if b.get('kind') == 'building' and b.get('rings')]
-    if UNNAMED_JSON.exists():
-        unnamed = json.load(UNNAMED_JSON.open(encoding='utf-8'))
-        osm_footprints += [{'osm_id': str(b['id']), 'lat': b['lat'], 'lon': b['lon'],
-                            'rings': b['rings']} for b in unnamed]
-    print(f'PIP pool: {len(osm_footprints)} footprints (named + unnamed)')
+    if ALL_JSON.exists():
+        all_fps = json.load(ALL_JSON.open(encoding='utf-8'))
+        osm_footprints = [{'osm_id': str(b['id']), 'lat': b['lat'], 'lon': b['lon'],
+                           'rings': b['rings']} for b in all_fps if b.get('rings')]
+        print(f'PIP pool: {len(osm_footprints)} footprints (full Dubai dataset)')
+    else:
+        if OSM_JSON.exists():
+            osm_all = json.load(OSM_JSON.open(encoding='utf-8'))
+            osm_footprints = [{'osm_id': b['osm_id'], 'lat': b['lat'], 'lon': b['lon'],
+                               'rings': b['rings']}
+                              for b in osm_all if b.get('kind') == 'building' and b.get('rings')]
+        if UNNAMED_JSON.exists():
+            unnamed = json.load(UNNAMED_JSON.open(encoding='utf-8'))
+            osm_footprints += [{'osm_id': str(b['id']), 'lat': b['lat'], 'lon': b['lon'],
+                                'rings': b['rings']} for b in unnamed]
+        print(f'PIP pool: {len(osm_footprints)} footprints (named + unnamed)')
     pip_upgraded = 0
     if osm_footprints:
         for m in matched:
