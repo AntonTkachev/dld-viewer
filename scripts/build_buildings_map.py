@@ -29,14 +29,15 @@ from pathlib import Path
 import duckdb
 
 ROOT = Path(__file__).resolve().parent.parent
-TX_PARQUET = ROOT / 'data' / 'tx.parquet'
-OSM_JSON   = ROOT / 'data' / 'osm_buildings.json'
-OSM_METRO  = ROOT / 'data' / 'osm_metro_stations.json'
-OSM_MALLS  = ROOT / 'data' / 'osm_malls.json'
-GEOJSON    = ROOT / 'data' / 'curated_polygons.geojson'
-OUT_JSON   = ROOT / 'data' / 'buildings_geo.json'
-OUT_BUNDLE = ROOT / 'buildings' / 'data.js'
-HTML       = ROOT / 'template.html'
+TX_PARQUET  = ROOT / 'data' / 'tx.parquet'
+OSM_JSON    = ROOT / 'data' / 'osm_buildings.json'
+OSM_METRO   = ROOT / 'data' / 'osm_metro_stations.json'
+OSM_MALLS   = ROOT / 'data' / 'osm_malls.json'
+GEOJSON     = ROOT / 'data' / 'curated_polygons.geojson'
+COORDS_JSON = ROOT / 'data' / 'building_coords.json'
+OUT_JSON    = ROOT / 'data' / 'buildings_geo.json'
+OUT_BUNDLE  = ROOT / 'buildings' / 'data.js'
+HTML        = ROOT / 'template.html'
 
 # Hand-curated coords for top DLD landmarks that don't sit in our OSM POI
 # tables (airports, theme parks, branded districts). Used only as fallback
@@ -230,6 +231,39 @@ def bbox_area_m2(rings: list) -> float:
     dlat = (max(lats) - min(lats)) * 111_000
     dlon = (max(lons) - min(lons)) * 111_000 * math.cos(math.radians(mid))
     return dlat * dlon
+
+
+def pip(lat: float, lon: float, ring: list) -> bool:
+    """Ray-casting point-in-polygon. ring = [[lat, lon], ...]"""
+    inside = False
+    n = len(ring)
+    j = n - 1
+    for i in range(n):
+        yi, xi = ring[i]
+        yj, xj = ring[j]
+        if ((yi > lat) != (yj > lat)) and (lon < (xj - xi) * (lat - yi) / (yj - yi) + xi):
+            inside = not inside
+        j = i
+    return inside
+
+
+def find_osm_footprint(osm_footprints: list, lat: float, lon: float):
+    """Return the smallest OSM building polygon that contains (lat, lon), or None."""
+    candidates = []
+    for b in osm_footprints:
+        rings = b.get('rings')
+        if not rings:
+            continue
+        outer = rings[0]
+        lats = [p[0] for p in outer]
+        lons = [p[1] for p in outer]
+        if not (min(lats) <= lat <= max(lats) and min(lons) <= lon <= max(lons)):
+            continue
+        if pip(lat, lon, outer):
+            candidates.append(b)
+    if not candidates:
+        return None
+    return min(candidates, key=lambda b: bbox_area_m2(b['rings']))
 
 
 def haversine_km(a_lat, a_lon, b_lat, b_lon):
@@ -431,7 +465,7 @@ def report(matched: list, unmatched: list) -> None:
     print(f'  matched:   {len(matched)} ({len(matched)/total*100:.1f}%)')
     for k in ('exact', 'exact_ar', 'jaccard', 'seqmatch',
               'project_exact', 'project_seqmatch', 'master_exact',
-              'landmark_fallback'):
+              'landmark_fallback', 'dg_prefix_exact', 'dg_prefix_jaccard'):
         if by_kind.get(k):
             print(f'    {k}: {by_kind[k]}')
     print(f'  unmatched: {len(unmatched)} ({len(unmatched)/total*100:.1f}%)')
@@ -472,12 +506,22 @@ def main() -> int:
     print(f'Area centroids loaded: {len(centroids)}')
     geo_rejected = 0
 
+    # Discovery Gardens clusters: DLD uses "MED 51"/"CON 109" for buildings that
+    # OSM names as bare numbers ("51"/"109"). Strip the prefix and retry matching.
+    _DG_PREFIX_RE = re.compile(r'^(MED|CON)\s+(\d+)$', re.IGNORECASE)
+
     matched = []
     unmatched = []
     for d in dld:
         osm_row, kind = match_one(d['name'], *indices,
                                   d.get('name_ar', ''),
                                   d.get('project', ''), d.get('master', ''))
+        if osm_row is None:
+            m = _DG_PREFIX_RE.match(d['name'])
+            if m:
+                osm_row, kind = match_one(m.group(2), *indices)
+                if osm_row is not None:
+                    kind = f'dg_prefix_{kind}'
         if osm_row is not None:
             # Geo-sanity applies to ALL match kinds. We previously exempted
             # project_* in the belief that a project might cluster outside
@@ -525,6 +569,114 @@ def main() -> int:
 
     print(f'Geo-sanity rejected: {geo_rejected}')
     report(matched, unmatched)
+
+    # Fallback: for still-unmatched buildings try building_coords.json
+    # (Wikidata + Nominatim geocoded points). No polygon — rendered as circle.
+    coords_fallback: dict = {}
+    if COORDS_JSON.exists():
+        coords_fallback = json.load(COORDS_JSON.open(encoding='utf-8'))
+    coords_by_name_slug = {v['slug']: v for v in coords_fallback.values()}
+
+    already_matched = {f"{slugify(m['area'])}--{slugify(m['name'])}" for m in matched}
+    coords_added = 0
+    still_unmatched = []
+    for d in unmatched:
+        name_slug = slugify(d['name'])
+        rec = coords_by_name_slug.get(name_slug)
+        if rec and rec.get('lat') and rec.get('lon'):
+            full_slug = f"{slugify(d['area'])}--{slugify(d['name'])}"
+            if full_slug not in already_matched:
+                matched.append({
+                    'area':     d['area'],
+                    'name':     d['name'],
+                    'slug':     full_slug,
+                    'n_deals':  d['n_deals'],
+                    'lat':      rec['lat'],
+                    'lon':      rec['lon'],
+                    'rings':    [],
+                    'vis':      'approx',
+                    'osm_id':   '',
+                    'osm_name': '',
+                    'match':    f"coords_{rec['source']}",
+                })
+                coords_added += 1
+                continue
+        still_unmatched.append(d)
+
+    if coords_added:
+        print(f'Coords fallback added: {coords_added} buildings '
+              f'(wikidata/nominatim point markers)')
+
+    # Google Geocoding fallback: for buildings still unmatched after Wikidata/Nominatim.
+    GOOGLE_JSON = ROOT / 'data' / 'google_buildings.json'
+    google_added = 0
+    if GOOGLE_JSON.exists():
+        google_cache = json.load(GOOGLE_JSON.open(encoding='utf-8'))
+        already_matched2 = {f"{slugify(m['area'])}--{slugify(m['name'])}" for m in matched}
+        new_still = []
+        for d in still_unmatched:
+            gkey = f"{d['area']}||{d['name']}"
+            rec = google_cache.get(gkey)
+            if rec and rec.get('status') in ('found', 'approximate') \
+                    and rec.get('lat') and rec.get('lon'):
+                full_slug = f"{slugify(d['area'])}--{slugify(d['name'])}"
+                if full_slug not in already_matched2:
+                    matched.append({
+                        'area':     d['area'],
+                        'name':     d['name'],
+                        'slug':     full_slug,
+                        'n_deals':  d['n_deals'],
+                        'lat':      rec['lat'],
+                        'lon':      rec['lon'],
+                        'rings':    [],
+                        'vis':      'approx',
+                        'osm_id':   '',
+                        'osm_name': '',
+                        'match':    f"google_{rec.get('loc_type','').lower()}",
+                    })
+                    google_added += 1
+                    continue
+            new_still.append(d)
+        still_unmatched = new_still
+    if google_added:
+        print(f'Google fallback added: {google_added} buildings (point coords)')
+
+    # PIP pass: upgrade approx→polygon by checking if the point coord falls
+    # inside an OSM building footprint. Uses both named (osm_buildings.json)
+    # and unnamed footprints (osm_unnamed_footprints.json — fetched by centroid match).
+    OSM_JSON      = ROOT / 'data' / 'osm_buildings.json'
+    UNNAMED_JSON  = ROOT / 'data' / 'osm_unnamed_footprints.json'
+    osm_footprints = []
+    if OSM_JSON.exists():
+        osm_all = json.load(OSM_JSON.open(encoding='utf-8'))
+        osm_footprints = [{'osm_id': b['osm_id'], 'lat': b['lat'], 'lon': b['lon'],
+                           'rings': b['rings']}
+                          for b in osm_all if b.get('kind') == 'building' and b.get('rings')]
+    if UNNAMED_JSON.exists():
+        unnamed = json.load(UNNAMED_JSON.open(encoding='utf-8'))
+        osm_footprints += [{'osm_id': str(b['id']), 'lat': b['lat'], 'lon': b['lon'],
+                            'rings': b['rings']} for b in unnamed]
+    print(f'PIP pool: {len(osm_footprints)} footprints (named + unnamed)')
+    pip_upgraded = 0
+    if osm_footprints:
+        for m in matched:
+            if m.get('vis') == 'approx' and m.get('lat') and m.get('lon'):
+                hit = find_osm_footprint(osm_footprints, m['lat'], m['lon'])
+                if hit and bbox_area_m2(hit['rings']) <= 300_000:
+                    m['rings'] = hit['rings']
+                    m['vis']   = 'building'
+                    m['osm_id'] = str(hit.get('osm_id', ''))
+                    m['match'] += '+pip'
+                    pip_upgraded += 1
+    if pip_upgraded:
+        print(f'PIP upgraded: {pip_upgraded} approx → polygon buildings')
+
+    # Drop remaining approx (point-only) buildings — no polygon to show.
+    before = len(matched)
+    matched = [m for m in matched if m.get('vis') != 'approx']
+    dropped = before - len(matched)
+    if dropped:
+        print(f'Dropped {dropped} approx (point-only) buildings — no polygon available')
 
     with OUT_JSON.open('w', encoding='utf-8') as f:
         json.dump(matched, f, separators=(',', ':'), ensure_ascii=False)
