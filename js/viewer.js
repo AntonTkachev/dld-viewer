@@ -2330,6 +2330,7 @@ for (const ml of MALLS) {
 }
 
 const buildingLayer = L.layerGroup();
+const _bldShapes = new Map(); // slug → Leaflet shape, for ?bld= deep-link
 if (typeof BUILDINGS !== 'undefined') {
   const _bldColor = (d) =>
       d >= 500 ? '#7a0000'
@@ -2345,6 +2346,7 @@ if (typeof BUILDINGS !== 'undefined') {
     <h3>🏢 ${_h(b.n)} <span class="src-tag src-osm">OSM</span></h3>
     <div class="muted" style="color:#888;margin-bottom:4px">${_h(b.a)}</div>
     <div class="stat"><span class="k">${t('bld_deals')}</span><span class="v">${b.d.toLocaleString()}</span></div>
+    ${b.s ? `<div style="margin-top:8px"><a href="/search/#${b.s}" style="background:#0366d6;color:#fff;text-decoration:none;padding:5px 10px;border-radius:4px;font-size:12px;font-weight:600;display:inline-block">${t('bld_details') || 'View details →'}</a></div>` : ''}
   `;
   for (const b of BUILDINGS) {
     const fill = _bldColor(b.d);
@@ -2374,8 +2376,11 @@ if (typeof BUILDINGS !== 'undefined') {
       ? '<div class="muted" style="font-size:11px;color:#888;margin-top:6px">compound polygon (multi-tower)</div>'
       : ''));
     shape.addTo(buildingLayer);
+    if (b.s) _bldShapes.set(b.s, {shape, b});
   }
 }
+
+if (minLevel === 99) buildingLayer.addTo(map);
 
 applyMask(currentMask, currentMaskPeriod, { pushUrl: false });
 if (currentView === 'table') setView('table', { pushUrl: false, force: true });
@@ -2463,5 +2468,23 @@ renderPoiList();
 
 _applyLayersFromUrl();
 
-map.fitBounds(L.geoJSON(GEOJSON).getBounds(), {padding:[20,20]});
+// Deep-link: ?bld=<slug> → enable buildings layer, fly to building, open popup
+(function() {
+  const bld = new URLSearchParams(window.location.search).get('bld');
+  if (!bld || typeof BUILDINGS === 'undefined') return;
+  const entry = _bldShapes.get(bld);
+  if (!entry) return;
+  const {shape, b} = entry;
+  if (!map.hasLayer(buildingLayer)) {
+    buildingLayer.addTo(map);
+    renderPoiList();
+    _writeLayersToUrl(_currentActiveLayerKeys());
+  }
+  map.once('moveend', () => shape.openPopup());
+  map.flyTo([b.lat, b.lon], 17, {duration: 0.6});
+})();
+
+if (!new URLSearchParams(window.location.search).get('bld')) {
+  map.fitBounds(L.geoJSON(GEOJSON).getBounds(), {padding:[20,20]});
+}
 
