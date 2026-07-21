@@ -972,25 +972,34 @@ def main() -> int:
 
 def write_bundle(matched: list) -> str:
     """Write buildings/data.js as `const BUILDINGS = [...]`. Slim schema:
-       {n, a, d, s?, lat, lon, r}
-       n=name, a=area, d=n_deals, s=search slug (links to /search/#slug), r=rings.
+       {n, a, d, s?, rn?, yr?, dev?, lat, lon, r}
+       n=name, a=area, d=n_deals (sales), s=search slug, rn=rent count,
+       yr=year built, dev=developer name, r=rings.
     Returns sha8 of the file content for cache-busting."""
     OUT_BUNDLE.parent.mkdir(parents=True, exist_ok=True)
-    # Build slug lookup from search-index so map links point to existing detail pages.
+    # Build slug→meta lookup from search-index (rents count, year, developer).
     idx_path = OUT_BUNDLE.parent / 'search-index.json'
-    search_slugs: set[str] = set()
+    idx_meta: dict[str, dict] = {}
     if idx_path.exists():
         import json as _json
         for rec in _json.loads(idx_path.read_text('utf-8')):
-            if rec.get('s'):
-                search_slugs.add(rec['s'])
+            s = rec.get('s')
+            if s:
+                idx_meta[s] = rec
     slim = []
     for m in matched:
         row = {'n': m['name'], 'a': m['area'], 'd': m['n_deals'],
                'lat': m['lat'], 'lon': m['lon']}
         slug = slugify(m['name'])
-        if slug in search_slugs:
+        meta = idx_meta.get(slug)
+        if meta:
             row['s'] = slug
+            if meta.get('rn'):
+                row['rn'] = meta['rn']
+            if meta.get('yr'):
+                row['yr'] = meta['yr']
+            if meta.get('dev') and not meta.get('dz'):  # skip zone labels
+                row['dev'] = meta['dev']
         if m.get('rings'):
             row['r'] = m['rings']
         v = m.get('vis')

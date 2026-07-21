@@ -175,13 +175,12 @@
   .td-name { font-weight: 500; }
   .td-area { color: #6b7280; font-size: 11.5px; margin-top: 2px; }
   .btn-map {
-    display: inline-flex; align-items: center; gap: 3px;
-    padding: 2px 7px; border-radius: 5px; font-size: 11px; font-weight: 600;
-    background: #eff6ff; border: 1px solid #bfdbfe; color: #1d4ed8;
-    cursor: pointer; text-decoration: none; white-space: nowrap;
-    margin-top: 4px; transition: background .12s;
+    display: inline-flex; align-items: center;
+    font-size: 13px; font-weight: 600; color: #1d4ed8;
+    text-decoration: none; margin-top: 3px;
+    opacity: .75; transition: opacity .12s;
   }
-  .btn-map:hover { background: #dbeafe; }
+  .btn-map:hover { opacity: 1; }
   .badge-zone {
     display: inline-block; font-size: 10px; font-weight: 600;
     padding: 1px 5px; border-radius: 4px; margin-left: 5px;
@@ -459,7 +458,7 @@ function render(){
   }
   emptyMsg.style.display='none';
   tBody.innerHTML = slice.map(b => `<tr onclick="location.href='/search/#${b.s}'">
-    <td class="td-name">${esc(b.n)}<div class="td-area">${esc(b.a)}</div><a class="btn-map" href="/en/sales/?layers=buildings&bld=${b.s}" onclick="event.stopPropagation()" title="Show on map">🗺 Map</a></td>
+    <td class="td-name">${esc(b.n)}<div class="td-area">${esc(b.a)}</div><a class="btn-map" href="/en/sales/?layers=buildings&bld=${b.s}" onclick="event.stopPropagation()" title="Show on map">↗</a></td>
     <td class="r col-yr">${b.yr!=null ? b.yr : '<span class="mute">—</span>'}</td>
     <td class="col-dev">${b.dev
       ? esc(b.dev)+(b.dz?'<span class="badge-zone">Zone</span>':'')

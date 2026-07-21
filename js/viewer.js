@@ -2342,12 +2342,31 @@ if (typeof BUILDINGS !== 'undefined') {
     const r = 2 + Math.log10(Math.max(1, d)) * 3;
     return Math.min(12, Math.max(3, r));
   };
-  const _bldPopup = (b) => `
-    <h3>🏢 ${_h(b.n)} <span class="src-tag src-osm">OSM</span></h3>
-    <div class="muted" style="color:#888;margin-bottom:4px">${_h(b.a)}</div>
-    <div class="stat"><span class="k">${t('bld_deals')}</span><span class="v">${b.d.toLocaleString()}</span></div>
-    ${b.s ? `<div style="margin-top:8px"><a href="/search/#${b.s}" style="background:#0366d6;color:#fff;text-decoration:none;padding:5px 10px;border-radius:4px;font-size:12px;font-weight:600;display:inline-block">${t('bld_details') || 'View details →'}</a></div>` : ''}
-  `;
+  const _bldPopup = (b) => {
+    const statCell = (label, val, color) =>
+      `<div style="min-width:70px">
+        <div style="font-size:9.5px;text-transform:uppercase;letter-spacing:.04em;color:#9ca3af;margin-bottom:1px">${label}</div>
+        <div style="font-size:15px;font-weight:700;color:${color}">${val}</div>
+      </div>`;
+    const metaCell = (label, val) =>
+      `<div style="min-width:70px">
+        <div style="font-size:9.5px;text-transform:uppercase;letter-spacing:.04em;color:#9ca3af;margin-bottom:1px">${label}</div>
+        <div style="font-size:12px;font-weight:500;color:#374151;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:110px">${_h(val)}</div>
+      </div>`;
+    const salesCell = statCell(t('bld_deals'), b.d.toLocaleString(), '#b91c1c');
+    const rentCell  = b.rn != null ? statCell(t('bld_rents'), b.rn.toLocaleString(), '#1d4ed8') : '';
+    const yrCell    = b.yr  ? metaCell(t('bld_built'), b.yr) : '';
+    const devCell   = b.dev ? metaCell(t('bld_developer'), b.dev) : '';
+    return `
+      <div style="font-weight:600;font-size:14px;margin-bottom:2px">🏢 ${_h(b.n)} <span class="src-tag src-osm">OSM</span></div>
+      <div style="font-size:11px;color:#9ca3af;margin-bottom:10px">${_h(b.a)}</div>
+      <div style="display:flex;gap:16px;flex-wrap:wrap;margin-bottom:${yrCell||devCell?'8px':'0'}">
+        ${salesCell}${rentCell}
+      </div>
+      ${(yrCell||devCell) ? `<div style="display:flex;gap:16px;flex-wrap:wrap;border-top:1px solid #f3f4f6;padding-top:8px">${yrCell}${devCell}</div>` : ''}
+      ${b.s ? `<div style="margin-top:10px"><a href="/search/#${b.s}" style="background:#1d4ed8;color:#fff;text-decoration:none;padding:5px 12px;border-radius:5px;font-size:12px;font-weight:600;display:inline-block">${t('bld_details')}</a></div>` : ''}
+    `;
+  };
   for (const b of BUILDINGS) {
     const fill = _bldColor(b.d);
     const vis = b.v || 'building';
