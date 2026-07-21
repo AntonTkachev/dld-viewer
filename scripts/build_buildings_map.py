@@ -129,7 +129,10 @@ _ROMAN = {
     'ii': '2', 'iii': '3', 'iv': '4', 'v': '5',
     'vi': '6', 'vii': '7', 'viii': '8', 'ix': '9', 'x': '10',
     'one': '1', 'two': '2', 'three': '3', 'four': '4', 'five': '5',
-    'six': '6', 'seven': '7', 'eight': '8', 'nine': '9', 'ten': '10',
+    # 'six'/'seven' intentionally omitted — they appear as brand names in Dubai
+    # ("Six Senses", "Seven City", "Seven Hotel") and would cause cross-type
+    # false positives when matched against OSM buildings named with digit '6'/'7'.
+    'eight': '8', 'nine': '9', 'ten': '10',
 }
 
 
@@ -162,6 +165,13 @@ def _trailing_subunit(s: str) -> str:
     Returns uppercase string or '' if none found."""
     m = re.search(r'(?<=\s)([A-Za-z]|\d+)\s*$', (s or '').strip())
     return m.group(1).upper() if m else ''
+
+
+def _trailing_num(s: str) -> str:
+    """Extract trailing digit sequence from a string regardless of preceding space.
+    Used for Arabic names where DLD sometimes omits the space (e.g. 'الجاز3' vs 'الجاز 2')."""
+    m = re.search(r'\d+\s*$', (s or '').strip())
+    return m.group().strip() if m else ''
 
 
 def norm_key(s: str) -> str:
@@ -513,14 +523,16 @@ def match_one(dld_name: str,
                         return ar_sub_hits[0], 'exact_ar'
                 return ar_hits[0], 'exact_ar'
             else:
-                # Single Arabic candidate: only accept when sub-unit matches (or
-                # neither side has a sub-unit designator).
-                if dld_ar_sub:
-                    osm_ar_sub = _trailing_subunit(
+                # Single Arabic candidate: verify trailing number matches.
+                # Use _trailing_num (not _trailing_subunit) because DLD sometimes
+                # omits the space before the digit (e.g. 'الجاز3' not 'الجاز 3').
+                dld_ar_num = _trailing_num(dld_name_ar)
+                if dld_ar_num:
+                    osm_ar_num = _trailing_num(
                         ar_hits[0].get('name:ar') or ar_hits[0].get('name_ar') or
                         ar_hits[0].get('name') or '')
-                    if osm_ar_sub and osm_ar_sub != dld_ar_sub:
-                        pass  # mismatch → skip, fall through to fuzzy steps
+                    if osm_ar_num and osm_ar_num != dld_ar_num:
+                        pass  # number mismatch → skip, fall through to fuzzy steps
                     else:
                         return ar_hits[0], 'exact_ar'
                 else:
