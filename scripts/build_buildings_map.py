@@ -972,14 +972,25 @@ def main() -> int:
 
 def write_bundle(matched: list) -> str:
     """Write buildings/data.js as `const BUILDINGS = [...]`. Slim schema:
-       {n, a, d, lat, lon, r}
-       n=name, a=area, d=n_deals, r=outer rings ([[lat,lon]...] per ring).
+       {n, a, d, s?, lat, lon, r}
+       n=name, a=area, d=n_deals, s=search slug (links to /search/#slug), r=rings.
     Returns sha8 of the file content for cache-busting."""
     OUT_BUNDLE.parent.mkdir(parents=True, exist_ok=True)
+    # Build slug lookup from search-index so map links point to existing detail pages.
+    idx_path = OUT_BUNDLE.parent / 'search-index.json'
+    search_slugs: set[str] = set()
+    if idx_path.exists():
+        import json as _json
+        for rec in _json.loads(idx_path.read_text('utf-8')):
+            if rec.get('s'):
+                search_slugs.add(rec['s'])
     slim = []
     for m in matched:
         row = {'n': m['name'], 'a': m['area'], 'd': m['n_deals'],
                'lat': m['lat'], 'lon': m['lon']}
+        slug = slugify(m['name'])
+        if slug in search_slugs:
+            row['s'] = slug
         if m.get('rings'):
             row['r'] = m['rings']
         v = m.get('vis')
