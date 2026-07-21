@@ -104,14 +104,16 @@ def slugify(s: str) -> str:
 
 
 # Suffix patterns that DLD attaches to break a single building into sub-units.
-# Stripping them lets `Skycourts Tower A`/`B`/`C` collapse to `Skycourts Tower`,
-# `Churchill Tower 2-Residential` to `Churchill Tower`, etc.
+# Stripping them lets `Skycourts Tower A`/`B`/`C` collapse to `Skycourts Tower`.
+# NOTE: we only strip single trailing LETTERS (A/B/C) after Tower/Block/etc —
+# NOT numbers. Numbers (Tower 1, Tower 2) are distinct buildings and must be
+# preserved in tokens so cross-tower false matches are impossible.
 _SUFFIX_RE = re.compile(
     r'\s*'
     r'('
         r'-\s*(residential|commercial|office|retail|hotel|tower|podium)s?'
     r'|'
-        r'\s+(tower|block|building|phase|wing|cluster)\s+[0-9a-z]{1,3}'
+        r'\s+(tower|block|building|phase|wing|cluster)\s+[a-z]'  # letter only, not digits
     r'|'
         r'\s+[a-z]'                       # trailing single letter (Tower A → Tower)
     r'|'
@@ -120,10 +122,17 @@ _SUFFIX_RE = re.compile(
     re.IGNORECASE,
 )
 
+# Roman numeral → Arabic numeral mapping for standalone tokens. Lets
+# "THE WIND TOWER II" match OSM "Wind Tower 2" after tower→STOP.
+# 'i' (single char) is already filtered by the len>1 guard, so we start at ii.
+_ROMAN = {
+    'ii': '2', 'iii': '3', 'iv': '4', 'v': '5',
+    'vi': '6', 'vii': '7', 'viii': '8', 'ix': '9', 'x': '10',
+}
+
 
 def strip_subunit(s: str) -> str:
-    """Iteratively strip trailing sub-unit suffixes. `Churchill Tower 2-Residential`
-    needs two passes: first drops `-Residential`, second drops ` 2`."""
+    """Iteratively strip trailing sub-unit suffixes."""
     prev = ''
     cur = (s or '').strip()
     while cur != prev:
@@ -137,7 +146,20 @@ def tokens(s: str):
     s = s.lower()
     s = re.sub(r"\bl\.?l\.?c\.?\b", '', s)
     s = re.sub(r"[^a-z0-9 ]+", ' ', s)
-    return {t for t in s.split() if t and t not in STOP and (len(t) > 1 or t.isdecimal())}
+    result = set()
+    for t in s.split():
+        if not t or t in STOP or (len(t) <= 1 and not t.isdecimal()):
+            continue
+        result.add(_ROMAN.get(t, t))  # normalize Roman numerals
+    return result
+
+
+def _trailing_subunit(s: str) -> str:
+    """Extract trailing sub-unit designator (single letter A/B/C or digits 1/2/3)
+    when it is preceded by a space — indicates a unit qualifier, not part of the name.
+    Returns uppercase string or '' if none found."""
+    m = re.search(r'(?<=\s)([A-Za-z]|\d+)\s*$', (s or '').strip())
+    return m.group(1).upper() if m else ''
 
 
 def norm_key(s: str) -> str:
@@ -400,6 +422,21 @@ def match_one(dld_name: str,
     k = norm_key(dld_name)
     hits = by_exact_b.get(k, [])
     if hits:
+        # build_indices appends one entry per name_field, so the same OSM building
+        # can appear multiple times. Deduplicate by osm_id for disambiguation.
+        unique_ids = {h.get('osm_id') for h in hits}
+        if len(unique_ids) > 1:
+            # Multiple distinct OSM buildings share the same norm_key
+            # (e.g. "Silverene Tower A" and "Silverene Tower B" both → {'silverene'}).
+            # Prefer the one whose trailing sub-unit letter/number matches DLD.
+            dld_sub = _trailing_subunit(dld_name)
+            if dld_sub:
+                sub_hits = [h for h in hits
+                            if _trailing_subunit(h.get('name') or h.get('name:en') or '')
+                               == dld_sub]
+                sub_unique = {h.get('osm_id') for h in sub_hits}
+                if len(sub_unique) == 1:
+                    return sub_hits[0], 'exact'
         return hits[0], 'exact'
 
     # 1b. Exact Arabic — buildings only.
@@ -407,6 +444,15 @@ def match_one(dld_name: str,
         kar = norm_ar(dld_name_ar)
         if kar and by_ar_b.get(kar):
             return by_ar_b[kar][0], 'exact_ar'
+
+    # 1c-pre. Alpha exact: same character sequence after removing all non-alphanum.
+    # Catches compound-word splits like "GOLDCREST VIEWS 2" ↔ "Gold Crest Views 2"
+    # where alpha strings are identical but norm_key tokenizations differ.
+    # Must run before Jaccard because Jaccard sometimes picks an unrelated building
+    # with higher J due to shared common tokens (e.g. '2', 'views').
+    a_pre = alpha(dld_name)
+    if a_pre and by_alpha_b.get(a_pre):
+        return by_alpha_b[a_pre], 'alpha_exact'
 
     # 2. Jaccard ≥ threshold (EN tokens) — buildings only.
     dt = tokens(dld_name)
@@ -504,8 +550,8 @@ def report(matched: list, unmatched: list) -> None:
     print(f'\n=== Match coverage ({MIN_DEALS}+ deals filter) ===')
     print(f'DLD buildings: {total}')
     print(f'  matched:   {len(matched)} ({len(matched)/total*100:.1f}%)')
-    for k in ('exact', 'exact_ar', 'jaccard', 'subset', 'rev_subset', 'seqmatch',
-              'project_exact', 'project_seqmatch', 'master_exact',
+    for k in ('exact', 'exact_ar', 'alpha_exact', 'jaccard', 'subset', 'rev_subset',
+              'seqmatch', 'project_exact', 'project_seqmatch', 'master_exact',
               'landmark_fallback', 'dg_prefix_exact', 'dg_prefix_jaccard'):
         if by_kind.get(k):
             print(f'    {k}: {by_kind[k]}')
