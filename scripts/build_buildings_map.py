@@ -587,7 +587,20 @@ def match_one(dld_name: str,
         if rev_hits:
             rev_hits.sort(key=lambda x: -x[0])
             if len(rev_hits) == 1 or rev_hits[0][0] > rev_hits[1][0]:
-                return rev_hits[0][1], 'rev_subset'
+                hit = rev_hits[0][1]
+                # Geo-check before committing: if this hit is far from the area
+                # centroid, fall through to seqmatch which may find a closer
+                # building. (e.g. "GREEN LAKES S1" rev_subsets to "Green Tower"
+                # 27 km away, while seqmatch finds "Green Lakes 1" 2 km away.)
+                if area_centroid:
+                    _d = haversine_km(area_centroid[0], area_centroid[1],
+                                      hit['lat'], hit['lon'])
+                    if _d > GEO_SANITY_KM:
+                        pass  # fall through to seqmatch
+                    else:
+                        return hit, 'rev_subset'
+                else:
+                    return hit, 'rev_subset'
 
     # 3. SequenceMatcher on alpha-only — buildings only.
     a = alpha(dld_name)
@@ -725,7 +738,14 @@ def main() -> int:
             c = centroids.get(d['area'])
             if c:
                 dist = haversine_km(c[0], c[1], osm_row['lat'], osm_row['lon'])
-                if dist > GEO_SANITY_KM:
+                # Exact name matches (norm_key or alpha identical) are lower-risk
+                # false positives than fuzzy matches. DLD area codes are
+                # administrative and sometimes don't match physical location
+                # (e.g. "INDIGO TOWER" coded under Wadi Al Safa 5 but physically
+                # in JVC). Relax to 15 km for exact/alpha_exact — still rejects
+                # same-name buildings in completely different emirates.
+                geo_limit = 15.0 if kind in ('exact', 'alpha_exact') else GEO_SANITY_KM
+                if dist > geo_limit:
                     geo_rejected += 1
                     osm_row = None
             # Reject compound matches to huge polygons (whole community/district).
