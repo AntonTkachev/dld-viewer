@@ -372,6 +372,30 @@ def build_indices(osm: list):
             t = tokens(n)
             if t and is_building:
                 token_rows_b.append((t, o))
+            # Extra: for "N, Street Name" address-format OSM buildings, also
+            # index under a compact alt-key so DLD "Project N" can match them.
+            # "1, Blue Waters Island Street" → strip road-type and geo-qualifier
+            # words → join → "bluewaters 1" → same norm_key as DLD's "1 bluewaters".
+            _addr_m = re.match(r'^(\d+),\s*(.+)$', n)
+            if _addr_m and is_building:
+                _addr_num  = _addr_m.group(1)
+                _addr_words = _addr_m.group(2).lower().split()
+                _ROAD_TYPES = {'street','road','avenue','lane','drive','boulevard',
+                               'way','walk','close','court','place','terrace'}
+                _GEO_QUAL   = {'island','islands','bay','creek','beach','peninsula',
+                               'park','heights','hills','lake','lakes',
+                               'garden','gardens','quarter'}
+                # Strip trailing road-type then trailing geo-qualifier
+                while _addr_words and _addr_words[-1] in _ROAD_TYPES:
+                    _addr_words.pop()
+                while _addr_words and _addr_words[-1] in _GEO_QUAL:
+                    _addr_words.pop()
+                if _addr_words:
+                    _compact = ''.join(_addr_words)  # join without spaces
+                    _alt_n   = f"{_compact} {_addr_num}"
+                    _alt_k   = norm_key(_alt_n)
+                    if _alt_k and _alt_k != k:
+                        bx[_alt_k].append(o)
         # Arabic side — only building-tagged polygons can resolve a direct AR match.
         if is_building:
             for name_field in ('name:ar', 'name_ar', 'official_name:ar'):
