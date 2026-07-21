@@ -79,7 +79,7 @@ MIN_DEALS = 1
 STOP = {
     'tower', 'towers', 'residence', 'residences', 'residential', 'building',
     'apartments', 'apartment', 'flats', 'flat', 'villa', 'villas',
-    'the', 'of', 'for', 'and', 'a', 'an',
+    'the', 'of', 'for', 'and', 'by', 'at', 'a', 'an',
     'dubai', 'al', 'el',
     'llc', 'l.l.c', 'dwc', 'co', 'company', 'group',
     'phase', 'block', 'plot',
@@ -432,6 +432,23 @@ def match_one(dld_name: str,
             if len(subset_hits) == 1 or subset_hits[0][0] > subset_hits[1][0]:
                 return subset_hits[0][1], 'subset'
 
+    # 2c. Reverse subset: all OSM tokens appear in DLD token set.
+    # Catches OSM using shorter/abbreviated names, e.g.:
+    #   DLD "PARK ISLAND BLAKELY" → OSM "Blakely Tower" ({'blakely'} ⊂ DLD)
+    #   DLD "Binghatti Aquarise - TOWER A" → OSM "Aquarise" ({'aquarise'} ⊂ DLD)
+    # Guard: skip when all OSM tokens are pure numbers — those are too ambiguous
+    # (e.g. OSM "88" ⊂ DLD "MED 88" would bypass the DG-prefix centroid logic).
+    # Same unambiguous-best guard as 2b.
+    if dt:
+        rev_hits = []
+        for tt, osm in token_rows_b:
+            if tt and tt < dt and not all(t.isdecimal() for t in tt):
+                rev_hits.append((jaccard(dt, tt), osm))
+        if rev_hits:
+            rev_hits.sort(key=lambda x: -x[0])
+            if len(rev_hits) == 1 or rev_hits[0][0] > rev_hits[1][0]:
+                return rev_hits[0][1], 'rev_subset'
+
     # 3. SequenceMatcher on alpha-only — buildings only.
     a = alpha(dld_name)
     if a:
@@ -440,9 +457,12 @@ def match_one(dld_name: str,
         if close:
             cand = by_alpha_b[close[0]]
             # Token guard: require at least one distinctive token in common.
-            # Exception: if alpha strings are identical (e.g. "MAG218" vs "MAG 218"
-            # differ only in spacing), accept without token overlap.
-            if close[0] == a or tokens(dld_name) & tokens(cand.get('name', '')):
+            # Exceptions (accept without token overlap):
+            #   • identical alpha strings ("MAG218" vs "MAG 218" differ only in spacing)
+            #   • near-identical alpha strings (≥0.95 ratio) — catches compound-word
+            #     splits like "Blue Bell" vs "Bluebell" where tokenisation diverges.
+            ratio = difflib.SequenceMatcher(None, a, close[0]).ratio()
+            if ratio >= 0.95 or tokens(dld_name) & tokens(cand.get('name', '')):
                 return cand, 'seqmatch'
 
     # 1c. Exact norm-key match against compound index (buildings-only step 1
@@ -484,7 +504,7 @@ def report(matched: list, unmatched: list) -> None:
     print(f'\n=== Match coverage ({MIN_DEALS}+ deals filter) ===')
     print(f'DLD buildings: {total}')
     print(f'  matched:   {len(matched)} ({len(matched)/total*100:.1f}%)')
-    for k in ('exact', 'exact_ar', 'jaccard', 'subset', 'seqmatch',
+    for k in ('exact', 'exact_ar', 'jaccard', 'subset', 'rev_subset', 'seqmatch',
               'project_exact', 'project_seqmatch', 'master_exact',
               'landmark_fallback', 'dg_prefix_exact', 'dg_prefix_jaccard'):
         if by_kind.get(k):
@@ -729,6 +749,48 @@ def main() -> int:
                     pip_upgraded += 1
     if pip_upgraded:
         print(f'PIP upgraded: {pip_upgraded} approx → polygon buildings')
+
+    # Centroid-proximity fallback: for ROOFTOP buildings where PIP failed, try
+    # assigning the nearest footprint by centroid distance (≤60 m). Only accepted
+    # when exactly ONE footprint is that close — avoids ambiguity in dense areas.
+    # Handles the common case where Google ROOFTOP is 30-60 m off from the actual
+    # building (e.g. new Dubai developments geocoded to a registration address).
+    CENTROID_PROX_M = 60
+    prox_upgraded = 0
+    if osm_footprints:
+        fp_cell = 0.001  # ~111 m/cell — 2-cell search radius covers 60 m + margin
+        fp_grid: dict = collections.defaultdict(list)
+        for fp in osm_footprints:
+            fp_grid[(int(fp['lat'] / fp_cell), int(fp['lon'] / fp_cell))].append(fp)
+
+        for m in matched:
+            if m.get('vis') != 'approx':
+                continue
+            if 'rooftop' not in m.get('match', '').lower():
+                continue
+            lat, lon = m.get('lat'), m.get('lon')
+            if not lat or not lon:
+                continue
+            ci, cj = int(lat / fp_cell), int(lon / fp_cell)
+            nearby = []
+            for di in range(-2, 3):
+                for dj in range(-2, 3):
+                    for fp in fp_grid.get((ci + di, cj + dj), []):
+                        d_m = haversine_km(lat, lon, fp['lat'], fp['lon']) * 1000
+                        if d_m <= CENTROID_PROX_M:
+                            nearby.append((d_m, fp))
+            if len(nearby) == 1:
+                _, hit = nearby[0]
+                if bbox_area_m2(hit['rings']) <= 300_000:
+                    m['rings']  = hit['rings']
+                    m['lat']    = hit['lat']
+                    m['lon']    = hit['lon']
+                    m['vis']    = 'building'
+                    m['osm_id'] = str(hit.get('osm_id', ''))
+                    m['match'] += '+centroid_prox'
+                    prox_upgraded += 1
+    if prox_upgraded:
+        print(f'Centroid-proximity upgraded: {prox_upgraded} ROOFTOP buildings')
 
     # Drop remaining approx (point-only) buildings — no polygon to show.
     before = len(matched)
