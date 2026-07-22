@@ -453,22 +453,15 @@
     },
 
     {
-      "_comment": "Al Hebiah Third — DAMAC Hills (40k) is 99.7% of all data. Mudon is also a known community here (137 tx, small but worth splitting).",
+      "_comment": "Al Hebiah Third — DAMAC Hills is 94.9% of data. Mudon (4.8%) already has its own DM polygon under Al Hebiah Sixth (15.9k), no split needed here.",
       "area_name_en": "Al Hebiah Third",
-      "keep_remainder": true,
-      "remainder_name": "Al Hebiah Third (other)",
+      "keep_remainder": false,
       "sub_polygons": [
         {
           "name": "DAMAC Hills",
           "name_ar": "داماك هيلز",
           "osm_polygon": "DAMAC Hills",
           "master_projects": ["DAMAC HILLS"]
-        },
-        {
-          "name": "Mudon",
-          "name_ar": "مدن",
-          "osm_polygon": "Mudon",
-          "master_projects": ["Mudon"]
         }
       ]
     },
