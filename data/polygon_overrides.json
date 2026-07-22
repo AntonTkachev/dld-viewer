@@ -450,6 +450,72 @@
           "master_project_sql": "project_name_en LIKE 'Emirates Living - Meadows%' OR master_project_en LIKE 'Meadows%'"
         }
       ]
+    },
+
+    {
+      "_comment": "Al Hebiah Third — DAMAC Hills (40k) is 99.7% of all data. Mudon is also a known community here (137 tx, small but worth splitting).",
+      "area_name_en": "Al Hebiah Third",
+      "keep_remainder": true,
+      "remainder_name": "Al Hebiah Third (other)",
+      "sub_polygons": [
+        {
+          "name": "DAMAC Hills",
+          "name_ar": "داماك هيلز",
+          "osm_polygon": "DAMAC Hills",
+          "master_projects": ["DAMAC HILLS"]
+        },
+        {
+          "name": "Mudon",
+          "name_ar": "مدن",
+          "osm_polygon": "Mudon",
+          "master_projects": ["Mudon"]
+        }
+      ]
+    },
+
+    {
+      "_comment": "Al Jadaf — Jaddaf Waterfront (15k) + Dubai Health Care City Phase 2 (15k) + large null blob (34k, likely commercial/industrial). Split out the two named communities.",
+      "area_name_en": "Al Jadaf",
+      "keep_remainder": true,
+      "remainder_name": "Al Jadaf (other)",
+      "sub_polygons": [
+        {
+          "name": "Jaddaf Waterfront",
+          "name_ar": "جداف ووترفرونت",
+          "osm_polygon": "Jaddaf Waterfront",
+          "master_projects": ["Jaddaf Waterfront"]
+        }
+      ]
+    },
+
+    {
+      "_comment": "Me'Aisem First — IMPZ (68k, 85%) + JGE (11k, 14%). IMPZ has no usable OSM polygon yet; split out JGE which has exact OSM match.",
+      "area_name_en": "Me'Aisem First",
+      "keep_remainder": true,
+      "remainder_name": "Me'Aisem First (other)",
+      "sub_polygons": [
+        {
+          "name": "Jumeirah Golf Estates",
+          "name_ar": "إمارات الغولف",
+          "osm_polygon": "Jumeirah Golf Estates",
+          "master_project_sql": "master_project_en IN ('Jumeirah Golf Estates', 'Jumeirah Golf Estates - Phase B')"
+        }
+      ]
+    },
+
+    {
+      "_comment": "Al Safouh First — Sufouh Gardens (8.9k) + null blob (2.4k).",
+      "area_name_en": "Al Safouh First",
+      "keep_remainder": true,
+      "remainder_name": "Al Safouh First (other)",
+      "sub_polygons": [
+        {
+          "name": "Sufouh Gardens",
+          "name_ar": "حدائق السفوح",
+          "osm_polygon": "Sufouh Gardens",
+          "master_projects": ["Sufouh Gardens"]
+        }
+      ]
     }
   ],
 
