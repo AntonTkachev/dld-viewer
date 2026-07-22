@@ -317,6 +317,7 @@ def load_area_centroids() -> dict:
     if not GEOJSON.exists():
         return {}
     pts_per_area = collections.defaultdict(list)
+    dld_aliases = {}  # DLD area_name_en → display name for centroid lookup
     with GEOJSON.open(encoding='utf-8') as f:
         gj = json.load(f)
     for feat in gj.get('features', []):
@@ -325,6 +326,9 @@ def load_area_centroids() -> dict:
                 props.get('NAME_EN') or '')
         if not area:
             continue
+        filt = props.get('filter') or {}
+        if filt.get('area_name_en'):
+            dld_aliases[filt['area_name_en']] = area
         geom = feat.get('geometry') or {}
         rings = []
         if geom.get('type') == 'Polygon':
@@ -334,7 +338,7 @@ def load_area_centroids() -> dict:
                 rings.extend(poly)
         for ring in rings:
             for p in ring:
-                pts_per_area[area].append((p[1], p[0]))  # GeoJSON is [lon, lat]
+                pts_per_area[area].append((p[1], p[0]))
     out = {}
     for area, pts in pts_per_area.items():
         if not pts:
@@ -342,6 +346,9 @@ def load_area_centroids() -> dict:
         lat = sum(p[0] for p in pts) / len(pts)
         lon = sum(p[1] for p in pts) / len(pts)
         out[area] = (lat, lon)
+    for dld_name, display_name in dld_aliases.items():
+        if dld_name not in out and display_name in out:
+            out[dld_name] = out[display_name]
     return out
 
 
@@ -744,7 +751,13 @@ def main() -> int:
                 # (e.g. "INDIGO TOWER" coded under Wadi Al Safa 5 but physically
                 # in JVC). Relax to 15 km for exact/alpha_exact — still rejects
                 # same-name buildings in completely different emirates.
-                geo_limit = 15.0 if kind in ('exact', 'alpha_exact') else GEO_SANITY_KM
+                # Exception: single-token norm_keys (e.g. "grand") are too short
+                # to be reliable at 15 km — use standard 5 km to avoid false positives
+                # like "The Grand" (Creek Harbour) → "Grand Building" (Warsan, ~6 km).
+                _nk = norm_key(d['name'])
+                _is_short_key = len(_nk.split()) <= 1
+                geo_limit = (GEO_SANITY_KM if _is_short_key
+                             else 15.0) if kind in ('exact', 'alpha_exact') else GEO_SANITY_KM
                 if dist > geo_limit:
                     geo_rejected += 1
                     osm_row = None
