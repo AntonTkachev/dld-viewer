@@ -315,7 +315,7 @@
     },
 
     {
-      "_comment": "Jabal Ali First — covers Al Furjan (34k), Discovery Gardens (19k), Wasl Gate (5k), Jabal Ali Village (1.2k). DMCC overlap with Al Thanyah Fifth is allowed: small bleed.",
+      "_comment": "Jabal Ali First — covers Al Furjan (34k), Discovery Gardens (19k), The Gardens (64k rents), Wasl Gate (5k), Jabal Ali Village (1.2k). DMCC overlap with Al Thanyah Fifth is allowed: small bleed.",
       "area_name_en": "Jabal Ali First",
       "keep_remainder": true,
       "remainder_name": "Jabal Ali First (other)",
@@ -331,6 +331,12 @@
           "name_ar": "ديسكفري جاردنز",
           "osm_polygon": "Discovery gardens",
           "master_projects": ["Discovery Gardens"]
+        },
+        {
+          "name": "The Gardens",
+          "name_ar": "ذا جاردنز",
+          "osm_polygon": "The Gardens",
+          "master_projects": ["The Gardens"]
         },
         {
           "name": "Wasl Gate",
