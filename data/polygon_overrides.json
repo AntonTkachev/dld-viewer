@@ -533,19 +533,11 @@
     },
 
     {
-      "_comment": "Nad Al Shiba First — Meydan Racecourse Community (6.4k tx, residential towers around the racecourse). Nad Al Sheba Gardens (2.5k) and nulls stay in remainder. DM spells it NADD (double-d).",
-      "area_name_en": "Nad Al Shiba First",
-      "area_name_dm": "NADD AL SHIBA FIRST",
-      "keep_remainder": true,
-      "remainder_name": "Nad Al Shiba First (other)",
-      "sub_polygons": [
-        {
-          "name": "Meydan",
-          "name_ar": "ميدان",
-          "osm_polygon": "Meydan Racecourse",
-          "master_projects": ["Meydan Racecourse Community"]
-        }
-      ]
+      "_comment": "Me'Aisem Second DM polygon (lat=24.978-25.011) is geographically identical to the OSM 'IMPZ' polygon (osm-admin-clone). Suppress it so it doesn't obscure the IMPZ sub-polygon in the Me'Aisem First split.",
+      "area_name_en": "Me'Aisem Second",
+      "area_name_dm": "ME'AISEM SECOND",
+      "keep_remainder": false,
+      "sub_polygons": []
     },
 
     {
@@ -563,9 +555,10 @@
     },
 
     {
-      "_comment": "Jabal Ali Industrial Second — Down Town Jabal Ali is 99.9% of data (3980/3985 tx), a residential development within the industrial sector name.",
+      "_comment": "Jabal Ali Industrial Second — Downtown Jebel Ali (OSM polygon, western part, 3980 tx) + Jabal Ali Industrial Second remainder (DM polygon, eastern part, ~5 tx). DM and OSM polygons are different shapes so both appear as distinct areas.",
       "area_name_en": "Jabal Ali Industrial Second",
-      "keep_remainder": false,
+      "keep_remainder": true,
+      "remainder_name": "Jabal Ali Industrial Second",
       "sub_polygons": [
         {
           "name": "Downtown Jebel Ali",
