@@ -205,6 +205,13 @@
       "dm_name": "SAIH SHUAIB 4",
       "display_name": "Dubai Industrial City",
       "display_name_ar": "مدينة دبي الصناعية"
+    },
+    {
+      "_comment": "Nadd Al Shiba First → 51% Meydan Racecourse Community (6.4k tx), rest is Nad Al Sheba Gardens + nulls. The OSM 'Meydan Racecourse' polygon is nearly identical to the DM polygon, so a sub-polygon split would create two overlapping polygons. Alias the whole DM area to 'Meydan' instead.",
+      "dm_name": "NADD AL SHIBA FIRST",
+      "dld_area_name_en": "Nad Al Shiba First",
+      "display_name": "Meydan",
+      "display_name_ar": "ميدان"
     }
   ],
 
