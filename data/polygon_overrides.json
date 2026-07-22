@@ -482,11 +482,17 @@
     },
 
     {
-      "_comment": "Me'Aisem First — IMPZ (68k, 85%) + JGE (11k, 14%). IMPZ has no usable OSM polygon yet; split out JGE which has exact OSM match.",
+      "_comment": "Me'Aisem First — IMPZ (68k, 85%) + JGE (11k, 14%). Both have OSM polygons.",
       "area_name_en": "Me'Aisem First",
       "keep_remainder": true,
       "remainder_name": "Me'Aisem First (other)",
       "sub_polygons": [
+        {
+          "name": "IMPZ (International Media Production Zone)",
+          "name_ar": "المنطقة الإعلامية الدولية",
+          "osm_polygon": "IMPZ",
+          "master_projects": ["IMPZ"]
+        },
         {
           "name": "Jumeirah Golf Estates",
           "name_ar": "إمارات الغولف",
@@ -507,6 +513,65 @@
           "name_ar": "حدائق السفوح",
           "osm_polygon": "Sufouh Gardens",
           "master_projects": ["Sufouh Gardens"]
+        }
+      ]
+    },
+
+    {
+      "_comment": "Wadi Al Safa 2 — Liwan (Liwan1+Liwan2 rollup, 12k tx, residential) + Falcon City (4.4k) in remainder. Liwan1/2 are the same physical community split across two DLD master names.",
+      "area_name_en": "Wadi Al Safa 2",
+      "keep_remainder": true,
+      "remainder_name": "Wadi Al Safa 2 (other)",
+      "sub_polygons": [
+        {
+          "name": "Liwan",
+          "name_ar": "ليوان",
+          "osm_polygon": "Liwan",
+          "master_project_sql": "master_project_en IN ('Liwan1', 'Liwan2', 'Liwan')"
+        }
+      ]
+    },
+
+    {
+      "_comment": "Nad Al Shiba First — Meydan Racecourse Community (6.4k tx, residential towers around the racecourse). Nad Al Sheba Gardens (2.5k) and nulls stay in remainder. DM spells it NADD (double-d).",
+      "area_name_en": "Nad Al Shiba First",
+      "area_name_dm": "NADD AL SHIBA FIRST",
+      "keep_remainder": true,
+      "remainder_name": "Nad Al Shiba First (other)",
+      "sub_polygons": [
+        {
+          "name": "Meydan",
+          "name_ar": "ميدان",
+          "osm_polygon": "Meydan Racecourse",
+          "master_projects": ["Meydan Racecourse Community"]
+        }
+      ]
+    },
+
+    {
+      "_comment": "Al Kheeran — Festival City is 94% of data (1156/1236 tx). A few nulls go unattributed.",
+      "area_name_en": "Al Kheeran",
+      "keep_remainder": false,
+      "sub_polygons": [
+        {
+          "name": "Dubai Festival City",
+          "name_ar": "مدينة فستيفال دبي",
+          "osm_polygon": "Dubai Festival City",
+          "master_projects": ["Festival City"]
+        }
+      ]
+    },
+
+    {
+      "_comment": "Jabal Ali Industrial Second — Down Town Jabal Ali is 99.9% of data (3980/3985 tx), a residential development within the industrial sector name.",
+      "area_name_en": "Jabal Ali Industrial Second",
+      "keep_remainder": false,
+      "sub_polygons": [
+        {
+          "name": "Downtown Jebel Ali",
+          "name_ar": "وسط جبل علي",
+          "osm_polygon": "Downtown Jebel Ali",
+          "master_projects": ["Down Town Jabal Ali"]
         }
       ]
     }
