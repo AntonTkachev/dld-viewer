@@ -317,13 +317,15 @@ def load_area_centroids() -> dict:
     if not GEOJSON.exists():
         return {}
     pts_per_area = collections.defaultdict(list)
+    sub_pts = collections.defaultdict(list)  # sub-community name → pts (for finer centroid)
     dld_aliases = {}  # DLD area_name_en → display name for centroid lookup
     with GEOJSON.open(encoding='utf-8') as f:
         gj = json.load(f)
     for feat in gj.get('features', []):
         props = feat.get('properties', {})
-        area = (props.get('parent_area_name_en') or props.get('name') or
-                props.get('NAME_EN') or '')
+        sub_name = props.get('name') or ''
+        parent = props.get('parent_area_name_en') or ''
+        area = parent or sub_name or props.get('NAME_EN') or ''
         if not area:
             continue
         filt = props.get('filter') or {}
@@ -339,6 +341,8 @@ def load_area_centroids() -> dict:
         for ring in rings:
             for p in ring:
                 pts_per_area[area].append((p[1], p[0]))
+                if parent and sub_name:
+                    sub_pts[sub_name].append((p[1], p[0]))
     out = {}
     for area, pts in pts_per_area.items():
         if not pts:
@@ -346,6 +350,11 @@ def load_area_centroids() -> dict:
         lat = sum(p[0] for p in pts) / len(pts)
         lon = sum(p[1] for p in pts) / len(pts)
         out[area] = (lat, lon)
+    for sub_name, pts in sub_pts.items():
+        if sub_name not in out and pts:
+            lat = sum(p[0] for p in pts) / len(pts)
+            lon = sum(p[1] for p in pts) / len(pts)
+            out[sub_name] = (lat, lon)
     for dld_name, display_name in dld_aliases.items():
         if dld_name not in out and display_name in out:
             out[dld_name] = out[display_name]
@@ -721,43 +730,39 @@ def main() -> int:
         if osm_row is None:
             m = _DG_PREFIX_RE.match(d['name'])
             if m:
-                # Try closest candidate to area centroid first (avoids picking a
-                # same-numbered building in a different part of Dubai).
+                # MED/CON prefixes are Discovery Gardens buildings. Only accept an
+                # exact bare-number OSM match (e.g. "80" == "80") — fuzzy fallback
+                # via match_one picks up wrong-community buildings like "The Gardens
+                # Building 80" via token-subset, which is too loose for single numbers.
                 by_exact_b = indices[0]
                 num_key = norm_key(m.group(2))
                 cands = by_exact_b.get(num_key, [])
+                dg_c = centroids.get('Discovery Gardens') or centroids.get(d['area'])
                 if cands:
-                    c = centroids.get(d['area'])
-                    if c and len(cands) > 1:
+                    if dg_c and len(cands) > 1:
                         cands = sorted(cands,
-                                       key=lambda b: haversine_km(c[0], c[1], b['lat'], b['lon']))
+                                       key=lambda b: haversine_km(dg_c[0], dg_c[1], b['lat'], b['lon']))
                     osm_row, kind = cands[0], 'dg_prefix_exact'
-                else:
-                    osm_row, kind = match_one(m.group(2), *indices,
-                                              area_centroid=centroids.get(d['area']))
-                    if osm_row is not None:
-                        kind = f'dg_prefix_{kind}'
         if osm_row is not None:
             # Geo-sanity applies to ALL match kinds. We previously exempted
             # project_* in the belief that a project might cluster outside
             # its area — but in practice fuzzy project matches (Bluewaters
             # Residences ↔ Blue Waves Residence) needed this check too.
-            c = centroids.get(d['area'])
-            if c:
-                dist = haversine_km(c[0], c[1], osm_row['lat'], osm_row['lon'])
-                # Exact name matches (norm_key or alpha identical) are lower-risk
-                # false positives than fuzzy matches. DLD area codes are
-                # administrative and sometimes don't match physical location
-                # (e.g. "INDIGO TOWER" coded under Wadi Al Safa 5 but physically
-                # in JVC). Relax to 15 km for exact/alpha_exact — still rejects
-                # same-name buildings in completely different emirates.
-                # Exception: single-token norm_keys (e.g. "grand") are too short
-                # to be reliable at 15 km — use standard 5 km to avoid false positives
-                # like "The Grand" (Creek Harbour) → "Grand Building" (Warsan, ~6 km).
+            if kind.startswith('dg_prefix'):
+                # Discovery Gardens: check against sub-community centroid with
+                # 2 km limit — rejects same-numbered buildings in The Gardens
+                # (~1.5 km west) that slip through the broader Jabal Ali First check.
+                dg_c = centroids.get('Discovery Gardens') or centroids.get(d['area'])
+                c = dg_c
+                geo_limit = 2.0
+            else:
+                c = centroids.get(d['area'])
                 _nk = norm_key(d['name'])
                 _is_short_key = len(_nk.split()) <= 1
                 geo_limit = (GEO_SANITY_KM if _is_short_key
                              else 15.0) if kind in ('exact', 'alpha_exact') else GEO_SANITY_KM
+            if c:
+                dist = haversine_km(c[0], c[1], osm_row['lat'], osm_row['lon'])
                 if dist > geo_limit:
                     geo_rejected += 1
                     osm_row = None
