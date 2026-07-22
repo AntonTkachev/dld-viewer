@@ -1959,6 +1959,7 @@ function renderChoro(){
     html += `<div class="row"><span class="sw" style="background:repeating-linear-gradient(45deg,transparent,transparent 3px,#94a3b8 3px,#94a3b8 4px)"></span>${t('legend_no_data')}</div>`;
   }
   document.getElementById('legend').innerHTML = html;
+  if (typeof _updateBldLegend === 'function') _updateBldLegend();
 
   _refreshOverlay(mask);
 }
@@ -2331,13 +2332,11 @@ for (const ml of MALLS) {
 
 const buildingLayer = L.layerGroup();
 const _bldShapes = new Map(); // slug → Leaflet shape, for ?bld= deep-link
+// Viridis 5-step (same direction as district choropleth: low=dark purple, high=yellow)
+const _BLD_RAMP = RAMP_VIRIDIS;
+const _BLD_BREAKS = [20, 50, 100, 500]; // deals thresholds (4 breaks → 5 buckets)
 if (typeof BUILDINGS !== 'undefined') {
-  const _bldColor = (d) =>
-      d >= 500 ? '#7a0000'
-    : d >= 100 ? '#cc0000'
-    : d >= 50  ? '#ff7a00'
-    : d >= 20  ? '#f0c000'
-    : '#3a92ff';
+  const _bldColor = (d) => _BLD_RAMP[d >= 500 ? 4 : d >= 100 ? 3 : d >= 50 ? 2 : d >= 20 ? 1 : 0];
   const _bldRadius = (d) => {
     const r = 2 + Math.log10(Math.max(1, d)) * 3;
     return Math.min(12, Math.max(3, r));
@@ -2398,6 +2397,26 @@ if (typeof BUILDINGS !== 'undefined') {
     if (b.s) _bldShapes.set(b.s, {shape, b});
   }
 }
+
+// Building layer legend — appended to #legend whenever buildings layer is active.
+// Called by renderChoro (after it sets innerHTML) and on layer toggle.
+function _updateBldLegend() {
+  const host = document.getElementById('legend');
+  if (!host) return;
+  const old = host.querySelector('#bld-legend-section');
+  if (old) old.remove();
+  if (!map.hasLayer(buildingLayer)) return;
+  const labels = ['< 20', '20–49', '50–99', '100–499', '500+'];
+  const sec = document.createElement('div');
+  sec.id = 'bld-legend-section';
+  sec.innerHTML =
+    `<div style="border-top:1px solid #e5e7eb;margin-top:7px;padding-top:7px;font-weight:600;margin-bottom:4px">${t('buildings')} — ${t('bld_deals')}</div>` +
+    labels.map((lbl, i) =>
+      `<div class="row"><span class="sw" style="background:${_BLD_RAMP[i]}"></span>${lbl}</div>`
+    ).join('');
+  host.appendChild(sec);
+}
+buildingLayer.on('add remove', _updateBldLegend);
 
 if (minLevel === 99) buildingLayer.addTo(map);
 
