@@ -125,6 +125,9 @@ setTimeout(() => {
   const tvHintEl = document.getElementById('tv-hint');
   if (tvHintEl) tvHintEl.textContent = t('tv_hint');
 
+  const bldNoteEl = document.getElementById('ls-building-note');
+  if (bldNoteEl) bldNoteEl.textContent = t('bld_coverage_note');
+
   document.querySelectorAll('#mp-lang-list .lang-btn').forEach(b => {
     b.addEventListener('click', e => {
       const target = b.dataset.lang;
@@ -2357,7 +2360,7 @@ if (typeof BUILDINGS !== 'undefined') {
     const yrCell    = b.yr  ? metaCell(t('bld_built'), b.yr) : '';
     const devCell   = b.dev ? metaCell(t('bld_developer'), b.dev) : '';
     return `
-      <div style="font-weight:600;font-size:14px;margin-bottom:2px">🏢 ${_h(b.n)} <span class="src-tag src-osm">OSM</span></div>
+      <div style="font-weight:600;font-size:14px;margin-bottom:2px"><svg width="13" height="13" viewBox="0 0 24 24" aria-hidden="true" style="vertical-align:-1px;margin-inline-end:2px"><rect x="4" y="3" width="16" height="18" rx="1.5" fill="none" stroke="currentColor" stroke-width="2"/><rect x="7.4" y="6.5" width="2.2" height="2.2" fill="currentColor"/><rect x="14.4" y="6.5" width="2.2" height="2.2" fill="currentColor"/><rect x="7.4" y="11.4" width="2.2" height="2.2" fill="currentColor"/><rect x="14.4" y="11.4" width="2.2" height="2.2" fill="currentColor"/><rect x="7.4" y="16.3" width="2.2" height="2.2" fill="currentColor"/><rect x="14.4" y="16.3" width="2.2" height="2.2" fill="currentColor"/></svg> ${_h(b.n)} <span class="src-tag src-osm">OSM</span></div>
       <div style="font-size:11px;color:#9ca3af;margin-bottom:10px">${_h(b.a)}</div>
       <div style="display:flex;gap:16px;flex-wrap:wrap;margin-bottom:${yrCell||devCell?'8px':'0'}">
         ${salesCell}${rentCell}
@@ -2413,7 +2416,8 @@ function _updateBldLegend() {
     `<div style="border-top:1px solid #e5e7eb;margin-top:7px;padding-top:7px;font-weight:600;margin-bottom:4px">${t('buildings')} — ${t('bld_deals')}</div>` +
     labels.map((lbl, i) =>
       `<div class="row"><span class="sw" style="background:${_BLD_RAMP[i]}"></span>${lbl}</div>`
-    ).join('');
+    ).join('') +
+    `<div style="margin-top:6px;font-size:10.5px;line-height:1.35;color:#9ca3af">${_h(t('bld_coverage_note'))}</div>`;
   host.appendChild(sec);
 }
 buildingLayer.on('add remove', _updateBldLegend);

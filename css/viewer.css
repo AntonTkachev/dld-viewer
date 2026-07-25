@@ -11,7 +11,7 @@
   body.has-lang-banner #view-switch{top:54px}
   @media (max-width:480px){#lang-banner{font-size:12px;padding:7px 12px;gap:8px}#lang-banner .lb-cta{padding:4px 10px;font-size:11.5px}}
   #map{position:absolute;left:0;right:0;top:0;bottom:0}
-  .legend{position:absolute;bottom:18px;right:18px;background:rgba(255,255,255,.97);padding:10px 12px;border-radius:8px;box-shadow:0 4px 14px rgba(0,0,0,.25);z-index:1000;font-size:12px}
+  .legend{position:absolute;bottom:18px;right:18px;max-width:200px;background:rgba(255,255,255,.97);padding:10px 12px;border-radius:8px;box-shadow:0 4px 14px rgba(0,0,0,.25);z-index:1000;font-size:12px}
   .legend .row{display:flex;align-items:center;gap:8px;margin:2px 0}
   .legend .sw{display:inline-block;width:18px;height:12px;border:1px solid rgba(0,0,0,.2);border-radius:2px}
   .leaflet-popup-content{font-size:13px;line-height:1.5;min-width:240px}
@@ -343,6 +343,7 @@
   #mp-level-list .ls-btn:hover:not(.active){background:#eef;border-color:#c5d4ea}
   #mp-level-list .ls-btn.active{background:#1d4ed8;color:#fff;border-color:#1d4ed8}
   #mp-level-list .ls-arrow{color:#bbb;font-size:11px;text-align:center;line-height:1;margin:-1px 0}
+  #mp-level-list .ls-note{margin-top:5px;padding-top:6px;border-top:1px solid #eef0f3;font-size:10.5px;line-height:1.4;color:#8a8f98;text-align:center}
   .leaflet-top.leaflet-right{margin-top:64px}
   .pj-progress{margin:6px 0 4px}
   .pj-progress-bar{position:relative;height:8px;border-radius:4px;background:#eef0f3;overflow:hidden}
