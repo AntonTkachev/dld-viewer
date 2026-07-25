@@ -95,6 +95,8 @@
   .tx-summary .tx-caret { font-size: 11px; color: #94a3b8; margin-left: 4px; transition: transform .15s; }
   details[open] .tx-caret { transform: rotate(180deg); }
   .tx-summary-right { display: flex; align-items: center; gap: 10px; }
+  .dp-tag-op-New   { background: #e6f7e6; color: #0a7f00; }
+  .dp-tag-op-Renew { background: #eef2ff; color: #4338ca; }
 
   /* ── Transaction table pagination ── */
   .pager { display: flex; gap: 8px; align-items: center; margin-top: 10px; font-size: 12.5px; color: #6b7280; }
@@ -109,7 +111,7 @@
 <body>
 <div class="wrap">
 
-  <div class="breadcrumb"><a href="/en/sales/">← Map</a> / Building Search</div>
+  <div class="breadcrumb"><a href="/en/sales/">← Map</a> / <a href="/buildings/">Buildings Directory</a> / Building Search</div>
 
   <h1>Building &amp; Tower Search</h1>
   <p class="lede">Sales and rental history for any Dubai building — by bedroom type, year, off-plan vs ready market.</p>
@@ -167,7 +169,7 @@
       <div class="sec-head"><h3>Rents — median annual (AED)</h3></div>
       <p class="rent-note">Ejari register, project level. Bedroom filter applies.</p>
       <div class="dp-stats" id="rents-stats"></div>
-      <div class="dp-chart"><canvas id="ch-rent"></canvas></div>
+      <div class="dp-chart-tall"><canvas id="ch-rent"></canvas></div>
     </div>
 
     <!-- Sales history (collapsed by default) -->
@@ -201,6 +203,38 @@
       </details>
     </div>
 
+    <!-- Rent history (collapsed by default) -->
+    <div class="panel" id="rn-panel">
+      <details id="rn-details">
+        <summary class="tx-summary">
+          <div style="display:flex;align-items:center;gap:6px">
+            <h3>Rent history</h3>
+            <span class="tx-caret">▼</span>
+          </div>
+          <div class="tx-summary-right">
+            <span id="rn-count-label" style="font-size:12px;color:#94a3b8"></span>
+          </div>
+        </summary>
+        <p class="rent-note" style="margin-top:14px">Ejari register, project level — same contracts as the rent chart above.</p>
+        <div style="overflow-x:auto">
+          <table class="dp-table">
+            <thead>
+              <tr>
+                <th>Date</th>
+                <th>Type</th>
+                <th class="num">Annual rent (AED)</th>
+                <th class="num">AED/sqft/yr</th>
+                <th class="num">Beds</th>
+                <th class="num">Area (sqft)</th>
+              </tr>
+            </thead>
+            <tbody id="rn-body"></tbody>
+          </table>
+        </div>
+        <div class="pager" id="rn-pager"></div>
+      </details>
+    </div>
+
   </div><!-- #result -->
 
 </div><!-- .wrap -->
@@ -224,6 +258,7 @@ const PERIODS     = [
   { k:'all', label:'All', yrs:null },
 ];
 const TX_PAGE = 25;
+const RN_PAGE = 25;
 
 // ── State ─────────────────────────────────────────────────────────────────────
 let INDEX  = null;
@@ -233,6 +268,7 @@ let period = 'all';
 let sqft   = false;
 let charts = [];
 let txPage = 0;
+let rnPage = 0;
 let currentSlug = null;
 let focusIdx = -1;
 
@@ -304,7 +340,7 @@ function pick(slug, name) {
   currentSlug = slug;
   history.replaceState(null, '', '/search/#' + slug);
   resultEl.style.display = 'none';
-  room = 'all'; period = 'all'; txPage = 0;
+  room = 'all'; period = 'all'; txPage = 0; rnPage = 0;
   fetchBuilding(slug);
 }
 function fetchBuilding(slug) {
@@ -339,10 +375,13 @@ function renderAll() {
   renderOffplanPanel();
   renderRentsPanel();
   renderTxTable();
+  renderRentTable();
   resultEl.style.display = 'block';
   // keep details closed when switching buildings
   const det = document.getElementById('tx-details');
   if (det) det.removeAttribute('open');
+  const rnDet = document.getElementById('rn-details');
+  if (rnDet) rnDet.removeAttribute('open');
 }
 
 function renderHeader() {
@@ -373,7 +412,7 @@ function renderRoomChips() {
     return `<button class="room-chip${active?' active':''}" data-room="${r}"${style}>${h(ROOM_LABEL[r])}<span class="chip-n">${fmtNum(n)}</span></button>`;
   }).join('');
   document.getElementById('room-chips').querySelectorAll('.room-chip').forEach(el =>
-    el.addEventListener('click', () => { room = el.dataset.room; txPage = 0; renderAll(); })
+    el.addEventListener('click', () => { room = el.dataset.room; txPage = 0; rnPage = 0; renderAll(); })
   );
 }
 
@@ -386,21 +425,21 @@ function renderPeriodChips() {
   );
 }
 
-// ── Sales chart (combo: volume bars + price lines with op/rd split) ──────────
+// ── Sales chart (combo: volume bars + price lines with op/rd split, monthly) ─
 function renderSalesPanel() {
   const panel  = document.getElementById('sales-chart-panel');
-  const cut    = yearCutoff();
+  const cut    = monthCutoff();
   const uLbl   = sqft ? 'AED/sqft' : 'AED/m²';
-  const syData = (DATA.sy || []).filter(r => r.y >= cut);
+  const smData = (DATA.sm || []).filter(r => r.ym >= cut);
 
   if (room !== 'all') {
     // ── Specific room: solid ready line + dashed off-plan line + count bars ──
-    const data = (DATA.sr[room] || []).filter(r => r.y >= cut);
+    const data = (DATA.smr[room] || []).filter(r => r.ym >= cut);
     if (!data.length) { panel.style.display = 'none'; return; }
     panel.style.display = 'block';
 
     const col    = ROOM_COLORS[room];
-    const years  = data.map(r => String(r.y));
+    const months = data.map(r => fmtYm(r.ym));
     const counts = data.map(r => r.n || 0);
     const pAll   = data.map(r => r.ppsqm    != null ? toUnit(r.ppsqm)    : null);
     const pOp    = data.map(r => r.op_ppsqm != null ? toUnit(r.op_ppsqm) : null);
@@ -431,23 +470,23 @@ function renderSalesPanel() {
     }
 
     charts.push(new Chart(document.getElementById('ch-price'), {
-      data: { labels: years, datasets },
+      data: { labels: months, datasets },
       options: comboSalesOpts(uLbl, hasOp),
     }));
 
   } else {
     // ── All: op/rd lines (dashed/solid, same "all" blue) + stacked bars ───
-    if (!syData.length) { panel.style.display = 'none'; return; }
+    if (!smData.length) { panel.style.display = 'none'; return; }
     panel.style.display = 'block';
 
     const col   = ROOM_COLORS['all'];
-    const years = syData.map(r => String(r.y));
-    const nOp   = syData.map(r => r.op || 0);
-    const nRd   = syData.map(r => r.rd || 0);
-    const pOp   = syData.map(r => r.op_ppsqm != null ? toUnit(r.op_ppsqm) : null);
-    const pRd   = syData.map(r => r.rd_ppsqm != null ? toUnit(r.rd_ppsqm) : null);
+    const months = smData.map(r => fmtYm(r.ym));
+    const nOp   = smData.map(r => r.op || 0);
+    const nRd   = smData.map(r => r.rd || 0);
+    const pOp   = smData.map(r => r.op_ppsqm != null ? toUnit(r.op_ppsqm) : null);
+    const pRd   = smData.map(r => r.rd_ppsqm != null ? toUnit(r.rd_ppsqm) : null);
     const hasOp = pOp.some(v => v != null);
-    const totalN = syData.reduce((s, r) => s + r.n, 0);
+    const totalN = smData.reduce((s, r) => s + r.n, 0);
 
     document.getElementById('sales-stats').innerHTML =
       `<div class="dp-stat dp-stat--count"><div class="k">Transactions</div><div class="v">${fmtNum(totalN)}</div></div>`;
@@ -464,7 +503,7 @@ function renderSalesPanel() {
       yAxisID:'yPrice', pointRadius:3, tension:.3, spanGaps:true, borderWidth:2, order:1 });
 
     charts.push(new Chart(document.getElementById('ch-price'), {
-      data: { labels: years, datasets },
+      data: { labels: months, datasets },
       options: comboSalesOpts(uLbl, true),
     }));
   }
@@ -564,17 +603,18 @@ function renderOffplanPanel() {
   }));
 }
 
-// ── Rents chart ───────────────────────────────────────────────────────────────
+// ── Rents chart (monthly) ────────────────────────────────────────────────────
 function renderRentsPanel() {
   const panel = document.getElementById('rents-panel');
-  const cut   = yearCutoff();
-  const data  = rentDataFor(room).filter(r => r.y >= cut);
+  const cut   = monthCutoff();
+  const data  = rentDataForMonth(room).filter(r => r.ym >= cut);
   if (!data.length) { panel.style.display = 'none'; return; }
   panel.style.display = 'block';
 
-  const years  = data.map(r => String(r.y));
+  const months = data.map(r => fmtYm(r.ym));
+  const counts = data.map(r => r.n || 0);
   const values = data.map(r => r.rent || null);
-  const n      = data.reduce((s, r) => s + (r.n||0), 0);
+  const n      = counts.reduce((s, v) => s + v, 0);
   const meds   = values.filter(Boolean);
   const med    = meds.length ? Math.round(meds.reduce((a,b)=>a+b,0)/meds.length) : null;
   const col    = ROOM_COLORS[room] || '#1d4ed8';
@@ -587,13 +627,12 @@ function renderRentsPanel() {
   ).join('');
 
   charts.push(new Chart(document.getElementById('ch-rent'), {
-    type: 'line',
-    data: { labels: years, datasets: [{
-      data: values, borderColor: col,
-      backgroundColor: col + '22', fill: true,
-      tension: .3, pointRadius: 4, spanGaps: true, borderWidth: 2.5,
-    }]},
-    options: chartLineOpts('AED / year', false),
+    data: { labels: months, datasets: [
+      { type:'bar',  label:'Contracts',      data:counts, backgroundColor:col+'33', yAxisID:'yVol',   order:3 },
+      { type:'line', label:'Median AED/yr',  data:values, borderColor:col, backgroundColor:'transparent',
+        yAxisID:'yPrice', pointRadius:4, tension:.3, spanGaps:true, borderWidth:2.5, order:1 },
+    ]},
+    options: comboSalesOpts('AED / year', true),
   }));
 }
 
@@ -640,29 +679,68 @@ function renderTxTable() {
   if (next) next.addEventListener('click', () => { txPage++; renderTxTable(); });
 }
 
+// ── Rent contract table ───────────────────────────────────────────────────────
+function renderRentTable() {
+  const panel = document.getElementById('rn-panel');
+  let rnts = DATA.rnts || [];
+  if (room !== 'all') rnts = rnts.filter(t => t.r === room);
+  if (period !== 'all') {
+    const p = PERIODS.find(x => x.k === period);
+    if (p?.yrs) { const cut = new Date().getFullYear() - p.yrs; rnts = rnts.filter(t => parseInt(t.d) >= cut); }
+  }
+  if (!rnts.length) { panel.style.display = 'none'; return; }
+  panel.style.display = 'block';
+
+  document.getElementById('rn-count-label').textContent = rnts.length.toLocaleString() + ' contracts';
+
+  const slice = rnts.slice(rnPage * RN_PAGE, (rnPage+1) * RN_PAGE);
+  document.getElementById('rn-body').innerHTML = slice.map(rt => {
+    const sqftArea  = rt.sqm ? Math.round(rt.sqm * SQM_TO_SQFT) : null;
+    const perSqft   = rt.sqm && rt.amt ? Math.round(rt.amt / (rt.sqm * SQM_TO_SQFT)) : null;
+    const badge     = rt.new
+      ? '<span class="dp-tag-op dp-tag-op-New">NEW</span>'
+      : '<span class="dp-tag-op dp-tag-op-Renew">RENEW</span>';
+    return `<tr>
+      <td>${h(fmtDate(rt.d))}</td>
+      <td>${badge}</td>
+      <td class="num" style="font-weight:600">${rt.amt ? fmtAEDFull(rt.amt) : '—'}</td>
+      <td class="num">${perSqft ? perSqft.toLocaleString() : '—'}</td>
+      <td class="num">${h(BEDS_LABEL[rt.r] || '—')}</td>
+      <td class="num">${sqftArea ? sqftArea.toLocaleString() : '—'}</td>
+    </tr>`;
+  }).join('');
+
+  const pages = Math.ceil(rnts.length / RN_PAGE);
+  document.getElementById('rn-pager').innerHTML = pages <= 1 ? '' : `
+    <button id="rn-pg-prev" ${rnPage===0 ? 'disabled' : ''}>← Prev</button>
+    <span>Page ${rnPage+1} of ${pages}</span>
+    <button id="rn-pg-next" ${rnPage>=pages-1 ? 'disabled' : ''}>Next →</button>
+  `;
+  const prev = document.getElementById('rn-pg-prev');
+  const next = document.getElementById('rn-pg-next');
+  if (prev) prev.addEventListener('click', () => { rnPage--; renderRentTable(); });
+  if (next) next.addEventListener('click', () => { rnPage++; renderRentTable(); });
+}
+
 // ── Data helpers ──────────────────────────────────────────────────────────────
 function yearCutoff() {
   if (period === 'all') return 0;
   const p = PERIODS.find(x => x.k === period);
   return p?.yrs ? new Date().getFullYear() - p.yrs : 0;
 }
-function rentDataFor(r) { return r === 'all' ? (DATA.ry || []) : (DATA.rr[r] || []); }
-
-// ── Chart helpers ─────────────────────────────────────────────────────────────
-function chartLineOpts(yLabel, showLegend) {
-  return {
-    responsive: true, maintainAspectRatio: false,
-    interaction: { mode:'index', intersect:false },
-    plugins: {
-      legend: { display: showLegend, position:'bottom', labels:{ boxWidth:10, font:{size:10}, padding:10 } },
-      tooltip: { callbacks: { label: ctx => ctx.parsed.y != null ? ` ${ctx.dataset.label ?? ''} ${fmtAED(ctx.parsed.y)} ${yLabel}` : null } },
-    },
-    scales: {
-      x: { grid:{display:false}, ticks:{font:{size:10}, maxRotation:0, autoSkip:true, maxTicksLimit:10} },
-      y: { beginAtZero:false, ticks:{font:{size:10}, callback: v => fmtK(v)}, title:{display:true, text:yLabel, font:{size:10}} },
-    },
-  };
+function monthCutoff() {
+  if (period === 'all') return '0000-00';
+  const p = PERIODS.find(x => x.k === period);
+  if (!p?.yrs) return '0000-00';
+  const d = new Date();
+  d.setMonth(d.getMonth() - p.yrs * 12);
+  return d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0');
 }
+function fmtYm(ym) {
+  const [y, m] = ym.split('-');
+  return MONTHS[parseInt(m) - 1] + " '" + y.slice(2);
+}
+function rentDataForMonth(r) { return r === 'all' ? (DATA.rm || []) : (DATA.rmr[r] || []); }
 
 function destroyCharts() { charts.forEach(c => c.destroy()); charts = []; }
 function toUnit(v) { return v == null ? null : (sqft ? Math.round(v / SQM_TO_SQFT * 10) / 10 : v); }
