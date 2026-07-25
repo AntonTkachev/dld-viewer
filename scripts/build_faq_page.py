@@ -151,35 +151,63 @@ FAQS = [
     ),
     dict(
         q=dict(
-            ru='Чем отличаются маски Sales, Rents, Growth, Payback и Lifecycle?',
-            en='What is the difference between the Sales, Rents, Growth, Payback and Lifecycle masks?',
-            ar='ما الفرق بين خرائط Sales وRents وGrowth وPayback وLifecycle؟',
-            hi='Sales, Rents, Growth, Payback और Lifecycle मास्क में क्या अंतर है?',
-            zh='Sales、Rents、Growth、Payback 与 Lifecycle 五个掩码有什么区别？',
+            ru='Чем отличаются маски Sales, Rents, Growth, Payback, Lifecycle, Investor и Дубайская формула?',
+            en='What is the difference between the Sales, Rents, Growth, Payback, Lifecycle, Investor and Dubai Formula masks?',
+            ar='ما الفرق بين خرائط Sales وRents وGrowth وPayback وLifecycle وInvestor وDubai Formula؟',
+            hi='Sales, Rents, Growth, Payback, Lifecycle, Investor और Dubai Formula मास्क में क्या अंतर है?',
+            zh='Sales、Rents、Growth、Payback、Lifecycle、Investor 与 Dubai Formula 这些掩码有什么区别？',
         ),
         a=dict(
             ru='Sales — количество и медианная цена сделок купли-продажи. Rents — '
                'количество и медианная сумма договоров аренды. Growth — рост AED/м² за '
-               '1/3/5/10 лет. Payback — за сколько лет годовая аренда окупит покупку. '
-               'Lifecycle — композитная фаза рынка района (растущий / активный / зрелый / '
-               'отстающий / перегретый).',
+               '1/3/5/10/15 лет или за всю историю. Payback — за сколько лет годовая аренда '
+               'окупит покупку. Lifecycle — композитная фаза рынка района (зарождающийся / '
+               'растущий / активный / зрелый / отстающий / перегретый). Investor: рост — '
+               'где вырастет стоимость (недооценённое готовое жильё или off-plan вход на '
+               'запуске), бэктест на данных DLD 2014-2024. Investor: рента — где выгоднее '
+               'сдавать (доходность + растущая аренда + низкая ротация арендаторов). '
+               'Дубайская формула — доходность на вложенный кэш с ипотекой (80% LTV, 4.5%) '
+               'плюс чек-лист выживания района: самонесущая рента, не перегрет, есть запас '
+               'до пика, ликвидность. Только по готовому жилью.',
             en='Sales — count and median price of purchase transactions. Rents — count '
                'and median amount of rental contracts. Growth — AED/sqm growth over '
-               '1/3/5/10 years. Payback — how many years of annual rent recoup the '
-               'purchase. Lifecycle — composite market phase per district (rising / '
-               'active / mature / lagging / overheated).',
+               '1/3/5/10/15 years or all-time. Payback — how many years of annual rent '
+               'recoup the purchase. Lifecycle — composite market phase per district '
+               '(emerging / rising / active / mature / lagging / overheated). Investor: '
+               'growth — where value is likely to rise (undervalued ready stock or '
+               'off-plan entry at launch), backtested on 2014-2024 DLD data. Investor: '
+               'income — where rent yields best (yield + rising rent + low tenant '
+               'turnover). Dubai Formula — cash-on-cash return with a mortgage (80% LTV, '
+               '4.5%) plus a district survival checklist: self-carrying rent, not '
+               'overheated, room to peak, liquidity. Ready stock only.',
             ar='Sales — عدد ووسيط أسعار صفقات الشراء. Rents — عدد ومتوسط مبالغ عقود '
-               'الإيجار. Growth — نمو السعر بالدرهم/م² خلال 1/3/5/10 سنوات. Payback — '
-               'كم سنة من الإيجار السنوي تسترد تكلفة الشراء. Lifecycle — مرحلة السوق '
-               'المركبة للحي (صاعد / نشط / ناضج / متخلف / مفرط الحرارة).',
+               'الإيجار. Growth — نمو السعر بالدرهم/م² خلال 1/3/5/10/15 سنة أو للتاريخ '
+               'الكامل. Payback — كم سنة من الإيجار السنوي تسترد تكلفة الشراء. Lifecycle — '
+               'مرحلة السوق المركبة للحي (ناشئ / صاعد / نشط / ناضج / متخلف / مفرط الحرارة). '
+               'Investor: نمو — أين سترتفع القيمة (عقارات جاهزة مقيّمة بأقل من قيمتها أو '
+               'شراء على الخارطة عند الإطلاق)، مُختبر على بيانات دائرة الأراضي 2014-2024. '
+               'Investor: رنتا — أين الإيجار أكثر ربحية (عائد + إيجار مرتفع + دوران '
+               'مستأجرين منخفض). Dubai Formula — العائد النقدي على النقد المستثمر مع رهن '
+               'عقاري (80% LTV، 4.5%) بالإضافة إلى قائمة تحقق لبقاء الحي: إيجار ذاتي '
+               'التغطية، غير مفرط الحرارة، مسافة عن الذروة، سيولة. للعقارات الجاهزة فقط.',
             hi='Sales — खरीद लेन-देन की संख्या और मध्यिका मूल्य। Rents — किराये के '
-               'अनुबंधों की संख्या और मध्यिका राशि। Growth — 1/3/5/10 वर्षों में AED/sqm '
-               'वृद्धि। Payback — कितने वर्षों का वार्षिक किराया खरीद की लागत वसूल कर लेगा। '
-               'Lifecycle — जिले का संयुक्त बाज़ार चरण (बढ़ता / सक्रिय / परिपक्व / '
-               'पिछड़ता / अति-गरम)।',
+               'अनुबंधों की संख्या और मध्यिका राशि। Growth — 1/3/5/10/15 वर्षों या पूरे '
+               'इतिहास में AED/sqm वृद्धि। Payback — कितने वर्षों का वार्षिक किराया खरीद '
+               'की लागत वसूल कर लेगा। Lifecycle — जिले का संयुक्त बाज़ार चरण (नवोदित / '
+               'बढ़ता / सक्रिय / परिपक्व / पिछड़ता / अति-गरम)। Investor: ग्रोथ — कीमत कहाँ '
+               'बढ़ेगी (कम आँकी गई तैयार संपत्ति या लॉन्च पर ऑफ-प्लान एंट्री), DLD '
+               '2014-2024 डेटा पर बैकटेस्ट किया गया। Investor: इनकम — किराया कहाँ सबसे '
+               'लाभदायक है (उपज + बढ़ता किराया + कम किरायेदार बदलाव)। Dubai Formula — '
+               'बंधक के साथ निवेशित नकद पर रिटर्न (80% LTV, 4.5%) साथ ही जिले की सर्वाइवल '
+               'चेकलिस्ट: स्व-वहन किराया, अति-गरम नहीं, शिखर तक जगह, तरलता। केवल तैयार संपत्ति।',
             zh='Sales——购房交易的数量和中位价。Rents——租赁合同的数量和中位金额。'
-               'Growth——1/3/5/10 年内每平方米价格的涨幅。Payback——按年租金多少年可收回购房成本。'
-               'Lifecycle——按社区的综合市场阶段（增长 / 活跃 / 成熟 / 落后 / 过热）。',
+               'Growth——1/3/5/10/15 年或全部历史的每平方米价格涨幅。Payback——按年租金'
+               '多少年可收回购房成本。Lifecycle——按社区的综合市场阶段（新兴 / 增长 / 活跃 / '
+               '成熟 / 落后 / 过热）。Investor: growth——价值可能上涨的区域（低估的现房或'
+               '开盘期的期房），基于 DLD 2014-2024 数据回测。Investor: income——租金收益'
+               '最佳的区域（收益率 + 租金上涨 + 低租户流动率）。Dubai Formula——按揭'
+               '（80% LTV，4.5%）下的现金回报率，加上区域生存清单：租金自持、未过热、'
+               '距高点尚有空间、流动性良好。仅限现房。',
         ),
     ),
     dict(
@@ -191,25 +219,32 @@ FAQS = [
             zh='生命周期各阶段是什么意思？',
         ),
         a=dict(
-            ru='Растущий — ранняя стадия, цены и аренда выше среднего по городу. '
-               'Активный — стабильно сильнее среднего. Зрелый — около среднего, без '
-               'выраженной динамики. Отстающий — слабее среднего, признаки замедления. '
-               'Перегретый — рост цен сильно опережает рост аренды, рынок остыл, но цены '
-               'не корректировались.',
-            en='Rising — early phase, prices and rents outpace the city average. Active — '
-               'consistently above average. Mature — near average, no pronounced dynamic. '
-               'Lagging — below average, slowdown signals. Overheated — price growth has '
-               'sharply outpaced rent growth, the market cooled but prices have not '
-               'corrected.',
-            ar='Rising — مرحلة مبكرة، تتجاوز الأسعار والإيجارات متوسط المدينة. Active — '
-               'فوق المتوسط باستمرار. Mature — قرب المتوسط، بدون ديناميكية واضحة. Lagging — '
-               'تحت المتوسط، إشارات تباطؤ. Overheated — نمو الأسعار تجاوز نمو الإيجار بشدة، '
-               'السوق تبرّد لكن الأسعار لم تتعدل.',
-            hi='Rising — प्रारंभिक चरण, कीमतें और किराये शहर के औसत से अधिक। Active — '
-               'लगातार औसत से ऊपर। Mature — औसत के निकट, कोई स्पष्ट गतिशीलता नहीं। '
-               'Lagging — औसत से नीचे, मंदी के संकेत। Overheated — मूल्य वृद्धि किराये की '
-               'वृद्धि से कहीं अधिक, बाज़ार ठंडा हो गया लेकिन कीमतें ठीक नहीं हुईं।',
-            zh='Rising——早期阶段，价格和租金高于城市平均水平。Active——持续高于平均。'
+            ru='Зарождающийся — район всё ещё в основном off-plan (доля продаж на этапе '
+               'строительства ≥85%), рано мерить рыночный цикл. Растущий — ранняя стадия, '
+               'цены и аренда выше среднего по городу. Активный — стабильно сильнее '
+               'среднего. Зрелый — около среднего, без выраженной динамики. Отстающий — '
+               'слабее среднего, признаки замедления. Перегретый — рост цен сильно '
+               'опережает рост аренды, рынок остыл, но цены не корректировались.',
+            en='Emerging — the district is still mostly off-plan (≥85% of sales are '
+               'pre-completion), too early to measure a market cycle. Rising — early '
+               'phase, prices and rents outpace the city average. Active — consistently '
+               'above average. Mature — near average, no pronounced dynamic. Lagging — '
+               'below average, slowdown signals. Overheated — price growth has sharply '
+               'outpaced rent growth, the market cooled but prices have not corrected.',
+            ar='Emerging — الحي لا يزال في معظمه على الخارطة (≥85% من المبيعات قبل '
+               'الإنجاز)، من المبكر قياس دورة السوق. Rising — مرحلة مبكرة، تتجاوز الأسعار '
+               'والإيجارات متوسط المدينة. Active — فوق المتوسط باستمرار. Mature — قرب '
+               'المتوسط، بدون ديناميكية واضحة. Lagging — تحت المتوسط، إشارات تباطؤ. '
+               'Overheated — نمو الأسعار تجاوز نمو الإيجار بشدة، السوق تبرّد لكن الأسعار '
+               'لم تتعدل.',
+            hi='Emerging — जिला अभी भी अधिकतर ऑफ-प्लान है (≥85% बिक्री निर्माण-पूर्व), '
+               'बाज़ार चक्र मापने के लिए बहुत जल्दी। Rising — प्रारंभिक चरण, कीमतें और '
+               'किराये शहर के औसत से अधिक। Active — लगातार औसत से ऊपर। Mature — औसत के '
+               'निकट, कोई स्पष्ट गतिशीलता नहीं। Lagging — औसत से नीचे, मंदी के संकेत। '
+               'Overheated — मूल्य वृद्धि किराये की वृद्धि से कहीं अधिक, बाज़ार ठंडा हो '
+               'गया लेकिन कीमतें ठीक नहीं हुईं।',
+            zh='Emerging——该社区仍以期房为主（≥85% 为竣工前销售），尚早以衡量市场周期。'
+               'Rising——早期阶段，价格和租金高于城市平均水平。Active——持续高于平均。'
                'Mature——接近平均，无明显动向。Lagging——低于平均，出现放缓迹象。'
                'Overheated——价格涨幅远超租金涨幅，市场降温但价格未回调。',
         ),
@@ -375,22 +410,37 @@ FAQS = [
             zh='我可以查看特定楼盘或塔楼吗？',
         ),
         a=dict(
-            ru='Нет, гранулярность — район (master_project_en в реестре DLD). Это '
-               'осознанное решение: для отдельного объекта вам нужен Property Finder '
-               'или Bayut. Наша задача — макро-картина рынка, не помощь в выборе '
-               'квартиры.',
-            en='No, granularity is district-level (master_project_en in the DLD register). '
-               'This is intentional: for individual listings you want Property Finder or '
-               'Bayut. Our purpose is the macro picture of the market, not picking a flat.',
-            ar='لا، الدقة على مستوى الحي (master_project_en في سجل دائرة الأراضي). هذا '
-               'قرار مقصود: للعقارات الفردية استخدم Property Finder أو Bayut. هدفنا الصورة '
-               'الكلية للسوق وليس اختيار شقة.',
-            hi='नहीं, ग्रैन्युलैरिटी जिले-स्तर पर है (DLD रजिस्टर में master_project_en)। '
-               'यह जानबूझकर है: व्यक्तिगत लिस्टिंग के लिए Property Finder या Bayut '
-               'का उपयोग करें। हमारा उद्देश्य बाज़ार की मैक्रो तस्वीर है, फ्लैट चुनना नहीं।',
-            zh='不可以，颗粒度为社区级别（DLD 登记中的 master_project_en）。这是有意为之的：'
-               '查找具体房源请使用 Property Finder 或 Bayut。我们的目的是市场宏观图景，'
-               '而非帮你挑选具体单位。',
+            ru='Да. На карте есть слой отдельных зданий (переключатель «Уровни» → иконка '
+               'здания), а на странице /search/ можно найти конкретную башню по названию '
+               'и увидеть число сделок, аренд, застройщика и год постройки. Показаны только '
+               'здания, которые удалось сопоставить с данными DLD через OpenStreetMap — это '
+               'не полный реестр всех домов Дубая. Для просмотра актуальных объявлений на '
+               'продажу используйте Property Finder или Bayut — мы показываем историю рынка, '
+               'а не текущие листинги.',
+            en='Yes. The map has an individual-buildings layer (Levels switcher → building '
+               'icon), and /search/ lets you look up a specific tower by name to see its '
+               'transaction count, rental count, developer and year built. Only buildings '
+               'we could match to DLD records via OpenStreetMap are shown — not a complete '
+               'inventory of every building in Dubai. For current listings, use Property '
+               'Finder or Bayut — we show market history, not live listings.',
+            ar='نعم. تحتوي الخريطة على طبقة للمباني الفردية (مفتاح المستويات ← أيقونة '
+               'المبنى)، وتتيح لك صفحة /search/ البحث عن برج معين بالاسم لرؤية عدد صفقاته '
+               'وعقود إيجاره والمطوّر وسنة البناء. تُعرض فقط المباني التي أمكن مطابقتها مع '
+               'بيانات دائرة الأراضي عبر OpenStreetMap — وليست قائمة كاملة بكل مبنى في دبي. '
+               'لعرض الإعلانات الحالية، استخدم Property Finder أو Bayut — نحن نعرض تاريخ '
+               'السوق وليس الإعلانات المباشرة.',
+            hi='हाँ। मानचित्र में अलग-अलग इमारतों की एक परत है (Levels स्विचर → इमारत '
+               'आइकन), और /search/ पेज पर नाम से किसी विशेष टावर को खोजकर उसके लेन-देन, '
+               'किराये के अनुबंध, डेवलपर और निर्माण वर्ष देखे जा सकते हैं। केवल वे इमारतें '
+               'दिखाई गई हैं जिन्हें OpenStreetMap के ज़रिए DLD डेटा से मिलाया जा सका — '
+               'यह दुबई की हर इमारत की पूरी सूची नहीं है। मौजूदा लिस्टिंग के लिए Property '
+               'Finder या Bayut का उपयोग करें — हम बाज़ार का इतिहास दिखाते हैं, लाइव '
+               'लिस्टिंग नहीं।',
+            zh='可以。地图提供独立建筑图层（Levels 切换器 → 建筑图标），在 /search/ 页面'
+               '按名称搜索某栋楼即可查看其交易数、租赁数、开发商和建成年份。仅显示已通过 '
+               'OpenStreetMap 与 DLD 数据匹配的建筑——并非迪拜所有建筑的完整名录。若需查看'
+               '当前在售房源，请使用 Property Finder 或 Bayut——我们展示的是市场历史，'
+               '而非实时房源。',
         ),
     ),
     dict(

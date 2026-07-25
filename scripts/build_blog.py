@@ -80,6 +80,20 @@ def _district_url(lang, slug):
     return BASE_URL + _lang_path_prefix(lang) + '/sales/' + slug + '/'
 
 
+def _building_url(slug):
+    """Building pages have no per-language mirror — /search/#slug deep-links
+    into the (single, language-switchable) search page. Same pattern the
+    map's building popups already use."""
+    return BASE_URL + '/search/#' + slug
+
+
+def _display_name(n):
+    """DLD names are inconsistently cased — some raw ALL CAPS, some already
+    mixed case from OSM. Title-case only the shouty ones for readability;
+    leave already-mixed-case names untouched."""
+    return n.title() if n.isupper() else n
+
+
 def _hreflang_block(make_url):
     parts = []
     for l in LANGUAGES:
@@ -295,7 +309,91 @@ POST3 = dict(
 )
 
 
-POSTS = [POST1, POST2, POST3]
+# ─────── Post-4: Most-traded buildings ────────
+def post4_data():
+    """Individual buildings ranked by DLD sale-transaction count. Only rows
+    with a search slug are usable — those are the ones /search/#slug can
+    actually resolve (matched all the way through to search-index.json)."""
+    raw = open(os.path.join(ROOT, 'buildings', 'data.js'), encoding='utf-8').read().strip()
+    prefix = 'const BUILDINGS = '
+    rows = json.loads(raw[len(prefix):].rstrip(';\n'))
+    rows = [b for b in rows if b.get('s') and b.get('d')]
+    rows.sort(key=lambda b: -b['d'])
+    return rows[:10]
+
+
+POST4 = dict(
+    slug='most-traded-buildings-2026',
+    date='2026-07-25',
+    title=dict(
+        ru='Топ-10 самых активных башен Дубая по числу сделок',
+        en='Top 10 most-traded towers in Dubai',
+        ar='أفضل 10 أبراج الأكثر تداولًا في دبي',
+        hi='दुबई के 10 सबसे अधिक कारोबार वाले टावर',
+        zh='迪拜交易最活跃的 10 栋楼盘',
+    ),
+    desc=dict(
+        ru='Здания Дубая с наибольшим числом сделок купли-продажи по данным DLD — с числом договоров аренды, застройщиком и годом постройки.',
+        en='Dubai buildings with the most DLD sale transactions — with rental contract counts, developer and year built.',
+        ar='مباني دبي الأكثر صفقات بيع وفق بيانات دائرة الأراضي — مع عدد عقود الإيجار والمطوّر وسنة البناء.',
+        hi='DLD डेटा के अनुसार सबसे अधिक बिक्री लेन-देन वाली दुबई की इमारतें — किराये के अनुबंधों, डेवलपर और निर्माण वर्ष के साथ।',
+        zh='根据 DLD 数据，迪拜销售交易量最高的建筑——附租赁合同数、开发商与建成年份。',
+    ),
+    intro=dict(
+        ru='Карта DXBCompass теперь показывает не только районы, но и отдельные здания. Мы '
+           'сопоставили дома из реестра DLD с их координатами на OpenStreetMap по названию и '
+           'геолокации — получилось несколько тысяч башен с историей сделок. Показаны только '
+           'здания, которые удалось сопоставить, — это не полный список домов Дубая. Ниже — '
+           'десятка с наибольшим числом зарегистрированных сделок купли-продажи; название каждой '
+           'ведёт на страницу поиска с полной историей по зданию.',
+        en='DXBCompass now maps individual buildings, not just districts. We matched DLD\'s '
+           'building register to OpenStreetMap coordinates by name and geolocation — a few '
+           'thousand towers now carry a transaction history. Only matched buildings are shown '
+           '— this is not a complete inventory of every building in Dubai. Below is the top '
+           'ten by registered sale-transaction count; each name links to a search page with '
+           'the building\'s full history.',
+        ar='تعرض خريطة DXBCompass الآن المباني الفردية وليس الأحياء فقط. طابقنا سجل المباني لدى '
+           'دائرة الأراضي مع إحداثيات OpenStreetMap بالاسم والموقع الجغرافي — فأصبح لدى آلاف '
+           'الأبراج تاريخ صفقات. تُعرض فقط المباني التي أمكن مطابقتها — وليست قائمة كاملة بكل '
+           'مبنى في دبي. أدناه أفضل عشرة حسب عدد صفقات البيع المسجلة؛ يقود كل اسم إلى صفحة بحث '
+           'بالتاريخ الكامل للمبنى.',
+        hi='DXBCompass मानचित्र अब केवल जिले ही नहीं, अलग-अलग इमारतें भी दिखाता है। हमने DLD के '
+           'भवन रजिस्टर को नाम और भू-स्थान से OpenStreetMap के निर्देशांकों से मिलाया — अब '
+           'कुछ हज़ार टावरों का लेन-देन इतिहास उपलब्ध है। केवल मिलान की गई इमारतें दिखाई गई हैं '
+           '— यह दुबई की हर इमारत की पूरी सूची नहीं है। नीचे पंजीकृत बिक्री लेन-देन की संख्या '
+           'के अनुसार शीर्ष दस हैं; हर नाम इमारत के पूरे इतिहास वाले खोज पृष्ठ से जुड़ा है।',
+        zh='DXBCompass 地图现在不仅显示社区，还显示独立建筑。我们通过名称和地理位置，将 DLD '
+           '的建筑登记与 OpenStreetMap 坐标进行了匹配——现已有数千栋楼盘带有交易历史。仅显示'
+           '已匹配的建筑——这并非迪拜所有建筑的完整名录。以下是按已登记销售交易数排名的前十位；'
+           '每个名称都链接到该建筑完整历史的搜索页面。',
+    ),
+    cols=dict(
+        ru=('Здание', 'Район', 'Сделок (DLD)', 'Договоров аренды', 'Год постройки', 'Застройщик'),
+        en=('Building', 'District', 'Sales (DLD)', 'Rental contracts', 'Built', 'Developer'),
+        ar=('المبنى', 'الحي', 'صفقات (DLD)', 'عقود الإيجار', 'سنة البناء', 'المطوّر'),
+        hi=('इमारत', 'जिला', 'बिक्री (DLD)', 'किराये के अनुबंध', 'निर्माण वर्ष', 'डेवलपर'),
+        zh=('建筑', '社区', '销售（DLD）', '租赁合同', '建成年份', '开发商'),
+    ),
+    footer=dict(
+        ru='Здания сопоставлены с OpenStreetMap автоматически по названию и координатам — часть '
+           'домов Дубая в выборку не попала (нет чистого совпадения или отсутствуют координаты). '
+           'Сделки считаются с начала истории реестра DLD, без ограничения по годам.',
+        en='Buildings are matched to OpenStreetMap automatically by name and coordinates — not '
+           'every Dubai building made it into the sample (no clean name match or missing '
+           'coordinates). Transaction counts run from the start of the DLD register, no year cutoff.',
+        ar='تُطابق المباني مع OpenStreetMap تلقائيًا بالاسم والإحداثيات — لم تدخل كل مباني دبي '
+           'في العينة (لا تطابق دقيق للاسم أو إحداثيات مفقودة). تُحسب الصفقات منذ بداية سجل '
+           'دائرة الأراضي دون حد زمني.',
+        hi='इमारतों को नाम और निर्देशांकों से स्वचालित रूप से OpenStreetMap से मिलाया जाता है — '
+           'दुबई की हर इमारत नमूने में शामिल नहीं हो सकी (साफ़ नाम मिलान न होना या निर्देशांक '
+           'न होना)। लेन-देन की गिनती DLD रजिस्टर की शुरुआत से है, बिना किसी वर्ष सीमा के।',
+        zh='建筑通过名称和坐标自动与 OpenStreetMap 匹配——并非迪拜所有建筑都进入了样本'
+           '（名称未能精确匹配或缺少坐标）。交易数统计自 DLD 登记开始，不设年份上限。',
+    ),
+)
+
+
+POSTS = [POST1, POST2, POST3, POST4]
 
 
 def render_post1_body(lang):
@@ -365,10 +463,32 @@ def render_post3_body(lang):
     return ''.join(sections)
 
 
+def render_post4_body(lang):
+    rows = post4_data()
+    cols = POST4['cols'][lang]
+    head = '<tr>' + ''.join(f'<th>{escape(c)}</th>' for c in cols) + '</tr>'
+    dash = '—'
+    body = []
+    for b in rows:
+        name_link = f'<a href="{_building_url(b["s"])}">{escape(_display_name(b["n"]))}</a>'
+        body.append(
+            '<tr>'
+            f'<td>{name_link}</td>'
+            f'<td>{escape(b.get("a", dash))}</td>'
+            f'<td>{_fmt_int(b["d"], lang)}</td>'
+            f'<td>{_fmt_int(b["rn"], lang) if b.get("rn") else dash}</td>'
+            f'<td>{b["yr"] if b.get("yr") else dash}</td>'
+            f'<td>{escape(b["dev"]) if b.get("dev") else dash}</td>'
+            '</tr>'
+        )
+    return f'<table class="blog-table"><thead>{head}</thead><tbody>{"".join(body)}</tbody></table>'
+
+
 POST_RENDERERS = {
     POST1['slug']: render_post1_body,
     POST2['slug']: render_post2_body,
     POST3['slug']: render_post3_body,
+    POST4['slug']: render_post4_body,
 }
 
 
