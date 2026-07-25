@@ -27,9 +27,11 @@
     { k: '10y', months: 120 },
     { k: 'all', months: null },
   ];
-  const ROOM_ORDER    = ['all','studio','1br','2br','3br','4br+','villa','other'];
+  const ROOM_ORDER    = ['all','apartments','studio','1br','2br','3br','4br+','villa','other'];
   const ROOM_BREAKDOWN = ['studio','1br','2br','3br','4br+','villa','other'];
-  const ROOM_COLORS   = { all:'#1d4ed8', studio:'#9ca3af', '1br':'#60a5fa', '2br':'#3b82f6', '3br':'#1d4ed8', '4br+':'#1e3a8a', villa:'#d97706', other:'#a78bfa' };
+  const ROOM_COLORS   = { all:'#1d4ed8', apartments:'#16a34a', studio:'#9ca3af', '1br':'#60a5fa', '2br':'#3b82f6', '3br':'#1d4ed8', '4br+':'#1e3a8a', villa:'#d97706', other:'#a78bfa' };
+  // Rooms that make up the "apartments" tab — everything except villa/other.
+  const APARTMENT_ROOMS = ['studio','1br','2br','3br','4br+'];
 
   function t(k) { return (typeof window.t === 'function') ? window.t(k) : k; }
 
@@ -55,10 +57,56 @@
   }
   function projName(p) { return _h(p || t('not_specified')); }
   function roomLabel(k){
-    if (k==='all')    return t('room_chip_all');
+    if (k==='all')        return t('room_chip_all');
+    if (k==='apartments') return t('room_all'); // reuses the "All apartments" string — accurate here, unlike for 'all'
     if (k==='villa')  return t('ru_villa');
     if (k==='other')  return t('ru_other');
     return {studio:'Studio','1br':'1BR','2br':'2BR','3br':'3BR','4br+':'4BR+'}[k];
+  }
+
+  // Client-side approximation: sums n/vol exactly across the apartment room
+  // buckets, but med/ppsqm are an n-weighted average of each bucket's median —
+  // not a true recomputed median. Good enough for a filter tab; not swapped
+  // into the server-computed room buckets that feed vintage/breakdown charts.
+  function _addApartmentsBucket(a) {
+    if (!a) return;
+    const tbr = a.timeline_by_rooms;
+    const bu  = a.by_rooms_unit;
+    if (tbr && !tbr.apartments) {
+      const byDate = new Map();
+      for (const room of APARTMENT_ROOMS) {
+        for (const p of (tbr[room] || [])) {
+          let e = byDate.get(p.d);
+          if (!e) { e = { d: p.d, n: 0, vol: 0, medSum: 0, ppsqmSum: 0 }; byDate.set(p.d, e); }
+          e.n   += p.n || 0;
+          e.vol += p.vol || 0;
+          e.medSum   += (p.med   || 0) * (p.n || 0);
+          e.ppsqmSum += (p.ppsqm || 0) * (p.n || 0);
+        }
+      }
+      tbr.apartments = Array.from(byDate.values())
+        .sort((x, y) => x.d < y.d ? -1 : x.d > y.d ? 1 : 0)
+        .map(e => ({
+          d: e.d, n: e.n, vol: Math.round(e.vol),
+          med:   e.n ? Math.round(e.medSum / e.n)   : 0,
+          ppsqm: e.n ? Math.round(e.ppsqmSum / e.n) : 0,
+        }));
+    }
+    if (bu && !bu.apartments) {
+      let n = 0, vol = 0, medSum = 0, ppsqmSum = 0;
+      for (const room of APARTMENT_ROOMS) {
+        const r = bu[room];
+        if (!r) continue;
+        n += r.n || 0; vol += r.vol || 0;
+        medSum   += (r.med   || 0) * (r.n || 0);
+        ppsqmSum += (r.ppsqm || 0) * (r.n || 0);
+      }
+      bu.apartments = {
+        n, vol: Math.round(vol),
+        med:   n ? Math.round(medSum / n)   : 0,
+        ppsqm: n ? Math.round(ppsqmSum / n) : 0,
+      };
+    }
   }
   function roomBreakdownIcon(k) {
     return (k === 'villa') ? '🏡' : (k === 'other') ? '·' : '🏢';
@@ -813,29 +861,48 @@
       avg:    { values: series.map(p => p.n ? Math.round(p.vol / p.n) : 0),      fmtY: fmtAxisAed,    fmtTip: fmtAedDP,                                                label: t('sp_subsection_avg'),    color: perMetric.avg },
       color: baseColor,
     };
-    const mkChart = (id, data, fmtY, tooltipFmt, color) => {
+    // secondary: {values, fmtY, fmtTip, label, color} — deal count riding on a right-hand
+    // axis behind the price line, so the two series' divergence (price is sticky, volume
+    // isn't) is visible on one chart instead of requiring a manual cross-reference.
+    const mkChart = (id, data, fmtY, tooltipFmt, color, label, secondary) => {
       const ctx = document.getElementById(id);
       if (!ctx) return;
       const bg = rgba(color, .14);
+      const datasets = [];
+      if (secondary) {
+        datasets.push({
+          type:'bar', label: secondary.label, data: secondary.values,
+          backgroundColor: rgba(secondary.color, .25), borderWidth: 0,
+          yAxisID: 'y1', barPercentage: .6, categoryPercentage: .7, order: 2,
+        });
+      }
+      datasets.push({ label, data, borderColor:color, backgroundColor:bg, tension:.3, pointRadius:1.5, fill:true, order: 1 });
+      const scales = {
+        y:{ticks:{font:{size:10}, callback: fmtY}, beginAtZero:true},
+        x:{ticks:{font:{size:10}, maxRotation:0, autoSkip:true, maxTicksLimit:6}},
+      };
+      if (secondary) {
+        scales.y1 = { position:'right', ticks:{font:{size:10}, callback: secondary.fmtY}, beginAtZero:true, grid:{drawOnChartArea:false} };
+      }
       const ch = new Chart(ctx, {
         type:'line',
-        data:{ labels, datasets:[{ data, borderColor:color, backgroundColor:bg, tension:.3, pointRadius:1.5, fill:true }]},
+        data:{ labels, datasets },
         options:{
           responsive:true, maintainAspectRatio:false,
           interaction:{intersect:false, mode:'index'},
-          plugins:{legend:{display:false}, tooltip:{callbacks:{label: c => ' ' + tooltipFmt(c.parsed.y)}}},
-          scales:{
-            y:{ticks:{font:{size:10}, callback: fmtY}, beginAtZero:true},
-            x:{ticks:{font:{size:10}, maxRotation:0, autoSkip:true, maxTicksLimit:6}},
-          }
+          plugins:{
+            legend:{ display: !!secondary, labels:{ font:{size:9}, boxWidth:10, padding:6 } },
+            tooltip:{callbacks:{label: c => c.dataset.type === 'bar' ? ' ' + secondary.fmtTip(c.parsed.y) : ' ' + tooltipFmt(c.parsed.y)}},
+          },
+          scales,
         }
       });
       S.activeCharts.push(ch);
       S.timelineCharts.push(ch);
     };
-    mkChart('ch-timeline-avg',    S.chartData.avg.values,    S.chartData.avg.fmtY,    S.chartData.avg.fmtTip,    S.chartData.avg.color);
-    mkChart('ch-timeline-count',  S.chartData.count.values,  S.chartData.count.fmtY,  S.chartData.count.fmtTip,  S.chartData.count.color);
-    mkChart('ch-timeline-volume', S.chartData.volume.values, S.chartData.volume.fmtY, S.chartData.volume.fmtTip, S.chartData.volume.color);
+    mkChart('ch-timeline-avg',    S.chartData.avg.values,    S.chartData.avg.fmtY,    S.chartData.avg.fmtTip,    S.chartData.avg.color,    S.chartData.avg.label,    S.chartData.count);
+    mkChart('ch-timeline-count',  S.chartData.count.values,  S.chartData.count.fmtY,  S.chartData.count.fmtTip,  S.chartData.count.color,  S.chartData.count.label);
+    mkChart('ch-timeline-volume', S.chartData.volume.values, S.chartData.volume.fmtY, S.chartData.volume.fmtTip, S.chartData.volume.color, S.chartData.volume.label);
   }
 
   function _maWindow(n) {
@@ -1029,6 +1096,9 @@
     const redLine = 'rgba(239,68,68,1)';
     const grnFill = 'rgba(34,197,94,0.16)';
     const redFill = 'rgba(239,68,68,0.18)';
+    // Same deal-count-behind-price overlay as the small inline chart, carried into the
+    // fullscreen modal so it doesn't disappear when the user expands the price chart.
+    const secondary = (metric === 'avg' && source === 'sale' && cd.count) ? cd.count : null;
 
     const el = _modalDOM();
     el.dataset.metric = metric;
@@ -1077,7 +1147,7 @@
         const still = document.getElementById('dp-chart-modal');
         if (!still || !still.classList.contains('open') || S.modalEngine !== 'echarts' || still.dataset.metric !== metric || (still.dataset.source || 'sale') !== source) return;
         echartsEl.innerHTML = '';
-        _renderModalECharts({ el: echartsEl, labels, data, ma, upper, lower, trendLine, median, w, color, m });
+        _renderModalECharts({ el: echartsEl, labels, data, ma, upper, lower, trendLine, median, w, color, m, secondary });
       }).catch(err => {
         echartsEl.innerHTML = `<div style="padding:20px;color:#dc2626;font-size:12px">ECharts failed to load. Reverting to Chart.js.</div>`;
         console.error('ECharts load failed:', err);
@@ -1085,12 +1155,12 @@
         el.querySelectorAll('.cm-engine').forEach(btn => btn.classList.toggle('active', btn.dataset.dpEngine === 'chartjs'));
         canvasEl.style.display = '';
         echartsEl.style.display = 'none';
-        _renderModalChartJs({ ctx: canvasEl, labels, data, ma, upper, lower, trendLine, median, w, color, m, grnLine, redLine, grnFill, redFill });
+        _renderModalChartJs({ ctx: canvasEl, labels, data, ma, upper, lower, trendLine, median, w, color, m, grnLine, redLine, grnFill, redFill, secondary });
       });
     } else {
       canvasEl.style.display = '';
       echartsEl.style.display = 'none';
-      _renderModalChartJs({ ctx: canvasEl, labels, data, ma, upper, lower, trendLine, median, w, color, m, grnLine, redLine, grnFill, redFill });
+      _renderModalChartJs({ ctx: canvasEl, labels, data, ma, upper, lower, trendLine, median, w, color, m, grnLine, redLine, grnFill, redFill, secondary });
     }
   }
 
@@ -1117,12 +1187,24 @@
     return _echartsPromise;
   }
 
-  function _renderModalChartJs({ ctx, labels, data, ma, upper, lower, trendLine, median, w, color, m, grnLine, redLine, grnFill, redFill }) {
+  function _renderModalChartJs({ ctx, labels, data, ma, upper, lower, trendLine, median, w, color, m, grnLine, redLine, grnFill, redFill, secondary }) {
+    const scales = {
+      y: { ticks: { font: { size: 11 }, callback: m.fmtY }, beginAtZero: true },
+      x: { ticks: { font: { size: 11 }, maxRotation: 0, autoSkip: true, maxTicksLimit: 14 } },
+    };
+    if (secondary) {
+      scales.y1 = { position: 'right', ticks: { font: { size: 11 }, callback: secondary.fmtY }, beginAtZero: true, grid: { drawOnChartArea: false } };
+    }
     S.modalChart = new Chart(ctx, {
       type: 'line',
       data: {
         labels,
         datasets: [
+          ...(secondary ? [{
+            type: 'bar', label: secondary.label, data: secondary.values,
+            backgroundColor: rgba(secondary.color, .25), borderWidth: 0,
+            yAxisID: 'y1', barPercentage: .6, categoryPercentage: .7, order: 7,
+          }] : []),
           { label: 'lower', data: lower, borderWidth: 0, pointRadius: 0, fill: false, order: 6 },
           { label: t('ch_channel'), data: upper, borderColor: 'rgba(148,163,184,0.55)', borderWidth: 1, borderDash:[3,3], pointRadius: 0, fill: '-1', backgroundColor: 'rgba(148,163,184,0.10)', order: 5 },
           { label: t('ch_ma') + ` (${w})`, data: ma, borderColor: '#64748b', borderWidth: 1.5, borderDash: [6,4], pointRadius: 0, fill: false, order: 4 },
@@ -1157,17 +1239,14 @@
         interaction: { intersect: false, mode: 'index' },
         plugins: {
           legend: { display: true, position: 'bottom', labels: { boxWidth: 14, font: { size: 11 }, filter: (item) => item.text !== 'lower' } },
-          tooltip: { callbacks: { label: c => ' ' + (c.dataset.label || '') + ': ' + m.fmtTip(c.parsed.y) } },
+          tooltip: { callbacks: { label: c => c.dataset.type === 'bar' ? ' ' + secondary.fmtTip(c.parsed.y) : ' ' + (c.dataset.label || '') + ': ' + m.fmtTip(c.parsed.y) } },
         },
-        scales: {
-          y: { ticks: { font: { size: 11 }, callback: m.fmtY }, beginAtZero: true },
-          x: { ticks: { font: { size: 11 }, maxRotation: 0, autoSkip: true, maxTicksLimit: 14 } },
-        },
+        scales,
       },
     });
   }
 
-  function _renderModalECharts({ el, labels, data, ma, upper, lower, trendLine, median, w, color, m }) {
+  function _renderModalECharts({ el, labels, data, ma, upper, lower, trendLine, median, w, color, m, secondary }) {
     const clean = arr => arr.map(v => Number.isFinite(v) ? v : null);
     const bandOffset = ma.map((v, i) => Number.isFinite(v) && Number.isFinite(upper[i]) ? upper[i] - v : null);
     const inst = echarts.init(el, null, { renderer: 'canvas' });
@@ -1178,7 +1257,7 @@
     const below = data.map((v, i) => (Number.isFinite(ma[i]) && v <  ma[i]) ? v : null);
 
     inst.setOption({
-      grid: { left: 56, right: 24, top: 18, bottom: 44 },
+      grid: { left: 56, right: secondary ? 56 : 24, top: 18, bottom: 44 },
       tooltip: {
         trigger: 'axis',
         axisPointer: { type: 'line', lineStyle: { color: '#94a3b8' } },
@@ -1196,7 +1275,7 @@
             .filter(p => p.value != null && !hidden.has(p.seriesName))
             .map(p => `<div style="display:flex;justify-content:space-between;gap:12px">
               <span>${p.marker} ${p.seriesName}</span>
-              <span style="font-variant-numeric:tabular-nums;font-weight:600">${m.fmtTip(Math.round(p.value))}</span>
+              <span style="font-variant-numeric:tabular-nums;font-weight:600">${secondary && p.seriesName === secondary.label ? secondary.fmtTip(Math.round(p.value)) : m.fmtTip(Math.round(p.value))}</span>
             </div>`)
             .join('');
           const bandRow = (bandU != null && bandL != null)
@@ -1217,6 +1296,7 @@
           ...(trendLine ? [t('ch_trend')] : []),
           ...(median != null ? [t('ch_median')] : []),
           t('ch_channel'),
+          ...(secondary ? [secondary.label] : []),
         ],
       },
       xAxis: {
@@ -1225,13 +1305,26 @@
         axisLine: { lineStyle: { color: '#e2e8f0' } },
         axisTick: { show: false },
       },
-      yAxis: {
+      yAxis: [{
         type: 'value',
         axisLabel: { fontSize: 10, color: '#64748b', formatter: m.fmtY },
         splitLine: { lineStyle: { color: '#f1f5f9' } },
         axisLine: { show: false }, axisTick: { show: false },
       },
+      ...(secondary ? [{
+        type: 'value',
+        axisLabel: { fontSize: 10, color: '#64748b', formatter: secondary.fmtY },
+        splitLine: { show: false },
+        axisLine: { show: false }, axisTick: { show: false },
+      }] : []),
+      ],
       series: [
+        // Deal count bars riding a second axis behind the price line
+        ...(secondary ? [{
+          name: secondary.label, type: 'bar', yAxisIndex: 1, data: secondary.values,
+          itemStyle: { color: secondary.color, opacity: .25 },
+          barMaxWidth: 14,
+        }] : []),
         // Bollinger band (anchor + stackable delta = filled area between lower and upper)
         {
           name: 'band-anchor', type: 'line', data: clean(lower),
@@ -1972,6 +2065,8 @@
     S.container       = container;
     S.sale            = sale  || null;
     S.rent            = rent  || null;
+    _addApartmentsBucket(S.sale);
+    _addApartmentsBucket(S.rent);
     S.isDubai         = !!isDubai;
     S.mode            = mode || 'both';
     S.period          = (initialPeriod && PERIODS.find(p => p.k === initialPeriod)) ? initialPeriod : 'all';

@@ -131,7 +131,8 @@
         <div class="ls-arrow">↓</div>
         <button data-min-level="2" class="ls-btn" type="button">2+</button>
         <div class="ls-arrow">↓</div>
-        <button data-min-level="99" class="ls-btn" type="button" title="Отдельные здания">🏢</button>
+        <button data-min-level="99" class="ls-btn" type="button" title="Отдельные здания"><svg width="14" height="14" viewBox="0 0 24 24" aria-hidden="true" style="vertical-align:-2px"><rect x="4" y="3" width="16" height="18" rx="1.5" fill="none" stroke="currentColor" stroke-width="2"/><rect x="7.4" y="6.5" width="2.2" height="2.2" fill="currentColor"/><rect x="14.4" y="6.5" width="2.2" height="2.2" fill="currentColor"/><rect x="7.4" y="11.4" width="2.2" height="2.2" fill="currentColor"/><rect x="14.4" y="11.4" width="2.2" height="2.2" fill="currentColor"/><rect x="7.4" y="16.3" width="2.2" height="2.2" fill="currentColor"/><rect x="14.4" y="16.3" width="2.2" height="2.2" fill="currentColor"/></svg></button>
+        <div class="ls-note" id="ls-building-note"></div>
       </div>
     </div>
   </div>
@@ -144,7 +145,7 @@
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
 <script src="/polygons/curated.js?v=a3918ced"></script>
 <script src="/buildings/data.js?v=de9be52e"></script>
-<script src="/transactions/data/choropleth.js?v=913f59ab"></script>
+<script src="/transactions/data/choropleth.js?v=1851b853"></script>
 <script>
 </script>
 <script src="/rents/data/choropleth.js?v=faa6048f"></script>
@@ -207,7 +208,9 @@
 
 
 
-<script src="/periods/all.js?v=138069cc"></script>
+
+
+<script src="/periods/all.js?v=79f5c613"></script>
 
 <script data-inlined="periods">
 </script>
@@ -229,8 +232,8 @@ const GOLD_LINE = {"type": "Feature", "properties": {"ref": "Gold", "name": "Gol
 const GOLD_STATIONS = [{"name": "Al Mina Street", "lat": 25.24885, "lon": 55.27808, "group": "gold"}, {"name": "Al Satwa (Bus Station)", "lat": 25.22797, "lon": 55.27416, "group": "gold"}, {"name": "Al Satwa Road", "lat": 25.22924, "lon": 55.27426, "group": "gold"}, {"name": "City Walk", "lat": 25.20784, "lon": 55.26203, "group": "gold"}, {"name": "Burj Khalifa Road", "lat": 25.189, "lon": 55.27112, "group": "gold"}, {"name": "District 1 (MBR City)", "lat": 25.17703, "lon": 55.28235, "group": "gold"}, {"name": "District 1 (Gold)", "lat": 25.1619, "lon": 55.29178, "group": "gold"}, {"name": "Nad Al Sheba", "lat": 25.1498, "lon": 55.28537, "group": "gold"}, {"name": "Dubai Hills", "lat": 25.11393, "lon": 55.27542, "group": "gold"}, {"name": "Global Village", "lat": 25.07095, "lon": 55.30508, "group": "gold"}, {"name": "Meydan Etihad Rail Interchange", "lat": 25.06536, "lon": 55.28679, "group": "gold"}, {"name": "Hadaeq Mohammed Bin Rashid", "lat": 25.06162, "lon": 55.254, "group": "gold"}, {"name": "Dubai Miracle Garden", "lat": 25.06007, "lon": 55.24697, "group": "gold"}, {"name": "Jumeirah Village Circle", "lat": 25.05231, "lon": 55.20113, "group": "gold"}, {"name": "Dubai Production City", "lat": 25.03388, "lon": 55.17868, "group": "gold"}];
 const GOLD_INTERCHANGES = ["Al Ghubaiba", "Business Bay", "Jumeirah Golf Estates"];
 </script>
-<script src="../../../js/i18n.js?v=ef4dfd24"></script>
-<script src="../../../js/viewer.js?v=b0c2df01"></script>
+<script src="../../../js/i18n.js?v=a719a982"></script>
+<script src="../../../js/viewer.js?v=dfa5f7d5"></script>
 <script>
 
 (function () {

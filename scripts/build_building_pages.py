@@ -312,6 +312,167 @@ for bname, d, price, sqm, room, op in q4:
         'r': room, 'op': op,
     })
 
+# ── 5. Individual rent contracts per project (rents.parquet has no building_name_en,
+#      so — like the ry/rr/rents-panel aggregates above — this is project-level, not
+#      building-level. Capped per project: some master projects (e.g. REMRAAM) span
+#      80+ buildings, and an uncapped list would get duplicated into every one of them. ──
+print("Query 5: rent contracts per project…", flush=True)
+RENT_TX_CAP = 300
+q5 = con.execute("""
+    SELECT
+        TRIM(project_name_en)  AS proj,
+        contract_start_date    AS d,
+        ROUND(CAST(contract_amount AS DOUBLE)) AS amt,
+        ROUND(CAST(actual_area    AS DOUBLE), 1) AS sqm,
+        CASE
+            WHEN ejari_property_type_en = 'Villa' THEN 'villa'
+            WHEN LOWER(ejari_property_sub_type_en) = 'studio' THEN 'studio'
+            WHEN ejari_property_sub_type_en LIKE '1%' THEN '1br'
+            WHEN ejari_property_sub_type_en LIKE '2%' THEN '2br'
+            WHEN ejari_property_sub_type_en LIKE '3%' THEN '3br'
+            WHEN ejari_property_sub_type_en LIKE '4%'
+              OR ejari_property_sub_type_en LIKE '5%'
+              OR ejari_property_sub_type_en LIKE '6%' THEN '4br+'
+            ELSE 'other'
+        END AS room,
+        CASE WHEN contract_reg_type_en = 'New' THEN 1 ELSE 0 END AS is_new
+    FROM read_parquet('data/rents.parquet')
+    WHERE project_name_en IS NOT NULL AND TRIM(project_name_en) != ''
+      AND ejari_property_type_en IN ('Flat', 'Villa', 'Studio')
+      AND CAST(contract_amount AS DOUBLE) > 1000
+      AND YEAR(CAST(contract_start_date AS DATE)) BETWEEN 2010 AND 2026
+    ORDER BY proj, contract_start_date DESC
+""").fetchall()
+print(f"  {len(q5):,} rows", flush=True)
+
+# rent_tx_data[norm(proj)] = list of {d, amt, sqm, r, new} — capped to RENT_TX_CAP per project
+rent_tx_data = {}
+for proj, d, amt, sqm, room, is_new in q5:
+    lst = rent_tx_data.setdefault(norm(proj), [])
+    if len(lst) < RENT_TX_CAP:
+        lst.append({
+            'd': d, 'amt': int(amt) if amt else None,
+            'sqm': float(sqm) if sqm else None,
+            'r': room, 'new': is_new,
+        })
+
+# ── 6. Sales: month + reg_type aggregation (monthly overall + offplan split) ─
+print("Query 6: sales by (building, month, reg_type)…", flush=True)
+q6 = con.execute("""
+    SELECT
+        TRIM(building_name_en)      AS bname,
+        STRFTIME(CAST(instance_date AS DATE), '%Y-%m') AS ym,
+        CASE WHEN reg_type_en = 'Off-Plan Properties' THEN 'offplan' ELSE 'ready' END AS reg,
+        COUNT(*)                    AS n,
+        ROUND(PERCENTILE_CONT(0.5) WITHIN GROUP (ORDER BY CAST(actual_worth AS DOUBLE))) AS med_price,
+        ROUND(PERCENTILE_CONT(0.5) WITHIN GROUP (ORDER BY
+            CASE WHEN CAST(procedure_area AS DOUBLE) > 0
+                 THEN CAST(actual_worth AS DOUBLE) / CAST(procedure_area AS DOUBLE)
+                 ELSE NULL END))    AS med_ppsqm
+    FROM read_parquet('data/tx.parquet')
+    WHERE trans_group_en = 'Sales'
+      AND building_name_en IS NOT NULL AND TRIM(building_name_en) != ''
+      AND CAST(actual_worth AS DOUBLE) > 10000
+      AND YEAR(CAST(instance_date AS DATE)) BETWEEN 2008 AND 2026
+    GROUP BY bname, ym, reg
+    ORDER BY bname, ym, reg
+""").fetchall()
+print(f"  {len(q6):,} rows", flush=True)
+
+# ── 7. Sales: month + room + reg_type breakdown ──────────────────────────────
+print("Query 7: sales by (building, month, room, reg_type)…", flush=True)
+q7 = con.execute("""
+    SELECT
+        TRIM(building_name_en)      AS bname,
+        STRFTIME(CAST(instance_date AS DATE), '%Y-%m') AS ym,
+        CASE
+            WHEN property_type_en = 'Villa' THEN 'villa'
+            WHEN rooms_en = 'Studio'        THEN 'studio'
+            WHEN rooms_en = '1 B/R'         THEN '1br'
+            WHEN rooms_en = '2 B/R'         THEN '2br'
+            WHEN rooms_en = '3 B/R'         THEN '3br'
+            WHEN rooms_en IN ('4 B/R','5 B/R','6 B/R','7 B/R') THEN '4br+'
+            ELSE 'other'
+        END AS room,
+        CASE WHEN reg_type_en = 'Off-Plan Properties' THEN 'offplan' ELSE 'ready' END AS reg,
+        COUNT(*)    AS n,
+        ROUND(PERCENTILE_CONT(0.5) WITHIN GROUP (ORDER BY CAST(actual_worth AS DOUBLE))) AS med_price,
+        ROUND(PERCENTILE_CONT(0.5) WITHIN GROUP (ORDER BY
+            CASE WHEN CAST(procedure_area AS DOUBLE) > 0
+                 THEN CAST(actual_worth AS DOUBLE) / CAST(procedure_area AS DOUBLE)
+                 ELSE NULL END))    AS med_ppsqm
+    FROM read_parquet('data/tx.parquet')
+    WHERE trans_group_en = 'Sales'
+      AND building_name_en IS NOT NULL AND TRIM(building_name_en) != ''
+      AND CAST(actual_worth AS DOUBLE) > 10000
+      AND YEAR(CAST(instance_date AS DATE)) BETWEEN 2008 AND 2026
+    GROUP BY bname, ym, room, reg
+    ORDER BY bname, ym, room, reg
+""").fetchall()
+print(f"  {len(q7):,} rows", flush=True)
+
+# ── 8. Rents: month + room breakdown (by project_name_en) ───────────────────
+print("Query 8: rents by (project, month, room)…", flush=True)
+q8 = con.execute("""
+    SELECT
+        TRIM(project_name_en)       AS proj,
+        STRFTIME(CAST(contract_start_date AS DATE), '%Y-%m') AS ym,
+        CASE
+            WHEN ejari_property_type_en = 'Villa' THEN 'villa'
+            WHEN LOWER(ejari_property_sub_type_en) = 'studio' THEN 'studio'
+            WHEN ejari_property_sub_type_en LIKE '1%' THEN '1br'
+            WHEN ejari_property_sub_type_en LIKE '2%' THEN '2br'
+            WHEN ejari_property_sub_type_en LIKE '3%' THEN '3br'
+            WHEN ejari_property_sub_type_en LIKE '4%'
+              OR ejari_property_sub_type_en LIKE '5%'
+              OR ejari_property_sub_type_en LIKE '6%' THEN '4br+'
+            ELSE 'other'
+        END AS room,
+        COUNT(*)    AS n,
+        ROUND(PERCENTILE_CONT(0.5) WITHIN GROUP (ORDER BY CAST(contract_amount AS DOUBLE))) AS med_rent,
+        ROUND(PERCENTILE_CONT(0.5) WITHIN GROUP (ORDER BY
+            CASE WHEN CAST(actual_area AS DOUBLE) > 0
+                 THEN CAST(contract_amount AS DOUBLE) / CAST(actual_area AS DOUBLE)
+                 ELSE NULL END))    AS med_rent_sqm
+    FROM read_parquet('data/rents.parquet')
+    WHERE project_name_en IS NOT NULL AND TRIM(project_name_en) != ''
+      AND ejari_property_type_en IN ('Flat', 'Villa', 'Studio')
+      AND CAST(contract_amount AS DOUBLE) > 1000
+      AND YEAR(CAST(contract_start_date AS DATE)) BETWEEN 2010 AND 2026
+    GROUP BY proj, ym, room
+    ORDER BY proj, ym, room
+""").fetchall()
+print(f"  {len(q8):,} rows", flush=True)
+
+# bld_m[bname][ym][reg] = {n, med_price, med_ppsqm}
+bld_m = {}
+for bname, ym, reg, n, med_price, med_ppsqm in q6:
+    ym_d = bld_m.setdefault(bname, {}).setdefault(ym, {})
+    ym_d[reg] = {
+        'n': n,
+        'med_price': int(med_price) if med_price else None,
+        'med_ppsqm': int(med_ppsqm) if med_ppsqm else None,
+    }
+
+# bld_rooms_m[bname][room][ym][reg] = {n, med_price, med_ppsqm}
+bld_rooms_m = {}
+for bname, ym, room, reg, n, med_price, med_ppsqm in q7:
+    bld_rooms_m.setdefault(bname, {}).setdefault(room, {}).setdefault(ym, {})[reg] = {
+        'n': n,
+        'med_price': int(med_price) if med_price else None,
+        'med_ppsqm': int(med_ppsqm) if med_ppsqm else None,
+    }
+
+# rent_data_m[proj_norm][room][ym] = {n, med_rent, med_rent_sqm}
+rent_data_m = {}
+for proj, ym, room, n, med_rent, med_rent_sqm in q8:
+    key = norm(proj)
+    rent_data_m.setdefault(key, {}).setdefault(room, {})[ym] = {
+        'n': n,
+        'med_rent': int(med_rent) if med_rent else None,
+        'med_rent_sqm': int(med_rent_sqm) if med_rent_sqm else None,
+    }
+
 # ── Index query data ─────────────────────────────────────────────────────────
 # bld[bname] = {proj, area, yrs: {yr: {reg: {n, med_price, med_ppsqm}}}}
 bld = {}
@@ -461,6 +622,79 @@ for bname in sorted(bld.keys()):
         if med_rent: row['rent'] = med_rent
         rents_by_year.append(row)
 
+    # ── Sales by month (off-plan split, combined median) ──────────────────
+    sales_by_month = []
+    for ym in sorted(bld_m.get(bname, {}).keys()):
+        ym_d = bld_m[bname][ym]
+        op = ym_d.get('offplan', {})
+        rd = ym_d.get('ready', {})
+        n_op = op.get('n', 0)
+        n_rd = rd.get('n', 0)
+
+        med_ppsqm = wavg([(op.get('med_ppsqm'), n_op), (rd.get('med_ppsqm'), n_rd)])
+        med_price  = wavg([(op.get('med_price'),  n_op), (rd.get('med_price'),  n_rd)])
+
+        row = {'ym': ym, 'n': n_op + n_rd}
+        if n_op:                    row['op']      = n_op
+        if n_rd:                    row['rd']      = n_rd
+        if med_ppsqm:               row['ppsqm']   = med_ppsqm
+        if med_price:               row['price']   = med_price
+        if op.get('med_ppsqm'):     row['op_ppsqm']= op['med_ppsqm']
+        if rd.get('med_ppsqm'):     row['rd_ppsqm']= rd['med_ppsqm']
+        sales_by_month.append(row)
+
+    # ── Sales by room+month (with off-plan/ready split) ───────────────────
+    sales_by_month_room = {}
+    room_data_m = bld_rooms_m.get(bname, {})
+    for room in ROOM_ORDER:
+        if room not in room_data_m: continue
+        rows = []
+        for ym in sorted(room_data_m[room].keys()):
+            ym_regs = room_data_m[room][ym]
+            op = ym_regs.get('offplan', {})
+            rd = ym_regs.get('ready', {})
+            n_op = op.get('n', 0)
+            n_rd = rd.get('n', 0)
+            med_ppsqm = wavg([(op.get('med_ppsqm'), n_op), (rd.get('med_ppsqm'), n_rd)])
+            med_price  = wavg([(op.get('med_price'),  n_op), (rd.get('med_price'),  n_rd)])
+            row = {'ym': ym, 'n': n_op + n_rd}
+            if med_ppsqm:               row['ppsqm']    = med_ppsqm
+            if med_price:               row['price']    = med_price
+            if n_op:                    row['op_n']     = n_op
+            if n_rd:                    row['rd_n']     = n_rd
+            if op.get('med_ppsqm'):     row['op_ppsqm'] = op['med_ppsqm']
+            if rd.get('med_ppsqm'):     row['rd_ppsqm'] = rd['med_ppsqm']
+            rows.append(row)
+        if rows:
+            sales_by_month_room[room] = rows
+
+    # ── Rents by month: match by normalised project name ──────────────────
+    proj_rents_m = rent_data_m.get(proj_key, {})
+    rents_by_month_room = {}
+    all_mo_rent = {}  # ym -> [(med_rent, n), ...]
+    for room in ROOM_ORDER:
+        if room not in proj_rents_m: continue
+        rows = []
+        for ym in sorted(proj_rents_m[room].keys()):
+            d = proj_rents_m[room][ym]
+            all_mo_rent.setdefault(ym, []).append((d.get('med_rent'), d['n']))
+            row = {'ym': ym, 'n': d['n']}
+            if d['med_rent']:     row['rent']     = d['med_rent']
+            if d['med_rent_sqm']: row['rent_sqm'] = d['med_rent_sqm']
+            rows.append(row)
+        if rows:
+            rents_by_month_room[room] = rows
+
+    rents_by_month = []
+    for ym in sorted(all_mo_rent.keys()):
+        pairs = all_mo_rent[ym]
+        total_n = sum(w for _, w in pairs)
+        med_rent = round(sum(v * w for v, w in pairs if v) / sum(w for v, w in pairs if v)) \
+                   if any(v for v, _ in pairs) else None
+        row = {'ym': ym, 'n': total_n}
+        if med_rent: row['rent'] = med_rent
+        rents_by_month.append(row)
+
     # ── Write JSON ───────────────────────────────────────────────────────
     out = {
         'name': bname,
@@ -472,7 +706,12 @@ for bname in sorted(bld.keys()):
         'sr': sales_by_room,    # sales by year+room
         'ry': rents_by_year,    # rents by year
         'rr': rents_by_room,    # rents by year+room
+        'sm': sales_by_month,          # sales by month (offplan split)
+        'smr': sales_by_month_room,    # sales by month+room
+        'rm': rents_by_month,          # rents by month
+        'rmr': rents_by_month_room,    # rents by month+room
         'txs': tx_data.get(bname, []),  # individual transactions (last 100)
+        'rnts': rent_tx_data.get(proj_key, []),  # individual rent contracts, project-level, capped
     }
 
     bdir = os.path.join(OUT_DIR, slug)
