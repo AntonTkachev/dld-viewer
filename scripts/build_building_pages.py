@@ -160,11 +160,13 @@ if os.path.exists('data/dld_projects.csv.gz'):
                     yr = None
             except ValueError:
                 yr = None
+        derived_st = row['__derived_status']
+        pct = 100 if derived_st == 'FINISHED' else _parse_int(row.get('percent_completed'))
         rera_meta[pno] = {
             'yr': yr, 'dev': eng, 'dz': dz if eng else False,
-            'pct': _parse_int(row.get('percent_completed')),
+            'pct': pct,
             'u':   _parse_int(row.get('no_of_units')),
-            'st':  row['__derived_status'],
+            'st':  derived_st,
         }
     print(f"  Loaded {len(rera_meta):,} RERA projects", flush=True)
 
