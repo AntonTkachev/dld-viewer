@@ -48,6 +48,7 @@ from datetime import date, timedelta
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 RERA_CSV = os.path.join(ROOT, 'data', 'dld_projects.csv.gz')
 RENTS_PQ = os.path.join(ROOT, 'data', 'rents.parquet')
+TX_PQ = os.path.join(ROOT, 'data', 'tx.parquet')
 BLDG_SIGNAL = os.path.join(ROOT, 'data', 'dld_buildings_signal.json')
 
 # Buildings threshold — half the project's registered buildings must
@@ -109,6 +110,31 @@ def _load_ejari_signal():
     return {num: (rec, tot) for num, tot, rec in rows}
 
 
+def _load_sales_signal():
+    """Return {project_number: total_sale_count} from tx.parquet.
+
+    Not used for status derivation (Buildings + Ejari already cover that) —
+    this is the "reality" counterpart exposed to callers that want to show
+    how much has actually traded against a RERA project, independent of
+    whatever the registry claims.
+    """
+    try:
+        import duckdb
+    except ImportError:
+        return {}
+    if not os.path.exists(TX_PQ):
+        return {}
+    con = duckdb.connect()
+    rows = con.execute("""
+        SELECT REGEXP_REPLACE(project_number, '\\.0+$', '') AS num,
+               COUNT(*) AS total_cnt
+        FROM read_parquet(?)
+        WHERE project_number IS NOT NULL AND project_number <> ''
+        GROUP BY 1
+    """, [TX_PQ]).fetchall()
+    return {num: tot for num, tot in rows}
+
+
 def _is_overdue(completion_date_str: str) -> bool:
     if not completion_date_str or len(completion_date_str) < 10:
         return False
@@ -145,10 +171,19 @@ def derive_status(rera_status: str, completion_date: str, project_number: str,
 def load_enriched_rows():
     """Yield enriched RERA rows.
 
-    Each yielded dict is the original CSV row plus two derived keys:
+    Each yielded dict is the original CSV row plus four derived keys:
       __derived_status  — string, the cleaned-up project_status
       __overdue         — bool, True iff RERA was ACTIVE + past completion
                           + no Buildings/Ejari signal
+      __sales_n         — int, DLD sale-transaction count for this
+                          project_number (tx.parquet), 0 if none/unavailable
+      __rent_n          — int, Ejari rental-contract count (all-time),
+                          0 if none/unavailable
+
+    __sales_n/__rent_n are the "reality" counterpart to the registry's own
+    numbers (percent_completed, no_of_units) — how much has actually
+    traded, independent of what RERA claims. Not used in derive_status()
+    beyond what the Ejari signal already covers there.
 
     Stats are printed to stderr so build logs surface the override count.
     """
@@ -159,6 +194,9 @@ def load_enriched_rows():
     ejari = _load_ejari_signal()
     if ejari:
         print(f'  [enrich] Ejari signal loaded for {len(ejari):,} project_numbers', flush=True)
+    sales = _load_sales_signal()
+    if sales:
+        print(f'  [enrich] Sales signal loaded for {len(sales):,} project_numbers', flush=True)
 
     overrides = overdue_count = total = 0
     out = []
@@ -179,6 +217,8 @@ def load_enriched_rows():
                 overdue_count += 1
             r['__derived_status'] = derived
             r['__overdue'] = overdue
+            r['__sales_n'] = sales.get(num, 0)
+            r['__rent_n'] = ejari.get(num, (0, 0))[1]
             out.append(r)
     print(f'  [enrich] {overrides:,} silent reclassifications, {overdue_count:,} overdue flagged '
           f'out of {total:,} total', flush=True)

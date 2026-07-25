@@ -64,25 +64,7 @@ setTimeout(() => {
   
   document.querySelectorAll('#mp-level-list .ls-btn').forEach(b => {
     b.addEventListener('click', () => {
-      const lvl = parseInt(b.dataset.minLevel, 10);
-      if (lvl !== minLevel) {
-        const prevLevel = minLevel;
-        minLevel = lvl;
-        document.querySelectorAll('#mp-level-list .ls-btn').forEach(x => {
-          x.classList.toggle('active', parseInt(x.dataset.minLevel,10) === minLevel);
-        });
-        const cur = document.getElementById('mp-level-current');
-        if (cur) cur.textContent = b.textContent;
-        // Building level (99): auto-show buildings layer; leaving it: auto-hide
-        if (lvl === 99 && !map.hasLayer(buildingLayer)) {
-          buildingLayer.addTo(map);
-          if (typeof renderPoiList === 'function') renderPoiList();
-        } else if (prevLevel === 99 && lvl !== 99 && map.hasLayer(buildingLayer)) {
-          map.removeLayer(buildingLayer);
-          if (typeof renderPoiList === 'function') renderPoiList();
-        }
-        if (typeof renderChoro === 'function') renderChoro();
-      }
+      _switchLevel(parseInt(b.dataset.minLevel, 10));
       document.getElementById('mp-level').classList.remove('open');
     });
   });
@@ -151,6 +133,10 @@ function _h(s) {
     '&':'&amp;', '<':'&lt;', '>':'&gt;', '"':'&quot;', "'":'&#39;', '`':'&#96;',
   })[c]);
 }
+// Shared building glyph — reused in building popups and the district-search
+// building rows, so both spots stay visually identical.
+const _BLD_ICON_SVG = '<svg width="13" height="13" viewBox="0 0 24 24" aria-hidden="true" style="vertical-align:-1px;margin-inline-end:2px"><rect x="4" y="3" width="16" height="18" rx="1.5" fill="none" stroke="currentColor" stroke-width="2"/><rect x="7.4" y="6.5" width="2.2" height="2.2" fill="currentColor"/><rect x="14.4" y="6.5" width="2.2" height="2.2" fill="currentColor"/><rect x="7.4" y="11.4" width="2.2" height="2.2" fill="currentColor"/><rect x="14.4" y="11.4" width="2.2" height="2.2" fill="currentColor"/><rect x="7.4" y="16.3" width="2.2" height="2.2" fill="currentColor"/><rect x="14.4" y="16.3" width="2.2" height="2.2" fill="currentColor"/></svg>';
+
 function _safeUrl(u) {
   const s = String(u == null ? '' : u).trim();
 
@@ -1569,6 +1555,33 @@ function _refreshViewSwitchLabel() {
 _refreshViewSwitchLabel();
 
 let minLevel = 0;
+
+// Single entry point for entering/leaving buildings mode (level 99). Any
+// code path that shows the buildings layer must go through this — it's the
+// only one that also clears the district choropleth (minLevel filter),
+// otherwise district polygons stay rendered underneath the building shapes.
+function _switchLevel(lvl) {
+  if (lvl === minLevel) return;
+  const prevLevel = minLevel;
+  minLevel = lvl;
+  document.querySelectorAll('#mp-level-list .ls-btn').forEach(x => {
+    const isActive = parseInt(x.dataset.minLevel, 10) === minLevel;
+    x.classList.toggle('active', isActive);
+    if (isActive) {
+      const cur = document.getElementById('mp-level-current');
+      if (cur) cur.innerHTML = x.innerHTML;
+    }
+  });
+  if (lvl === 99 && !map.hasLayer(buildingLayer)) {
+    buildingLayer.addTo(map);
+    if (typeof renderPoiList === 'function') renderPoiList();
+  } else if (prevLevel === 99 && lvl !== 99 && map.hasLayer(buildingLayer)) {
+    map.removeLayer(buildingLayer);
+    if (typeof renderPoiList === 'function') renderPoiList();
+  }
+  if (typeof renderChoro === 'function') renderChoro();
+}
+
 function _bbox(geom){
   let minX=Infinity,minY=Infinity,maxX=-Infinity,maxY=-Infinity;
   (function walk(o){
@@ -1669,17 +1682,30 @@ function _buildSearchIndex(){
     }))
     .sort((a,b) => a.name.toLowerCase().localeCompare(b.name.toLowerCase()));
 }
+// Buildings are ALL CAPS in DLD, mixed case from OSM — title-case the
+// shouty ones for readability, same normalization the blog uses.
+function _bldDisplayName(n) {
+  return n === n.toUpperCase() ? n.replace(/\w\S*/g, w => w[0] + w.slice(1).toLowerCase()) : n;
+}
+let _buildingSearchIndex = null;
+function _buildBuildingSearchIndex(){
+  if (typeof BUILDINGS === 'undefined') return [];
+  return BUILDINGS
+    .filter(b => b.s) // only buildings a search slug actually resolves
+    .map(b => ({name: b.n, display: _bldDisplayName(b.n), area: b.a || '', slug: b.s}))
+    .sort((a,b) => a.display.toLowerCase().localeCompare(b.display.toLowerCase()));
+}
 function _renderSearchResults(query){
   if (!_searchIndex) _searchIndex = _buildSearchIndex();
   const q = (query||'').toLowerCase().trim();
-  let items = _searchIndex;
+  let districts = _searchIndex;
   if (q) {
-    items = _searchIndex.filter(x =>
+    districts = _searchIndex.filter(x =>
       x.name.toLowerCase().includes(q) ||
       (x.nameAr && x.nameAr.includes(query)) ||
       x.aliases.some(a => a.includes(q)));
 
-    items.sort((a,b) => {
+    districts.sort((a,b) => {
       const nameMatch = n => n.toLowerCase().startsWith(q) ? 0 : 1;
       const aliasMatch = x => x.aliases.some(a => a.startsWith(q)) ? 0 : 1;
       const ap = Math.min(nameMatch(a.name), aliasMatch(a));
@@ -1687,32 +1713,53 @@ function _renderSearchResults(query){
       if (ap !== bp) return ap - bp;
       return a.name.toLowerCase().localeCompare(b.name.toLowerCase());
     });
+    districts = districts.slice(0, 10);
   }
-  items = items.slice(0, 10);
+
+  // Buildings only join in once there's an actual query — browsing all
+  // ~2,400 of them isn't useful the way browsing the district list is.
+  let buildings = [];
+  if (q) {
+    if (!_buildingSearchIndex) _buildingSearchIndex = _buildBuildingSearchIndex();
+    buildings = _buildingSearchIndex.filter(x => x.name.toLowerCase().includes(q));
+    buildings.sort((a,b) => {
+      const nameMatch = n => n.toLowerCase().startsWith(q) ? 0 : 1;
+      const ap = nameMatch(a.name), bp = nameMatch(b.name);
+      if (ap !== bp) return ap - bp;
+      return a.display.toLowerCase().localeCompare(b.display.toLowerCase());
+    });
+    buildings = buildings.slice(0, 10);
+  }
+
   const el = document.getElementById('search-results');
   if (!el) return;
-  if (!items.length) {
+  if (!districts.length && !buildings.length) {
     el.innerHTML = `<div class="sr-empty">${t('search_empty')}</div>`;
     return;
   }
-  el.innerHTML = items.map((x, i) =>
-    `<div class="sr-item" data-i="${i}"><span class="sr-name">${_h(x.name)}</span><span class="sr-meta">L${x.level|0}${x.rc?(' · '+x.rc.toLocaleString('ru-RU')):''}</span></div>`
-  ).join('');
-  el.querySelectorAll('.sr-item').forEach((it, i) => {
-    it.addEventListener('click', () => _onSearchSelect(items[i].feat));
+
+  let html = '';
+  if (districts.length) {
+    html += `<div class="sr-group">${_h(t('search_group_districts'))}</div>` + districts.map((x, i) =>
+      `<div class="sr-item" data-kind="district" data-i="${i}"><span class="sr-name">${_h(x.name)}</span><span class="sr-meta">L${x.level|0}${x.rc?(' · '+x.rc.toLocaleString('ru-RU')):''}</span></div>`
+    ).join('');
+  }
+  if (buildings.length) {
+    html += `<div class="sr-group">${_h(t('search_group_buildings'))}</div>` + buildings.map((x, i) =>
+      `<div class="sr-item" data-kind="building" data-i="${i}"><span class="sr-name">${_BLD_ICON_SVG}${_h(x.display)}</span><span class="sr-meta">${_h(x.area)}</span></div>`
+    ).join('');
+  }
+  el.innerHTML = html;
+
+  el.querySelectorAll('.sr-item[data-kind="district"]').forEach((it, i) => {
+    it.addEventListener('click', () => _onSearchSelect(districts[i].feat));
+  });
+  el.querySelectorAll('.sr-item[data-kind="building"]').forEach((it, i) => {
+    it.addEventListener('click', () => _onSearchSelectBuilding(buildings[i].slug));
   });
 }
 function _onSearchSelect(feat){
-  
-  if (feat._level !== undefined && feat._level < minLevel) {
-    minLevel = 0;
-    document.querySelectorAll('#mp-level-list .ls-btn').forEach(x => {
-      x.classList.toggle('active', parseInt(x.dataset.minLevel,10) === 0);
-    });
-    const cur = document.getElementById('mp-level-current');
-    if (cur) cur.textContent = '0+';
-    if (typeof renderChoro === 'function') renderChoro();
-  }
+  if (feat._level !== undefined && feat._level < minLevel) _switchLevel(0);
   const bb = _bbox(feat.geometry);
   const center = [bb.cy, bb.cx];
   map.flyTo(center, Math.max(map.getZoom(), 14), {duration: 0.5});
@@ -1726,6 +1773,15 @@ function _onSearchSelect(feat){
   }, 550);
 
   if (typeof _setSelected === 'function') _setSelected(feat);
+}
+function _onSearchSelectBuilding(slug){
+  const entry = _bldShapes.get(slug);
+  if (!entry) return;
+  const {shape, b} = entry;
+  _switchLevel(99);
+  document.getElementById('mp-search').classList.remove('open');
+  map.once('moveend', () => shape.openPopup());
+  map.flyTo([b.lat, b.lon], 17, {duration: 0.6});
 }
 
 let choro;
@@ -2359,13 +2415,14 @@ if (typeof BUILDINGS !== 'undefined') {
     const rentCell  = b.rn != null ? statCell(t('bld_rents'), b.rn.toLocaleString(), '#1d4ed8') : '';
     const yrCell    = b.yr  ? metaCell(t('bld_built'), b.yr) : '';
     const devCell   = b.dev ? metaCell(t('bld_developer'), b.dev) : '';
+    const pctCell   = b.pct != null ? metaCell(t('bld_rera_pct'), b.pct + '%') : '';
     return `
-      <div style="font-weight:600;font-size:14px;margin-bottom:2px"><svg width="13" height="13" viewBox="0 0 24 24" aria-hidden="true" style="vertical-align:-1px;margin-inline-end:2px"><rect x="4" y="3" width="16" height="18" rx="1.5" fill="none" stroke="currentColor" stroke-width="2"/><rect x="7.4" y="6.5" width="2.2" height="2.2" fill="currentColor"/><rect x="14.4" y="6.5" width="2.2" height="2.2" fill="currentColor"/><rect x="7.4" y="11.4" width="2.2" height="2.2" fill="currentColor"/><rect x="14.4" y="11.4" width="2.2" height="2.2" fill="currentColor"/><rect x="7.4" y="16.3" width="2.2" height="2.2" fill="currentColor"/><rect x="14.4" y="16.3" width="2.2" height="2.2" fill="currentColor"/></svg> ${_h(b.n)} <span class="src-tag src-osm">OSM</span></div>
+      <div style="font-weight:600;font-size:14px;margin-bottom:2px">${_BLD_ICON_SVG} ${_h(b.n)} <span class="src-tag src-osm">OSM</span></div>
       <div style="font-size:11px;color:#9ca3af;margin-bottom:10px">${_h(b.a)}</div>
-      <div style="display:flex;gap:16px;flex-wrap:wrap;margin-bottom:${yrCell||devCell?'8px':'0'}">
+      <div style="display:flex;gap:16px;flex-wrap:wrap;margin-bottom:${yrCell||devCell||pctCell?'8px':'0'}">
         ${salesCell}${rentCell}
       </div>
-      ${(yrCell||devCell) ? `<div style="display:flex;gap:16px;flex-wrap:wrap;border-top:1px solid #f3f4f6;padding-top:8px">${yrCell}${devCell}</div>` : ''}
+      ${(yrCell||devCell||pctCell) ? `<div style="display:flex;gap:16px;flex-wrap:wrap;border-top:1px solid #f3f4f6;padding-top:8px">${yrCell}${devCell}${pctCell}</div>` : ''}
       ${b.s ? `<div style="margin-top:10px"><a href="/search/#${b.s}" style="background:#1d4ed8;color:#fff;text-decoration:none;padding:5px 12px;border-radius:5px;font-size:12px;font-weight:600;display:inline-block">${t('bld_details')}</a></div>` : ''}
     `;
   };
@@ -2384,6 +2441,13 @@ if (typeof BUILDINGS !== 'undefined') {
         fillColor: fill, fillOpacity: 0.15,
         dashArray: '4 3',
       });
+    } else if (vis === 'synthetic' && b.r && b.r.length) {
+      // stand-in square, no real OSM footprint
+      shape = L.polygon(b.r, {
+        color: '#222', weight: 0.6,
+        fillColor: fill, fillOpacity: 0.6,
+        dashArray: '2 2',
+      });
     } else {
       shape = L.circleMarker([b.lat, b.lon], {
         radius: _bldRadius(b.d),
@@ -2395,6 +2459,8 @@ if (typeof BUILDINGS !== 'undefined') {
       ? '<div class="muted" style="font-size:11px;color:#888;margin-top:6px">≈ approximate location (community-level)</div>'
       : vis === 'compound'
       ? '<div class="muted" style="font-size:11px;color:#888;margin-top:6px">compound polygon (multi-tower)</div>'
+      : vis === 'synthetic'
+      ? '<div class="muted" style="font-size:11px;color:#888;margin-top:6px">⌐ no OSM footprint yet — outline is a fixed-size stand-in, not the real shape</div>'
       : ''));
     shape.addTo(buildingLayer);
     if (b.s) _bldShapes.set(b.s, {shape, b});
@@ -2510,20 +2576,11 @@ renderPoiList();
 
 _applyLayersFromUrl();
 
-// Deep-link: ?bld=<slug> → enable buildings layer, fly to building, open popup
+// Deep-link: ?bld=<slug> → switch to buildings level, fly to building, open popup
 (function() {
   const bld = new URLSearchParams(window.location.search).get('bld');
   if (!bld || typeof BUILDINGS === 'undefined') return;
-  const entry = _bldShapes.get(bld);
-  if (!entry) return;
-  const {shape, b} = entry;
-  if (!map.hasLayer(buildingLayer)) {
-    buildingLayer.addTo(map);
-    renderPoiList();
-    _writeLayersToUrl(_currentActiveLayerKeys());
-  }
-  map.once('moveend', () => shape.openPopup());
-  map.flyTo([b.lat, b.lon], 17, {duration: 0.6});
+  _onSearchSelectBuilding(bld);
 })();
 
 if (!new URLSearchParams(window.location.search).get('bld')) {

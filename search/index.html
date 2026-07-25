@@ -395,6 +395,14 @@ function renderHeader() {
   if (DATA.rn) stats.push({ k:'Rent contracts', v: fmtNum(DATA.rn) });
   if (lastSale?.ppsqm) stats.push({ k:(sqft ? 'AED/sqft' : 'AED/m²')+' ('+lastSale.y+')', v: fmtAED(toUnit(lastSale.ppsqm)) });
   if (lastRent?.rent)  stats.push({ k:'Median rent/yr ('+lastRent.y+')', v: fmtAED(lastRent.rent) + ' AED' });
+  // RERA registry counterpart — official numbers, not DLD transaction reality.
+  if (DATA.rera_status) {
+    const STATUS_LABEL = { FINISHED:'Delivered', ACTIVE:'Under construction', NOT_STARTED:'Not started',
+      PENDING:'Pending', CONDITIONAL_ACTIVATING:'Cond. active', FRIEZED:'Frozen' };
+    stats.push({ k:'RERA status', v: STATUS_LABEL[DATA.rera_status] || DATA.rera_status });
+  }
+  if (DATA.rera_pct != null) stats.push({ k:'RERA complete', v: DATA.rera_pct + '%' });
+  if (DATA.rera_units) stats.push({ k:'RERA units', v: fmtNum(DATA.rera_units) });
   document.getElementById('bld-stats').innerHTML = stats.map(s =>
     `<div class="about-stat"><div class="k">${h(s.k)}</div><div class="v">${h(s.v)}</div></div>`
   ).join('');

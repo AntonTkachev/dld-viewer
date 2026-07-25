@@ -990,9 +990,9 @@ def main() -> int:
 
 def write_bundle(matched: list) -> str:
     """Write buildings/data.js as `const BUILDINGS = [...]`. Slim schema:
-       {n, a, d, s?, rn?, yr?, dev?, lat, lon, r}
+       {n, a, d, s?, rn?, yr?, dev?, pct?, lat, lon, r}
        n=name, a=area, d=n_deals (sales), s=search slug, rn=rent count,
-       yr=year built, dev=developer name, r=rings.
+       yr=year built, dev=developer name, pct=RERA percent complete, r=rings.
     Returns sha8 of the file content for cache-busting."""
     OUT_BUNDLE.parent.mkdir(parents=True, exist_ok=True)
     # Build slug→meta lookup from search-index (rents count, year, developer).
@@ -1018,6 +1018,8 @@ def write_bundle(matched: list) -> str:
                 row['yr'] = meta['yr']
             if meta.get('dev') and not meta.get('dz'):  # skip zone labels
                 row['dev'] = meta['dev']
+            if meta.get('pct') is not None:
+                row['pct'] = meta['pct']
         if m.get('rings'):
             row['r'] = m['rings']
         v = m.get('vis')

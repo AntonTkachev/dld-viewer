@@ -124,31 +124,48 @@ BRAND_MAP = {
     'مدينه دبى الطبيه منطقه حرة - ذ.م.م.':               ('Dubai Healthcare City',   True),
 }
 
-# ── Load RERA: project_number → (completion_year, english_dev, is_zone) ──────
-rera_meta = {}  # int(project_number) → {yr, dev, dz}
+# ── Load RERA: project_number → (completion_year, english_dev, is_zone,
+#    percent_complete, unit_count, derived delivery status) ──────────────────
+# Uses the shared enricher (same module /construction reads) so a building's
+# "delivered?" flag agrees with what the construction landing page says —
+# not a second, potentially-diverging derivation.
+rera_meta = {}  # int(project_number) → {yr, dev, dz, pct, u, st}
 if os.path.exists('data/dld_projects.csv.gz'):
-    with gzip.open('data/dld_projects.csv.gz', 'rt', encoding='utf-8') as fh:
-        for row in csv.DictReader(fh):
-            pno_str = row.get('project_number', '').strip()
-            if not pno_str:
-                continue
+    sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+    from _rera_enrich import load_enriched_rows
+
+    def _parse_int(s):
+        try:
+            return int(float(s))
+        except (TypeError, ValueError):
+            return None
+
+    for row in load_enriched_rows():
+        pno_str = row.get('project_number', '').strip()
+        if not pno_str:
+            continue
+        try:
+            pno = int(float(pno_str))
+        except ValueError:
+            continue
+        dev_ar = (row.get('developer_name') or '').strip()
+        eng, dz = BRAND_MAP.get(dev_ar, (None, False))
+        # completion_date: "YYYY-MM-DD" or empty
+        comp = (row.get('completion_date') or '').strip()
+        yr = None
+        if comp and len(comp) >= 4:
             try:
-                pno = int(float(pno_str))
-            except ValueError:
-                continue
-            dev_ar = (row.get('developer_name') or '').strip()
-            eng, dz = BRAND_MAP.get(dev_ar, (None, False))
-            # completion_date: "YYYY-MM-DD" or empty
-            comp = (row.get('completion_date') or '').strip()
-            yr = None
-            if comp and len(comp) >= 4:
-                try:
-                    yr = int(comp[:4])
-                    if yr < 1990 or yr > 2040:
-                        yr = None
-                except ValueError:
+                yr = int(comp[:4])
+                if yr < 1990 or yr > 2040:
                     yr = None
-            rera_meta[pno] = {'yr': yr, 'dev': eng, 'dz': dz if eng else False}
+            except ValueError:
+                yr = None
+        rera_meta[pno] = {
+            'yr': yr, 'dev': eng, 'dz': dz if eng else False,
+            'pct': _parse_int(row.get('percent_completed')),
+            'u':   _parse_int(row.get('no_of_units')),
+            'st':  row['__derived_status'],
+        }
     print(f"  Loaded {len(rera_meta):,} RERA projects", flush=True)
 
 def slugify(name):
@@ -695,6 +712,10 @@ for bname in sorted(bld.keys()):
         if med_rent: row['rent'] = med_rent
         rents_by_month.append(row)
 
+    # ── RERA enrichment ──────────────────────────────────────────────────
+    pno = bld_pno.get(bname)
+    meta = rera_meta.get(pno, {}) if pno else {}
+
     # ── Write JSON ───────────────────────────────────────────────────────
     out = {
         'name': bname,
@@ -713,15 +734,20 @@ for bname in sorted(bld.keys()):
         'txs': tx_data.get(bname, []),  # individual transactions (last 100)
         'rnts': rent_tx_data.get(proj_key, []),  # individual rent contracts, project-level, capped
     }
+    # RERA fields — official registry counterpart to the observed DLD
+    # numbers above. Omitted when the project_number join missed.
+    if meta.get('pct') is not None:
+        out['rera_pct'] = meta['pct']
+    if meta.get('u') is not None:
+        out['rera_units'] = meta['u']
+    if meta.get('st'):
+        out['rera_status'] = meta['st']
 
     bdir = os.path.join(OUT_DIR, slug)
     os.makedirs(bdir, exist_ok=True)
     with open(os.path.join(bdir, 'data.json'), 'w') as f:
         json.dump(out, f, ensure_ascii=False, separators=(',', ':'))
 
-    # ── RERA enrichment ──────────────────────────────────────────────────
-    pno = bld_pno.get(bname)
-    meta = rera_meta.get(pno, {}) if pno else {}
     idx_entry = {'n': bname, 's': slug, 'a': b['area'] or '', 'tx': n_sales, 'rn': rents_total_n}
     if meta.get('yr'):
         idx_entry['yr'] = meta['yr']
@@ -729,6 +755,10 @@ for bname in sorted(bld.keys()):
         idx_entry['dev'] = meta['dev']
         if meta.get('dz'):
             idx_entry['dz'] = True
+    if meta.get('pct') is not None:
+        idx_entry['pct'] = meta['pct']
+    if meta.get('st'):
+        idx_entry['st'] = meta['st']
     search_index.append(idx_entry)
     written += 1
 
