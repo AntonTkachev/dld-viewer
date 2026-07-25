@@ -207,7 +207,7 @@
     .fg-name input, .fg-area input { width: 100%; }
     .fg-dev input { width: 100%; }
     .filters { flex-direction: column; align-items: stretch; }
-    .col-dev, .col-yr { display: none; }
+    .col-dev, .col-yr, .col-pct { display: none; }
   }
 </style>
 </head>
@@ -269,6 +269,7 @@
           <th>Building</th>
           <th class="col-yr r sortable" id="thBuilt">Built <span class="sort-icon" id="builtIcon">↕</span></th>
           <th class="col-dev">Developer / Zone</th>
+          <th class="col-pct r" title="Official RERA percent complete">Complete</th>
           <th class="r">Sales</th>
           <th class="r">Rents</th>
         </tr>
@@ -458,11 +459,12 @@ function render(){
   }
   emptyMsg.style.display='none';
   tBody.innerHTML = slice.map(b => `<tr onclick="location.href='/search/#${b.s}'">
-    <td class="td-name">${esc(b.n)}<div class="td-area">${esc(b.a)}</div><a class="btn-map" href="/en/sales/?layers=buildings&bld=${b.s}" onclick="event.stopPropagation()" title="Show on map">↗</a></td>
+    <td class="td-name">${esc(b.n)}<div class="td-area">${esc(b.a)}</div><a class="btn-map" href="/en/sales/?bld=${b.s}" onclick="event.stopPropagation()" title="Show on map">↗</a></td>
     <td class="r col-yr">${b.yr!=null ? b.yr : '<span class="mute">—</span>'}</td>
     <td class="col-dev">${b.dev
       ? esc(b.dev)+(b.dz?'<span class="badge-zone">Zone</span>':'')
       : '<span class="mute">—</span>'}</td>
+    <td class="r col-pct">${b.pct!=null ? b.pct+'%' : '<span class="mute">—</span>'}</td>
     <td class="r">${fmt(b.tx)}</td>
     <td class="r">${b.rn ? fmt(b.rn) : '<span class="mute">—</span>'}</td>
   </tr>`).join('');
