@@ -132,7 +132,7 @@ def load_area_slugs():
 
 def parse_int(s):
     try:
-        return int(s) if s and str(s).strip() else 0
+        return int(float(s)) if s and str(s).strip() else 0
     except (TypeError, ValueError):
         return 0
 
@@ -205,7 +205,8 @@ def load_projects():
             # `st` carries the DERIVED status, not the raw RERA value. See
             # _rera_enrich for the rules. Raw RERA is not exposed.
             'st':    r['__derived_status'],
-            'pct':   parse_int(r.get('percent_completed')),
+            # Silent FINISHED override doesn't touch RERA's own percent_completed.
+            'pct':   100 if r['__derived_status'] == 'FINISHED' else parse_int(r.get('percent_completed')),
             'u':     parse_int(r.get('no_of_units')),
             'b':     parse_int(r.get('no_of_buildings')),
             'v':     parse_int(r.get('no_of_villas')),
