@@ -111,12 +111,13 @@ def _load_ejari_signal():
 
 
 def _load_sales_signal():
-    """Return {project_number: total_sale_count} from tx.parquet.
+    """Return {project_number: (recent_count, total_count)} from tx.parquet.
 
     Not used for status derivation (Buildings + Ejari already cover that) —
     this is the "reality" counterpart exposed to callers that want to show
     how much has actually traded against a RERA project, independent of
-    whatever the registry claims.
+    whatever the registry claims. recent = trailing 365 days, a rough
+    unit-count-bounded "current activity" read vs the all-time total.
     """
     try:
         import duckdb
@@ -124,15 +125,17 @@ def _load_sales_signal():
         return {}
     if not os.path.exists(TX_PQ):
         return {}
+    one_year_ago = (date.today() - timedelta(days=365)).isoformat()
     con = duckdb.connect()
-    rows = con.execute("""
+    rows = con.execute(f"""
         SELECT REGEXP_REPLACE(project_number, '\\.0+$', '') AS num,
-               COUNT(*) AS total_cnt
+               COUNT(*) AS total_cnt,
+               COUNT(*) FILTER (WHERE instance_date >= '{one_year_ago}') AS recent_cnt
         FROM read_parquet(?)
         WHERE project_number IS NOT NULL AND project_number <> ''
         GROUP BY 1
     """, [TX_PQ]).fetchall()
-    return {num: tot for num, tot in rows}
+    return {num: (rec, tot) for num, tot, rec in rows}
 
 
 def _is_overdue(completion_date_str: str) -> bool:
@@ -175,15 +178,14 @@ def load_enriched_rows():
       __derived_status  — string, the cleaned-up project_status
       __overdue         — bool, True iff RERA was ACTIVE + past completion
                           + no Buildings/Ejari signal
-      __sales_n         — int, DLD sale-transaction count for this
-                          project_number (tx.parquet), 0 if none/unavailable
-      __rent_n          — int, Ejari rental-contract count (all-time),
-                          0 if none/unavailable
+      __sales_n / __rent_n              — int, all-time counts
+      __sales_n_recent / __rent_n_recent — int, trailing-365-day counts
 
-    __sales_n/__rent_n are the "reality" counterpart to the registry's own
-    numbers (percent_completed, no_of_units) — how much has actually
-    traded, independent of what RERA claims. Not used in derive_status()
-    beyond what the Ejari signal already covers there.
+    "Reality" counterpart to the registry's own numbers (percent_completed,
+    no_of_units). The _recent variants are the more useful "current
+    activity" read — all-time totals balloon on older projects just from
+    years of accumulated resales/renewals, dwarfing the unit count. Not
+    used in derive_status() beyond what the Ejari signal already covers.
 
     Stats are printed to stderr so build logs surface the override count.
     """
@@ -217,8 +219,12 @@ def load_enriched_rows():
                 overdue_count += 1
             r['__derived_status'] = derived
             r['__overdue'] = overdue
-            r['__sales_n'] = sales.get(num, 0)
-            r['__rent_n'] = ejari.get(num, (0, 0))[1]
+            sales_recent, sales_total = sales.get(num, (0, 0))
+            rent_recent, rent_total = ejari.get(num, (0, 0))
+            r['__sales_n'] = sales_total
+            r['__sales_n_recent'] = sales_recent
+            r['__rent_n'] = rent_total
+            r['__rent_n_recent'] = rent_recent
             out.append(r)
     print(f'  [enrich] {overrides:,} silent reclassifications, {overdue_count:,} overdue flagged '
           f'out of {total:,} total', flush=True)

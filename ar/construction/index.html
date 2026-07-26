@@ -171,7 +171,7 @@
 
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
 <script>
-const COPY = {"breadcrumb_dubai": "دبي", "section": "مشاريع البناء في دبي", "h1": "مشاريع البناء في دبي — سجل RERA", "lede": "سجل RERA على مستوى المشروع: {n_total} مشروعًا، {n_inflight} قيد التنفيذ، {units} وحدة في خط الإنتاج. تصفية حسب الحالة / المطور / المنطقة.", "cta_map": "عرض على الخريطة", "title": "البناء في دبي — سجل RERA مع تصفية ورسوم", "meta": "{n_inflight} مشروع بناء نشط من أصل {n_total} سجل في RERA.", "h_inflight": "قيد التنفيذ", "h_units": "وحدات في الخط", "h_completing": "التسليم في {y}", "h_top_dev": "أهم مطور", "h_avg_pct": "متوسط الإنجاز", "chart_status": "حسب حالة المشروع", "chart_completion": "النشطة حسب سنة التسليم المتوقعة", "chart_top_devs": "أفضل 10 مطورين (قيد التنفيذ)", "chart_top_areas": "أفضل 10 مناطق (قيد التنفيذ)", "filter_status": "الحالة", "filter_search": "ابحث عن مشروع أو مطور…", "filter_area": "كل المناطق", "filter_clear": "إعادة تعيين", "showing": "عرض {n} من {total}", "sort_col_name": "المشروع", "sort_col_status": "الحالة", "sort_col_pct": "الإنجاز", "sort_col_units": "الوحدات", "sort_col_area": "المنطقة", "sort_col_master": "المشروع الرئيسي", "sort_col_dev": "المطور", "sort_col_end": "التسليم", "sort_col_sales": "النشاط (DLD)", "col_sales_tooltip": "صفقات البيع الفعلية / عقود الإيجار — وليست من سجل RERA", "st_FINISHED": "مكتمل", "st_ACTIVE": "نشط", "st_NOT_STARTED": "لم يبدأ", "st_PENDING": "معلق", "st_CONDITIONAL_ACTIVATING": "نشط مشروط", "st_FRIEZED": "مجمد", "st_OVERDUE": "متأخر", "per_page": "لكل صفحة", "prev": "→", "next": "←", "empty_results": "لا توجد نتائج — عدّل المرشحات.", "no_units": "—", "no_data": "—", "nav_map": "→ إلى الخريطة", "nav_districts": "كل الأحياء →"};
+const COPY = {"breadcrumb_dubai": "دبي", "section": "مشاريع البناء في دبي", "h1": "مشاريع البناء في دبي — سجل RERA", "lede": "سجل RERA على مستوى المشروع: {n_total} مشروعًا، {n_inflight} قيد التنفيذ، {units} وحدة في خط الإنتاج. تصفية حسب الحالة / المطور / المنطقة.", "cta_map": "عرض على الخريطة", "title": "البناء في دبي — سجل RERA مع تصفية ورسوم", "meta": "{n_inflight} مشروع بناء نشط من أصل {n_total} سجل في RERA.", "h_inflight": "قيد التنفيذ", "h_units": "وحدات في الخط", "h_completing": "التسليم في {y}", "h_top_dev": "أهم مطور", "h_avg_pct": "متوسط الإنجاز", "chart_status": "حسب حالة المشروع", "chart_completion": "النشطة حسب سنة التسليم المتوقعة", "chart_top_devs": "أفضل 10 مطورين (قيد التنفيذ)", "chart_top_areas": "أفضل 10 مناطق (قيد التنفيذ)", "filter_status": "الحالة", "filter_search": "ابحث عن مشروع أو مطور…", "filter_area": "كل المناطق", "filter_clear": "إعادة تعيين", "showing": "عرض {n} من {total}", "sort_col_name": "المشروع", "sort_col_status": "الحالة", "sort_col_pct": "الإنجاز", "sort_col_units": "الوحدات", "sort_col_area": "المنطقة", "sort_col_master": "المشروع الرئيسي", "sort_col_dev": "المطور", "sort_col_end": "التسليم", "sort_col_sales": "النشاط خلال 12 شهرًا (DLD)", "col_sales_tooltip": "صفقات البيع / الإيجار خلال آخر 12 شهرًا. قد تكون عقود الإيجار أقصر من سنة، فقد يكون الرقم أعلى قليلًا من الواقع. الإجمالي منذ البداية:", "st_FINISHED": "مكتمل", "st_ACTIVE": "نشط", "st_NOT_STARTED": "لم يبدأ", "st_PENDING": "معلق", "st_CONDITIONAL_ACTIVATING": "نشط مشروط", "st_FRIEZED": "مجمد", "st_OVERDUE": "متأخر", "per_page": "لكل صفحة", "prev": "→", "next": "←", "empty_results": "لا توجد نتائج — عدّل المرشحات.", "no_units": "—", "no_data": "—", "nav_map": "→ إلى الخريطة", "nav_districts": "كل الأحياء →"};
 const HERO = {"inflight": 1106, "units_pipeline": 263561, "completing_year": 60, "this_year": 2026, "top_dev": "Nakheel PJSC", "top_dev_n": 177, "avg_pct_inflight": 11.4};
 const LANG = "ar";
 const BASE_URL = "https://dxbcompass.com";
@@ -237,7 +237,7 @@ function applyFilters() {
   STATE.page = 1;
 }
 
-const SORT_NUMERIC = new Set(["pct","u","b","v","l","sy","ey","sn"]);
+const SORT_NUMERIC = new Set(["pct","u","b","v","l","sy","ey","sn12"]);
 function applySort() {
   const k = STATE.sortKey, dir = STATE.sortDir === "asc" ? 1 : -1;
   const numeric = SORT_NUMERIC.has(k);
@@ -337,7 +337,7 @@ const COLS = [
   {key:"st",  label:"sort_col_status", sortable:true, align:"start"},
   {key:"pct", label:"sort_col_pct",    sortable:true, align:"end"},
   {key:"u",   label:"sort_col_units",  sortable:true, align:"end"},
-  {key:"sn",  label:"sort_col_sales",  sortable:true, align:"end"},
+  {key:"sn12", label:"sort_col_sales", sortable:true, align:"end"},
   {key:"a",   label:"sort_col_area",   sortable:true, align:"start"},
   {key:"mp",  label:"sort_col_master", sortable:true, align:"start"},
   {key:"dev", label:"sort_col_dev",    sortable:true, align:"start"},
@@ -350,7 +350,7 @@ function renderHead() {
     if (STATE.sortKey === c.key) cls.push(STATE.sortDir === "asc" ? "sort-asc" : "sort-desc");
     if (c.align === "end") cls.push("num");
     const arrow = STATE.sortKey === c.key ? (STATE.sortDir === "asc" ? "▲" : "▼") : "▾";
-    const title = c.key === "sn" ? ` title="${_h(COPY.col_sales_tooltip)}"` : "";
+    const title = c.key === "sn12" ? ` title="${_h(COPY.col_sales_tooltip)}"` : "";
     return `<th class="${cls.join(" ")}" data-sort="${c.key}"${title}>${_h(COPY[c.label])}<span class="sort-arr">${arrow}</span></th>`;
   }).join("");
 }
@@ -386,10 +386,9 @@ function renderBody() {
     const devCell = p.dev_orig
       ? `<span title="${_h(p.dev_orig)}" class="aliased">${_h(p.dev || COPY.no_data)}<span class="alias-dot" aria-hidden="true">ᵃʳ</span></span>`
       : _h(p.dev || COPY.no_data);
-    // "Reality" counterpart to the registry columns — actual DLD sale /
-    // rental activity against this project_number, not from RERA at all.
-    const salesCell = (p.sn || p.rn)
-      ? `<span title="${_h(COPY.col_sales_tooltip)}">${fmt(p.sn||0)}${p.rn ? " / " + fmt(p.rn) : ""}</span>`
+    const salesTitle = `${COPY.col_sales_tooltip} ${fmt(p.sn||0)} / ${fmt(p.rn||0)}`;
+    const salesCell = (p.sn12 || p.rn12)
+      ? `<span title="${_h(salesTitle)}">${fmt(p.sn12||0)}${p.rn12 ? " / " + fmt(p.rn12) : ""}</span>`
       : _h(COPY.no_data);
     return `<tr>
       <td><span class="proj-pn">${projName}</span>${projSub}</td>

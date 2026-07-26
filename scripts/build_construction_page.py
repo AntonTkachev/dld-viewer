@@ -215,13 +215,14 @@ def load_projects():
             'ey':    end_year,
             'cls':   cls,
         }
-        # Reality counterpart to the registry's own numbers — how much has
-        # actually traded/rented against this project_number, independent
-        # of what RERA claims. Omitted entirely when zero to keep JSON slim.
         if r['__sales_n']:
             row['sn'] = r['__sales_n']
+        if r['__sales_n_recent']:
+            row['sn12'] = r['__sales_n_recent']
         if r['__rent_n']:
             row['rn'] = r['__rent_n']
+        if r['__rent_n_recent']:
+            row['rn12'] = r['__rent_n_recent']
         # *_orig fields are emitted only when an alias actually changed the
         # displayed value — keeps the JSON slim and signals to the UI
         # which cells deserve the "ᵃʳ" tooltip flag.
@@ -283,7 +284,7 @@ COPY = {
         sort_col_name='Проект', sort_col_status='Статус', sort_col_pct='Готовность',
         sort_col_units='Юниты', sort_col_area='Район', sort_col_master='Master-project',
         sort_col_dev='Застройщик', sort_col_end='Сдача',
-        sort_col_sales='Активность (DLD)', col_sales_tooltip='Сделок / договоров аренды по факту — не из реестра RERA',
+        sort_col_sales='Активность за 12 мес (DLD)', col_sales_tooltip='Сделок / аренд за последние 12 месяцев. Аренда может быть короче года — цифра может быть чуть завышена. Всего с начала:',
         st_FINISHED='Сдан', st_ACTIVE='Строится', st_NOT_STARTED='Не начат',
         st_PENDING='Ожидание', st_CONDITIONAL_ACTIVATING='Условно активен', st_FRIEZED='Заморожен',
         st_OVERDUE='Просрочен',
@@ -313,7 +314,7 @@ COPY = {
         sort_col_name='Project', sort_col_status='Status', sort_col_pct='Completion',
         sort_col_units='Units', sort_col_area='Area', sort_col_master='Master project',
         sort_col_dev='Developer', sort_col_end='Completion',
-        sort_col_sales='Activity (DLD)', col_sales_tooltip='Actual sale transactions / rental contracts — not from the RERA register',
+        sort_col_sales='Activity, last 12mo (DLD)', col_sales_tooltip='Sales / rentals in the last 12 months. Leases can run shorter than a year, so this can run slightly high. All-time total:',
         st_FINISHED='Finished', st_ACTIVE='Active', st_NOT_STARTED='Not started',
         st_PENDING='Pending', st_CONDITIONAL_ACTIVATING='Cond. active', st_FRIEZED='Frozen',
         st_OVERDUE='Overdue',
@@ -343,7 +344,7 @@ COPY = {
         sort_col_name='المشروع', sort_col_status='الحالة', sort_col_pct='الإنجاز',
         sort_col_units='الوحدات', sort_col_area='المنطقة', sort_col_master='المشروع الرئيسي',
         sort_col_dev='المطور', sort_col_end='التسليم',
-        sort_col_sales='النشاط (DLD)', col_sales_tooltip='صفقات البيع الفعلية / عقود الإيجار — وليست من سجل RERA',
+        sort_col_sales='النشاط خلال 12 شهرًا (DLD)', col_sales_tooltip='صفقات البيع / الإيجار خلال آخر 12 شهرًا. قد تكون عقود الإيجار أقصر من سنة، فقد يكون الرقم أعلى قليلًا من الواقع. الإجمالي منذ البداية:',
         st_FINISHED='مكتمل', st_ACTIVE='نشط', st_NOT_STARTED='لم يبدأ',
         st_PENDING='معلق', st_CONDITIONAL_ACTIVATING='نشط مشروط', st_FRIEZED='مجمد',
         st_OVERDUE='متأخر',
@@ -373,7 +374,7 @@ COPY = {
         sort_col_name='प्रोजेक्ट', sort_col_status='स्थिति', sort_col_pct='पूर्णता',
         sort_col_units='यूनिट', sort_col_area='क्षेत्र', sort_col_master='मास्टर प्रोजेक्ट',
         sort_col_dev='डेवलपर', sort_col_end='सम्पन्न',
-        sort_col_sales='गतिविधि (DLD)', col_sales_tooltip='वास्तविक बिक्री लेन-देन / किराये के अनुबंध — RERA रजिस्टर से नहीं',
+        sort_col_sales='पिछले 12 माह की गतिविधि (DLD)', col_sales_tooltip='पिछले 12 महीनों में बिक्री / किराया। पट्टे एक वर्ष से छोटे हो सकते हैं, इसलिए यह संख्या थोड़ी अधिक हो सकती है। शुरुआत से कुल:',
         st_FINISHED='सम्पन्न', st_ACTIVE='सक्रिय', st_NOT_STARTED='शुरू नहीं',
         st_PENDING='लंबित', st_CONDITIONAL_ACTIVATING='सशर्त सक्रिय', st_FRIEZED='फ्रोजन',
         st_OVERDUE='विलंबित',
@@ -403,7 +404,7 @@ COPY = {
         sort_col_name='项目', sort_col_status='状态', sort_col_pct='完成度',
         sort_col_units='户数', sort_col_area='社区', sort_col_master='主项目',
         sort_col_dev='开发商', sort_col_end='完工',
-        sort_col_sales='实际活跃度（DLD）', col_sales_tooltip='实际销售交易数／租赁合同数——并非来自 RERA 登记',
+        sort_col_sales='近12个月活跃度（DLD）', col_sales_tooltip='近12个月的销售／租赁数。租约可能不满一年，此数字可能略偏高。自开盘以来累计：',
         st_FINISHED='已完成', st_ACTIVE='在建', st_NOT_STARTED='未启动',
         st_PENDING='待定', st_CONDITIONAL_ACTIVATING='有条件激活', st_FRIEZED='冻结',
         st_OVERDUE='逾期',
@@ -737,7 +738,7 @@ function applyFilters() {{
   STATE.page = 1;
 }}
 
-const SORT_NUMERIC = new Set(["pct","u","b","v","l","sy","ey","sn"]);
+const SORT_NUMERIC = new Set(["pct","u","b","v","l","sy","ey","sn12"]);
 function applySort() {{
   const k = STATE.sortKey, dir = STATE.sortDir === "asc" ? 1 : -1;
   const numeric = SORT_NUMERIC.has(k);
@@ -837,7 +838,7 @@ const COLS = [
   {{key:"st",  label:"sort_col_status", sortable:true, align:"start"}},
   {{key:"pct", label:"sort_col_pct",    sortable:true, align:"end"}},
   {{key:"u",   label:"sort_col_units",  sortable:true, align:"end"}},
-  {{key:"sn",  label:"sort_col_sales",  sortable:true, align:"end"}},
+  {{key:"sn12", label:"sort_col_sales", sortable:true, align:"end"}},
   {{key:"a",   label:"sort_col_area",   sortable:true, align:"start"}},
   {{key:"mp",  label:"sort_col_master", sortable:true, align:"start"}},
   {{key:"dev", label:"sort_col_dev",    sortable:true, align:"start"}},
@@ -850,7 +851,7 @@ function renderHead() {{
     if (STATE.sortKey === c.key) cls.push(STATE.sortDir === "asc" ? "sort-asc" : "sort-desc");
     if (c.align === "end") cls.push("num");
     const arrow = STATE.sortKey === c.key ? (STATE.sortDir === "asc" ? "▲" : "▼") : "▾";
-    const title = c.key === "sn" ? ` title="${{_h(COPY.col_sales_tooltip)}}"` : "";
+    const title = c.key === "sn12" ? ` title="${{_h(COPY.col_sales_tooltip)}}"` : "";
     return `<th class="${{cls.join(" ")}}" data-sort="${{c.key}}"${{title}}>${{_h(COPY[c.label])}}<span class="sort-arr">${{arrow}}</span></th>`;
   }}).join("");
 }}
@@ -886,10 +887,9 @@ function renderBody() {{
     const devCell = p.dev_orig
       ? `<span title="${{_h(p.dev_orig)}}" class="aliased">${{_h(p.dev || COPY.no_data)}}<span class="alias-dot" aria-hidden="true">ᵃʳ</span></span>`
       : _h(p.dev || COPY.no_data);
-    // "Reality" counterpart to the registry columns — actual DLD sale /
-    // rental activity against this project_number, not from RERA at all.
-    const salesCell = (p.sn || p.rn)
-      ? `<span title="${{_h(COPY.col_sales_tooltip)}}">${{fmt(p.sn||0)}}${{p.rn ? " / " + fmt(p.rn) : ""}}</span>`
+    const salesTitle = `${{COPY.col_sales_tooltip}} ${{fmt(p.sn||0)}} / ${{fmt(p.rn||0)}}`;
+    const salesCell = (p.sn12 || p.rn12)
+      ? `<span title="${{_h(salesTitle)}}">${{fmt(p.sn12||0)}}${{p.rn12 ? " / " + fmt(p.rn12) : ""}}</span>`
       : _h(COPY.no_data);
     return `<tr>
       <td><span class="proj-pn">${{projName}}</span>${{projSub}}</td>

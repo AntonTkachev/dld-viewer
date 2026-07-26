@@ -171,7 +171,7 @@
 
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
 <script>
-const COPY = {"breadcrumb_dubai": "दुबई", "section": "दुबई में निर्माण परियोजनाएँ", "h1": "दुबई का निर्माण — RERA रजिस्टर", "lede": "RERA रजिस्टर: {n_total} परियोजनाएँ, {n_inflight} चालू, {units} यूनिट पाइपलाइन में।", "cta_map": "मानचित्र पर दिखाएँ", "title": "दुबई निर्माण — RERA रजिस्टर फिल्टर के साथ", "meta": "{n_inflight} सक्रिय निर्माण परियोजनाएँ {n_total} RERA रिकॉर्ड में से।", "h_inflight": "अभी चालू", "h_units": "पाइपलाइन यूनिट", "h_completing": "{y} में पूर्णता", "h_top_dev": "शीर्ष डेवलपर", "h_avg_pct": "औसत पूर्णता", "chart_status": "परियोजना स्थिति", "chart_completion": "अपेक्षित पूर्णता वर्ष", "chart_top_devs": "शीर्ष-10 डेवलपर (in-flight)", "chart_top_areas": "शीर्ष-10 क्षेत्र (in-flight)", "filter_status": "स्थिति", "filter_search": "प्रोजेक्ट या डेवलपर खोजें…", "filter_area": "सभी क्षेत्र", "filter_clear": "रीसेट", "showing": "{n} में से {total}", "sort_col_name": "प्रोजेक्ट", "sort_col_status": "स्थिति", "sort_col_pct": "पूर्णता", "sort_col_units": "यूनिट", "sort_col_area": "क्षेत्र", "sort_col_master": "मास्टर प्रोजेक्ट", "sort_col_dev": "डेवलपर", "sort_col_end": "सम्पन्न", "sort_col_sales": "गतिविधि (DLD)", "col_sales_tooltip": "वास्तविक बिक्री लेन-देन / किराये के अनुबंध — RERA रजिस्टर से नहीं", "st_FINISHED": "सम्पन्न", "st_ACTIVE": "सक्रिय", "st_NOT_STARTED": "शुरू नहीं", "st_PENDING": "लंबित", "st_CONDITIONAL_ACTIVATING": "सशर्त सक्रिय", "st_FRIEZED": "फ्रोजन", "st_OVERDUE": "विलंबित", "per_page": "प्रति पेज", "prev": "←", "next": "→", "empty_results": "कुछ नहीं मिला।", "no_units": "—", "no_data": "—", "nav_map": "← मानचित्र पर", "nav_districts": "सभी जिले →"};
+const COPY = {"breadcrumb_dubai": "दुबई", "section": "दुबई में निर्माण परियोजनाएँ", "h1": "दुबई का निर्माण — RERA रजिस्टर", "lede": "RERA रजिस्टर: {n_total} परियोजनाएँ, {n_inflight} चालू, {units} यूनिट पाइपलाइन में।", "cta_map": "मानचित्र पर दिखाएँ", "title": "दुबई निर्माण — RERA रजिस्टर फिल्टर के साथ", "meta": "{n_inflight} सक्रिय निर्माण परियोजनाएँ {n_total} RERA रिकॉर्ड में से।", "h_inflight": "अभी चालू", "h_units": "पाइपलाइन यूनिट", "h_completing": "{y} में पूर्णता", "h_top_dev": "शीर्ष डेवलपर", "h_avg_pct": "औसत पूर्णता", "chart_status": "परियोजना स्थिति", "chart_completion": "अपेक्षित पूर्णता वर्ष", "chart_top_devs": "शीर्ष-10 डेवलपर (in-flight)", "chart_top_areas": "शीर्ष-10 क्षेत्र (in-flight)", "filter_status": "स्थिति", "filter_search": "प्रोजेक्ट या डेवलपर खोजें…", "filter_area": "सभी क्षेत्र", "filter_clear": "रीसेट", "showing": "{n} में से {total}", "sort_col_name": "प्रोजेक्ट", "sort_col_status": "स्थिति", "sort_col_pct": "पूर्णता", "sort_col_units": "यूनिट", "sort_col_area": "क्षेत्र", "sort_col_master": "मास्टर प्रोजेक्ट", "sort_col_dev": "डेवलपर", "sort_col_end": "सम्पन्न", "sort_col_sales": "पिछले 12 माह की गतिविधि (DLD)", "col_sales_tooltip": "पिछले 12 महीनों में बिक्री / किराया। पट्टे एक वर्ष से छोटे हो सकते हैं, इसलिए यह संख्या थोड़ी अधिक हो सकती है। शुरुआत से कुल:", "st_FINISHED": "सम्पन्न", "st_ACTIVE": "सक्रिय", "st_NOT_STARTED": "शुरू नहीं", "st_PENDING": "लंबित", "st_CONDITIONAL_ACTIVATING": "सशर्त सक्रिय", "st_FRIEZED": "फ्रोजन", "st_OVERDUE": "विलंबित", "per_page": "प्रति पेज", "prev": "←", "next": "→", "empty_results": "कुछ नहीं मिला।", "no_units": "—", "no_data": "—", "nav_map": "← मानचित्र पर", "nav_districts": "सभी जिले →"};
 const HERO = {"inflight": 1106, "units_pipeline": 263561, "completing_year": 60, "this_year": 2026, "top_dev": "Nakheel PJSC", "top_dev_n": 177, "avg_pct_inflight": 11.4};
 const LANG = "hi";
 const BASE_URL = "https://dxbcompass.com";
@@ -237,7 +237,7 @@ function applyFilters() {
   STATE.page = 1;
 }
 
-const SORT_NUMERIC = new Set(["pct","u","b","v","l","sy","ey","sn"]);
+const SORT_NUMERIC = new Set(["pct","u","b","v","l","sy","ey","sn12"]);
 function applySort() {
   const k = STATE.sortKey, dir = STATE.sortDir === "asc" ? 1 : -1;
   const numeric = SORT_NUMERIC.has(k);
@@ -337,7 +337,7 @@ const COLS = [
   {key:"st",  label:"sort_col_status", sortable:true, align:"start"},
   {key:"pct", label:"sort_col_pct",    sortable:true, align:"end"},
   {key:"u",   label:"sort_col_units",  sortable:true, align:"end"},
-  {key:"sn",  label:"sort_col_sales",  sortable:true, align:"end"},
+  {key:"sn12", label:"sort_col_sales", sortable:true, align:"end"},
   {key:"a",   label:"sort_col_area",   sortable:true, align:"start"},
   {key:"mp",  label:"sort_col_master", sortable:true, align:"start"},
   {key:"dev", label:"sort_col_dev",    sortable:true, align:"start"},
@@ -350,7 +350,7 @@ function renderHead() {
     if (STATE.sortKey === c.key) cls.push(STATE.sortDir === "asc" ? "sort-asc" : "sort-desc");
     if (c.align === "end") cls.push("num");
     const arrow = STATE.sortKey === c.key ? (STATE.sortDir === "asc" ? "▲" : "▼") : "▾";
-    const title = c.key === "sn" ? ` title="${_h(COPY.col_sales_tooltip)}"` : "";
+    const title = c.key === "sn12" ? ` title="${_h(COPY.col_sales_tooltip)}"` : "";
     return `<th class="${cls.join(" ")}" data-sort="${c.key}"${title}>${_h(COPY[c.label])}<span class="sort-arr">${arrow}</span></th>`;
   }).join("");
 }
@@ -386,10 +386,9 @@ function renderBody() {
     const devCell = p.dev_orig
       ? `<span title="${_h(p.dev_orig)}" class="aliased">${_h(p.dev || COPY.no_data)}<span class="alias-dot" aria-hidden="true">ᵃʳ</span></span>`
       : _h(p.dev || COPY.no_data);
-    // "Reality" counterpart to the registry columns — actual DLD sale /
-    // rental activity against this project_number, not from RERA at all.
-    const salesCell = (p.sn || p.rn)
-      ? `<span title="${_h(COPY.col_sales_tooltip)}">${fmt(p.sn||0)}${p.rn ? " / " + fmt(p.rn) : ""}</span>`
+    const salesTitle = `${COPY.col_sales_tooltip} ${fmt(p.sn||0)} / ${fmt(p.rn||0)}`;
+    const salesCell = (p.sn12 || p.rn12)
+      ? `<span title="${_h(salesTitle)}">${fmt(p.sn12||0)}${p.rn12 ? " / " + fmt(p.rn12) : ""}</span>`
       : _h(COPY.no_data);
     return `<tr>
       <td><span class="proj-pn">${projName}</span>${projSub}</td>

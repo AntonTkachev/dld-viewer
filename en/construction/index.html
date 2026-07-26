@@ -171,7 +171,7 @@
 
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
 <script>
-const COPY = {"breadcrumb_dubai": "Dubai", "section": "Construction projects in Dubai", "h1": "Dubai construction — RERA register", "lede": "Project-level RERA register: {n_total} projects, {n_inflight} in flight, {units} units in the pipeline. Filter by status / developer / district; charts re-render with the table.", "cta_map": "Show on map", "title": "Dubai construction — RERA register with filters & charts", "meta": "{n_inflight} active construction projects out of {n_total} RERA records. Filter and analyse by developer, area, expected completion year.", "h_inflight": "In flight now", "h_units": "Units in pipeline", "h_completing": "Completing in {y}", "h_top_dev": "Leading developer", "h_avg_pct": "Avg completion", "chart_status": "By project status", "chart_completion": "Active by expected completion year", "chart_top_devs": "Top-10 developers (in-flight)", "chart_top_areas": "Top-10 areas (in-flight)", "filter_status": "Status", "filter_search": "Search project or developer…", "filter_area": "All areas", "filter_clear": "Clear", "showing": "Showing {n} of {total}", "sort_col_name": "Project", "sort_col_status": "Status", "sort_col_pct": "Completion", "sort_col_units": "Units", "sort_col_area": "Area", "sort_col_master": "Master project", "sort_col_dev": "Developer", "sort_col_end": "Completion", "sort_col_sales": "Activity (DLD)", "col_sales_tooltip": "Actual sale transactions / rental contracts — not from the RERA register", "st_FINISHED": "Finished", "st_ACTIVE": "Active", "st_NOT_STARTED": "Not started", "st_PENDING": "Pending", "st_CONDITIONAL_ACTIVATING": "Cond. active", "st_FRIEZED": "Frozen", "st_OVERDUE": "Overdue", "per_page": "Per page", "prev": "←", "next": "→", "empty_results": "No matches — adjust the filters.", "no_units": "—", "no_data": "—", "nav_map": "← To map", "nav_districts": "All districts →"};
+const COPY = {"breadcrumb_dubai": "Dubai", "section": "Construction projects in Dubai", "h1": "Dubai construction — RERA register", "lede": "Project-level RERA register: {n_total} projects, {n_inflight} in flight, {units} units in the pipeline. Filter by status / developer / district; charts re-render with the table.", "cta_map": "Show on map", "title": "Dubai construction — RERA register with filters & charts", "meta": "{n_inflight} active construction projects out of {n_total} RERA records. Filter and analyse by developer, area, expected completion year.", "h_inflight": "In flight now", "h_units": "Units in pipeline", "h_completing": "Completing in {y}", "h_top_dev": "Leading developer", "h_avg_pct": "Avg completion", "chart_status": "By project status", "chart_completion": "Active by expected completion year", "chart_top_devs": "Top-10 developers (in-flight)", "chart_top_areas": "Top-10 areas (in-flight)", "filter_status": "Status", "filter_search": "Search project or developer…", "filter_area": "All areas", "filter_clear": "Clear", "showing": "Showing {n} of {total}", "sort_col_name": "Project", "sort_col_status": "Status", "sort_col_pct": "Completion", "sort_col_units": "Units", "sort_col_area": "Area", "sort_col_master": "Master project", "sort_col_dev": "Developer", "sort_col_end": "Completion", "sort_col_sales": "Activity, last 12mo (DLD)", "col_sales_tooltip": "Sales / rentals in the last 12 months. Leases can run shorter than a year, so this can run slightly high. All-time total:", "st_FINISHED": "Finished", "st_ACTIVE": "Active", "st_NOT_STARTED": "Not started", "st_PENDING": "Pending", "st_CONDITIONAL_ACTIVATING": "Cond. active", "st_FRIEZED": "Frozen", "st_OVERDUE": "Overdue", "per_page": "Per page", "prev": "←", "next": "→", "empty_results": "No matches — adjust the filters.", "no_units": "—", "no_data": "—", "nav_map": "← To map", "nav_districts": "All districts →"};
 const HERO = {"inflight": 1106, "units_pipeline": 263561, "completing_year": 60, "this_year": 2026, "top_dev": "Nakheel PJSC", "top_dev_n": 177, "avg_pct_inflight": 11.4};
 const LANG = "en";
 const BASE_URL = "https://dxbcompass.com";
@@ -237,7 +237,7 @@ function applyFilters() {
   STATE.page = 1;
 }
 
-const SORT_NUMERIC = new Set(["pct","u","b","v","l","sy","ey","sn"]);
+const SORT_NUMERIC = new Set(["pct","u","b","v","l","sy","ey","sn12"]);
 function applySort() {
   const k = STATE.sortKey, dir = STATE.sortDir === "asc" ? 1 : -1;
   const numeric = SORT_NUMERIC.has(k);
@@ -337,7 +337,7 @@ const COLS = [
   {key:"st",  label:"sort_col_status", sortable:true, align:"start"},
   {key:"pct", label:"sort_col_pct",    sortable:true, align:"end"},
   {key:"u",   label:"sort_col_units",  sortable:true, align:"end"},
-  {key:"sn",  label:"sort_col_sales",  sortable:true, align:"end"},
+  {key:"sn12", label:"sort_col_sales", sortable:true, align:"end"},
   {key:"a",   label:"sort_col_area",   sortable:true, align:"start"},
   {key:"mp",  label:"sort_col_master", sortable:true, align:"start"},
   {key:"dev", label:"sort_col_dev",    sortable:true, align:"start"},
@@ -350,7 +350,7 @@ function renderHead() {
     if (STATE.sortKey === c.key) cls.push(STATE.sortDir === "asc" ? "sort-asc" : "sort-desc");
     if (c.align === "end") cls.push("num");
     const arrow = STATE.sortKey === c.key ? (STATE.sortDir === "asc" ? "▲" : "▼") : "▾";
-    const title = c.key === "sn" ? ` title="${_h(COPY.col_sales_tooltip)}"` : "";
+    const title = c.key === "sn12" ? ` title="${_h(COPY.col_sales_tooltip)}"` : "";
     return `<th class="${cls.join(" ")}" data-sort="${c.key}"${title}>${_h(COPY[c.label])}<span class="sort-arr">${arrow}</span></th>`;
   }).join("");
 }
@@ -386,10 +386,9 @@ function renderBody() {
     const devCell = p.dev_orig
       ? `<span title="${_h(p.dev_orig)}" class="aliased">${_h(p.dev || COPY.no_data)}<span class="alias-dot" aria-hidden="true">ᵃʳ</span></span>`
       : _h(p.dev || COPY.no_data);
-    // "Reality" counterpart to the registry columns — actual DLD sale /
-    // rental activity against this project_number, not from RERA at all.
-    const salesCell = (p.sn || p.rn)
-      ? `<span title="${_h(COPY.col_sales_tooltip)}">${fmt(p.sn||0)}${p.rn ? " / " + fmt(p.rn) : ""}</span>`
+    const salesTitle = `${COPY.col_sales_tooltip} ${fmt(p.sn||0)} / ${fmt(p.rn||0)}`;
+    const salesCell = (p.sn12 || p.rn12)
+      ? `<span title="${_h(salesTitle)}">${fmt(p.sn12||0)}${p.rn12 ? " / " + fmt(p.rn12) : ""}</span>`
       : _h(COPY.no_data);
     return `<tr>
       <td><span class="proj-pn">${projName}</span>${projSub}</td>
