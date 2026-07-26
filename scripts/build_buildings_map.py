@@ -93,8 +93,23 @@ PROJECT_SEQMATCH_THRESHOLD = 0.92  # project_name fallback — stricter, to
 # Geo-sanity: matches more than this far from the DLD area's centroid get
 # rejected — catches cases like `Muraba Residences Palm Jumeirah` fuzzy-
 # matching to `Mr. C Residences Jumeirah` (different building, different
-# coast). 5 km comfortably covers even the biggest DLD areas.
+# coast). 5 km comfortably covers even the biggest DLD areas. Only used as
+# a fallback when geo_ok() has no real polygon for the area.
 GEO_SANITY_KM = 5.0
+
+# DLD sometimes records a generic placeholder instead of a real building
+# name (e.g. transactions on a cancelled off-plan project). These aren't
+# proper nouns — geocoding them returns garbage, so skip them entirely.
+GENERIC_NAME_BLOCKLIST = {'canceled building', 'cancelled building'}
+
+# OSM building=* subtypes that aren't a residential/commercial tower a DLD
+# transaction could be for — transit and utility structures that happen to
+# carry a building=yes-like tag and can otherwise fuzzy-match a DLD name.
+NON_RESIDENTIAL_BUILDING_TAGS = {
+    'train_station', 'transportation', 'airport_terminal', 'cruise_terminal',
+    'guardhouse', 'service', 'garage', 'garages', 'parking', 'kiosk',
+    'canopy', 'hangar', 'roof', 'tent', 'no',
+}
 
 
 def slugify(s: str) -> str:
@@ -208,7 +223,8 @@ def load_dld() -> list:
     return [{'area': r[0], 'name': r[1], 'name_ar': r[2] or '',
              'project': r[3] or '', 'master': r[4] or '',
              'landmark': r[5] or '', 'metro': r[6] or '', 'mall': r[7] or '',
-             'n_deals': r[8]} for r in rows]
+             'n_deals': r[8]} for r in rows
+            if r[1].strip().lower() not in GENERIC_NAME_BLOCKLIST]
 
 
 def _strip_metro_suffix(s: str) -> str:
@@ -252,7 +268,8 @@ def fallback_coord(d: dict, poi_coords: dict):
 
 def load_osm() -> list:
     with OSM_JSON.open(encoding='utf-8') as f:
-        return json.load(f)
+        rows = json.load(f)
+    return [r for r in rows if r.get('building') not in NON_RESIDENTIAL_BUILDING_TAGS]
 
 
 def bbox_area_m2(rings: list) -> float:
@@ -265,6 +282,19 @@ def bbox_area_m2(rings: list) -> float:
     dlat = (max(lats) - min(lats)) * 111_000
     dlon = (max(lons) - min(lons)) * 111_000 * math.cos(math.radians(mid))
     return dlat * dlon
+
+
+def synthetic_square_ring(lat: float, lon: float, half_m: float = 16.5) -> list:
+    """~33x33m square ring centered on a geocoded point — stand-in for a
+    missing OSM footprint."""
+    d_lat = half_m / 111_320
+    d_lon = half_m / (111_320 * math.cos(math.radians(lat)))
+    return [[
+        [lat - d_lat, lon - d_lon],
+        [lat - d_lat, lon + d_lon],
+        [lat + d_lat, lon + d_lon],
+        [lat + d_lat, lon - d_lon],
+    ]]
 
 
 def pip(lat: float, lon: float, ring: list) -> bool:
@@ -307,6 +337,58 @@ def haversine_km(a_lat, a_lon, b_lat, b_lon):
     dl = math.radians(b_lon - a_lon)
     h = math.sin(dp/2)**2 + math.cos(p1)*math.cos(p2)*math.sin(dl/2)**2
     return 2 * R * math.asin(math.sqrt(h))
+
+
+def load_area_polygons() -> dict:
+    """DLD area_name_en -> list of rings [[(lat,lon),...],...], same
+    parent/alias grouping as load_area_centroids but keeping real geometry
+    for point-in-polygon geo-sanity instead of a flat-radius check."""
+    if not GEOJSON.exists():
+        return {}
+    rings_per_area = collections.defaultdict(list)
+    dld_aliases = {}
+    with GEOJSON.open(encoding='utf-8') as f:
+        gj = json.load(f)
+    for feat in gj.get('features', []):
+        props = feat.get('properties', {})
+        sub_name = props.get('name') or ''
+        parent = props.get('parent_area_name_en') or ''
+        area = parent or sub_name or props.get('NAME_EN') or ''
+        if not area:
+            continue
+        filt = props.get('filter') or {}
+        if filt.get('area_name_en'):
+            dld_aliases[filt['area_name_en']] = area
+        geom = feat.get('geometry') or {}
+        polys = []
+        if geom.get('type') == 'Polygon':
+            polys = [geom['coordinates']]
+        elif geom.get('type') == 'MultiPolygon':
+            polys = geom['coordinates']
+        for poly in polys:
+            ring = [(p[1], p[0]) for p in poly[0]]
+            rings_per_area[area].append(ring)
+            if parent and sub_name:
+                rings_per_area[sub_name].append(ring)
+    out = dict(rings_per_area)
+    for dld_name, display_name in dld_aliases.items():
+        if dld_name not in out and display_name in out:
+            out[dld_name] = out[display_name]
+    return out
+
+
+def geo_ok(area_polys: dict, centroids: dict, area: str, lat: float, lon: float,
+           radius_km: float = GEO_SANITY_KM) -> bool:
+    """Real point-in-polygon against the DLD area's curated community
+    polygon(s); falls back to flat-radius-from-centroid only when we have
+    no polygon coverage for that area at all."""
+    rings = area_polys.get(area)
+    if rings:
+        return any(pip(lat, lon, ring) for ring in rings)
+    c = centroids.get(area)
+    if not c:
+        return True
+    return haversine_km(c[0], c[1], lat, lon) <= radius_km
 
 
 def load_area_centroids() -> dict:
@@ -713,6 +795,7 @@ def main() -> int:
 
     indices = build_indices(osm)
     centroids = load_area_centroids()
+    area_polys = load_area_polygons()
     print(f'Area centroids loaded: {len(centroids)}')
     geo_rejected = 0
 
@@ -749,23 +832,23 @@ def main() -> int:
             # its area — but in practice fuzzy project matches (Bluewaters
             # Residences ↔ Blue Waves Residence) needed this check too.
             if kind.startswith('dg_prefix'):
-                # Discovery Gardens: check against sub-community centroid with
-                # 2 km limit — rejects same-numbered buildings in The Gardens
-                # (~1.5 km west) that slip through the broader Jabal Ali First check.
-                dg_c = centroids.get('Discovery Gardens') or centroids.get(d['area'])
-                c = dg_c
-                geo_limit = 2.0
+                # Discovery Gardens: check against sub-community, 2 km
+                # radius fallback — rejects same-numbered buildings in The
+                # Gardens (~1.5 km west) that slip past the area-level check.
+                dg_area = 'Discovery Gardens' if 'Discovery Gardens' in area_polys or \
+                          'Discovery Gardens' in centroids else d['area']
+                ok = geo_ok(area_polys, centroids, dg_area,
+                            osm_row['lat'], osm_row['lon'], radius_km=2.0)
             else:
-                c = centroids.get(d['area'])
                 _nk = norm_key(d['name'])
                 _is_short_key = len(_nk.split()) <= 1
-                geo_limit = (GEO_SANITY_KM if _is_short_key
+                radius_km = (GEO_SANITY_KM if _is_short_key
                              else 15.0) if kind in ('exact', 'alpha_exact') else GEO_SANITY_KM
-            if c:
-                dist = haversine_km(c[0], c[1], osm_row['lat'], osm_row['lon'])
-                if dist > geo_limit:
-                    geo_rejected += 1
-                    osm_row = None
+                ok = geo_ok(area_polys, centroids, d['area'],
+                            osm_row['lat'], osm_row['lon'], radius_km=radius_km)
+            if not ok:
+                geo_rejected += 1
+                osm_row = None
             # Reject compound matches to huge polygons (whole community/district).
             # 300 000 m² ≈ 300 × 1 000 m site — too large to represent one building.
             if osm_row is not None and kind in ('project_exact', 'project_seqmatch'):
@@ -824,6 +907,7 @@ def main() -> int:
 
     already_matched = {f"{slugify(m['area'])}--{slugify(m['name'])}" for m in matched}
     coords_added = 0
+    coords_geo_rejected = 0
     still_unmatched = []
     for d in unmatched:
         name_slug = slugify(d['name'])
@@ -832,6 +916,10 @@ def main() -> int:
             # Skip Nominatim results that matched a non-building POI — these block
             # the correct Google ROOFTOP result from being used in the next pass.
             if rec.get('source') == 'nominatim' and rec.get('nom_type', '') in _NOM_BAD_TYPES:
+                still_unmatched.append(d)
+                continue
+            if not geo_ok(area_polys, centroids, d['area'], rec['lat'], rec['lon']):
+                coords_geo_rejected += 1
                 still_unmatched.append(d)
                 continue
             full_slug = f"{slugify(d['area'])}--{slugify(d['name'])}"
@@ -856,10 +944,13 @@ def main() -> int:
     if coords_added:
         print(f'Coords fallback added: {coords_added} buildings '
               f'(wikidata/nominatim point markers)')
+    if coords_geo_rejected:
+        print(f'Coords fallback geo-rejected: {coords_geo_rejected}')
 
     # Google Geocoding fallback: for buildings still unmatched after Wikidata/Nominatim.
     GOOGLE_JSON = ROOT / 'data' / 'google_buildings.json'
     google_added = 0
+    google_geo_rejected = 0
     if GOOGLE_JSON.exists():
         google_cache = json.load(GOOGLE_JSON.open(encoding='utf-8'))
         already_matched2 = {f"{slugify(m['area'])}--{slugify(m['name'])}" for m in matched}
@@ -869,6 +960,10 @@ def main() -> int:
             rec = google_cache.get(gkey)
             if rec and rec.get('status') in ('found', 'approximate') \
                     and rec.get('lat') and rec.get('lon'):
+                if not geo_ok(area_polys, centroids, d['area'], rec['lat'], rec['lon']):
+                    google_geo_rejected += 1
+                    new_still.append(d)
+                    continue
                 full_slug = f"{slugify(d['area'])}--{slugify(d['name'])}"
                 if full_slug not in already_matched2:
                     matched.append({
@@ -888,6 +983,8 @@ def main() -> int:
                     continue
             new_still.append(d)
         still_unmatched = new_still
+    if google_geo_rejected:
+        print(f'Google fallback geo-rejected: {google_geo_rejected}')
     if google_added:
         print(f'Google fallback added: {google_added} buildings (point coords)')
 
@@ -903,14 +1000,16 @@ def main() -> int:
     if ALL_JSON.exists():
         all_fps = json.load(ALL_JSON.open(encoding='utf-8'))
         osm_footprints = [{'osm_id': str(b['id']), 'lat': b['lat'], 'lon': b['lon'],
-                           'rings': b['rings']} for b in all_fps if b.get('rings')]
+                           'rings': b['rings']} for b in all_fps if b.get('rings')
+                          and b.get('building') not in NON_RESIDENTIAL_BUILDING_TAGS]
         print(f'PIP pool: {len(osm_footprints)} footprints (full Dubai dataset)')
     else:
         if OSM_JSON.exists():
             osm_all = json.load(OSM_JSON.open(encoding='utf-8'))
             osm_footprints = [{'osm_id': b['osm_id'], 'lat': b['lat'], 'lon': b['lon'],
                                'rings': b['rings']}
-                              for b in osm_all if b.get('kind') == 'building' and b.get('rings')]
+                              for b in osm_all if b.get('kind') == 'building' and b.get('rings')
+                              and b.get('building') not in NON_RESIDENTIAL_BUILDING_TAGS]
         if UNNAMED_JSON.exists():
             unnamed = json.load(UNNAMED_JSON.open(encoding='utf-8'))
             osm_footprints += [{'osm_id': str(b['id']), 'lat': b['lat'], 'lon': b['lon'],
@@ -972,7 +1071,66 @@ def main() -> int:
     if prox_upgraded:
         print(f'Centroid-proximity upgraded: {prox_upgraded} ROOFTOP buildings')
 
-    # Drop remaining approx (point-only) buildings — no polygon to show.
+    # No traced OSM footprint: synthesize a square for reliable-precision
+    # sources (ROOFTOP/GEOMETRIC_CENTER/wikidata/nominatim/osm). Low-confidence
+    # Google tiers (APPROXIMATE, RANGE_INTERPOLATED) still get dropped below.
+    UNRELIABLE_PRECISION = ('approximate', 'range_interpolated')
+    synthesized = 0
+    for m in matched:
+        if m.get('vis') != 'approx':
+            continue
+        match_kind = m.get('match', '')
+        if any(tag in match_kind for tag in UNRELIABLE_PRECISION):
+            continue
+        if not m.get('lat') or not m.get('lon'):
+            continue
+        m['rings'] = synthetic_square_ring(m['lat'], m['lon'])
+        m['vis'] = 'synthetic'
+        m['match'] = match_kind + '+synthetic_square'
+        synthesized += 1
+    if synthesized:
+        print(f'Synthesized: {synthesized} fixed-size square stand-ins '
+              f'(reliable-precision approx buildings)')
+
+    # Manual overrides — eyeballed on the live map, no automated match found
+    # or trusted a real footprint the algorithm missed. See data/building_osm_overrides.json.
+    OVERRIDES_JSON = ROOT / 'data' / 'building_osm_overrides.json'
+    overrides_applied = 0
+    if OVERRIDES_JSON.exists():
+        overrides = json.load(OVERRIDES_JSON.open(encoding='utf-8'))
+        overrides = {k: v for k, v in overrides.items() if not k.startswith('_')}
+        osm_by_id = {str(b.get('osm_id')): b for b in json.load(OSM_JSON.open(encoding='utf-8'))}
+        if UNNAMED_JSON.exists():
+            for b in json.load(UNNAMED_JSON.open(encoding='utf-8')):
+                osm_by_id.setdefault(str(b.get('id')), {
+                    'osm_id': b.get('id'), 'lat': b['lat'], 'lon': b['lon'],
+                    'rings': b['rings'], 'name': '',
+                })
+        by_key = {f"{m['area']}||{m['name']}": m for m in matched}
+        for key, osm_id in overrides.items():
+            osm_row = osm_by_id.get(str(osm_id))
+            if not osm_row or not osm_row.get('rings'):
+                print(f'  override skipped (osm_id {osm_id} not found): {key}', file=sys.stderr)
+                continue
+            if osm_row.get('building') in NON_RESIDENTIAL_BUILDING_TAGS:
+                print(f'  override skipped (osm_id {osm_id} is building={osm_row.get("building")}): {key}',
+                      file=sys.stderr)
+                continue
+            m = by_key.get(key)
+            if m is None:
+                continue
+            m['rings'] = osm_row['rings']
+            m['lat'] = osm_row['lat']
+            m['lon'] = osm_row['lon']
+            m['vis'] = 'building'
+            m['osm_id'] = str(osm_row.get('osm_id', ''))
+            m['osm_name'] = osm_row.get('name', '')
+            m['match'] = 'manual_override'
+            overrides_applied += 1
+    if overrides_applied:
+        print(f'Manual overrides applied: {overrides_applied}')
+
+    # Drop what's left — unreliable precision, no trustworthy polygon.
     before = len(matched)
     matched = [m for m in matched if m.get('vis') != 'approx']
     dropped = before - len(matched)
