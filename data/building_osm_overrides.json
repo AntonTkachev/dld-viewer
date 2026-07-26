@@ -1,0 +1,17 @@
+{
+  "_comment": "Manually eyeballed on the live map — DLD building has no automated OSM match (jaccard/exact_ar/geo-gated fallback all miss), but a real OSM footprint sits under/near it. Key: 'area||name' (DLD area_name_en || building_name_en). Value: OSM way id from osm_buildings.json.",
+  "Business Bay||burj capital": "1527435321",
+  "Business Bay||Bayz 102 By Danube": "1072528778",
+  "Business Bay||Avarra by Palace": "399867027",
+  "Burj Khalifa||ALTAJER": "1093273371",
+  "Burj Khalifa||Rixos Financial Center Road Dubai Residences": "382096523",
+  "Business Bay||ENARA by OMNIYAT": "409279881",
+  "Business Bay||TIGER SKY TOWER": "1494150427",
+  "Marsa Dubai||Six Senses Residences Dubai Marina": "186351097",
+  "Marsa Dubai||SOBHA SEAHAVEN - TOWER C": "1137233397",
+  "Al Thanyah Fifth||MBL Royal": "195525613",
+  "Al Thanyah Fifth||ME DO RE Business": "160092608",
+  "Al Thanyah Fifth||ME DO RE 2": "195303507",
+  "Palm Jumeirah||XXII CARAT CLUB VILLAS Palm Jumeirah": "545205215",
+  "Business Bay||ONDA BY KASCO": "399896356"
+}
