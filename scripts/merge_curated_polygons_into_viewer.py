@@ -93,16 +93,22 @@ elif JS_OUT.exists():
 else:
     old_count = 0
 
-# Read AGGREGATES + RENT_AGGREGATES from index.html so we can resolve each
-# split-polygon's master_projects filter into a real AGGREGATES key. Without
-# this, viewer.js falls through to the admin parent's key — which is wrong
-# for splits like "Expo City Dubai" (polygon key 'expo city dubai' has no
-# AGGREGATES bucket; the data lives under 'expo city', the lowercased
-# master_project_en). The admin parent 'madinat al mataar' also has no
-# AGGREGATES bucket, so the URL ends up as 404.
+# Read AGGREGATES + RENT_AGGREGATES so we can resolve each split-polygon's
+# master_projects filter into a real AGGREGATES key. Without this, viewer.js
+# falls through to the admin parent's key — which is wrong for splits like
+# "Expo City Dubai" (polygon key 'expo city dubai' has no AGGREGATES bucket;
+# the data lives under 'expo city', the lowercased master_project_en). The
+# admin parent 'madinat al mataar' also has no AGGREGATES bucket, so the URL
+# ends up as 404. Both consts live in their own externalized choropleth
+# bundles now, not inlined in template.html.
 agg_keys, rent_keys = set(), set()
-for const, target in (('AGGREGATES', agg_keys), ('RENT_AGGREGATES', rent_keys)):
-    mc = re.search(rf'^const {const} = (\{{.*?\}});\s*$', text, re.MULTILINE)
+for const, target, path in (
+    ('AGGREGATES', agg_keys, ROOT / 'transactions' / 'data' / 'choropleth.js'),
+    ('RENT_AGGREGATES', rent_keys, ROOT / 'rents' / 'data' / 'choropleth.js'),
+):
+    if not path.exists():
+        continue
+    mc = re.search(rf'^const {const} = (\{{.*?\}});\s*$', path.read_text(encoding='utf-8'), re.MULTILINE)
     if mc:
         target.update(json.loads(mc.group(1)).keys())
 print(f'AGGREGATES keys: {len(agg_keys)}; RENT_AGGREGATES keys: {len(rent_keys)}', file=sys.stderr)
