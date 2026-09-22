@@ -607,7 +607,7 @@
       <div class="dp-section">
         <h3>${t("sp_section_timeline")}</h3>
         <div class="room-chips" id="dp-room-chips">${renderRoomChips(a)}</div>
-        <div style="display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px">
+        <div class="dp-timeline-grid">
           <div>
             <div style="font-size:11px;color:#666;margin-bottom:2px">${t("sp_subsection_avg")}</div>
             <div class="dp-chart" style="height:180px">
