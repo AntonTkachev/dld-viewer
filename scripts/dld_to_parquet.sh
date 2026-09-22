@@ -3,8 +3,8 @@
 #
 # Usage:    ./dld_to_parquet.sh <input_dir> <output.parquet>
 # Examples:
-#   ./dld_to_parquet.sh ~/Downloads/dld_transactions   data/tx.parquet
-#   ./dld_to_parquet.sh ~/Downloads/dld_rent_contracts data/rents.parquet
+#   ./dld_to_parquet.sh data/raw/dld_transactions   data/tx.parquet
+#   ./dld_to_parquet.sh data/raw/dld_rent_contracts data/rents.parquet
 #
 # What it does:
 #   * Picks the lexicographically newest *.csv.gz under <input_dir>

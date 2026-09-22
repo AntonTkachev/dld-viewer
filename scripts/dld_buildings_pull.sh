@@ -9,7 +9,7 @@
 # downstream signal-precompute (dld_buildings_to_signal.py) is fast.
 set -euo pipefail
 
-DEST="${HOME}/Downloads/dld_buildings"
+DEST="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")/.." && pwd)/data/raw/dld_buildings"
 DATASET_ID=459523
 LIST_API="https://data.dubai/o/dda/data-services/dataset-download?datasetId=${DATASET_ID}&page=1&pageSize=200&sortDir=desc"
 

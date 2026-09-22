@@ -2,8 +2,8 @@
 # Polite, resumable downloader for data.dubai datasets.
 #
 # Usage:    ./dld_download.sh <datasetId> [outDir]
-# Examples: ./dld_download.sh 468586 ~/Downloads/dld_rent_contracts   # rents
-#           ./dld_download.sh 470061 ~/Downloads/dld_transactions     # tx
+# Examples: ./dld_download.sh 468586 data/raw/dld_rent_contracts   # rents
+#           ./dld_download.sh 470061 data/raw/dld_transactions     # tx
 #
 # Design points (see scripts/README or commit msg for the full discussion):
 #   * One sequential connection, ~1.5 MB/s by default — feels like a browser.
@@ -26,7 +26,7 @@ set -euo pipefail
 
 DATASET_ID="${1:-}"
 [ -z "$DATASET_ID" ] && { echo "usage: $0 <datasetId> [outDir]" >&2; exit 2; }
-OUT_DIR="${2:-$HOME/Downloads/dld_${DATASET_ID}}"
+OUT_DIR="${2:-$(cd "$(dirname "$0")/.." && pwd)/data/raw/dld_${DATASET_ID}}"
 
 RATE="${RATE:-1500k}"
 CHUNK_SECONDS="${CHUNK_SECONDS:-480}"
@@ -60,6 +60,8 @@ import json, sys
 d = json.load(sys.stdin)
 for folder in d["data"]["metadata"]:
     for f in folder["files"]:
+        if not f["file_name"].endswith(".csv.gz"):
+            continue  # .json.gz is the same data, unused by dld_to_parquet.sh
         print("\t".join([folder["file_folder"], f["file_name"], str(f["file_size"])]))
 '
 }

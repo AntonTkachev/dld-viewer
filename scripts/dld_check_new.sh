@@ -53,5 +53,8 @@ check() {
   echo
 }
 
-check "TX"   470061 "$HOME/Downloads/dld_transactions"
-check "RENT" 468586 "$HOME/Downloads/dld_rent_contracts"
+HERE="$(cd "$(dirname "$0")" && pwd)"
+RAW="$(cd "$HERE/.." && pwd)/data/raw"
+
+check "TX"   470061 "$RAW/dld_transactions"
+check "RENT" 468586 "$RAW/dld_rent_contracts"

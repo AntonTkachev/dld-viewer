@@ -5,6 +5,9 @@ rents-*.csv
 # Parquet snapshots — too large for GitHub; rebuild via scripts/dld_refresh.sh
 data/*.parquet
 
+# Raw DLD/DM downloads (multi-GB, regeneratable via dld_refresh.sh / dld_buildings_pull.sh)
+data/raw/
+
 # Intermediate JSON outputs (inlined into HTML at build time)
 data/aggregates_intermediate/
 

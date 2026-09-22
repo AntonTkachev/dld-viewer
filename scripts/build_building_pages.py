@@ -540,6 +540,7 @@ def total_sales(bname):
 # ── Generate output files ────────────────────────────────────────────────────
 print("Writing output files…", flush=True)
 search_index = []
+project_slugs = {}
 seen_slugs = {}
 written = 0
 skipped = 0
@@ -717,6 +718,8 @@ for bname in sorted(bld.keys()):
     # ── RERA enrichment ──────────────────────────────────────────────────
     pno = bld_pno.get(bname)
     meta = rera_meta.get(pno, {}) if pno else {}
+    if pno:
+        project_slugs.setdefault(pno, []).append(slug)
 
     # ── Write JSON ───────────────────────────────────────────────────────
     out = {
@@ -774,4 +777,9 @@ with open(idx_path, 'w') as f:
     json.dump(search_index, f, ensure_ascii=False, separators=(',', ':'))
 
 print(f"  search-index.json  →  {len(search_index):,} buildings  ({os.path.getsize(idx_path)//1024} KB)")
+
+proj_idx_path = os.path.join(OUT_DIR, 'project-index.json')
+with open(proj_idx_path, 'w') as f:
+    json.dump(project_slugs, f, ensure_ascii=False, separators=(',', ':'))
+print(f"  project-index.json  →  {len(project_slugs):,} project_numbers  ({os.path.getsize(proj_idx_path)//1024} KB)")
 print("Done!")
