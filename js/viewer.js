@@ -2417,7 +2417,7 @@ function _ensureBuildingsData() {
     const s = document.createElement('script');
     s.src = '/buildings/data.js?v=' + (window.__BUILDINGS_VER__ || '');
     s.onload = () => { _initBuildingShapes(); resolve(); };
-    s.onerror = () => resolve(); // fail quietly — buildings layer just stays empty
+    s.onerror = () => { _buildingsLoadPromise = null; resolve(); }; // let the next call retry
     document.head.appendChild(s);
   });
   return _buildingsLoadPromise;
