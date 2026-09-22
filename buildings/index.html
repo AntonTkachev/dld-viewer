@@ -485,6 +485,9 @@ document.getElementById('btnReset').addEventListener('click', ()=>{
   sortBy.value='tx'; page=0; applyFilters();
 });
 
+const qParam = new URLSearchParams(location.search).get('q');
+if (qParam) fName.value = qParam;
+
 fetch('/buildings/search-index.json')
   .then(r=>{ if(!r.ok) throw 0; return r.json(); })
   .then(data=>{

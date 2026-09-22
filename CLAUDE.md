@@ -61,12 +61,15 @@ ZSTD-9 compressed, Parquet. Read with DuckDB / Polars / pyarrow. All columns are
 data/
   tx.parquet            ← deduplicated transactions
   rents.parquet         ← deduplicated rent contracts
-~/Downloads/dld_transactions/
-  transactions_<date>_*/<filename>.csv.gz   ← raw snapshot (golden source backup)
-  download.log
-~/Downloads/dld_rent_contracts/
-  rent_contracts_<date>_*/<filename>.csv.gz
-  download.log
+  raw/
+    dld_transactions/
+      transactions_<date>_*/<filename>.csv.gz   ← raw snapshot (golden source backup)
+      download.log
+    dld_rent_contracts/
+      rent_contracts_<date>_*/<filename>.csv.gz
+      download.log
+    dld_buildings/
+      building_summary_information.csv.gz
 scripts/
   dld_download.sh       ← polite (1.5 MB/s) resumable downloader
   dld_to_parquet.sh     ← dedup latest snapshot → parquet (DuckDB)
@@ -82,7 +85,7 @@ scripts/
   khda_refresh.sh       ← weekly orchestrator: scrape → pull → merge → build_pages
 ```
 
-Raw downloads live outside the repo (`~/Downloads/...`) because they're large (~2.4 GB) and regeneratable. `.gitignore` blocks `transactions-*.csv` / `rents-*.csv` in repo root (legacy DLD-portal exports — superseded by Parquet).
+Raw downloads live in `data/raw/` (gitignored — large, ~2.4 GB, and regeneratable via `dld_refresh.sh` / `dld_buildings_pull.sh`). `.gitignore` also blocks `transactions-*.csv` / `rents-*.csv` in repo root (legacy DLD-portal exports — superseded by Parquet).
 
 ## Don't trust the DLD-portal CSV files
 
@@ -124,11 +127,11 @@ All five datasets below share one public API:
 
 | Dataset | id | Portal | Pull script | Output | Size | Refresh |
 |---|---:|---|---|---|---:|---|
-| Transactions (sales / mortgages / gifts) | 470061 | <https://data.dubai/en/l/470061> | `scripts/dld_tx_pull.sh` → `scripts/dld_to_parquet.sh ~/Downloads/dld_transactions data/tx.parquet` | `data/tx.parquet` (also raw CSVs in `~/Downloads/dld_transactions/`) | 60 MB | weekly (irregular cadence — see fact #7) |
-| Rent contracts (Ejari) | 468586 | <https://data.dubai/en/l/468586> | `scripts/dld_rents_pull.sh` → `scripts/dld_to_parquet.sh ~/Downloads/dld_rent_contracts data/rents.parquet` | `data/rents.parquet` | 287 MB | weekly |
+| Transactions (sales / mortgages / gifts) | 470061 | <https://data.dubai/en/l/470061> | `scripts/dld_tx_pull.sh` → `scripts/dld_to_parquet.sh data/raw/dld_transactions data/tx.parquet` | `data/tx.parquet` (also raw CSVs in `data/raw/dld_transactions/`) | 60 MB | weekly (irregular cadence — see fact #7) |
+| Rent contracts (Ejari) | 468586 | <https://data.dubai/en/l/468586> | `scripts/dld_rents_pull.sh` → `scripts/dld_to_parquet.sh data/raw/dld_rent_contracts data/rents.parquet` | `data/rents.parquet` | 287 MB | weekly |
 | Real Estate Projects (RERA register) | 467654 | <https://data.dubai/en/l/467654> | `scripts/dld_projects_pull.py` | `data/dld_projects.csv.gz` | 451 KB | weekly |
 | Communities (DM GIS NET admin polygons) | 461494 | <https://data.dubai/en/l/461494> | `scripts/dld_communities_pull.sh` → `scripts/dld_communities_to_geojson.py` | `data/dld_communities.kml` + `data/dld_communities.geojson` | 2.3 MB / 3.4 MB | rarely (boundaries are stable) |
-| Building Summary Information (DM Building Control completion certificates) | 459523 | <https://data.dubai/en/l/459523> | `scripts/dld_buildings_pull.sh` → `scripts/dld_buildings_to_signal.py` | `data/dld_buildings_signal.json` (slim 1.8 MB digest; raw 207 MB CSV stays in `~/Downloads/dld_buildings/`) | 1.8 MB | monthly |
+| Building Summary Information (DM Building Control completion certificates) | 459523 | <https://data.dubai/en/l/459523> | `scripts/dld_buildings_pull.sh` → `scripts/dld_buildings_to_signal.py` | `data/dld_buildings_signal.json` (slim 1.8 MB digest; raw 207 MB CSV stays in `data/raw/dld_buildings/`) | 1.8 MB | monthly |
 
 **Cross-checking RERA against DM Buildings + Ejari:** `scripts/_rera_enrich.py` derives a cleaned `__derived_status` per RERA project. Rule: if ≥50% of a project's buildings are status="New" in DM Building Control → silently reclassify ACTIVE → FINISHED. Fallback: Ejari rentals ≥5/12mo or ≥30 total. Mechanism stays server-side (data.json doesn't expose the join), so the construction page and map badges show a cleaner pipeline than RERA alone.
 

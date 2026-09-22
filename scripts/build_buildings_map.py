@@ -1195,28 +1195,28 @@ def write_bundle(matched: list) -> str:
 
 
 def patch_template_src(bundle_hash: str) -> None:
-    """Insert <script src="/buildings/data.js?v=..."> into template.html
-    (after polygons/curated.js) and remove any prior inline `const BUILDINGS = …`."""
+    """Set window.__BUILDINGS_VER__ in template.html — viewer.js lazy-loads
+    buildings/data.js itself, so no static <script src> tag is needed."""
     with HTML.open(encoding='utf-8') as f:
         lines = f.readlines()
 
     # Drop any previous inline BUILDINGS line.
     lines = [l for l in lines if not l.startswith('const BUILDINGS = ')]
 
-    src_tag = f'<script src="/buildings/data.js?v={bundle_hash}"></script>\n'
+    ver_tag = f'<script>window.__BUILDINGS_VER__="{bundle_hash}";</script>\n'
     existing = next((i for i, l in enumerate(lines)
-                     if '/buildings/data.js' in l), None)
+                     if '__BUILDINGS_VER__' in l or '/buildings/data.js' in l), None)
     if existing is not None:
-        lines[existing] = src_tag
-        print(f'Updated <script src=buildings/data.js> on line {existing + 1}')
+        lines[existing] = ver_tag
+        print(f'Updated __BUILDINGS_VER__ on line {existing + 1}')
     else:
         anchor = next((i for i, l in enumerate(lines)
                        if '/polygons/curated.js' in l), None)
         if anchor is None:
             print('Could not find polygons/curated.js anchor', file=sys.stderr)
             return
-        lines.insert(anchor + 1, src_tag)
-        print(f'Inserted <script src=buildings/data.js> after polygons (line {anchor + 2})')
+        lines.insert(anchor + 1, ver_tag)
+        print(f'Inserted __BUILDINGS_VER__ after polygons (line {anchor + 2})')
 
     with HTML.open('w', encoding='utf-8') as f:
         f.writelines(lines)

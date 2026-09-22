@@ -147,6 +147,17 @@ def parse_year(s):
         return None
 
 
+def load_project_building_slugs():
+    """Map RERA project_number → [building slugs] from buildings/project-index.json
+    (written by build_building_pages.py from the same tx.parquet building→
+    project_number join). Returns {} if the file hasn't been generated yet."""
+    path = os.path.join(ROOT, 'buildings', 'project-index.json')
+    if not os.path.exists(path):
+        return {}
+    with open(path, encoding='utf-8') as f:
+        return json.load(f)
+
+
 def load_projects():
     # Use the shared enricher so the construction page and the map merger
     # see the same derived statuses. Each row gets __derived_status +
@@ -155,6 +166,7 @@ def load_projects():
     from _rera_enrich import load_enriched_rows
     rows = load_enriched_rows()
     area_slugs = load_area_slugs()
+    project_bld_slugs = load_project_building_slugs()
     aliases = load_aliases()
     dev_map = aliases['developers']
     cls_map = aliases['project_classifications']
@@ -223,6 +235,8 @@ def load_projects():
             row['rn'] = r['__rent_n']
         if r['__rent_n_recent']:
             row['rn12'] = r['__rent_n_recent']
+        if proj_num in project_bld_slugs:
+            row['bldn'] = len(project_bld_slugs[proj_num])
         # *_orig fields are emitted only when an alias actually changed the
         # displayed value — keeps the JSON slim and signals to the UI
         # which cells deserve the "ᵃʳ" tooltip flag.
@@ -285,6 +299,7 @@ COPY = {
         sort_col_units='Юниты', sort_col_area='Район', sort_col_master='Master-project',
         sort_col_dev='Застройщик', sort_col_end='Сдача',
         sort_col_sales='Активность за 12 мес (DLD)', col_sales_tooltip='Сделок / аренд за последние 12 месяцев. Аренда может быть короче года — цифра может быть чуть завышена. Всего с начала:',
+        bld_link_title='Здания этого проекта',
         st_FINISHED='Сдан', st_ACTIVE='Строится', st_NOT_STARTED='Не начат',
         st_PENDING='Ожидание', st_CONDITIONAL_ACTIVATING='Условно активен', st_FRIEZED='Заморожен',
         st_OVERDUE='Просрочен',
@@ -315,6 +330,7 @@ COPY = {
         sort_col_units='Units', sort_col_area='Area', sort_col_master='Master project',
         sort_col_dev='Developer', sort_col_end='Completion',
         sort_col_sales='Activity, last 12mo (DLD)', col_sales_tooltip='Sales / rentals in the last 12 months. Leases can run shorter than a year, so this can run slightly high. All-time total:',
+        bld_link_title='Buildings in this project',
         st_FINISHED='Finished', st_ACTIVE='Active', st_NOT_STARTED='Not started',
         st_PENDING='Pending', st_CONDITIONAL_ACTIVATING='Cond. active', st_FRIEZED='Frozen',
         st_OVERDUE='Overdue',
@@ -345,6 +361,7 @@ COPY = {
         sort_col_units='الوحدات', sort_col_area='المنطقة', sort_col_master='المشروع الرئيسي',
         sort_col_dev='المطور', sort_col_end='التسليم',
         sort_col_sales='النشاط خلال 12 شهرًا (DLD)', col_sales_tooltip='صفقات البيع / الإيجار خلال آخر 12 شهرًا. قد تكون عقود الإيجار أقصر من سنة، فقد يكون الرقم أعلى قليلًا من الواقع. الإجمالي منذ البداية:',
+        bld_link_title='مباني هذا المشروع',
         st_FINISHED='مكتمل', st_ACTIVE='نشط', st_NOT_STARTED='لم يبدأ',
         st_PENDING='معلق', st_CONDITIONAL_ACTIVATING='نشط مشروط', st_FRIEZED='مجمد',
         st_OVERDUE='متأخر',
@@ -375,6 +392,7 @@ COPY = {
         sort_col_units='यूनिट', sort_col_area='क्षेत्र', sort_col_master='मास्टर प्रोजेक्ट',
         sort_col_dev='डेवलपर', sort_col_end='सम्पन्न',
         sort_col_sales='पिछले 12 माह की गतिविधि (DLD)', col_sales_tooltip='पिछले 12 महीनों में बिक्री / किराया। पट्टे एक वर्ष से छोटे हो सकते हैं, इसलिए यह संख्या थोड़ी अधिक हो सकती है। शुरुआत से कुल:',
+        bld_link_title='इस प्रोजेक्ट की इमारतें',
         st_FINISHED='सम्पन्न', st_ACTIVE='सक्रिय', st_NOT_STARTED='शुरू नहीं',
         st_PENDING='लंबित', st_CONDITIONAL_ACTIVATING='सशर्त सक्रिय', st_FRIEZED='फ्रोजन',
         st_OVERDUE='विलंबित',
@@ -405,6 +423,7 @@ COPY = {
         sort_col_units='户数', sort_col_area='社区', sort_col_master='主项目',
         sort_col_dev='开发商', sort_col_end='完工',
         sort_col_sales='近12个月活跃度（DLD）', col_sales_tooltip='近12个月的销售／租赁数。租约可能不满一年，此数字可能略偏高。自开盘以来累计：',
+        bld_link_title='该项目的楼盘',
         st_FINISHED='已完成', st_ACTIVE='在建', st_NOT_STARTED='未启动',
         st_PENDING='待定', st_CONDITIONAL_ACTIVATING='有条件激活', st_FRIEZED='冻结',
         st_OVERDUE='逾期',
@@ -613,6 +632,8 @@ def render_page(lang, projects_count, hero, this_year):
   .nav-foot a{{color:#1d4ed8;text-decoration:none}}
   td .proj-pn{{font-weight:600;color:#0f172a;display:block;line-height:1.3}}
   td .proj-sub{{color:#64748b;font-size:11.5px;line-height:1.3;margin-top:1px}}
+  td .bld-link{{display:inline-flex;color:#1d4ed8;margin-inline-start:6px;vertical-align:middle}}
+  td .bld-link:hover{{color:#1641aa}}
   /* Aliased developer/project name — translated by our manual map. The
      superscript ᵃʳ flag plus dotted underline tells the user this isn't
      the literal RERA spelling; hover shows the original Arabic. */
@@ -882,6 +903,9 @@ function renderBody() {{
     if (p.v) subBits.push(p.v + " villa");
     if (p.l) subBits.push(p.l + " land");
     const projSub = subBits.length ? `<span class="proj-sub">${{_h(subBits.join(" · "))}}</span>` : "";
+    const bldLink = p.bldn
+      ? `<a class="bld-link" href="/buildings/?q=${{encodeURIComponent(p.pn)}}" title="${{_h(COPY.bld_link_title)}}" target="_blank" onclick="event.stopPropagation()"><svg width="13" height="13" viewBox="0 0 24 24" aria-hidden="true"><rect x="4" y="3" width="16" height="18" rx="1.5" fill="none" stroke="currentColor" stroke-width="2"/><rect x="7.4" y="6.5" width="2.2" height="2.2" fill="currentColor"/><rect x="14.4" y="6.5" width="2.2" height="2.2" fill="currentColor"/><rect x="7.4" y="11.4" width="2.2" height="2.2" fill="currentColor"/><rect x="14.4" y="11.4" width="2.2" height="2.2" fill="currentColor"/><rect x="7.4" y="16.3" width="2.2" height="2.2" fill="currentColor"/><rect x="14.4" y="16.3" width="2.2" height="2.2" fill="currentColor"/></svg></a>`
+      : "";
     // Aliased developer name: show English, tooltip the original Arabic.
     // Marker dot signals "translated" so users know it isn't raw RERA.
     const devCell = p.dev_orig
@@ -892,7 +916,7 @@ function renderBody() {{
       ? `<span title="${{_h(salesTitle)}}">${{fmt(p.sn12||0)}}${{p.rn12 ? " / " + fmt(p.rn12) : ""}}</span>`
       : _h(COPY.no_data);
     return `<tr>
-      <td><span class="proj-pn">${{projName}}</span>${{projSub}}</td>
+      <td><span class="proj-pn">${{projName}}</span>${{bldLink}}${{projSub}}</td>
       <td>${{stCell}}</td>
       <td class="num">${{pctCell}}</td>
       <td class="num">${{unitsCell}}</td>

@@ -49,6 +49,7 @@ setTimeout(() => {
         if (item.id === 'mp-search') {
           const inp = document.getElementById('search-input');
           if (inp) { inp.value = ''; setTimeout(()=>inp.focus(), 0); _renderSearchResults(''); }
+          _ensureBuildingsData(); // preload so building results are ready by the time they type
         }
         if (item.id === 'mp-mask') {
           if (typeof renderMaskList === 'function') renderMaskList();
@@ -1574,6 +1575,7 @@ function _switchLevel(lvl) {
   });
   if (lvl === 99 && !map.hasLayer(buildingLayer)) {
     buildingLayer.addTo(map);
+    _ensureBuildingsData();
     if (typeof renderPoiList === 'function') renderPoiList();
   } else if (prevLevel === 99 && lvl !== 99 && map.hasLayer(buildingLayer)) {
     map.removeLayer(buildingLayer);
@@ -1720,15 +1722,23 @@ function _renderSearchResults(query){
   // ~2,400 of them isn't useful the way browsing the district list is.
   let buildings = [];
   if (q) {
-    if (!_buildingSearchIndex) _buildingSearchIndex = _buildBuildingSearchIndex();
-    buildings = _buildingSearchIndex.filter(x => x.name.toLowerCase().includes(q));
-    buildings.sort((a,b) => {
-      const nameMatch = n => n.toLowerCase().startsWith(q) ? 0 : 1;
-      const ap = nameMatch(a.name), bp = nameMatch(b.name);
-      if (ap !== bp) return ap - bp;
-      return a.display.toLowerCase().localeCompare(b.display.toLowerCase());
-    });
-    buildings = buildings.slice(0, 10);
+    if (typeof BUILDINGS === 'undefined') {
+      // re-render once data arrives, if the query is still the same
+      _ensureBuildingsData().then(() => {
+        const inp = document.getElementById('search-input');
+        if (inp && inp.value.toLowerCase().trim() === q) _renderSearchResults(inp.value);
+      });
+    } else {
+      if (!_buildingSearchIndex) _buildingSearchIndex = _buildBuildingSearchIndex();
+      buildings = _buildingSearchIndex.filter(x => x.name.toLowerCase().includes(q));
+      buildings.sort((a,b) => {
+        const nameMatch = n => n.toLowerCase().startsWith(q) ? 0 : 1;
+        const ap = nameMatch(a.name), bp = nameMatch(b.name);
+        if (ap !== bp) return ap - bp;
+        return a.display.toLowerCase().localeCompare(b.display.toLowerCase());
+      });
+      buildings = buildings.slice(0, 10);
+    }
   }
 
   const el = document.getElementById('search-results');
@@ -2394,7 +2404,24 @@ const _bldShapes = new Map(); // slug → Leaflet shape, for ?bld= deep-link
 // Viridis 5-step (same direction as district choropleth: low=dark purple, high=yellow)
 const _BLD_RAMP = RAMP_VIRIDIS;
 const _BLD_BREAKS = [20, 50, 100, 500]; // deals thresholds (4 breaks → 5 buckets)
-if (typeof BUILDINGS !== 'undefined') {
+
+// BUILDINGS is fetched lazily — only when the buildings layer is actually used.
+let _buildingsLoadPromise = null;
+function _ensureBuildingsData() {
+  if (typeof BUILDINGS !== 'undefined') return Promise.resolve();
+  if (_buildingsLoadPromise) return _buildingsLoadPromise;
+  _buildingsLoadPromise = new Promise((resolve) => {
+    const s = document.createElement('script');
+    s.src = '/buildings/data.js?v=' + (window.__BUILDINGS_VER__ || '');
+    s.onload = () => { _initBuildingShapes(); resolve(); };
+    s.onerror = () => resolve(); // fail quietly — buildings layer just stays empty
+    document.head.appendChild(s);
+  });
+  return _buildingsLoadPromise;
+}
+
+function _initBuildingShapes() {
+  if (typeof BUILDINGS === 'undefined') return;
   const _bldColor = (d) => _BLD_RAMP[d >= 500 ? 4 : d >= 100 ? 3 : d >= 50 ? 2 : d >= 20 ? 1 : 0];
   const _bldRadius = (d) => {
     const r = 2 + Math.log10(Math.max(1, d)) * 3;
@@ -2465,6 +2492,8 @@ if (typeof BUILDINGS !== 'undefined') {
     shape.addTo(buildingLayer);
     if (b.s) _bldShapes.set(b.s, {shape, b});
   }
+  _updateBldLegend();
+  if (typeof renderPoiList === 'function') renderPoiList();
 }
 
 // Building layer legend — appended to #legend whenever buildings layer is active.
@@ -2488,7 +2517,7 @@ function _updateBldLegend() {
 }
 buildingLayer.on('add remove', _updateBldLegend);
 
-if (minLevel === 99) buildingLayer.addTo(map);
+if (minLevel === 99) { buildingLayer.addTo(map); _ensureBuildingsData(); }
 
 applyMask(currentMask, currentMaskPeriod, { pushUrl: false });
 if (currentView === 'table') setView('table', { pushUrl: false, force: true });
@@ -2579,8 +2608,8 @@ _applyLayersFromUrl();
 // Deep-link: ?bld=<slug> → switch to buildings level, fly to building, open popup
 (function() {
   const bld = new URLSearchParams(window.location.search).get('bld');
-  if (!bld || typeof BUILDINGS === 'undefined') return;
-  _onSearchSelectBuilding(bld);
+  if (!bld) return;
+  _ensureBuildingsData().then(() => _onSearchSelectBuilding(bld));
 })();
 
 if (!new URLSearchParams(window.location.search).get('bld')) {

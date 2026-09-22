@@ -112,6 +112,8 @@
   .nav-foot a{color:#1d4ed8;text-decoration:none}
   td .proj-pn{font-weight:600;color:#0f172a;display:block;line-height:1.3}
   td .proj-sub{color:#64748b;font-size:11.5px;line-height:1.3;margin-top:1px}
+  td .bld-link{display:inline-flex;color:#1d4ed8;margin-inline-start:6px;vertical-align:middle}
+  td .bld-link:hover{color:#1641aa}
   /* Aliased developer/project name — translated by our manual map. The
      superscript ᵃʳ flag plus dotted underline tells the user this isn't
      the literal RERA spelling; hover shows the original Arabic. */
@@ -171,7 +173,7 @@
 
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
 <script>
-const COPY = {"breadcrumb_dubai": "Дубай", "section": "Строящиеся объекты в Дубае", "h1": "Стройки Дубая — RERA реестр", "lede": "Проект-уровень из реестра RERA: {n_total} объектов, {n_inflight} в работе, {units} юнитов в пайплайне. Фильтры по статусу/застройщику/району и графики обновляются вместе с таблицей.", "cta_map": "Показать на карте", "title": "Стройки Дубая — реестр RERA с фильтрами и графиками", "meta": "{n_inflight} активных строек из {n_total} проектов RERA. Анализ по застройщикам, районам, годам сдачи. Полный реестр с фильтрами и графиками.", "h_inflight": "В работе сейчас", "h_units": "Юнитов в пайплайне", "h_completing": "Сдача в {y}", "h_top_dev": "Лидер по проектам", "h_avg_pct": "Средняя готовность", "chart_status": "Распределение по статусу", "chart_completion": "Сдача активных по годам", "chart_top_devs": "Топ-10 застройщиков (in-flight)", "chart_top_areas": "Топ-10 районов (in-flight)", "filter_status": "Статус", "filter_search": "Поиск проекта или застройщика…", "filter_area": "Все районы", "filter_clear": "Сбросить", "showing": "Показано {n} из {total}", "sort_col_name": "Проект", "sort_col_status": "Статус", "sort_col_pct": "Готовность", "sort_col_units": "Юниты", "sort_col_area": "Район", "sort_col_master": "Master-project", "sort_col_dev": "Застройщик", "sort_col_end": "Сдача", "sort_col_sales": "Активность за 12 мес (DLD)", "col_sales_tooltip": "Сделок / аренд за последние 12 месяцев. Аренда может быть короче года — цифра может быть чуть завышена. Всего с начала:", "st_FINISHED": "Сдан", "st_ACTIVE": "Строится", "st_NOT_STARTED": "Не начат", "st_PENDING": "Ожидание", "st_CONDITIONAL_ACTIVATING": "Условно активен", "st_FRIEZED": "Заморожен", "st_OVERDUE": "Просрочен", "per_page": "На странице", "prev": "←", "next": "→", "empty_results": "Ничего не найдено — измени фильтры.", "no_units": "—", "no_data": "—", "nav_map": "← К карте", "nav_districts": "Все районы →"};
+const COPY = {"breadcrumb_dubai": "Дубай", "section": "Строящиеся объекты в Дубае", "h1": "Стройки Дубая — RERA реестр", "lede": "Проект-уровень из реестра RERA: {n_total} объектов, {n_inflight} в работе, {units} юнитов в пайплайне. Фильтры по статусу/застройщику/району и графики обновляются вместе с таблицей.", "cta_map": "Показать на карте", "title": "Стройки Дубая — реестр RERA с фильтрами и графиками", "meta": "{n_inflight} активных строек из {n_total} проектов RERA. Анализ по застройщикам, районам, годам сдачи. Полный реестр с фильтрами и графиками.", "h_inflight": "В работе сейчас", "h_units": "Юнитов в пайплайне", "h_completing": "Сдача в {y}", "h_top_dev": "Лидер по проектам", "h_avg_pct": "Средняя готовность", "chart_status": "Распределение по статусу", "chart_completion": "Сдача активных по годам", "chart_top_devs": "Топ-10 застройщиков (in-flight)", "chart_top_areas": "Топ-10 районов (in-flight)", "filter_status": "Статус", "filter_search": "Поиск проекта или застройщика…", "filter_area": "Все районы", "filter_clear": "Сбросить", "showing": "Показано {n} из {total}", "sort_col_name": "Проект", "sort_col_status": "Статус", "sort_col_pct": "Готовность", "sort_col_units": "Юниты", "sort_col_area": "Район", "sort_col_master": "Master-project", "sort_col_dev": "Застройщик", "sort_col_end": "Сдача", "sort_col_sales": "Активность за 12 мес (DLD)", "col_sales_tooltip": "Сделок / аренд за последние 12 месяцев. Аренда может быть короче года — цифра может быть чуть завышена. Всего с начала:", "bld_link_title": "Здания этого проекта", "st_FINISHED": "Сдан", "st_ACTIVE": "Строится", "st_NOT_STARTED": "Не начат", "st_PENDING": "Ожидание", "st_CONDITIONAL_ACTIVATING": "Условно активен", "st_FRIEZED": "Заморожен", "st_OVERDUE": "Просрочен", "per_page": "На странице", "prev": "←", "next": "→", "empty_results": "Ничего не найдено — измени фильтры.", "no_units": "—", "no_data": "—", "nav_map": "← К карте", "nav_districts": "Все районы →"};
 const HERO = {"inflight": 1106, "units_pipeline": 263561, "completing_year": 60, "this_year": 2026, "top_dev": "Nakheel PJSC", "top_dev_n": 177, "avg_pct_inflight": 11.4};
 const LANG = "ru";
 const BASE_URL = "https://dxbcompass.com";
@@ -381,6 +383,9 @@ function renderBody() {
     if (p.v) subBits.push(p.v + " villa");
     if (p.l) subBits.push(p.l + " land");
     const projSub = subBits.length ? `<span class="proj-sub">${_h(subBits.join(" · "))}</span>` : "";
+    const bldLink = p.bldn
+      ? `<a class="bld-link" href="/buildings/?q=${encodeURIComponent(p.pn)}" title="${_h(COPY.bld_link_title)}" target="_blank" onclick="event.stopPropagation()"><svg width="13" height="13" viewBox="0 0 24 24" aria-hidden="true"><rect x="4" y="3" width="16" height="18" rx="1.5" fill="none" stroke="currentColor" stroke-width="2"/><rect x="7.4" y="6.5" width="2.2" height="2.2" fill="currentColor"/><rect x="14.4" y="6.5" width="2.2" height="2.2" fill="currentColor"/><rect x="7.4" y="11.4" width="2.2" height="2.2" fill="currentColor"/><rect x="14.4" y="11.4" width="2.2" height="2.2" fill="currentColor"/><rect x="7.4" y="16.3" width="2.2" height="2.2" fill="currentColor"/><rect x="14.4" y="16.3" width="2.2" height="2.2" fill="currentColor"/></svg></a>`
+      : "";
     // Aliased developer name: show English, tooltip the original Arabic.
     // Marker dot signals "translated" so users know it isn't raw RERA.
     const devCell = p.dev_orig
@@ -391,7 +396,7 @@ function renderBody() {
       ? `<span title="${_h(salesTitle)}">${fmt(p.sn12||0)}${p.rn12 ? " / " + fmt(p.rn12) : ""}</span>`
       : _h(COPY.no_data);
     return `<tr>
-      <td><span class="proj-pn">${projName}</span>${projSub}</td>
+      <td><span class="proj-pn">${projName}</span>${bldLink}${projSub}</td>
       <td>${stCell}</td>
       <td class="num">${pctCell}</td>
       <td class="num">${unitsCell}</td>

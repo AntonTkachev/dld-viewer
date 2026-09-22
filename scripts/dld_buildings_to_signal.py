@@ -2,7 +2,7 @@
 """Precompute the building-completion signal for the RERA enricher.
 
 Reads:
-  ~/Downloads/dld_buildings/building_summary_information.csv.gz
+  data/raw/dld_buildings/building_summary_information.csv.gz
   (527K rows, Dubai Municipality Building Control Department)
 
 Writes:
@@ -28,7 +28,7 @@ import sys
 from collections import Counter
 
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-SRC = os.path.expanduser('~/Downloads/dld_buildings/building_summary_information.csv.gz')
+SRC = os.path.join(ROOT, 'data', 'raw', 'dld_buildings', 'building_summary_information.csv.gz')
 OUT = os.path.join(ROOT, 'data', 'dld_buildings_signal.json')
 
 
