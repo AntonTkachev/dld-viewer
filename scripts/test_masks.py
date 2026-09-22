@@ -92,6 +92,8 @@ LIFECYCLE_GOLDEN = [
     'jlt (jumeirah lake towers)', 'jbr (jumeirah beach residence)',
 ]
 
+GOLDEN_SPLIT_MASTERS = ['dubai marina', 'bluewaters island', 'jumeirah park']
+
 CONST_RE = {
     name: re.compile(rf'const {name} = (\{{.*?\}});\s*\n', re.S)
     for name in list(COV_MIN) + ['LIFECYCLE']
@@ -190,6 +192,22 @@ def load_polygon_keys(geojson_path):
             if feat['properties'].get('key')}
 
 
+def load_split_master_keys(curated_js_path):
+    if not os.path.exists(curated_js_path):
+        return {}
+    with open(curated_js_path, encoding='utf-8') as f:
+        text = f.read()
+    m = re.search(r'const GEOJSON = (\{.*\});', text, re.S)
+    if not m:
+        return {}
+    geo = json.loads(m.group(1))
+    return {
+        p['name'].lower(): p.get('master_project_key')
+        for p in (f['properties'] for f in geo['features'])
+        if 'split' in (p.get('real_match_kind') or '')
+    }
+
+
 def main():
     consts = extract_consts(os.path.join(ROOT, 'template.html'))
     print('[structure] PASS — 4 _PERIODS + LIFECYCLE parsed from <script> blocks')
@@ -256,6 +274,21 @@ def main():
         print(f'  FAIL LIFECYCLE: missing {lc_missing}')
     else:
         print(f'  OK   LIFECYCLE: all {len(LIFECYCLE_GOLDEN)} key districts present')
+
+    split_keys = load_split_master_keys(os.path.join(ROOT, 'polygons/curated.js'))
+    if split_keys:
+        resolved = sum(1 for v in split_keys.values() if v)
+        if resolved == 0:
+            fails.append('[golden] split polygons: 0/%d resolved a master_project_key' % len(split_keys))
+            print(f'  FAIL split polygons: 0/{len(split_keys)} resolved a master_project_key')
+        else:
+            print(f'  OK   split polygons: {resolved}/{len(split_keys)} resolved a master_project_key')
+        missing = [g for g in GOLDEN_SPLIT_MASTERS if not split_keys.get(g)]
+        if missing:
+            fails.append(f'[golden] split polygons: missing master_project_key for {missing}')
+            print(f'  FAIL split polygons: missing master_project_key for {missing}')
+        else:
+            print(f'  OK   split polygons: all {len(GOLDEN_SPLIT_MASTERS)} golden masters resolved')
 
     if fails:
         print('\n=== FAILED ===')
