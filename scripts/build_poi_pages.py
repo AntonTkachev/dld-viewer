@@ -26,7 +26,7 @@ import sys
 import unicodedata
 
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-SRC = os.path.join(ROOT, 'template.html')
+SRC = os.path.join(ROOT, 'pois', 'all.js')
 GEO = os.path.join(ROOT, 'data', 'dld_communities_osm.geojson')
 
 # Single source of truth for BASE_URL (env-overridable for dev builds).
@@ -283,7 +283,7 @@ COPY = {
 def extract_const(text, name):
     m = re.search(rf'^const {name} = (\[.*\]);\s*$', text, re.MULTILINE)
     if not m:
-        raise RuntimeError(f'const {name} not found in index.html')
+        raise RuntimeError(f'const {name} not found in pois/all.js')
     return json.loads(m.group(1))
 
 

@@ -25,7 +25,6 @@ import time
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parent.parent
-HTML = ROOT / 'template.html'
 OUT  = ROOT / 'data' / 'osm_medical.json'
 URL  = 'https://overpass-api.de/api/interpreter'
 UA   = 'dld-viewer/1'
@@ -127,27 +126,10 @@ def harvest() -> list:
 
 
 def patch_index(medical: list) -> None:
-    """Replace HOSPITALS line with MEDICAL; drop CLINICS line if present."""
-    with HTML.open(encoding='utf-8') as f:
-        lines = f.readlines()
-    medical_line = 'const MEDICAL = ' + json.dumps(medical, separators=(',', ':'), ensure_ascii=False) + ';\n'
-    out, hosp_idx, drop_clinics = [], None, False
-    for i, line in enumerate(lines):
-        if line.startswith('const HOSPITALS = ') or line.startswith('const MEDICAL = '):
-            out.append(medical_line)
-            hosp_idx = i + 1
-        elif line.startswith('const CLINICS = '):
-            drop_clinics = True
-            continue
-        else:
-            out.append(line)
-    if hosp_idx is None:
-        print('Neither HOSPITALS nor MEDICAL const found in index.html', file=sys.stderr)
-        sys.exit(1)
-    with HTML.open('w', encoding='utf-8') as f:
-        f.writelines(out)
-    print(f'Patched MEDICAL at line {hosp_idx} of index.html'
-          + (' (and removed CLINICS line)' if drop_clinics else ''))
+    sys.path.insert(0, str(ROOT / 'scripts'))
+    from _pois_bundle import patch_const
+    h = patch_const('MEDICAL', medical)
+    print(f'Patched MEDICAL in pois/all.js (v={h}) — {len(medical)} entries')
 
 
 def main() -> int:

@@ -191,6 +191,17 @@ for f in curated['features']:
         },
     })
 
+def _round_coords(node, ndigits=6):
+    if isinstance(node, list):
+        if node and isinstance(node[0], (int, float)):
+            return [round(n, ndigits) for n in node]
+        return [_round_coords(n, ndigits) for n in node]
+    return node
+
+
+for feat in new_features:
+    feat['geometry']['coordinates'] = _round_coords(feat['geometry']['coordinates'])
+
 new_geo = {'type': 'FeatureCollection', 'features': new_features}
 new_literal = 'const GEOJSON = ' + json.dumps(new_geo, ensure_ascii=False, separators=(', ', ': ')) + ';\n'
 
