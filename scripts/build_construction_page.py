@@ -552,7 +552,7 @@ def render_page(lang, projects_count, hero, this_year):
 <link rel="icon" type="image/svg+xml" href="{BASE_URL}/favicon.svg">
 <link rel="stylesheet" href="{BASE_URL}/css/viewer.css">
 <script async src="https://www.googletagmanager.com/gtag/js?id=G-5G3EY3Y2KG"></script>
-<script>window.dataLayer=window.dataLayer||[];function gtag(){{dataLayer.push(arguments);}}gtag(\'js\',new Date());gtag(\'config\',\'G-5G3EY3Y2KG\');</script>
+<script>window.dataLayer=window.dataLayer||[];function gtag(){{dataLayer.push(arguments);}}gtag(\'js\',new Date());if(!/^(localhost|127\.0\.0\.1|0\.0\.0\.0)$/.test(location.hostname)){{gtag(\'config\',\'G-5G3EY3Y2KG\');}}</script>
 <style>
   html,body{{background:#f8fafc;min-height:100%}}
   .wrap{{max-width:1280px;margin:0 auto;padding:18px 20px 64px}}
