@@ -1897,6 +1897,9 @@ function _featurePopupHtml(f) {
 
 function _openFeaturePopup(f, latlng) {
   L.popup().setLatLng(latlng).setContent(_featurePopupHtml(f)).openOn(map);
+  if (typeof gtag === 'function') {
+    gtag('event', 'select_content', {content_type: 'district', item_id: f.properties.key || f.properties.name});
+  }
 }
 
 function _findSmallestAt(latlng) {
