@@ -31,9 +31,12 @@ def read_bundle() -> dict:
 
 
 def write_js(consts: dict) -> str:
+    missing = [name for name in CONST_ORDER if name not in consts]
+    if missing:
+        raise RuntimeError(f'refusing to write pois/all.js — missing consts: {missing}')
     lines = [
         'const ' + name + ' = ' + json.dumps(consts[name], separators=(',', ':'), ensure_ascii=False) + ';\n'
-        for name in CONST_ORDER if name in consts
+        for name in CONST_ORDER
     ]
     JS_OUT.parent.mkdir(parents=True, exist_ok=True)
     JS_OUT.write_text(''.join(lines), encoding='utf-8')
