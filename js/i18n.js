@@ -1646,6 +1646,7 @@ function applyLang(newLang) {
   if (typeof renderMaskList === 'function') renderMaskList();
   if (typeof updateMaskCurrentLabel === 'function') updateMaskCurrentLabel();
   if (typeof renderPoiList === 'function') renderPoiList();
+  if (typeof renderTable === 'function') renderTable();
   if (typeof _refreshViewSwitchLabel === 'function') _refreshViewSwitchLabel();
   
   if (typeof renderChoro === 'function') renderChoro();

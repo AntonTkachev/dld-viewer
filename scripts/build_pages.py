@@ -53,6 +53,41 @@ VIEWS = ('map', 'table')
 # OG locale codes for each language.
 OG_LOCALE = {'ru': 'ru_RU', 'en': 'en_US', 'ar': 'ar_AE', 'hi': 'hi_IN', 'zh': 'zh_CN'}
 
+# Keep in sync with the matching keys in js/i18n.js's I18N object.
+TOOLBAR_I18N = {
+    'ru': dict(mp_label_search='Поиск', mp_label_lang='Язык', mp_label_poi='Места',
+               mp_label_mask='Показатель', level_label='Уровни:', poi_title='Места на карте',
+               search_title='Поиск района или здания', search_placeholder='Поиск района или здания...',
+               tv_period_label='Период:', tv_search_placeholder='Поиск района...'),
+    'en': dict(mp_label_search='Search', mp_label_lang='Language', mp_label_poi='Places',
+               mp_label_mask='Indicator', level_label='Levels:', poi_title='Places on map',
+               search_title='Search district or building', search_placeholder='Search district or building...',
+               tv_period_label='Period:', tv_search_placeholder='Search district...'),
+    'ar': dict(mp_label_search='بحث', mp_label_lang='اللغة', mp_label_poi='الأماكن',
+               mp_label_mask='المؤشر', level_label='المستويات:', poi_title='الأماكن على الخريطة',
+               search_title='ابحث عن منطقة أو مبنى', search_placeholder='ابحث عن منطقة أو مبنى...',
+               tv_period_label='الفترة:', tv_search_placeholder='بحث عن منطقة...'),
+    'hi': dict(mp_label_search='खोज', mp_label_lang='भाषा', mp_label_poi='स्थान',
+               mp_label_mask='संकेतक', level_label='स्तर:', poi_title='मानचित्र पर स्थान',
+               search_title='जिला या इमारत खोजें', search_placeholder='जिला या इमारत खोजें...',
+               tv_period_label='अवधि:', tv_search_placeholder='जिला खोजें...'),
+    'zh': dict(mp_label_search='搜索', mp_label_lang='语言', mp_label_poi='地点',
+               mp_label_mask='指标', level_label='层级:', poi_title='地图上的地点',
+               search_title='搜索社区或建筑', search_placeholder='搜索社区或建筑...',
+               tv_period_label='时段:', tv_search_placeholder='搜索社区...'),
+}
+
+MASK_NAME_I18N = {
+    'sales':   dict(ru='Сделки', en='Sales', ar='الصفقات', hi='लेन-देन', zh='销售'),
+    'rents':   dict(ru='Аренда', en='Rentals', ar='الإيجار', hi='किराया', zh='租赁'),
+    'growth':  dict(ru='Рост цены', en='Price growth', ar='نمو السعر', hi='मूल्य वृद्धि', zh='价格涨幅'),
+    'payback': dict(ru='Окупаемость арендой', en='Rental payback', ar='استرداد الإيجار', hi='किराये से वसूली', zh='租金回本'),
+    'lifecycle': dict(ru='Жизненный цикл', en='Market lifecycle', ar='دورة السوق', hi='बाज़ार जीवन-चक्र', zh='市场周期'),
+    'investor':  dict(ru='Инвестор: рост', en='Investor: growth', ar='المستثمر: نمو', hi='निवेशक: ग्रोथ', zh='投资者：增值'),
+    'income':    dict(ru='Инвестор: рента', en='Investor: income', ar='المستثمر: دخل إيجاري', hi='निवेशक: किराया आय', zh='投资者：租金收益'),
+    'formula':   dict(ru='Дубайская формула', en='Dubai formula', ar='معادلة دبي', hi='दुबई फ़ॉर्मूला', zh='迪拜公式'),
+}
+
 # Page chrome — title / desc / keywords / dataset_name per language.
 PAGES = {
     'sales': dict(
@@ -466,6 +501,33 @@ def _lang_path_prefix(lang):
     return '/' + lang
 
 
+def _localize_toolbar(s, lang, initial_mask):
+    tr = TOOLBAR_I18N[lang]
+    ru = TOOLBAR_I18N['ru']
+    if initial_mask in MASK_NAME_I18N:
+        s = s.replace(
+            f'id="mp-mask-current">{MASK_NAME_I18N["sales"]["ru"]}<',
+            f'id="mp-mask-current">{MASK_NAME_I18N[initial_mask][lang]}<',
+        )
+    s = s.replace(f'title="{ru["search_title"]}"', f'title="{tr["search_title"]}"')
+    s = s.replace(f'id="mp-search-label">{ru["mp_label_search"]}<', f'id="mp-search-label">{tr["mp_label_search"]}<')
+    s = s.replace(f'placeholder="{ru["search_placeholder"]}"', f'placeholder="{tr["search_placeholder"]}"')
+    s = s.replace(f'title="{ru["poi_title"]}"', f'title="{tr["poi_title"]}"')
+    s = s.replace(f'id="mp-lang-label">{ru["mp_label_lang"]}<', f'id="mp-lang-label">{tr["mp_label_lang"]}<')
+    s = s.replace(f'id="mp-poi-label">{ru["mp_label_poi"]}<', f'id="mp-poi-label">{tr["mp_label_poi"]}<')
+    s = s.replace(f'id="mp-poi-title">{ru["poi_title"]}<', f'id="mp-poi-title">{tr["poi_title"]}<')
+    s = s.replace(f'id="mp-mask-label">{ru["mp_label_mask"]}<', f'id="mp-mask-label">{tr["mp_label_mask"]}<')
+    s = s.replace(f'id="mp-level-label">Уровни<', f'id="mp-level-label">{tr["level_label"]}<')
+    s = s.replace(f'id="mp-level-title">Уровни<', f'id="mp-level-title">{tr["level_label"]}<')
+    s = s.replace('lang-current-code">RU<', f'lang-current-code">{lang.upper()}<')
+    s = s.replace('data-lang="ru" class="lang-btn active"', 'data-lang="ru" class="lang-btn"')
+    s = s.replace(f'data-lang="{lang}" class="lang-btn"', f'data-lang="{lang}" class="lang-btn active"')
+    s = s.replace(f'id="tv-mask-btn-label">{ru["mp_label_mask"]}<', f'id="tv-mask-btn-label">{tr["mp_label_mask"]}<')
+    s = s.replace('id="tv-period-btn-label">Период<', f'id="tv-period-btn-label">{tr["tv_period_label"]}<')
+    s = s.replace('id="tv-search" type="text" placeholder="Поиск..."', f'id="tv-search" type="text" placeholder="{tr["tv_search_placeholder"]}"')
+    return s
+
+
 def _page_url(page_key, view, lang):
     """Absolute URL for canonical/hreflang/JSON-LD use (includes BASE_URL)."""
     return BASE_URL + _lang_path_prefix(lang) + '/' + page_key + '/' + ('table/' if view == 'table' else '')
@@ -591,6 +653,7 @@ def build(page_key, cfg, view, lang):
         f'<html lang="{lang}" dir="{DIR_FOR_LANG[lang]}">',
         s, count=1,
     )
+    s = _localize_toolbar(s, lang, cfg['initial_mask'])
 
     s = s.replace('href="css/viewer.css"',  f'href="{asset_prefix}css/viewer.css"')
     s = s.replace('href="favicon.svg"',     f'href="{asset_prefix}favicon.svg"')
