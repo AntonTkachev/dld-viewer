@@ -188,6 +188,8 @@ def main():
             'Allow: /\n'
             f'Sitemap: {BASE_URL}/sitemap.xml\n'
         )
+    # llms.txt is hand-curated (docs/site-overview for LLM crawlers) — not
+    # regenerated here, just left in place at ROOT/llms.txt.
     print('robots.txt: written', file=sys.stderr)
 
 

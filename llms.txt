@@ -1,0 +1,27 @@
+# DXBCompass
+
+> Dubai real estate data platform built on official Dubai Land Department (DLD) records — a transaction-data and analytics site, not a property listing portal.
+
+DXBCompass computes market statistics from real, registered DLD transactions and Ejari rent contracts: median sale price, median rent, price per m², price growth over time, rental yield / investment payback period, and market lifecycle stage — broken down by Dubai district/community. Figures are derived from actual closed deals, not estimates, asking prices, or user submissions. Available in English, Arabic, Russian, Hindi, and Chinese (English is canonical).
+
+## Core data views
+- [Sales](https://dxbcompass.com/en/sales/): sale transactions by district — median price, price/m², deal count, historical periods (1/3/5/10 years, all-time)
+- [Rents](https://dxbcompass.com/en/rents/): rent contracts by district — median annual rent, price/m², by room type (studio to 4BR+)
+- [Growth](https://dxbcompass.com/en/growth/): historical price growth by district
+- [Payback](https://dxbcompass.com/en/payback/): rental yield / investment payback period by district
+- [Investor score](https://dxbcompass.com/en/investor/): composite investment attractiveness ranking by district
+- [Construction](https://dxbcompass.com/en/construction/): RERA project pipeline, delivery status, cross-checked against DM Building Control completions
+
+## District pages
+Every Dubai district/community has its own sale and rent pages, e.g. https://dxbcompass.com/en/sales/downtown-dubai/ and https://dxbcompass.com/en/rents/downtown-dubai/ — each with top projects, largest deals, and recent transaction lists as sub-pages.
+
+## Points of interest directories
+[Mosques](https://dxbcompass.com/en/mosques/), [Malls](https://dxbcompass.com/en/malls/), [Schools](https://dxbcompass.com/en/schools/), [Universities](https://dxbcompass.com/en/universities/), [Medical facilities](https://dxbcompass.com/en/medical/) — location directories cross-referenced with nearby districts.
+
+## Reference
+- [FAQ](https://dxbcompass.com/en/faq/): data sourcing, update cadence, methodology, why district names may differ from common usage
+- [Blog](https://dxbcompass.com/en/blog/): market analysis articles
+- [Buildings](https://dxbcompass.com/buildings/): building-level completion data from DM Building Control
+
+## Data source
+Dubai Land Department open data via Dubai Pulse: transaction records (dataset 470061) and Ejari rent contracts (dataset 468586), refreshed weekly. Each snapshot is a complete cumulative history — no data is ever removed.
