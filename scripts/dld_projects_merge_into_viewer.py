@@ -255,19 +255,10 @@ def main() -> int:
         for m, n in no_poly_master.most_common(5):
             print(f'  {n:>4}  {m!r}')
 
-    # Patch index.html
-    with HTML.open(encoding='utf-8') as f:
-        lines = f.readlines()
-    idx = next((i for i, l in enumerate(lines) if l.startswith('const PROJECTS = ')), None)
-    if idx is None:
-        print('PROJECTS const not found in index.html', file=sys.stderr)
-        return 1
-    lines[idx] = ('const PROJECTS = '
-                  + json.dumps(with_inflight, separators=(',', ':'), ensure_ascii=False)
-                  + ';\n')
-    with HTML.open('w', encoding='utf-8') as f:
-        f.writelines(lines)
-    print(f'Patched line {idx + 1} of index.html — {len(with_inflight)} district markers')
+    sys.path.insert(0, str(ROOT / 'scripts'))
+    from _pois_bundle import patch_const
+    h = patch_const('PROJECTS', with_inflight)
+    print(f'Patched PROJECTS in pois/all.js (v={h}) — {len(with_inflight)} district markers')
     return 0
 
 

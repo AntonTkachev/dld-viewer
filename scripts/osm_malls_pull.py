@@ -26,7 +26,6 @@ import time
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parent.parent
-HTML = ROOT / 'template.html'
 OUT  = ROOT / 'data' / 'osm_malls.json'
 URL  = 'https://overpass-api.de/api/interpreter'
 UA   = 'dld-viewer/1'
@@ -205,17 +204,10 @@ def harvest() -> list:
 
 
 def patch_index(malls: list) -> None:
-    with HTML.open(encoding='utf-8') as f:
-        lines = f.readlines()
-    line = 'const MALLS = ' + json.dumps(malls, separators=(',', ':'), ensure_ascii=False) + ';\n'
-    idx = next((i for i, l in enumerate(lines) if l.startswith('const MALLS = ')), None)
-    if idx is None:
-        print('MALLS const not found in index.html', file=sys.stderr)
-        sys.exit(1)
-    lines[idx] = line
-    with HTML.open('w', encoding='utf-8') as f:
-        f.writelines(lines)
-    print(f'Patched MALLS at line {idx + 1} of index.html — {len(malls)} entries')
+    sys.path.insert(0, str(ROOT / 'scripts'))
+    from _pois_bundle import patch_const
+    h = patch_const('MALLS', malls)
+    print(f'Patched MALLS in pois/all.js (v={h}) — {len(malls)} entries')
 
 
 def main() -> int:

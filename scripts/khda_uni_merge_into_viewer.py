@@ -353,16 +353,10 @@ def main():
     print(f'KHDA-only added (geocoded by area centroid): {stats.get("khda_only", 0)}')
     print(f'Total UNIVERSITIES entries on map: {len(unis)}')
 
-    with HTML.open(encoding='utf-8') as f:
-        lines = f.readlines()
-    idx = next((i for i, l in enumerate(lines) if l.startswith('const UNIVERSITIES = ')), None)
-    if idx is None:
-        print('UNIVERSITIES const not found in index.html', file=sys.stderr)
-        return 1
-    lines[idx] = 'const UNIVERSITIES = ' + json.dumps(unis, separators=(',', ':'), ensure_ascii=False) + ';\n'
-    with HTML.open('w', encoding='utf-8') as f:
-        f.writelines(lines)
-    print(f'Patched line {idx + 1} of index.html')
+    sys.path.insert(0, str(ROOT / 'scripts'))
+    from _pois_bundle import patch_const
+    h = patch_const('UNIVERSITIES', unis)
+    print(f'Patched UNIVERSITIES in pois/all.js (v={h})')
     return 0
 
 if __name__ == '__main__':

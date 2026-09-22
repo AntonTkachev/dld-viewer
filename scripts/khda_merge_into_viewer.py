@@ -471,16 +471,10 @@ def main():
     print(f'  geo-rejected {stats["geo_rejected"]:4d}   (name match overruled by >{GEO_SANITY_KM} km from KHDA area)')
     print(f'  unmatched  {stats["none"]:4d}   (KHDA-only without OSM coord: {len(khda) - matched})')
 
-    with HTML.open(encoding='utf-8') as f:
-        lines = f.readlines()
-    idx = next((i for i, l in enumerate(lines) if l.startswith('const SCHOOLS = ')), None)
-    if idx is None:
-        print('SCHOOLS const not found in index.html', file=sys.stderr)
-        return 1
-    lines[idx] = 'const SCHOOLS = ' + json.dumps(schools, separators=(',', ':'), ensure_ascii=False) + ';\n'
-    with HTML.open('w', encoding='utf-8') as f:
-        f.writelines(lines)
-    print(f'Patched line {idx + 1} of index.html')
+    sys.path.insert(0, str(ROOT / 'scripts'))
+    from _pois_bundle import patch_const
+    h = patch_const('SCHOOLS', schools)
+    print(f'Patched SCHOOLS in pois/all.js (v={h})')
 
     # Single entry point: also refresh UNIVERSITIES so callers don't have to
     # remember a second script. KHDA HE has its own STOP set, area-alias
