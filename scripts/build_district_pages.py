@@ -621,9 +621,17 @@ FAQ_COPY = {
         'q_count':  'Сколько сделок прошло в {name}?',
         'a_count':  'В {name} зарегистрировано {n} сделок купли-продажи за всё время. '
                     'Это официальный счёт из реестра DLD.',
+        'q_history': 'Есть ли история сделок по {name}?',
+        'a_history': 'Да — на DXBCompass доступна полная история и данные по сделкам '
+                     'в {name}: {n} зарегистрированных сделок с ценой, датой, проектом '
+                     'и площадью, по данным Dubai Land Department, обновляется еженедельно.',
         'q_rent':   'Какая средняя аренда в {name}?',
         'a_rent':   'Медианная годовая аренда в {name} — {med} AED. '
                     'Всего зарегистрировано {n} договоров аренды (Ejari).',
+        'q_rent_history': 'Есть ли данные по договорам аренды в {name}?',
+        'a_rent_history': 'Да — на DXBCompass доступна история договоров аренды (Ejari) '
+                          'в {name}: {n} зарегистрированных договоров с суммой аренды, '
+                          'датой и типом объекта, обновляется еженедельно.',
         'q_mix':    'Что преобладает в {name} — квартиры или виллы?',
         'a_mix':    'В {name} {flat_pct}% сделок — квартиры, {villa_pct}% — виллы.',
         'q_top':    'Какие самые активные проекты в {name}?',
@@ -638,9 +646,17 @@ FAQ_COPY = {
         'q_count':  'How many transactions have happened in {name}?',
         'a_count':  '{n} sale transactions have been registered in {name} to date. '
                     'Source: official DLD register.',
+        'q_history': 'Is there a sale transaction history for {name}?',
+        'a_history': 'Yes — DXBCompass lists the full sale transaction history and data '
+                     'for {name}: {n} registered deals with price, date, project and size, '
+                     'sourced directly from the Dubai Land Department and updated weekly.',
         'q_rent':   'What is the average rent in {name}?',
         'a_rent':   'The median annual rent in {name} is {med} AED. '
                     'A total of {n} rental contracts (Ejari) are registered.',
+        'q_rent_history': 'Is rental transaction data available for {name}?',
+        'a_rent_history': 'Yes — DXBCompass tracks the rent transaction history for {name}: '
+                          '{n} registered Ejari contracts with rent amount, date and property '
+                          'type, sourced from the Dubai Land Department and updated weekly.',
         'q_mix':    'What dominates in {name} — apartments or villas?',
         'a_mix':    'In {name}, {flat_pct}% of transactions are apartments, '
                     '{villa_pct}% are villas.',
@@ -656,9 +672,16 @@ FAQ_COPY = {
         'q_count':  'كم عدد الصفقات التي تمت في {name}؟',
         'a_count':  'تم تسجيل {n} صفقة بيع في {name} حتى الآن. '
                     'المصدر: السجل الرسمي لدائرة الأراضي.',
+        'q_history': 'هل تتوفر بيانات تاريخ الصفقات في {name}؟',
+        'a_history': 'نعم — يوفر DXBCompass السجل الكامل لبيانات الصفقات في {name}: '
+                     '{n} صفقة مسجلة مع السعر والتاريخ والمشروع والمساحة، من دائرة '
+                     'الأراضي والأملاك في دبي، ويُحدَّث أسبوعيًا.',
         'q_rent':   'ما متوسط الإيجار في {name}؟',
         'a_rent':   'الإيجار السنوي الوسيط في {name} هو {med} درهم. '
                     'إجمالي {n} عقد إيجار مسجل (إيجاري).',
+        'q_rent_history': 'هل تتوفر بيانات عقود الإيجار في {name}؟',
+        'a_rent_history': 'نعم — يوفر DXBCompass سجل عقود الإيجار (إيجاري) في {name}: '
+                          '{n} عقد مسجل مع قيمة الإيجار والتاريخ ونوع العقار، ويُحدَّث أسبوعيًا.',
         'q_mix':    'ما الذي يهيمن في {name} — الشقق أم الفلل؟',
         'a_mix':    'في {name}، {flat_pct}% من الصفقات شقق و{villa_pct}% فلل.',
         'q_top':    'ما هي أكثر المشاريع نشاطًا في {name}؟',
@@ -673,9 +696,17 @@ FAQ_COPY = {
         'q_count':  '{name} में कितने लेन-देन हुए हैं?',
         'a_count':  'अब तक {name} में {n} बिक्री लेन-देन पंजीकृत हुए हैं। '
                     'स्रोत: DLD का आधिकारिक रजिस्टर।',
+        'q_history': 'क्या {name} में लेन-देन का इतिहास उपलब्ध है?',
+        'a_history': 'हाँ — DXBCompass पर {name} के लेन-देन का पूरा इतिहास और डेटा उपलब्ध है: '
+                     '{n} पंजीकृत सौदे कीमत, तारीख, प्रोजेक्ट और क्षेत्रफल के साथ, '
+                     'Dubai Land Department के आधिकारिक डेटा पर आधारित, साप्ताहिक अपडेट।',
         'q_rent':   '{name} में औसत किराया क्या है?',
         'a_rent':   '{name} में मध्यिका वार्षिक किराया {med} AED है। '
                     'कुल {n} किराये के अनुबंध (Ejari) पंजीकृत हैं।',
+        'q_rent_history': 'क्या {name} में किराये के अनुबंधों का डेटा उपलब्ध है?',
+        'a_rent_history': 'हाँ — DXBCompass पर {name} के Ejari किराया अनुबंधों का इतिहास '
+                          'उपलब्ध है: {n} पंजीकृत अनुबंध किराया राशि, तारीख और प्रॉपर्टी '
+                          'प्रकार के साथ, साप्ताहिक अपडेट।',
         'q_mix':    '{name} में क्या प्रबल है — अपार्टमेंट या विला?',
         'a_mix':    '{name} में {flat_pct}% लेन-देन अपार्टमेंट हैं, '
                     '{villa_pct}% विला हैं।',
@@ -690,9 +721,15 @@ FAQ_COPY = {
         'q_count':  '{name} 已经发生了多少笔交易？',
         'a_count':  '{name} 累计登记了 {n} 笔销售交易。'
                     '数据来源：DLD 官方登记册。',
+        'q_history': '{name} 是否有交易历史记录？',
+        'a_history': '有 — DXBCompass 提供 {name} 的完整交易历史和数据：{n} 笔登记交易，'
+                     '包含价格、日期、项目和面积，数据来自迪拜土地局，每周更新。',
         'q_rent':   '{name} 的平均租金是多少？',
         'a_rent':   '{name} 的年租金中位数为 {med} 迪拉姆。'
                     '已登记 {n} 份租赁合同（Ejari）。',
+        'q_rent_history': '{name} 是否有租赁合同数据？',
+        'a_rent_history': '有 — DXBCompass 提供 {name} 的 Ejari 租赁合同历史记录：'
+                          '{n} 份登记合同，包含租金、日期和物业类型，每周更新。',
         'q_mix':    '{name} 以公寓为主还是别墅为主？',
         'a_mix':    '{name} 中 {flat_pct}% 的交易为公寓，{villa_pct}% 为别墅。',
         'q_top':    '{name} 最活跃的项目有哪些？',
@@ -1086,8 +1123,8 @@ def build_about(name, sale_rec, rent_rec, lang):
         grid_items.append((c['about_stat_ppsqm'], f'{fmt_int(sale_rec["med_ppsqm"], lang)} AED'))
     if rent_rec.get('n'):
         grid_items.append((c['about_stat_rent_n'], fmt_int(rent_rec['n'], lang)))
-    if rent_rec.get('med'):
-        grid_items.append((c['about_stat_rent_med'], f'{fmt_aed(rent_rec["med"], lang)} AED'))
+    if rent_rec.get('med_annual'):
+        grid_items.append((c['about_stat_rent_med'], f'{fmt_aed(rent_rec["med_annual"], lang)} AED'))
 
     grid_html = ''
     if grid_items:
@@ -1121,13 +1158,21 @@ def build_district_faq(name, sale_rec, rent_rec, lang):
             c['q_count'].format(name=name),
             c['a_count'].format(name=name, n=fmt_int(sale_rec['n'], lang)),
         ))
+        qa.append((
+            c['q_history'].format(name=name),
+            c['a_history'].format(name=name, n=fmt_int(sale_rec['n'], lang)),
+        ))
 
-    if rent_rec.get('med') and rent_rec.get('n'):
+    if rent_rec.get('med_annual') and rent_rec.get('n'):
         qa.append((
             c['q_rent'].format(name=name),
             c['a_rent'].format(name=name,
-                               med=fmt_aed(rent_rec['med'], lang),
+                               med=fmt_aed(rent_rec['med_annual'], lang),
                                n=fmt_int(rent_rec['n'], lang)),
+        ))
+        qa.append((
+            c['q_rent_history'].format(name=name),
+            c['a_rent_history'].format(name=name, n=fmt_int(rent_rec['n'], lang)),
         ))
 
     flat = sale_rec.get('flat', {}) or {}
