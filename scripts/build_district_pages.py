@@ -1233,7 +1233,7 @@ def build_top_projects_html(name, mode, slug, rec, lang):
     same data + column layout as the full /projects/ sub-page (reuses
     render_list_table), just capped to 5 rows so Google sees real content
     at first paint instead of only the JS-only detail-content panel."""
-    rows = (rec.get('top_projects') or [])[:5]
+    rows = [r for r in (rec.get('top_projects') or []) if r.get('proj')][:5]
     if not rows:
         return ''
     columns = next(lt[6] for lt in LIST_TYPES if lt[0] == mode and lt[1] == 'projects')
