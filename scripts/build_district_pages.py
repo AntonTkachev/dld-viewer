@@ -32,6 +32,8 @@ ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 SRC  = os.path.join(ROOT, 'template.html')
 TPL  = os.path.join(ROOT, 'templates', 'district.html')
 TPL_LIST = os.path.join(ROOT, 'templates', 'district-list.html')
+CURATED_GEO = os.path.join(ROOT, 'data', 'curated_polygons.geojson')
+NEARBY_N = 4
 
 # Single source of truth for BASE_URL (env-overridable for dev builds).
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
@@ -142,6 +144,7 @@ COPY = {
         'loading': 'Загрузка статистики…',
         'load_err': 'Не удалось загрузить данные',
         'about_title': 'О районе {name}',
+        'nearby_title': 'Похожие районы рядом с {name}',
         'about_intro': '{name} — один из районов Дубая. ',
         'about_unknown': '{name} — один из районов Дубая по данным Dubai Land Department.',
         'about_all_flat':  'Все сделки — квартиры; виллы и таунхаусы в этом районе не строятся.',
@@ -237,6 +240,7 @@ COPY = {
         'loading': 'Loading statistics…',
         'load_err': 'Could not load data',
         'about_title': 'About {name}',
+        'nearby_title': 'Similar districts near {name}',
         'about_intro': '{name} is a Dubai district. ',
         'about_unknown': '{name} is one of the Dubai districts in Dubai Land Department records.',
         'about_all_flat':  'All transactions are apartments; villas and townhouses are not built here.',
@@ -332,6 +336,7 @@ COPY = {
         'loading': 'جاري تحميل الإحصاءات…',
         'load_err': 'تعذر تحميل البيانات',
         'about_title': 'عن منطقة {name}',
+        'nearby_title': 'مناطق مشابهة قريبة من {name}',
         'about_intro': '{name} — حي من أحياء دبي. ',
         'about_unknown': '{name} — أحد أحياء دبي وفقًا لبيانات دائرة الأراضي والأملاك.',
         'about_all_flat':  'جميع الصفقات شقق سكنية؛ لا يوجد فلل ولا تاون هاوس في هذه المنطقة.',
@@ -427,6 +432,7 @@ COPY = {
         'loading': 'आँकड़े लोड हो रहे हैं…',
         'load_err': 'डेटा लोड नहीं हो सका',
         'about_title': '{name} के बारे में',
+        'nearby_title': '{name} के पास समान जिले',
         'about_intro': '{name} — दुबई का एक क्षेत्र है। ',
         'about_unknown': 'Dubai Land Department के अनुसार {name} दुबई के क्षेत्रों में से एक है।',
         'about_all_flat':  'सभी सौदे अपार्टमेंट हैं; इस क्षेत्र में विला और टाउनहाउस नहीं हैं।',
@@ -522,6 +528,7 @@ COPY = {
         'loading': '正在加载统计数据…',
         'load_err': '无法加载数据',
         'about_title': '关于 {name}',
+        'nearby_title': '{name}附近的相似区域',
         'about_intro': '{name} 是迪拜的一个社区。',
         'about_unknown': '根据迪拜土地局的数据,{name} 是迪拜的社区之一。',
         'about_all_flat':  '所有交易均为公寓;该社区没有别墅或联排别墅。',
@@ -1138,6 +1145,84 @@ def build_about(name, sale_rec, rent_rec, lang):
     return f'<section class="about"><h2>{html_escape(title_text)}</h2>{intro}{grid_html}</section>'
 
 
+def _polygon_centroid(feature):
+    """Plain vertex-average centroid — not area-weighted, but good enough
+    to rank nearby districts (Dubai's polygons are small relative to the
+    distances between them)."""
+    g = feature.get('geometry') or {}
+    coords = []
+    if g.get('type') == 'Polygon':
+        for ring in g['coordinates']:
+            coords.extend(ring)
+    elif g.get('type') == 'MultiPolygon':
+        for poly in g['coordinates']:
+            for ring in poly:
+                coords.extend(ring)
+    if not coords:
+        return None
+    xs = [c[0] for c in coords]
+    ys = [c[1] for c in coords]
+    return (sum(xs) / len(xs), sum(ys) / len(ys))
+
+
+def build_nearby_index(sale_agg, rent_agg):
+    """key -> [neighbor_key, ...] sorted nearest-first, restricted to keys
+    that (a) have a polygon in curated_polygons.geojson and (b) have at
+    least some sale or rent data (no point linking to an empty page)."""
+    if not os.path.exists(CURATED_GEO):
+        return {}
+    with open(CURATED_GEO, encoding='utf-8') as f:
+        features = json.load(f)['features']
+
+    centroids = {}
+    for feat in features:
+        key = (feat.get('properties') or {}).get('key')
+        if not key:
+            continue
+        c = _polygon_centroid(feat)
+        if c:
+            centroids[key] = c
+
+    has_data = lambda k: bool((sale_agg.get(k) or {}).get('n')) or bool((rent_agg.get(k) or {}).get('n'))
+    keys = [k for k in centroids if has_data(k)]
+
+    index = {}
+    for k in keys:
+        x0, y0 = centroids[k]
+        others = sorted(
+            (o for o in keys if o != k),
+            key=lambda o: (centroids[o][0] - x0) ** 2 + (centroids[o][1] - y0) ** 2,
+        )
+        index[k] = others[:NEARBY_N]
+    return index
+
+
+def build_nearby_html(name, mode, lang, key, nearby_index, sale_agg, rent_agg):
+    """Visible 'similar districts nearby' links, same mode as the current
+    page. Skips a neighbor if it has no data for that specific mode."""
+    c = COPY[lang]
+    neighbor_keys = nearby_index.get(key) or []
+    agg = sale_agg if mode == 'sale' else rent_agg
+    items = []
+    for nk in neighbor_keys:
+        rec = agg.get(nk) or {}
+        if not rec.get('n'):
+            continue
+        n_name = rec.get('name') or nk.title()
+        n_slug = slugify(n_name)
+        items.append((n_name, base_url(mode, n_slug, lang)))
+
+    if not items:
+        return ''
+
+    links = ''.join(
+        f'<li><a href="{url}">{html_escape(n_name)}</a></li>'
+        for n_name, url in items
+    )
+    title_text = c['nearby_title'].format(name=name)
+    return f'<nav class="nearby-districts"><h2>{html_escape(title_text)}</h2><ul>{links}</ul></nav>'
+
+
 def build_district_faq(name, sale_rec, rent_rec, lang):
     """Per-district Q&A — visible HTML section + FAQPage JSON-LD, returned
     as one combined string ready to drop into __DISTRICT_FAQ__. Empty if
@@ -1437,6 +1522,7 @@ def main():
         agg = json.load(f)
     with open(os.path.join(ROOT, 'data', 'aggregates_intermediate', 'rent.json'), encoding='utf-8') as f:
         rent = json.load(f)
+    nearby_index = build_nearby_index(agg, rent)
     tx_periods, rents_periods = load_period_aggregates()
     with open(TPL, encoding='utf-8') as f:
         template = f.read()
@@ -1484,6 +1570,7 @@ def main():
                 if not base_rec:
                     continue
                 period_aggs = tx_periods if mode == 'sale' else rents_periods
+                nearby_html = build_nearby_html(display_name, mode, lang, key, nearby_index, agg, rent)
 
                 # Build data.json bundle once per (key, mode) — shared across
                 # all language passes. Hash it for cache-busting the DATA_URL.
@@ -1575,6 +1662,7 @@ def main():
                     # nav and inside each <details> body.
                     html = html.replace('<!--__SUBPAGES__-->', '')
                     html = html.replace('<!--__DISTRICT_FAQ__-->', district_faq_html)
+                    html = html.replace('<!--__NEARBY__-->', nearby_html)
 
                     html_path = os.path.join(out_dir, 'index.html')
                     with open(html_path, 'w', encoding='utf-8') as f:
