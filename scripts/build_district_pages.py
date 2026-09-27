@@ -201,6 +201,7 @@ COPY = {
         'list_breadcrumb_recent':       'Последние',
         'list_back':                    '← Назад в {name}',
         'list_main_link':               'Главная района',
+        'see_full_list':                'Полный список →',
         'list_no_data':                 'Нет данных для отображения.',
         'col_proj':   'Проект',
         'col_n':      'Сделок',
@@ -297,6 +298,7 @@ COPY = {
         'list_breadcrumb_recent':       'Recent',
         'list_back':                    '← Back to {name}',
         'list_main_link':               'District home',
+        'see_full_list':                'See full list →',
         'list_no_data':                 'No data to display.',
         'col_proj':   'Project',
         'col_n':      'Transactions',
@@ -393,6 +395,7 @@ COPY = {
         'list_breadcrumb_recent':       'الأحدث',
         'list_back':                    '← العودة إلى {name}',
         'list_main_link':               'الصفحة الرئيسية للحي',
+        'see_full_list':                'عرض القائمة الكاملة ←',
         'list_no_data':                 'لا توجد بيانات للعرض.',
         'col_proj':   'المشروع',
         'col_n':      'الصفقات',
@@ -489,6 +492,7 @@ COPY = {
         'list_breadcrumb_recent':       'हाल',
         'list_back':                    '← वापस {name}',
         'list_main_link':               'क्षेत्र मुख्य पृष्ठ',
+        'see_full_list':                'पूरी सूची देखें →',
         'list_no_data':                 'दिखाने के लिए कोई डेटा नहीं।',
         'col_proj':   'परियोजना',
         'col_n':      'सौदे',
@@ -585,6 +589,7 @@ COPY = {
         'list_breadcrumb_recent':       '最新',
         'list_back':                    '← 返回 {name}',
         'list_main_link':               '社区主页',
+        'see_full_list':                '查看完整列表 →',
         'list_no_data':                 '暂无数据可显示。',
         'col_proj':   '项目',
         'col_n':      '交易数',
@@ -1223,6 +1228,24 @@ def build_nearby_html(name, mode, lang, key, nearby_index, sale_agg, rent_agg):
     return f'<nav class="nearby-districts"><h2>{html_escape(title_text)}</h2><ul>{links}</ul></nav>'
 
 
+def build_top_projects_html(name, mode, slug, rec, lang):
+    """Server-rendered top-5 projects table on the main district page —
+    same data + column layout as the full /projects/ sub-page (reuses
+    render_list_table), just capped to 5 rows so Google sees real content
+    at first paint instead of only the JS-only detail-content panel."""
+    rows = (rec.get('top_projects') or [])[:5]
+    if not rows:
+        return ''
+    columns = next(lt[6] for lt in LIST_TYPES if lt[0] == mode and lt[1] == 'projects')
+    table_html = render_list_table(rows, columns, lang)
+    c = COPY[lang]
+    title_key = 'list_h1_top_projects_sale' if mode == 'sale' else 'list_h1_top_projects_rent'
+    title_text = c[title_key].format(name=name)
+    full_url = base_url(mode, slug, lang) + 'projects/'
+    more_link = f'<p><a href="{full_url}">{html_escape(c["see_full_list"])}</a></p>'
+    return f'<section class="top-projects-preview"><h2>{html_escape(title_text)}</h2>{table_html}{more_link}</section>'
+
+
 def build_district_faq(name, sale_rec, rent_rec, lang):
     """Per-district Q&A — visible HTML section + FAQPage JSON-LD, returned
     as one combined string ready to drop into __DISTRICT_FAQ__. Empty if
@@ -1571,6 +1594,7 @@ def main():
                     continue
                 period_aggs = tx_periods if mode == 'sale' else rents_periods
                 nearby_html = build_nearby_html(display_name, mode, lang, key, nearby_index, agg, rent)
+                top_projects_html = build_top_projects_html(display_name, mode, slug, base_rec, lang)
 
                 # Build data.json bundle once per (key, mode) — shared across
                 # all language passes. Hash it for cache-busting the DATA_URL.
@@ -1663,6 +1687,7 @@ def main():
                     html = html.replace('<!--__SUBPAGES__-->', '')
                     html = html.replace('<!--__DISTRICT_FAQ__-->', district_faq_html)
                     html = html.replace('<!--__NEARBY__-->', nearby_html)
+                    html = html.replace('<!--__TOP_PROJECTS__-->', top_projects_html)
 
                     html_path = os.path.join(out_dir, 'index.html')
                     with open(html_path, 'w', encoding='utf-8') as f:
