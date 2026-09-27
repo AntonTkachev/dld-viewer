@@ -170,8 +170,10 @@ POI seeds for the map's layers (schools / universities / medical / mosques / met
 | File | Purpose | Edit notes |
 |---|---|---|
 | `data/polygon_overrides.json` | Hand-curated split rules for the 16 master-projects that need to be visually broken out from their DLD admin parent (Marina out of Marsa Dubai, Sports City out of Al Hebiah Fourth, etc.) | See `docs/polygon_overrides_design.md` for the schema |
-| `data/dm_to_dld_aliases.json` | DM admin spelling ↔ DLD spelling mappings + display-name overrides (Burj Khalifa → Downtown Dubai, NAKHLAT JUMEIRA → Palm Jumeirah) | 13 entries, all manually verified |
+| `data/dm_to_dld_aliases.json` | DM admin spelling ↔ DLD spelling mappings + display-name overrides (Burj Khalifa → Downtown Dubai, NAKHLAT JUMEIRA → Palm Jumeirah) | 34 entries, all manually verified |
 | `data/rera_arabic_aliases.json` | Arabic → English mappings for the top 44 RERA developers + 3 project classifications. Project name English mapping is done via tx.parquet join, not aliases | See `_skipped` section for known gaps |
+
+**Caveat — adding/changing a `display_name` retires the old slug.** Once an alias gets a `display_name`, `build_district_pages.py` only ever emits pages under the new slug — the raw admin-name slug stops being generated. If Google had already indexed that old slug (found 2026-09-27: `al-barsha-south-fourth` → `jumeirah-village-circle`, plus similar cases from `polygon_overrides.json` renames), the old URL 404s forever unless something redirects it. `scripts/build_renamed_area_redirects.py` back-fills a canonical+meta-refresh stub at every old (lang, mode, subpath) combo that has a live target — it's wired into `refresh_all.sh` (phase 8a) so this self-heals on the next full rebuild after an alias edit. It only knows the `dm_to_dld_aliases.json` pairs automatically; a rename done purely inside `polygon_overrides.json` (no old-name field to diff against) needs a manual entry added to `LEGACY_SLUG_PAIRS` in that script. Also check `data/seo_whitelist.json` for the old slug when renaming — a stale whitelist entry makes the retired page's *redirect stub* itself show up in `sitemap.xml`, which is wrong (caught and fixed for `al-rega` / `dubai-south-residential-district` during that same investigation).
 
 ### Derived (no pull script — generated from other sources)
 
