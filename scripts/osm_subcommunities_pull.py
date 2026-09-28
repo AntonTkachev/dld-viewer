@@ -22,6 +22,7 @@ import json
 import re
 import subprocess
 import sys
+import time
 from pathlib import Path
 
 from shapely.geometry import Polygon, mapping
@@ -29,6 +30,7 @@ from shapely.validation import make_valid
 
 DATA = Path(__file__).resolve().parent.parent / 'data'
 URL  = 'https://overpass-api.de/api/interpreter'
+UA   = 'dld-viewer/1'
 BBOX = '24.95,55.05,25.50,55.65'
 
 # (real_area_key, display name): list of name regex patterns (case-insensitive)
@@ -52,11 +54,20 @@ out tags geom;
 
 def fetch():
     print('querying overpass...', file=sys.stderr)
-    out = subprocess.run(
-        ['curl', '-s', '--max-time', '90', '--data-urlencode', f'data={QUERY}', URL],
-        capture_output=True, text=True, check=True,
-    )
-    return json.loads(out.stdout)
+    last_err = None
+    for attempt in (1, 2):
+        out = subprocess.run(
+            ['curl', '-sS', '--max-time', '90', '-A', UA,
+             '--data-urlencode', f'data={QUERY}', URL],
+            capture_output=True, text=True, check=True,
+        )
+        try:
+            return json.loads(out.stdout)
+        except json.JSONDecodeError as e:
+            last_err = e
+            if attempt == 1:
+                time.sleep(5)
+    raise last_err
 
 
 def is_polygon_way(w):
