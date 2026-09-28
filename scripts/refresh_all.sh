@@ -84,5 +84,8 @@ $PY scripts/build_sitemap.py
 phase "11. Smoke test"
 $PY scripts/test_masks.py
 
+phase "11b. Building matcher golden test"
+$PY scripts/test_buildings_match.py
+
 echo
 echo "[$(ts)] refresh_all: done"
