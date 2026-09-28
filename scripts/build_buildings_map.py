@@ -547,7 +547,7 @@ def match_one(dld_name: str,
               by_exact_b, by_alpha_b, token_rows_b, by_ar_b,
               by_exact_c, by_alpha_c,
               dld_name_ar='', dld_project='', dld_master='',
-              area_centroid=None):
+              area_centroid=None, exclude_ids=frozenset()):
     """Return (osm_row, match_kind) or (None, None).
 
     Direct name matches (steps 1-3) are restricted to building-tagged OSM
@@ -555,7 +555,7 @@ def match_one(dld_name: str,
     project_name fallback (step 4)."""
     # 1. Exact normalized (EN) — buildings only.
     k = norm_key(dld_name)
-    hits = by_exact_b.get(k, [])
+    hits = [h for h in by_exact_b.get(k, []) if h.get('osm_id') not in exclude_ids]
     if hits:
         # build_indices appends one entry per name_field, so the same OSM building
         # can appear multiple times. Deduplicate by osm_id for disambiguation.
@@ -595,7 +595,7 @@ def match_one(dld_name: str,
     # Must run BEFORE Arabic exact so English alpha match wins over wrong Arabic
     # match when OSM only has one Arabic building for a numbered series.
     a_pre = alpha(dld_name)
-    if a_pre and by_alpha_b.get(a_pre):
+    if a_pre and by_alpha_b.get(a_pre) and by_alpha_b[a_pre].get('osm_id') not in exclude_ids:
         return by_alpha_b[a_pre], 'alpha_exact'
 
     # 1b. Exact Arabic — buildings only.
@@ -606,7 +606,7 @@ def match_one(dld_name: str,
     # "ALJAZ 3" wrongly matching the only Arabic building "الجاز 2".
     if dld_name_ar:
         kar = norm_ar(dld_name_ar)
-        ar_hits = by_ar_b.get(kar, [])
+        ar_hits = [h for h in by_ar_b.get(kar, []) if h.get('osm_id') not in exclude_ids]
         if ar_hits:
             ar_unique_ids = {h.get('osm_id') for h in ar_hits}
             dld_ar_sub = _trailing_subunit(dld_name_ar)
@@ -641,6 +641,8 @@ def match_one(dld_name: str,
     if dt:
         best = (0.0, None)
         for tt, osm in token_rows_b:
+            if osm.get('osm_id') in exclude_ids:
+                continue
             j = jaccard(dt, tt)
             if j > best[0]:
                 best = (j, osm)
@@ -658,6 +660,8 @@ def match_one(dld_name: str,
         for tt, osm in token_rows_b:
             if dt < tt:  # proper subset only (equal sets already caught above)
                 oid = osm.get('osm_id')
+                if oid in exclude_ids:
+                    continue
                 if oid not in seen_sub:
                     seen_sub.add(oid)
                     subset_hits.append((jaccard(dt, tt), osm))
@@ -679,6 +683,8 @@ def match_one(dld_name: str,
         for tt, osm in token_rows_b:
             if tt and tt < dt and not all(t.isdecimal() for t in tt):
                 oid = osm.get('osm_id')
+                if oid in exclude_ids:
+                    continue
                 if oid not in seen_rev:
                     seen_rev.add(oid)
                     rev_hits.append((jaccard(dt, tt), osm))
@@ -703,25 +709,29 @@ def match_one(dld_name: str,
     # 3. SequenceMatcher on alpha-only — buildings only.
     a = alpha(dld_name)
     if a:
-        close = difflib.get_close_matches(a, list(by_alpha_b.keys()),
-                                          n=1, cutoff=SEQMATCH_THRESHOLD)
-        if close:
-            cand = by_alpha_b[close[0]]
+        close_all = difflib.get_close_matches(a, list(by_alpha_b.keys()),
+                                              n=5, cutoff=SEQMATCH_THRESHOLD)
+        for ck in close_all:
+            cand = by_alpha_b[ck]
+            if cand.get('osm_id') in exclude_ids:
+                continue
             # Token guard: require at least one distinctive token in common.
             # Exceptions (accept without token overlap):
             #   • identical alpha strings ("MAG218" vs "MAG 218" differ only in spacing)
             #   • near-identical alpha strings (≥0.95 ratio) — catches compound-word
             #     splits like "Blue Bell" vs "Bluebell" where tokenisation diverges.
-            ratio = difflib.SequenceMatcher(None, a, close[0]).ratio()
+            ratio = difflib.SequenceMatcher(None, a, ck).ratio()
             if ratio >= 0.95 or tokens(dld_name) & tokens(cand.get('name', '')):
                 return cand, 'seqmatch'
+            break
 
     # 1c. Exact norm-key match against compound index (buildings-only step 1
     # missed it). E.g. "Skycourts Tower A" norm='skycourts' matches compound
     # "Skycourts Towers" norm='skycourts'. Treated as project_exact so the
     # 300k m² area guard and compound vis apply.
-    if k and by_exact_c.get(k):
-        return by_exact_c[k][0], 'project_exact'
+    _c_hits = [h for h in by_exact_c.get(k, []) if h.get('osm_id') not in exclude_ids]
+    if k and _c_hits:
+        return _c_hits[0], 'project_exact'
 
     # 4. project_name fallback — Skycourts Tower A → Skycourts compound.
     # Only useful when project ≠ master (otherwise the OSM hit would be a
@@ -730,17 +740,18 @@ def match_one(dld_name: str,
     # place=neighbourhood polygons are filtered out at load time below.
     if dld_project and dld_project != dld_name and dld_project != dld_master:
         kp = norm_key(dld_project)
-        hits = by_exact_c.get(kp, []) + by_exact_b.get(kp, [])
+        hits = [h for h in (by_exact_c.get(kp, []) + by_exact_b.get(kp, []))
+                if h.get('osm_id') not in exclude_ids]
         if hits:
             return hits[0], 'project_exact'
         ap = alpha(dld_project)
         if ap:
-            close = difflib.get_close_matches(
+            close_all = difflib.get_close_matches(
                 ap, list(by_alpha_c.keys()) + list(by_alpha_b.keys()),
-                n=1, cutoff=PROJECT_SEQMATCH_THRESHOLD)
-            if close:
-                cand = by_alpha_c.get(close[0]) or by_alpha_b.get(close[0])
-                if cand:
+                n=5, cutoff=PROJECT_SEQMATCH_THRESHOLD)
+            for ck in close_all:
+                cand = by_alpha_c.get(ck) or by_alpha_b.get(ck)
+                if cand and cand.get('osm_id') not in exclude_ids:
                     return cand, 'project_seqmatch'
 
     return None, None
@@ -805,28 +816,45 @@ def main() -> int:
 
     matched = []
     unmatched = []
+    retry_recovered = 0
+    dedup_blocked = 0
+    # Global one-footprint-per-building guard — restricted to the 'seqmatch'
+    # stage only (see comment below). Not a general "one osm_id per building"
+    # rule: exact/jaccard/subset/rev_subset/project legitimately reuse a
+    # single OSM polygon across several DLD sub-towers (Aykon City, Downtown
+    # Views II, Diamond Views, ...) whenever OSM draws one footprint for an
+    # entire multi-tower complex. seqmatch is the one stage loose enough to
+    # wrongly collapse genuinely distinct buildings onto a textually-similar
+    # neighbour (e.g. Elite Residence 1/3/4/6 all landing on Elite Residence 8).
+    used_seqmatch_osm_ids = set()
     for d in dld:
-        osm_row, kind = match_one(d['name'], *indices,
-                                  d.get('name_ar', ''),
-                                  d.get('project', ''), d.get('master', ''),
-                                  area_centroid=centroids.get(d['area']))
-        if osm_row is None:
-            m = _DG_PREFIX_RE.match(d['name'])
-            if m:
-                # MED/CON prefixes are Discovery Gardens buildings. Only accept an
-                # exact bare-number OSM match (e.g. "80" == "80") — fuzzy fallback
-                # via match_one picks up wrong-community buildings like "The Gardens
-                # Building 80" via token-subset, which is too loose for single numbers.
-                by_exact_b = indices[0]
-                num_key = norm_key(m.group(2))
-                cands = by_exact_b.get(num_key, [])
-                dg_c = centroids.get('Discovery Gardens') or centroids.get(d['area'])
-                if cands:
-                    if dg_c and len(cands) > 1:
-                        cands = sorted(cands,
-                                       key=lambda b: haversine_km(dg_c[0], dg_c[1], b['lat'], b['lon']))
-                    osm_row, kind = cands[0], 'dg_prefix_exact'
-        if osm_row is not None:
+        exclude_ids = set(used_seqmatch_osm_ids)
+        osm_row, kind = None, None
+        for _attempt in range(4):
+            osm_row, kind = match_one(d['name'], *indices,
+                                      d.get('name_ar', ''),
+                                      d.get('project', ''), d.get('master', ''),
+                                      area_centroid=centroids.get(d['area']),
+                                      exclude_ids=exclude_ids)
+            if osm_row is None and _attempt == 0:
+                m = _DG_PREFIX_RE.match(d['name'])
+                if m:
+                    # MED/CON prefixes are Discovery Gardens buildings. Only accept an
+                    # exact bare-number OSM match (e.g. "80" == "80") — fuzzy fallback
+                    # via match_one picks up wrong-community buildings like "The Gardens
+                    # Building 80" via token-subset, which is too loose for single numbers.
+                    by_exact_b = indices[0]
+                    num_key = norm_key(m.group(2))
+                    cands = [c for c in by_exact_b.get(num_key, [])
+                             if c.get('osm_id') not in exclude_ids]
+                    dg_c = centroids.get('Discovery Gardens') or centroids.get(d['area'])
+                    if cands:
+                        if dg_c and len(cands) > 1:
+                            cands = sorted(cands,
+                                           key=lambda b: haversine_km(dg_c[0], dg_c[1], b['lat'], b['lon']))
+                        osm_row, kind = cands[0], 'dg_prefix_exact'
+            if osm_row is None:
+                break  # nothing left to try
             # Geo-sanity applies to ALL match kinds. We previously exempted
             # project_* in the belief that a project might cluster outside
             # its area — but in practice fuzzy project matches (Bluewaters
@@ -846,9 +874,24 @@ def main() -> int:
                              else 15.0) if kind in ('exact', 'alpha_exact') else GEO_SANITY_KM
                 ok = geo_ok(area_polys, centroids, d['area'],
                             osm_row['lat'], osm_row['lon'], radius_km=radius_km)
-            if not ok:
-                geo_rejected += 1
-                osm_row = None
+            # Reject compound matches to huge polygons (whole community/district).
+            # 300 000 m² ≈ 300 × 1 000 m site — too large to represent one building.
+            if ok and kind in ('project_exact', 'project_seqmatch'):
+                area_m2 = bbox_area_m2(osm_row.get('rings') or [])
+                if area_m2 > 300_000:
+                    ok = False
+            # One-footprint-per-building guard, seqmatch stage only (see above).
+            if ok and kind == 'seqmatch' and osm_row.get('osm_id') in used_seqmatch_osm_ids:
+                ok = False
+                dedup_blocked += 1
+            if ok:
+                if _attempt > 0:
+                    retry_recovered += 1
+                break
+            geo_rejected += 1
+            exclude_ids.add(osm_row.get('osm_id'))
+            osm_row, kind = None, None
+        if osm_row is not None:
             # Reject compound matches to huge polygons (whole community/district).
             # 300 000 m² ≈ 300 × 1 000 m site — too large to represent one building.
             if osm_row is not None and kind in ('project_exact', 'project_seqmatch'):
@@ -867,6 +910,8 @@ def main() -> int:
             vis = 'compound'
         else:
             vis = 'building'
+            if kind == 'seqmatch':
+                used_seqmatch_osm_ids.add(osm_row['osm_id'])
         geom_rings = osm_row.get('rings') or []
 
         matched.append({
@@ -884,6 +929,8 @@ def main() -> int:
         })
 
     print(f'Geo-sanity rejected: {geo_rejected}')
+    print(f'Dedup-blocked (seqmatch reuse): {dedup_blocked}')
+    print(f'Retry-recovered matches: {retry_recovered}')
     report(matched, unmatched)
 
     # Fallback: for still-unmatched buildings try building_coords.json
