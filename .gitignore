@@ -24,3 +24,6 @@ data/osm_buildings.json
 
 # Local scratch — OAuth client secrets, DB backups, etc. Never commit.
 tails/
+
+# Reddit outreach skill state (seen/replied post tracking — runtime, not data)
+data/.reddit_outreach/
