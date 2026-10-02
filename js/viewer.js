@@ -1069,6 +1069,9 @@ function _renderTvPages() {
         e.preventDefault();
         dd.classList.remove('open');
         applyMask(m, mk.defaultPeriod);
+        if (typeof gtag === 'function') {
+          gtag('event', 'select_content', {content_type: 'mask', item_id: m});
+        }
       });
     }
     menu.appendChild(a);
@@ -1447,8 +1450,12 @@ function _buildMaskRow(id, mask) {
   `;
   row.addEventListener('click', e => {
     if (e.target.closest('.period-slider-wrap')) return;
+    const changed = id !== currentMask;
     applyMask(id, (id === currentMask) ? currentMaskPeriod : mask.defaultPeriod);
     renderMaskList();
+    if (changed && typeof gtag === 'function') {
+      gtag('event', 'select_content', {content_type: 'mask', item_id: id});
+    }
   });
   const slider = row.querySelector('.period-slider');
   if (slider) {

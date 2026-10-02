@@ -29,6 +29,12 @@ spamming. Treat every rule below as load-bearing, not a suggestion.
 4. **Disclose affiliation whenever you link dxbcompass.com** — one line like
    "(I built this — free DLD/Ejari explorer, no login)". Undisclosed
    affiliate-style links are exactly what gets accounts shadow-banned.
+4a. **Every dxbcompass.com link gets a UTM tag** — append
+   `?utm_source=reddit&utm_medium=social&utm_campaign=outreach` to the URL
+   (e.g. `dxbcompass.com/en/growth?utm_source=reddit&utm_medium=social&utm_campaign=outreach`).
+   GA4 was showing this traffic as unattributed `(direct)` with no way to
+   tell it apart from organic visits — confirmed 2026-10-02. Without the tag
+   there is no way to measure whether a post actually drove traffic.
 5. **No template reuse.** Every reply is written fresh for that specific
    post. Identical phrasing across threads is the #1 bot tell.
 6. **Respect the self-promo pacing cap**: no more than **2 replies that
@@ -36,8 +42,13 @@ spamming. Treat every rule below as load-bearing, not a suggestion.
    this with `--report` before drafting (see Step 3). Over the cap → either
    draft a reply with real numbers and no link, or skip and just tell the
    user what you found.
-7. **Cap this run at 3 posted replies total**, however many good candidates
-   turn up. Human accounts don't reply to 8 threads in one sitting.
+7. **Cap this run at 2 posted replies total**, however many good candidates
+   turn up. Human accounts don't reply to 8 threads in one sitting — and
+   confirmed 2026-10-01: Reddit itself throttles the user's account to one
+   comment per ~20 minutes anyway, so a 3rd item in the same run just sits
+   unpostable. Bring a 3rd draft only as a clearly-labeled bonus/optional
+   candidate the user can post later once the cooldown clears, not as part
+   of the batch you expect posted this run.
 
 ## Step 0 — how posting works here (read this, don't re-litigate it)
 
@@ -45,9 +56,17 @@ spamming. Treat every rule below as load-bearing, not a suggestion.
 restriction in the tool itself, not a per-session permission to request or a
 risk call to re-evaluate. Do not attempt to drive Reddit's site through
 `claude-in-chrome`, and do not write or suggest a separate browser-automation
-script (Playwright, Selenium, etc.) to do it instead — that would just be a
-different technical path to the same thing the tool already refuses, and
-that's not something to build around.
+script (Playwright, Selenium, AppleScript/JXA, etc.) to do it instead — that
+would just be a different technical path to the same thing the tool already
+refuses, and that's not something to build around.
+
+(2026-09-30: a full JS-injection auto-poster was built and tried — see
+`scripts/reddit_auto_post.py` / `scripts/reddit_post_one.jxa.js`, left in the
+repo unused. It hit a hard wall: Reddit's comment box is a Lexical rich-text
+editor that only accepts trusted, real OS-level input events, and the
+`comment-composer-host` custom element stayed hidden in an AppleScript-driven
+window regardless. Not worth re-attempting without a fundamentally different
+approach — don't rediscover this the hard way.)
 
 The actual submit click is always the user's own action, done by hand, in
 their own already-logged-in browser. What this skill automates is
@@ -175,7 +194,13 @@ Wait for one follow-up message telling you which ones actually got posted
 python3 scripts/reddit_scan.py --mark-replied "<post_id>" "<subreddit>" "<url>"
 ```
 
-The rule-7 pacing cap (max 3 per run) is enforced by how many drafts you
+Only mark the ones the user actually confirms as posted — Reddit's own
+per-account comment cooldown (~20 minutes between comments, confirmed
+2026-10-01) means a 3rd item offered in the same batch often comes back as
+"not posted yet, rate-limited" rather than a clean yes/no on content. Don't
+mark-replied anything the user didn't explicitly say went through.
+
+The rule-7 pacing cap (max 2 per run) is enforced by how many drafts you
 bring to Step 6 in the first place, not by making the user check in between
 posts.
 
@@ -183,5 +208,5 @@ posts.
 
 Stop and ask the user rather than guessing when: a post is ambiguous about
 whether it wants investment advice or just venting, the subreddit's rules
-are unclear about self-promotion, or you've already posted 3 replies this
+are unclear about self-promotion, or you've already posted 2 replies this
 run.
