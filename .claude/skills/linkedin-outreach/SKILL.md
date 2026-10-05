@@ -285,13 +285,22 @@ real session (interleave with `--log-step`, see Step 0):
 6. Confirm the comment landed (it should appear in the thread).
    → `--log-step comment_submitted:<author>`
 
-Log each success:
+Log each success, including the post's own reaction/comment counts at the
+moment you comment (visible on the post card — e.g. "82 реакции", "11
+комментариев"; use 0 if the post shows none):
 
 ```bash
-python3 scripts/linkedin_outreach_state.py --mark-replied "<post url>" <true|false>
+python3 scripts/linkedin_outreach_state.py --mark-replied "<post url>" <true|false> \
+    --post-reactions <N> --post-comments <N>
 ```
 
 (`true`/`false` = whether that comment included a dxbcompass.com link.)
+
+This exists to eventually answer: does a popular post get our comment more
+views, or does it not matter? A manual spot-check on 2026-10-05 (7 comments)
+was too small and too noisy to tell — see Step 7. Capturing post-level
+counts at comment time (not guessed after the fact) is what makes that
+analysis possible later.
 
 **On pacing between posts**: the original intent was a randomized 20–40s
 gap between posts, since three comments landing back-to-back reads as
@@ -312,6 +321,30 @@ Report back to the user as each one lands, don't wait for the whole batch:
 post URL, the comment text, and which pacing rule applied. If good
 candidates were skipped solely due to the daily link cap, say so explicitly.
 Close the run with `--timing-report` and share the real numbers.
+
+## Step 7 — engagement check-in on past comments (when asked)
+
+Not part of every run — do this when the user asks to check how past
+comments are doing (e.g. "посмотри, сколько там просмотров/лайков"), or
+proactively at the start of a run if it's been a few days since the last
+check-in. For each past entry from `--engagement-report` that doesn't have
+a recent check-in, `navigate` to its URL and read the post via
+`get_page_text`: your own comment shows its reaction count and a views
+count (e.g. "29 показов") directly beneath it. Log it:
+
+```bash
+python3 scripts/linkedin_outreach_state.py --log-engagement "<post url>" <views> <reactions>
+```
+
+Then `python3 scripts/linkedin_outreach_state.py --engagement-report` to see
+the full table (post's own reactions/comments at post time vs. our
+comment's views/reactions). **Don't turn this into a selection filter yet**
+— rule 2026-10-05: the first 7 data points were too small and too
+inconsistent to show that post popularity predicts comment views (a post
+with ~0 of its own reactions got 29 views on our comment; an 82-reaction
+post got 28). The report itself tells you when there's enough data (rough
+bar: 20-30 check-ins) to revisit this and potentially add a real pattern to
+Step 2's filter — until then, just keep logging.
 
 ## Stop conditions
 
