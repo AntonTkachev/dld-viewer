@@ -1,0 +1,34 @@
+[
+  {
+    "company": "fäm Properties",
+    "match_keywords": ["fam properties", "fäm properties", "fam dubai", "fäm dubai"],
+    "tool_name": "DXB Interact",
+    "tool_url": "https://dxbinteract.com",
+    "source": "https://famproperties.com/blog/free-property-data-platform",
+    "verified": "2026-10-05",
+    "notes": "First-party, free public dashboard of all DLD transactions in real time. Closest direct competitor to dxbcompass.com."
+  },
+  {
+    "company": "Allsopp & Allsopp",
+    "match_keywords": ["allsopp & allsopp", "allsopp and allsopp", "allsopp & allsopp group", "allsopp real estate"],
+    "tool_name": "data.hub",
+    "tool_url": "https://www.allsoppandallsopp.com/dubai/properties/property-data-hub",
+    "source": "https://www.allsoppandallsopp.com/dubai/properties/property-data-hub/sales/in-areas-community-downtown%20dubai",
+    "verified": "2026-10-05",
+    "notes": "Search by building/community, real sold prices vs asking prices, auto valuation reports."
+  },
+  {
+    "company": "Driven Properties",
+    "match_keywords": [
+      "driven properties",
+      "driven forbes",
+      "driven forbes properties",
+      "driven forbes global properties"
+    ],
+    "tool_name": "Dubai Real Estate Market Guide",
+    "tool_url": "https://www.drivenproperties.com/dubai-real-estate-market-guide/daily-transactions",
+    "source": "https://www.drivenproperties.com/dubai-real-estate-market-guide/daily-transactions",
+    "verified": "2026-10-05",
+    "notes": "\"Driven Forbes\" / \"Driven Forbes Global Properties\" are the same brokerage's co-branding with Forbes Global Properties — same company, same tool, match on either name."
+  }
+]
