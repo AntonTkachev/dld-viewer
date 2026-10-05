@@ -1564,6 +1564,8 @@ def main():
         print(f'building all {len(districts)} districts × {len(LANGUAGES)} langs', file=sys.stderr)
 
     built = 0
+    produced_sale_slugs = set()
+    produced_rent_slugs = set()
     for key in districts:
         sale_rec = agg.get(key) or {}
         rent_rec = rent.get(key) or {}
@@ -1576,6 +1578,10 @@ def main():
         else:
             name = (sale_rec.get('name') or rent_rec.get('name')) or key.title()
             slug = slugify(name)
+        if sale_rec:
+            produced_sale_slugs.add(slug)
+        if rent_rec:
+            produced_rent_slugs.add(slug)
 
         for lang in LANGUAGES:
             c = COPY[lang]
@@ -1708,6 +1714,25 @@ def main():
                       file=sys.stderr)
 
     print(f'done — {built} page(s) across {len(LANGUAGES)} language(s)', file=sys.stderr)
+
+    if DISTRICTS is None:
+        missing_sales = sorted(SALES_WHITELIST - produced_sale_slugs)
+        missing_rents = sorted(RENTS_WHITELIST - produced_rent_slugs)
+        if missing_sales or missing_rents:
+            print('\n=== SEO WHITELIST GAP — whitelisted slug has no live page this run ===',
+                  file=sys.stderr)
+            if missing_sales:
+                print(f'  sales ({len(missing_sales)}): {missing_sales}', file=sys.stderr)
+            if missing_rents:
+                print(f'  rents ({len(missing_rents)}): {missing_rents}', file=sys.stderr)
+            print('  These slugs are indexable per data/seo_whitelist.json but have no '
+                  'backing record in data/aggregates_intermediate/{sale,rent}.json, so '
+                  'their on-disk page (base + all period subpages) is frozen at whatever '
+                  'content was last generated and never gets today\'s template/content '
+                  'changes. Needs a human decision: update the whitelist, add a redirect '
+                  '(scripts/build_renamed_area_redirects.py LEGACY_SLUG_PAIRS), or fix the '
+                  'upstream split — not something this script can resolve on its own.',
+                  file=sys.stderr)
 
 
 if __name__ == '__main__':
