@@ -1719,20 +1719,28 @@ def main():
         missing_sales = sorted(SALES_WHITELIST - produced_sale_slugs)
         missing_rents = sorted(RENTS_WHITELIST - produced_rent_slugs)
         if missing_sales or missing_rents:
+            orphaned, dead = [], []
+            for slug in missing_sales:
+                (orphaned if os.path.exists(os.path.join(out_root('ru'), 'sales', slug, 'index.html')) else dead).append(('sale', slug))
+            for slug in missing_rents:
+                (orphaned if os.path.exists(os.path.join(out_root('ru'), 'rents', slug, 'index.html')) else dead).append(('rent', slug))
             print('\n=== SEO WHITELIST GAP — whitelisted slug has no live page this run ===',
                   file=sys.stderr)
-            if missing_sales:
-                print(f'  sales ({len(missing_sales)}): {missing_sales}', file=sys.stderr)
-            if missing_rents:
-                print(f'  rents ({len(missing_rents)}): {missing_rents}', file=sys.stderr)
-            print('  These slugs are indexable per data/seo_whitelist.json but have no '
-                  'backing record in data/aggregates_intermediate/{sale,rent}.json, so '
-                  'their on-disk page (base + all period subpages) is frozen at whatever '
-                  'content was last generated and never gets today\'s template/content '
-                  'changes. Needs a human decision: update the whitelist, add a redirect '
-                  '(scripts/build_renamed_area_redirects.py LEGACY_SLUG_PAIRS), or fix the '
-                  'upstream split — not something this script can resolve on its own.',
-                  file=sys.stderr)
+            if orphaned:
+                print(f'  orphaned ({len(orphaned)}) — page exists on disk but is frozen at '
+                      f'whatever content was last generated, never gets today\'s changes:',
+                      file=sys.stderr)
+                for mode, slug in orphaned:
+                    print(f'    {mode:4s} {slug}', file=sys.stderr)
+            if dead:
+                print(f'  dead ({len(dead)}) — no page was ever produced for this slug; likely '
+                      f'a stale/typo whitelist entry:', file=sys.stderr)
+                for mode, slug in dead:
+                    print(f'    {mode:4s} {slug}', file=sys.stderr)
+            print('  Needs a human decision per entry: delete the whitelist entry, point it at '
+                  'the current slug, add a redirect (scripts/build_renamed_area_redirects.py '
+                  'LEGACY_SLUG_PAIRS), or fix the upstream split — not something this script '
+                  'can resolve on its own.', file=sys.stderr)
 
 
 if __name__ == '__main__':
