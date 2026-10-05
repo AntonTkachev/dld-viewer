@@ -27,3 +27,9 @@ tails/
 
 # Reddit outreach skill state (seen/replied post tracking — runtime, not data)
 data/.reddit_outreach/
+
+# LinkedIn outreach skill state (replied-comment pacing log — runtime, not data)
+data/.linkedin_outreach/
+
+# LinkedIn agent-leads skill state (found/contacted agent tracking — runtime, not data)
+data/.linkedin_agent_leads/
