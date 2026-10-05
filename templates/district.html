@@ -132,9 +132,9 @@
   </div>
 </div>
 
-<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js" integrity="sha384-e6nUZLBkQ86NJ6TVVKAeSaK8jWa3NhkYWZFomE39AvDbQWeie9PlQqM3pmYW5d1g" crossorigin="anonymous"></script>
-<script src="__ASSET_BASE__/js/i18n.js"></script>
-<script src="__ASSET_BASE__/js/detail-panel.js"></script>
+<script defer src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js" integrity="sha384-e6nUZLBkQ86NJ6TVVKAeSaK8jWa3NhkYWZFomE39AvDbQWeie9PlQqM3pmYW5d1g" crossorigin="anonymous"></script>
+<script defer src="__ASSET_BASE__/js/i18n.js"></script>
+<script defer src="__ASSET_BASE__/js/detail-panel.js"></script>
 <script>
 const DISTRICT_KEY  = /*__DISTRICT_KEY__*/'';
 const DISTRICT_NAME = /*__DISTRICT_NAME__*/'';
@@ -144,11 +144,6 @@ const PAGE_LANG     = /*__PAGE_LANG__*/'ru';
 const BASE_URL      = /*__BASE_URL__*/'/sales/business-bay/';
 const DATA_URL      = /*__DATA_URL__*/'data.json';
 const PERIOD_COPY   = /*__PERIOD_COPY__*/null;
-
-// Activate the requested language so detail-panel.js's t() returns localized
-// strings. i18n.js exposes a top-level `currentLang` closure variable + a t()
-// reader; setting currentLang via applyLang() is enough for our usage.
-if (typeof applyLang === 'function') applyLang(PAGE_LANG);
 const LOAD_ERR = /*__LOAD_ERR_LABEL__*/'Не удалось загрузить данные';
 
 function periodHref(p) {
@@ -215,7 +210,17 @@ window.addEventListener('popstate', () => {
   location.reload();
 });
 
-load();
+// Chart.js / i18n.js / detail-panel.js load with `defer` (so they don't
+// block the initial paint of the above-the-fold text); defer guarantees
+// they've all run by DOMContentLoaded, so that's when it's safe to call
+// into them (applyLang, DetailPanel.mount via load()).
+document.addEventListener('DOMContentLoaded', () => {
+  // Activate the requested language so detail-panel.js's t() returns localized
+  // strings. i18n.js exposes a top-level `currentLang` closure variable + a t()
+  // reader; setting currentLang via applyLang() is enough for our usage.
+  if (typeof applyLang === 'function') applyLang(PAGE_LANG);
+  load();
+});
 </script>
 </body>
 </html>
