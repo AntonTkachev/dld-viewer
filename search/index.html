@@ -24,122 +24,7 @@
 <script async src="https://www.googletagmanager.com/gtag/js?id=G-5G3EY3Y2KG"></script>
 <script>window.dataLayer=window.dataLayer||[];function gtag(){dataLayer.push(arguments);}gtag('js',new Date());if(!/^(localhost|127\.0\.0\.1|0\.0\.0\.0)$/.test(location.hostname)){gtag('config','G-5G3EY3Y2KG');}</script>
 <link rel="stylesheet" href="/css/viewer.css">
-<style>
-  html, body { background: #f8fafc; min-height: 100%; }
-  .wrap { max-width: 1080px; margin: 0 auto; padding: 18px 20px 64px; }
-  .breadcrumb { font-size: 13px; color: #6b7280; margin-bottom: 10px; }
-  .breadcrumb a { color: #1d4ed8; text-decoration: none; }
-  .breadcrumb a:hover { text-decoration: underline; }
-  h1 { font-size: 24px; margin: 0 0 4px; line-height: 1.25; }
-  .lede { font-size: 14px; color: #6b7280; margin: 0 0 20px; }
-  .panel { background: #fff; border: 1px solid #e5e7eb; border-radius: 12px; padding: 18px 20px; margin-bottom: 16px; }
-  .err { color: #b91c1c; padding: 16px; font-size: 14px; }
-
-  /* ── Search ── */
-  .search-wrap { position: relative; margin-bottom: 20px; }
-  #q {
-    width: 100%; padding: 10px 14px 10px 40px; font-size: 15px;
-    border: 2px solid #e5e7eb; border-radius: 10px; outline: none;
-    background: #fff; color: #111; font-family: inherit; box-sizing: border-box;
-    transition: border-color .15s;
-  }
-  #q:focus { border-color: #1d4ed8; }
-  #q::placeholder { color: #94a3b8; }
-  .search-icon { position: absolute; left: 13px; top: 50%; transform: translateY(-50%); color: #94a3b8; pointer-events: none; }
-  #hint { font-size: 12px; color: #94a3b8; margin: -14px 0 20px; min-height: 1em; }
-  #suggestions {
-    position: absolute; top: calc(100% + 4px); left: 0; right: 0; z-index: 200;
-    background: #fff; border: 1px solid #e5e7eb; border-radius: 10px;
-    box-shadow: 0 6px 24px rgba(0,0,0,.12); max-height: 360px; overflow-y: auto;
-    display: none;
-  }
-  .sug-item { padding: 9px 14px; cursor: pointer; display: flex; justify-content: space-between; align-items: center; gap: 8px; border-bottom: 1px solid #f3f4f6; }
-  .sug-item:last-child { border-bottom: none; }
-  .sug-item:hover, .sug-item.active { background: #eff6ff; }
-  .sug-name { font-size: 13.5px; font-weight: 500; color: #111; }
-  .sug-area { font-size: 11.5px; color: #6b7280; margin-top: 1px; }
-  .sug-cnt  { font-size: 11px; color: #94a3b8; white-space: nowrap; }
-
-  /* ── Building header ── */
-  .bld-title { font-size: 22px; font-weight: 700; margin: 0 0 3px; }
-  .bld-sub   { font-size: 13px; color: #6b7280; margin: 0 0 14px; }
-  .about-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(130px, 1fr)); gap: 8px; }
-  .about-stat { padding: 8px 12px; background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 8px; }
-  .about-stat .k { font-size: 10.5px; color: #6b7280; text-transform: uppercase; letter-spacing: .04em; margin-bottom: 3px; }
-  .about-stat .v { font-size: 15px; font-weight: 600; color: #0f172a; font-variant-numeric: tabular-nums; }
-
-  /* ── Section header ── */
-  .sec-head { display: flex; align-items: baseline; justify-content: space-between; gap: 10px; margin-bottom: 10px; flex-wrap: wrap; }
-  .sec-head h3 { font-size: 13px; font-weight: 700; color: #475569; text-transform: uppercase; letter-spacing: .04em; margin: 0; }
-
-  /* ── AED/m² vs AED/sqft toggle ── */
-  .unit-toggle { display: inline-flex; border: 1px solid #d6dde6; border-radius: 6px; overflow: hidden; }
-  .unit-btn { background: #fff; border: 0; padding: 4px 11px; font-size: 11.5px; font-weight: 600; color: #475569; cursor: pointer; font-family: inherit; line-height: 1.3; }
-  .unit-btn + .unit-btn { border-left: 1px solid #d6dde6; }
-  .unit-btn.active { background: #0f172a; color: #fff; }
-  .unit-btn:hover:not(.active) { background: #f1f5fb; }
-
-  /* ── Charts ── */
-  .dp-chart { position: relative; height: 220px; margin: 8px 0 0; }
-  .dp-chart canvas { width: 100% !important; height: 100% !important; }
-  .dp-chart-tall { position: relative; height: 260px; margin: 8px 0 0; }
-  .dp-chart-tall canvas { width: 100% !important; height: 100% !important; }
-
-  /* ── Sales history (collapsible) ── */
-  .tx-summary {
-    display: flex; align-items: center; justify-content: space-between;
-    cursor: pointer; list-style: none; gap: 10px;
-  }
-  .tx-summary::-webkit-details-marker { display: none; }
-  .tx-summary h3 { font-size: 13px; font-weight: 700; color: #475569; text-transform: uppercase; letter-spacing: .04em; margin: 0; }
-  .tx-summary .tx-caret { font-size: 11px; color: #94a3b8; margin-left: 4px; transition: transform .15s; }
-  details[open] .tx-caret { transform: rotate(180deg); }
-  .tx-summary-right { display: flex; align-items: center; gap: 10px; }
-  .dp-tag-op-New   { background: #e6f7e6; color: #0a7f00; }
-  .dp-tag-op-Renew { background: #eef2ff; color: #4338ca; }
-
-  /* ── Transaction table pagination ── */
-  .pager { display: flex; gap: 8px; align-items: center; margin-top: 10px; font-size: 12.5px; color: #6b7280; }
-  .pager button { background: #fff; border: 1px solid #e5e7eb; border-radius: 6px; padding: 4px 12px; cursor: pointer; font-size: 12px; font-family: inherit; color: #374151; }
-  .pager button:hover { background: #f3f4f6; }
-  .pager button:disabled { opacity: .4; cursor: default; }
-
-  /* ── Misc ── */
-  .rent-note { font-size: 11.5px; color: #94a3b8; margin: 0 0 10px; }
-
-  /* ── PDF export ── */
-  .bld-head { display: flex; align-items: flex-start; justify-content: space-between; gap: 12px; flex-wrap: wrap; }
-  .pdf-btn {
-    display: inline-flex; align-items: center; gap: 6px; flex-shrink: 0;
-    padding: 8px 14px; background: #1d4ed8; color: #fff; border: none; border-radius: 8px;
-    font-size: 13px; font-weight: 600; font-family: inherit; cursor: pointer; white-space: nowrap;
-  }
-  .pdf-btn:hover:not(:disabled) { background: #1e40af; }
-  .pdf-btn:disabled { opacity: .6; cursor: default; }
-
-  /* Buttons don't inherit font-family from the page by default in most browsers —
-     without this, room/period chips and the unit toggle can render in the UA's
-     default button font instead of the page's sans-serif, looking out of place. */
-  button { font-family: inherit; }
-
-  @media (max-width: 480px) {
-    .bld-head { flex-direction: column; align-items: stretch; }
-    .pdf-btn { justify-content: center; }
-    .about-grid { grid-template-columns: repeat(2, 1fr) !important; }
-  }
-
-  /* Room chips + period chips + unit toggle as ONE row instead of two — splitting
-     them into separate rows on a 1080px-wide panel left a lot of visibly empty space
-     no matter how the groups were aligned within each row. One row, scrollable if it
-     doesn't fit (rather than wrapped), reads as a single deliberate control strip. */
-  .filter-row {
-    display: flex; align-items: center; gap: 14px;
-    flex-wrap: nowrap; overflow-x: auto; -webkit-overflow-scrolling: touch;
-  }
-  .filter-row::-webkit-scrollbar { height: 3px; }
-  .filter-row .room-chips, .filter-row .period-chips, .filter-row .unit-toggle { flex-shrink: 0; flex-wrap: nowrap; margin: 0; }
-  .filter-divider { width: 1px; align-self: stretch; min-height: 20px; background: #e5e7eb; flex-shrink: 0; }
-</style>
+<link rel="stylesheet" href="/search/search.css">
 </head>
 <body>
 <div class="wrap">
@@ -149,7 +34,6 @@
   <h1>Building &amp; Tower Search</h1>
   <p class="lede">Sales and rental history for any Dubai building — by bedroom type, year, off-plan vs ready market.</p>
 
-  <!-- ── Search ── -->
   <div class="search-wrap">
     <span class="search-icon">🔍</span>
     <input id="q" type="text" placeholder="Type a building or tower name…" autocomplete="off" spellcheck="false">
@@ -157,10 +41,8 @@
   </div>
   <div id="hint">Loading index…</div>
 
-  <!-- ═══ RESULT ═══════════════════════════════════════════════════════ -->
   <div id="result" style="display:none">
 
-    <!-- Building header -->
     <div class="panel">
       <div class="bld-head">
         <div>
@@ -172,7 +54,6 @@
       <div class="about-grid" id="bld-stats"></div>
     </div>
 
-    <!-- Room + period chips + unit toggle — one scrollable row -->
     <div class="panel" style="padding:14px 20px">
       <div class="filter-row" id="filter-row">
         <div class="room-chips" id="room-chips"></div>
@@ -186,7 +67,6 @@
       </div>
     </div>
 
-    <!-- Sales price chart -->
     <div class="panel" id="sales-chart-panel">
       <div class="sec-head">
         <h3>Sales — median <span id="unit-label-1">AED / m²</span></h3>
@@ -195,7 +75,6 @@
       <div class="dp-chart-tall"><canvas id="ch-price"></canvas></div>
     </div>
 
-    <!-- Off-plan vs Ready (combined: bars for count, lines for price) -->
     <div class="panel" id="offplan-panel">
       <div class="sec-head">
         <h3>Off-plan vs Ready — price &amp; volume</h3>
@@ -204,7 +83,6 @@
       <div class="dp-chart-tall"><canvas id="ch-offplan"></canvas></div>
     </div>
 
-    <!-- Rents chart -->
     <div class="panel" id="rents-panel">
       <div class="sec-head"><h3>Rents — median annual (AED)</h3></div>
       <p class="rent-note">Ejari register, project level. Bedroom filter applies.</p>
@@ -212,7 +90,6 @@
       <div class="dp-chart-tall"><canvas id="ch-rent"></canvas></div>
     </div>
 
-    <!-- Sales history (collapsed by default) -->
     <div class="panel" id="tx-panel">
       <details id="tx-details">
         <summary class="tx-summary">
@@ -243,7 +120,6 @@
       </details>
     </div>
 
-    <!-- Rent history (collapsed by default) -->
     <div class="panel" id="rn-panel">
       <details id="rn-details">
         <summary class="tx-summary">
@@ -275,15 +151,12 @@
       </details>
     </div>
 
-  </div><!-- #result -->
-
-</div><!-- .wrap -->
-
+  </div>
+</div>
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
 <script>
 'use strict';
 
-// ── Constants ─────────────────────────────────────────────────────────────────
 const SQM_TO_SQFT = 10.7639;
 const MONTHS      = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
 const ROOM_ORDER  = ['all','studio','1br','2br','3br','4br+','villa','other'];
@@ -300,7 +173,6 @@ const PERIODS     = [
 const TX_PAGE = 25;
 const RN_PAGE = 25;
 
-// ── State ─────────────────────────────────────────────────────────────────────
 let INDEX  = null;
 let DATA   = null;
 let room   = 'all';
@@ -312,19 +184,16 @@ let rnPage = 0;
 let currentSlug = null;
 let focusIdx = -1;
 
-// ── DOM ───────────────────────────────────────────────────────────────────────
 const qEl      = document.getElementById('q');
 const sugEl    = document.getElementById('suggestions');
 const hintEl   = document.getElementById('hint');
 const resultEl = document.getElementById('result');
 
-// ── Load index ────────────────────────────────────────────────────────────────
 fetch('/buildings/search-index.json')
   .then(r => { if (!r.ok) throw r.status; return r.json(); })
   .then(d  => { INDEX = d; hintEl.textContent = d.length.toLocaleString() + ' buildings indexed'; tryHash(); })
   .catch(() => { hintEl.textContent = 'Index unavailable'; });
 
-// ── Search ────────────────────────────────────────────────────────────────────
 qEl.addEventListener('input',   onInput);
 qEl.addEventListener('keydown', onKey);
 document.addEventListener('click', e => { if (!e.target.closest('.search-wrap')) closeSug(); });
@@ -372,7 +241,6 @@ function moveFocus(items) {
 }
 function closeSug() { sugEl.style.display = 'none'; }
 
-// ── Load building ─────────────────────────────────────────────────────────────
 function pick(slug, name) {
   closeSug();
   qEl.value = name;
@@ -393,7 +261,6 @@ function fetchBuilding(slug) {
     });
 }
 
-// ── Unit toggle ───────────────────────────────────────────────────────────────
 document.getElementById('btn-sqm').addEventListener('click',  () => setUnit(false));
 document.getElementById('btn-sqft').addEventListener('click', () => setUnit(true));
 function setUnit(v) {
@@ -405,7 +272,6 @@ function setUnit(v) {
   if (DATA) renderAll();
 }
 
-// ── Main render ───────────────────────────────────────────────────────────────
 function renderAll() {
   destroyCharts();
   renderHeader();
@@ -417,7 +283,7 @@ function renderAll() {
   renderTxTable();
   renderRentTable();
   resultEl.style.display = 'block';
-  // keep details closed when switching buildings
+
   const det = document.getElementById('tx-details');
   if (det) det.removeAttribute('open');
   const rnDet = document.getElementById('rn-details');
@@ -435,7 +301,7 @@ function renderHeader() {
   if (DATA.rn) stats.push({ k:'Rent contracts', v: fmtNum(DATA.rn) });
   if (lastSale?.ppsqm) stats.push({ k:(sqft ? 'AED/sqft' : 'AED/m²')+' ('+lastSale.y+')', v: fmtAED(toUnit(lastSale.ppsqm)) });
   if (lastRent?.rent)  stats.push({ k:'Median rent/yr ('+lastRent.y+')', v: fmtAED(lastRent.rent) + ' AED' });
-  // RERA registry counterpart — official numbers, not DLD transaction reality.
+
   if (DATA.rera_status) {
     const STATUS_LABEL = { FINISHED:'Delivered', ACTIVE:'Under construction', NOT_STARTED:'Not started',
       PENDING:'Pending', CONDITIONAL_ACTIVATING:'Cond. active', FRIEZED:'Frozen' };
@@ -444,9 +310,7 @@ function renderHeader() {
   if (DATA.rera_pct != null) stats.push({ k:'RERA complete', v: DATA.rera_pct + '%' });
   if (DATA.rera_units) stats.push({ k:'RERA units', v: fmtNum(DATA.rera_units) });
   const statsEl = document.getElementById('bld-stats');
-  // auto-fit's column count depends on viewport width, which splits an odd count like
-  // 7 unevenly (5+2, 6+1, ...). Pick a fixed column count instead so the two rows this
-  // section almost always wraps into come out balanced (7 → 4+3, 6 → 3+3, 5 → 3+2).
+
   const cols = stats.length <= 4 ? Math.max(stats.length, 1) : Math.ceil(stats.length / 2);
   statsEl.style.gridTemplateColumns = `repeat(${cols}, 1fr)`;
   statsEl.innerHTML = stats.map(s =>
@@ -479,7 +343,6 @@ function renderPeriodChips() {
   );
 }
 
-// ── Sales chart (combo: volume bars + price lines with op/rd split, monthly) ─
 function renderSalesPanel() {
   const panel  = document.getElementById('sales-chart-panel');
   const cut    = monthCutoff();
@@ -487,7 +350,7 @@ function renderSalesPanel() {
   const smData = (DATA.sm || []).filter(r => r.ym >= cut);
 
   if (room !== 'all') {
-    // ── Specific room: solid ready line + dashed off-plan line + count bars ──
+
     const data = (DATA.smr[room] || []).filter(r => r.ym >= cut);
     if (!data.length) { panel.style.display = 'none'; return; }
     panel.style.display = 'block';
@@ -529,7 +392,7 @@ function renderSalesPanel() {
     }));
 
   } else {
-    // ── All: op/rd lines (dashed/solid, same "all" blue) + stacked bars ───
+
     if (!smData.length) { panel.style.display = 'none'; return; }
     panel.style.display = 'block';
 
@@ -595,7 +458,6 @@ function comboSalesOpts(uLbl, showLegend) {
   };
 }
 
-// ── Off-plan vs Ready — combined chart (bars + lines, dual Y) ─────────────────
 function renderOffplanPanel() {
   const panel   = document.getElementById('offplan-panel');
   const cut     = yearCutoff();
@@ -616,10 +478,10 @@ function renderOffplanPanel() {
     data: {
       labels: years,
       datasets: [
-        // stacked bars (count) — right Y axis
+
         { type:'bar',  label:'Off-plan count', data:nOp, backgroundColor:'rgba(245,158,11,0.35)', yAxisID:'yVol', stack:'vol', order:3 },
         { type:'bar',  label:'Ready count',    data:nRd, backgroundColor:'rgba(29,78,216,0.20)',  yAxisID:'yVol', stack:'vol', order:3 },
-        // price lines — left Y axis
+
         { type:'line', label:'Off-plan '+uLbl, data:pOp, borderColor:'#d97706', backgroundColor:'transparent', yAxisID:'yPrice', pointRadius:3, tension:.3, spanGaps:true, borderWidth:2, order:1 },
         { type:'line', label:'Ready '+uLbl,    data:pRd, borderColor:'#1d4ed8', backgroundColor:'transparent', yAxisID:'yPrice', pointRadius:3, tension:.3, spanGaps:true, borderWidth:2, order:1 },
       ],
@@ -657,7 +519,6 @@ function renderOffplanPanel() {
   }));
 }
 
-// ── Rents chart (monthly) ────────────────────────────────────────────────────
 function renderRentsPanel() {
   const panel = document.getElementById('rents-panel');
   const cut   = monthCutoff();
@@ -690,7 +551,6 @@ function renderRentsPanel() {
   }));
 }
 
-// ── Transaction table ─────────────────────────────────────────────────────────
 function filteredTxs() {
   let txs = DATA.txs || [];
   if (room !== 'all') txs = txs.filter(t => t.r === room);
@@ -737,7 +597,6 @@ function renderTxTable() {
   if (next) next.addEventListener('click', () => { txPage++; renderTxTable(); });
 }
 
-// ── Rent contract table ───────────────────────────────────────────────────────
 function filteredRents() {
   let rnts = DATA.rnts || [];
   if (room !== 'all') rnts = rnts.filter(t => t.r === room);
@@ -784,7 +643,6 @@ function renderRentTable() {
   if (next) next.addEventListener('click', () => { rnPage++; renderRentTable(); });
 }
 
-// ── Data helpers ──────────────────────────────────────────────────────────────
 function yearCutoff() {
   if (period === 'all') return 0;
   const p = PERIODS.find(x => x.k === period);
@@ -807,7 +665,6 @@ function rentDataForMonth(r) { return r === 'all' ? (DATA.rm || []) : (DATA.rmr[
 function destroyCharts() { charts.forEach(c => c.destroy()); charts = []; }
 function toUnit(v) { return v == null ? null : (sqft ? Math.round(v / SQM_TO_SQFT * 10) / 10 : v); }
 
-// ── Formatters ────────────────────────────────────────────────────────────────
 function fmtNum(n) {
   if (n == null) return '—';
   if (n >= 1e6) return (n/1e6).toFixed(1).replace(/\.0$/,'') + 'M';
@@ -840,425 +697,6 @@ function h(s) {
     ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'})[c]);
 }
 
-// ── PDF export ────────────────────────────────────────────────────────────────
-// Libraries are not in the initial bundle (keeps this page's LCP/FCP clean) —
-// they're fetched from the CSP-whitelisted jsdelivr CDN only on first click.
-let _pdfLibsPromise = null;
-function loadScript(src) {
-  return new Promise((resolve, reject) => {
-    const s = document.createElement('script');
-    s.src = src;
-    s.onload = resolve;
-    s.onerror = () => reject(new Error('Failed to load ' + src));
-    document.head.appendChild(s);
-  });
-}
-function loadPdfLibs() {
-  if (!_pdfLibsPromise) {
-    _pdfLibsPromise = loadScript('https://cdn.jsdelivr.net/npm/jspdf@2.5.2/dist/jspdf.umd.min.js')
-      .then(() => loadScript('https://cdn.jsdelivr.net/npm/jspdf-autotable@3.8.3/dist/jspdf.plugin.autotable.min.js'));
-  }
-  return _pdfLibsPromise;
-}
-function imageToDataUrl(url) {
-  return new Promise((resolve, reject) => {
-    const img = new Image();
-    img.crossOrigin = 'anonymous';
-    img.onload = () => {
-      const c = document.createElement('canvas');
-      c.width = img.naturalWidth; c.height = img.naturalHeight;
-      c.getContext('2d').drawImage(img, 0, 0);
-      try { resolve(c.toDataURL('image/png')); } catch (e) { reject(e); }
-    };
-    img.onerror = () => reject(new Error('Failed to load ' + url));
-    img.src = url;
-  });
-}
-function pdfFilename() {
-  const slug = (DATA.name || currentSlug || 'building').replace(/[^a-z0-9]+/gi, '_').replace(/^_+|_+$/g, '');
-  const date = new Date().toISOString().slice(0, 10);
-  return `${slug}_DLD_Report_${date}.pdf`;
-}
-
-// ── ROI metrics ──────────────────────────────────────────────────────────────
-// Same methodology as the site's own payback/investor masks (scripts/build_payback_map.py,
-// see project memory "investor-backtest-findings"): gross yield = rent per sqm / sale price
-// per sqm, blended over the last up to 2 reported years, n-weighted. Real DLD sale +
-// Ejari rent registry data — not a marketing projection.
-const YIELD_ROOMS = ['studio', '1br', '2br', '3br', '4br+'];
-function weightedAvg(arr, field, nYears) {
-  if (!arr || !arr.length) return null;
-  let totalN = 0, sum = 0;
-  for (const e of arr.slice(-nYears)) {
-    const n = e.n || 0, v = e[field];
-    if (v == null || !n) continue;
-    totalN += n; sum += v * n;
-  }
-  return totalN ? sum / totalN : null;
-}
-function roomYieldStats(roomKey) {
-  const saleArr = DATA.sr[roomKey], rentArr = DATA.rr[roomKey];
-  if (!saleArr?.length && !rentArr?.length) return null; // unit type doesn't exist in this building
-  const ppsqm   = weightedAvg(saleArr, 'ppsqm', 2);
-  const rentSqm = weightedAvg(rentArr, 'rent_sqm', 2);
-  const avgPrice = weightedAvg(saleArr, 'price', 2);
-  const avgRent  = weightedAvg(rentArr, 'rent', 2);
-  const hasYield = !!(ppsqm && rentSqm);
-  const n = (saleArr || []).slice(-2).reduce((s, e) => s + (e.n || 0), 0);
-  return {
-    room: roomKey, ppsqm, rentSqm, avgPrice, avgRent, n,
-    yieldPct:   hasYield ? (rentSqm / ppsqm) * 100 : null,
-    paybackYrs: hasYield ? ppsqm / rentSqm          : null,
-  };
-}
-function allRoomYieldStats() {
-  return YIELD_ROOMS.map(roomYieldStats).filter(Boolean);
-}
-function blendedYieldStats(rows) {
-  const yieldRows = rows.filter(r => r.yieldPct != null);
-  const totalN = yieldRows.reduce((s, r) => s + r.n, 0);
-  if (!totalN) return null;
-  const ppsqm = yieldRows.reduce((s, r) => s + r.ppsqm * r.n, 0) / totalN;
-  const rentSqm = yieldRows.reduce((s, r) => s + r.rentSqm * r.n, 0) / totalN;
-  return { ppsqm, rentSqm, yieldPct: (rentSqm / ppsqm) * 100, paybackYrs: ppsqm / rentSqm };
-}
-// Prefers the latest FULLY reported calendar year over the current in-progress one —
-// comparing a partial year (e.g. Oct snapshot of 2026, ~70% of a year's contracts) against
-// a complete prior year biases the % change downward for no real reason. Falls back to
-// the partial year only if it's all there is.
-function latestFullYear(arr) {
-  const thisYear = new Date().getFullYear();
-  const full = arr.filter(e => e.y < thisYear && (e.n || 0) >= 5);
-  if (full.length) return full[full.length - 1];
-  return arr.slice().reverse().find(e => (e.n || 0) >= 5) || arr[arr.length - 1];
-}
-function priceChangePct(yearsBack) {
-  const sy = DATA.sy || [];
-  if (!sy.length) return null;
-  const latest = latestFullYear(sy);
-  if (!latest || !latest.ppsqm) return null;
-  const base = sy.find(e => e.y === latest.y - yearsBack);
-  if (!base || !base.ppsqm) return null;
-  return ((latest.ppsqm / base.ppsqm) - 1) * 100;
-}
-// Rent growth persists year-over-year (unlike price momentum, which mean-reverts —
-// see project memory "investor-backtest-findings"), so unlike priceChangePct this
-// is a genuine forward-looking positive signal, not just a historical data point.
-function rentChangePct(yearsBack) {
-  const ry = DATA.ry || [];
-  if (!ry.length) return null;
-  const latest = latestFullYear(ry);
-  if (!latest || !latest.rent) return null;
-  const base = ry.find(e => e.y === latest.y - yearsBack);
-  if (!base || !base.rent) return null;
-  return ((latest.rent / base.rent) - 1) * 100;
-}
-function renewalRatePct(rnts) {
-  if (!rnts || !rnts.length) return null;
-  const renewed = rnts.filter(t => !t.new).length;
-  return (renewed / rnts.length) * 100;
-}
-function fmtPct(v) { return v == null ? '—' : (v >= 0 ? '+' : '') + v.toFixed(1) + '%'; }
-
-// Small offscreen 5-year annual chart (purpose-built for the PDF — not a
-// screenshot of the on-screen 12-year monthly chart, which is too dense to print).
-// Shared by the sales trend and the rent trend — same shape of data (yearly
-// {y, n, <valueField>}), just a different field/label/color per call.
-async function renderAnnualTrendImage(yearlyData, { countLabel, valueField, valueLabel, color }) {
-  const rows = (yearlyData || []).slice(-5);
-  if (!rows.length) return null;
-  const canvas = document.createElement('canvas');
-  canvas.width = 1400; canvas.height = 460;
-  canvas.style.position = 'fixed'; canvas.style.left = '-9999px'; canvas.style.top = '0';
-  document.body.appendChild(canvas);
-  const chart = new Chart(canvas, {
-    data: {
-      labels: rows.map(e => String(e.y)),
-      datasets: [
-        { type: 'bar', label: countLabel, data: rows.map(e => e.n || 0), backgroundColor: color + '2e', yAxisID: 'yVol', order: 3 },
-        { type: 'line', label: valueLabel, data: rows.map(e => e[valueField] || null), borderColor: color, backgroundColor: 'transparent', yAxisID: 'yPrice', borderWidth: 3, pointRadius: 5, tension: .25, order: 1 },
-      ],
-    },
-    options: {
-      responsive: false, animation: false,
-      plugins: { legend: { display: true, position: 'bottom', labels: { font: { size: 15 }, boxWidth: 14 } } },
-      scales: {
-        x: { grid: { display: false }, ticks: { font: { size: 15 } } },
-        yPrice: { position: 'left', ticks: { font: { size: 13 }, callback: v => fmtK(v) }, title: { display: true, text: valueLabel, font: { size: 13 } } },
-        yVol: { position: 'right', grid: { drawOnChartArea: false }, ticks: { font: { size: 13 } } },
-      },
-    },
-  });
-  await new Promise(r => requestAnimationFrame(() => requestAnimationFrame(r)));
-  const dataUrl = canvas.toDataURL('image/png');
-  chart.destroy();
-  canvas.remove();
-  return dataUrl;
-}
-async function buildPdfReport() {
-  const { jsPDF } = window.jspdf;
-  const doc = new jsPDF({ unit: 'mm', format: 'a4' });
-  const pageW = doc.internal.pageSize.getWidth();
-  const marginX = 14;
-  let y = 16;
-
-  // ── Header: logo + title + generated date ──
-  try {
-    const logo = await imageToDataUrl('/icon-192.png');
-    doc.addImage(logo, 'PNG', marginX, y - 6, 10, 10);
-  } catch (e) { /* logo is cosmetic — skip silently if it fails to load */ }
-  doc.setFontSize(10); doc.setTextColor(100);
-  doc.text('DXBCompass — dxbcompass.com', marginX + 13, y - 1);
-  doc.setFontSize(17); doc.setTextColor(15, 23, 42);
-  doc.text(`${DATA.name} — Market Analysis Report`, marginX + 13, y + 5);
-  doc.setFontSize(9); doc.setTextColor(120);
-  const genDate = new Date().toLocaleDateString('en-GB', { day: 'numeric', month: 'long', year: 'numeric' });
-  doc.text(`Generated ${genDate} · ${[DATA.area, DATA.proj && DATA.proj !== DATA.name ? DATA.proj : ''].filter(Boolean).join(' · ')}`, marginX + 13, y + 10);
-  y += 18;
-  doc.setDrawColor(226, 232, 240);
-  doc.line(marginX, y, pageW - marginX, y);
-  y += 8;
-
-  // ── ROI KPI row ──
-  // Yield and payback are the same number (payback ≈ 100 / yield%), just phrased two
-  // ways — we lead with yield (the market convention) and tuck payback underneath as
-  // a small annotation rather than a second headline tile, instead of dropping it.
-  // 1Y price change is deliberately NOT a headline tile: the project's own backtest
-  // (memory "investor-backtest-findings") found 1y price momentum mean-reverts — making
-  // it a big bold "look how much it went up" number would be exactly as misleading in
-  // the other direction as hiding payback would be. Rent growth and renewal rate are
-  // the metrics that backtest actually validates as real signal.
-  const txs = filteredTxs();
-  const rnts = filteredRents();
-  const roomRows = allRoomYieldStats();
-  const headline = room !== 'all' ? roomYieldStats(room) : blendedYieldStats(roomRows);
-  // No Ejari contracts registered at all (DATA.rn === 0) means this is almost certainly
-  // still off-plan / pre-handover — there is no rental market yet, full stop. Printing
-  // four KPI tiles that are 3/4 "—" (as happened on off-plan buildings like Seven City
-  // JLT) looks broken. Swap the whole row for sale-side metrics that actually exist.
-  const noRentalHistory = !DATA.rn;
-  let kpis;
-  if (noRentalHistory) {
-    const opCount = txs.filter(t => t.op).length;
-    const opSharePct = txs.length ? (opCount / txs.length) * 100 : null;
-    const avgSalePrice = weightedAvg(DATA.sy, 'price', 2);
-    kpis = [
-      { k: 'Avg sale price', v: avgSalePrice ? fmtAEDFull(avgSalePrice) + ' AED' : '—' },
-      { k: 'Off-plan share', v: opSharePct == null ? '—' : opSharePct.toFixed(0) + '%' },
-      { k: 'Transactions' + (period !== 'all' || room !== 'all' ? ' (filtered)' : ''), v: txs.length.toLocaleString() },
-      { k: '3Y price change', v: fmtPct(priceChangePct(3)) },
-    ];
-  } else {
-    kpis = [
-      { k: 'Gross rental yield', v: headline ? fmtPct(headline.yieldPct) : '—', color: [22, 163, 74] },
-      { k: 'Rent growth (YoY)', v: fmtPct(rentChangePct(1)) },
-      { k: 'Tenant renewal rate', v: (() => { const r = renewalRatePct(rnts); return r == null ? '—' : r.toFixed(0) + '%'; })() },
-      { k: '3Y price change', v: fmtPct(priceChangePct(3)) },
-    ].filter(kpi => kpi.v !== '—'); // drop individual gaps rather than print a dash tile
-    if (!kpis.length) kpis = [{ k: '3Y price change', v: fmtPct(priceChangePct(3)) }];
-  }
-  const kpiW = (pageW - marginX * 2) / kpis.length;
-  kpis.forEach((kpi, i) => {
-    const x = marginX + i * kpiW;
-    doc.setFillColor(248, 250, 252);
-    doc.setDrawColor(226, 232, 240);
-    doc.roundedRect(x, y, kpiW - 4, 19, 2, 2, 'FD');
-    doc.setFontSize(8); doc.setTextColor(107, 114, 128);
-    doc.text(kpi.k, x + 3, y + 6);
-    doc.setFontSize(12.5); doc.setTextColor(...(kpi.color || [15, 23, 42]));
-    doc.text(String(kpi.v), x + 3, y + 13.5);
-  });
-  y += 22;
-  doc.setFontSize(7.5); doc.setTextColor(148, 155, 168);
-  doc.text(noRentalHistory
-    ? 'No Ejari rental contracts registered yet for this building — consistent with an off-plan / pre-handover project. Yield and payback will appear here once units are tenanted.'
-    : 'Gross yield before service charges, maintenance & financing costs. Based on DLD sales + Ejari rent registry, last 2 reported years.', marginX, y);
-  y += 8;
-
-  // ── Yield by unit type — the room breakdown is where the real signal is.
-  // On a no-rental-history (off-plan) building this degrades to a plain price table —
-  // no point printing columns of "—".
-  const yieldRoomRows = roomRows.filter(r => !noRentalHistory || r.avgPrice != null);
-  if (yieldRoomRows.length) {
-    doc.setFontSize(11); doc.setTextColor(15, 23, 42);
-    doc.text(noRentalHistory ? 'Sale prices by unit type' : 'Yield by unit type', marginX, y);
-    y += 3;
-    doc.autoTable(noRentalHistory ? {
-      startY: y,
-      margin: { left: marginX, right: marginX },
-      head: [['Unit type', 'Avg price (AED)']],
-      body: yieldRoomRows.map(r => [ROOM_LABEL[r.room], r.avgPrice ? fmtAEDFull(r.avgPrice) : '—']),
-      styles: { fontSize: 9, cellPadding: 2.5 },
-      headStyles: { fillColor: [29, 78, 216], textColor: 255 },
-      theme: 'grid',
-    } : {
-      startY: y,
-      margin: { left: marginX, right: marginX },
-      head: [['Unit type', 'Avg price (AED)', 'Avg rent (AED/yr)', 'Gross yield']],
-      body: yieldRoomRows.map(r => [
-        ROOM_LABEL[r.room],
-        r.avgPrice ? fmtAEDFull(r.avgPrice) : '—',
-        r.avgRent  ? fmtAEDFull(r.avgRent)  : '—',
-        fmtPct(r.yieldPct),
-      ]),
-      styles: { fontSize: 9, cellPadding: 2.5 },
-      headStyles: { fillColor: [29, 78, 216], textColor: 255 },
-      theme: 'grid',
-    });
-    y = doc.lastAutoTable.finalY + 10;
-  }
-
-  // ── 5-year annual trends (purpose-built charts, not the 12-year monthly screenshot) ──
-  const priceTrendImg = await renderAnnualTrendImage(DATA.sy, {
-    countLabel: 'Transactions', valueField: 'ppsqm', valueLabel: 'Median AED/m²', color: '#1d4ed8',
-  });
-  if (priceTrendImg) {
-    const imgW = pageW - marginX * 2;
-    const imgH = imgW * (460 / 1400);
-    if (y + imgH > 275) { doc.addPage(); y = 16; }
-    doc.setFontSize(11); doc.setTextColor(15, 23, 42);
-    doc.text('Sale price & volume — last 5 years', marginX, y);
-    y += 4;
-    doc.addImage(priceTrendImg, 'PNG', marginX, y, imgW, imgH);
-    y += imgH + 8;
-  }
-  const rentTrendImg = await renderAnnualTrendImage(DATA.ry, {
-    countLabel: 'Contracts', valueField: 'rent', valueLabel: 'Median AED/yr', color: '#16a34a',
-  });
-  if (rentTrendImg) {
-    const imgW = pageW - marginX * 2;
-    const imgH = imgW * (460 / 1400);
-    if (y + imgH > 275) { doc.addPage(); y = 16; }
-    doc.setFontSize(11); doc.setTextColor(15, 23, 42);
-    doc.text('Rent & contract volume — last 5 years', marginX, y);
-    y += 4;
-    doc.addImage(rentTrendImg, 'PNG', marginX, y, imgW, imgH);
-    y += imgH + 8;
-  }
-
-  // ── Table: most recent sales transactions (DATA.txs is already newest-first) ──
-  // "vs. median" flags deals priced well below the comparable unit-type benchmark
-  // (same ppsqm figures as the yield table above) — a motivated-seller / distressed-
-  // pricing signal, the one genuinely new, actionable thing a plain comps list lacks.
-  if (txs.length) {
-    if (y > 260) { doc.addPage(); y = 16; }
-    doc.setFontSize(11); doc.setTextColor(15, 23, 42);
-    doc.text('Recent sales transactions (DLD)', marginX, y);
-    y += 5;
-    const benchmarkPpsqm = {};
-    roomRows.forEach(r => { if (r.ppsqm) benchmarkPpsqm[r.room] = r.ppsqm; });
-    const BELOW_MARKET_THRESHOLD = -15; // % vs comparable median ppsqft
-    // Floor on the flaggable range: DLD "Sales" occasionally includes related-party
-    // transfers or corrected entries at nominal prices (verified on real data — a
-    // Princess Tower 2BR logged at 40,505 AED, ~98% under comps). A real motivated-
-    // seller discount doesn't go past roughly -40%; beyond that it's not a market
-    // comp, so don't dress it up as a deal.
-    const BELOW_MARKET_FLOOR = -40;
-    const salesSlice = txs.slice(0, 10);
-    const showType = salesSlice.some(t => t.op); // all-ready building: Type column is dead weight
-    const txRows = salesSlice.map(t => {
-      const sqftArea = t.sqm ? Math.round(t.sqm * SQM_TO_SQFT) : null;
-      const ppsqft = t.sqm && t.p ? Math.round(t.p / (t.sqm * SQM_TO_SQFT)) : null;
-      const benchmark = benchmarkPpsqm[t.r];
-      const diffPct = (benchmark && ppsqft) ? ((ppsqft / (benchmark / SQM_TO_SQFT)) - 1) * 100 : null;
-      const cells = [fmtDate(t.d)];
-      if (showType) cells.push(t.op ? 'Off-plan' : 'Ready');
-      cells.push(
-        BEDS_LABEL[t.r] || '—',
-        sqftArea ? sqftArea.toLocaleString() : '—',
-        t.p ? fmtAEDFull(t.p) : '—',
-        ppsqft ? ppsqft.toLocaleString() : '—',
-      );
-      return { flagged: diffPct != null && diffPct <= BELOW_MARKET_THRESHOLD && diffPct > BELOW_MARKET_FLOOR, cells };
-    });
-    if (txRows.some(r => r.flagged)) {
-      doc.setFontSize(7.5); doc.setTextColor(22, 163, 74);
-      doc.text(`Highlighted rows are priced ${Math.abs(BELOW_MARKET_THRESHOLD)}%+ below the comparable unit-type median — possible motivated seller.`, marginX, y);
-      y += 5;
-    }
-    const salesHead = ['Date'];
-    if (showType) salesHead.push('Type');
-    salesHead.push('Beds', 'Area (sqft)', 'Price (AED)', 'AED/sqft');
-    doc.autoTable({
-      startY: y,
-      margin: { left: marginX, right: marginX },
-      head: [salesHead],
-      body: txRows.map(r => r.cells),
-      styles: { fontSize: 9, cellPadding: 2.5 },
-      headStyles: { fillColor: [29, 78, 216], textColor: 255 },
-      theme: 'grid',
-      didParseCell: (data) => {
-        if (data.section !== 'body' || !txRows[data.row.index]?.flagged) return;
-        data.cell.styles.fillColor = [220, 252, 231];
-      },
-    });
-    y = doc.lastAutoTable.finalY + 10;
-  }
-
-  // ── Table: most recent rental contracts (DATA.rnts is already newest-first) ──
-  if (rnts.length) {
-    if (y > 260) { doc.addPage(); y = 16; }
-    doc.setFontSize(11); doc.setTextColor(15, 23, 42);
-    doc.text('Recent rental contracts (Ejari)', marginX, y);
-    y += 3;
-    doc.autoTable({
-      startY: y,
-      margin: { left: marginX, right: marginX },
-      head: [['Date', 'Type', 'Beds', 'Area (sqft)', 'Annual rent (AED)']],
-      body: rnts.slice(0, 10).map(t => {
-        const sqftArea = t.sqm ? Math.round(t.sqm * SQM_TO_SQFT) : null;
-        return [
-          fmtDate(t.d),
-          t.new ? 'New' : 'Renew',
-          BEDS_LABEL[t.r] || '—',
-          sqftArea ? sqftArea.toLocaleString() : '—',
-          t.amt ? fmtAEDFull(t.amt) : '—',
-        ];
-      }),
-      styles: { fontSize: 9, cellPadding: 2.5 },
-      headStyles: { fillColor: [22, 163, 74], textColor: 255 },
-      theme: 'grid',
-    });
-    y = doc.lastAutoTable.finalY + 10;
-  }
-
-  // ── Footer CTA on every page ──
-  const pageCount = doc.internal.getNumberOfPages();
-  for (let p = 1; p <= pageCount; p++) {
-    doc.setPage(p);
-    const pageH = doc.internal.pageSize.getHeight();
-    doc.setDrawColor(226, 232, 240);
-    doc.line(marginX, pageH - 14, pageW - marginX, pageH - 14);
-    doc.setFontSize(8.5); doc.setTextColor(107, 114, 128);
-    doc.text('Full interactive history, charts & filters:', marginX, pageH - 9);
-    doc.setTextColor(29, 78, 216);
-    doc.textWithLink(`dxbcompass.com/search/#${currentSlug}`, marginX, pageH - 5,
-      { url: `https://dxbcompass.com/search/#${currentSlug}` });
-    doc.setTextColor(150);
-    doc.text(`Page ${p} of ${pageCount}`, pageW - marginX, pageH - 9, { align: 'right' });
-  }
-
-  doc.save(pdfFilename());
-}
-const btnPdf = document.getElementById('btn-pdf');
-if (btnPdf) btnPdf.addEventListener('click', async () => {
-  if (!DATA) return;
-  const original = btnPdf.textContent;
-  btnPdf.disabled = true;
-  btnPdf.textContent = 'Generating PDF…';
-  try {
-    await loadPdfLibs();
-    await buildPdfReport();
-  } catch (err) {
-    console.error('PDF export failed:', err);
-    alert('Could not generate the PDF report. Please try again.');
-  } finally {
-    btnPdf.disabled = false;
-    btnPdf.textContent = original;
-  }
-});
-
-// ── Hash routing ──────────────────────────────────────────────────────────────
 function tryHash() {
   const slug = location.hash.slice(1);
   if (!slug || !INDEX) return;
@@ -1266,5 +704,6 @@ function tryHash() {
   if (m) { qEl.value = m.n; pick(m.s, m.n); }
 }
 </script>
+<script src="/search/pdf-report.js"></script>
 </body>
 </html>
