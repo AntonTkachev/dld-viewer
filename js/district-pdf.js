@@ -80,12 +80,9 @@ async function ensureBothSides() {
     if (!res.ok) throw new Error('HTTP ' + res.status);
     const merged = mergeTiers(await res.json());
     if (CTX.mode === 'sale') CTX.rent = merged; else CTX.sale = merged;
-  } catch (e) {
-    /* no counterpart page for this district — degrade to one-sided report */
-  }
+  } catch (e) {}
 }
 
-// Monthly {d,n,vol,med,ppsqm} series (as shipped in sale/rent timeline data) → yearly, n-weighted.
 function yearlyFromMonthly(monthly) {
   if (!monthly || !monthly.length) return [];
   const byYear = new Map();
@@ -104,6 +101,10 @@ function yearlyFromMonthly(monthly) {
     med:   e.n ? Math.round(e.medSum / e.n)   : 0,
     ppsqm: e.n ? Math.round(e.ppsqmSum / e.n) : 0,
   }));
+}
+function capToCurrentYear(yearly) {
+  const thisYear = new Date().getFullYear();
+  return yearly.filter(e => e.y <= thisYear);
 }
 function weightedAvg(arr, field, nYears) {
   if (!arr || !arr.length) return null;
@@ -171,10 +172,6 @@ function priceChangePct(yearsBack) {
   return ((latest.ppsqm / base.ppsqm) - 1) * 100;
 }
 function rentChangePct(yearsBack) {
-  // ppsqm, not absolute median rent — a district's unit mix shifts between
-  // years (e.g. a wave of new studios), which swings the absolute median
-  // even when like-for-like AED/m² rent is flat or rising. Confirmed on
-  // Business Bay: median rent -28% YoY while ppsqm was +12% YoY.
   const ry = yearlyFromMonthly(CTX.rent && CTX.rent.timeline);
   if (!ry.length) return null;
   const latest = latestFullYear(ry);
@@ -291,12 +288,13 @@ async function buildPdfReport() {
     : 'Gross yield before service charges, maintenance & financing costs. Based on DLD sales + Ejari rent registry, last 2 reported years, district-wide.', marginX, y);
   y += 8;
 
-  const yieldRoomRows = roomRows.filter(r => !noRentalHistory || r.avgPrice != null);
+  const hasRoomYield = roomRows.some(r => r.yieldPct != null);
+  const yieldRoomRows = roomRows.filter(r => hasRoomYield ? true : r.avgPrice != null);
   if (yieldRoomRows.length) {
     doc.setFontSize(11); doc.setTextColor(15, 23, 42);
-    doc.text(noRentalHistory ? 'Sale prices by unit type' : 'Yield by unit type', marginX, y);
+    doc.text(hasRoomYield ? 'Yield by unit type' : 'Sale prices by unit type', marginX, y);
     y += 3;
-    doc.autoTable(noRentalHistory ? {
+    doc.autoTable(!hasRoomYield ? {
       startY: y,
       margin: { left: marginX, right: marginX },
       head: [['Unit type', 'Avg price (AED)']],
@@ -321,7 +319,7 @@ async function buildPdfReport() {
     y = doc.lastAutoTable.finalY + 10;
   }
 
-  const priceTrendImg = await renderAnnualTrendImage(yearlyFromMonthly(CTX.sale && CTX.sale.timeline), {
+  const priceTrendImg = await renderAnnualTrendImage(capToCurrentYear(yearlyFromMonthly(CTX.sale && CTX.sale.timeline)), {
     countLabel: 'Transactions', valueField: 'ppsqm', valueLabel: 'Median AED/m²', color: '#1d4ed8',
   });
   if (priceTrendImg) {
@@ -334,7 +332,7 @@ async function buildPdfReport() {
     doc.addImage(priceTrendImg, 'PNG', marginX, y, imgW, imgH);
     y += imgH + 8;
   }
-  const rentTrendImg = await renderAnnualTrendImage(yearlyFromMonthly(CTX.rent && CTX.rent.timeline), {
+  const rentTrendImg = await renderAnnualTrendImage(capToCurrentYear(yearlyFromMonthly(CTX.rent && CTX.rent.timeline)), {
     countLabel: 'Contracts', valueField: 'med', valueLabel: 'Median AED/yr', color: '#16a34a',
   });
   if (rentTrendImg) {
