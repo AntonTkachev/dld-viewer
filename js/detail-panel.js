@@ -32,6 +32,30 @@
   const ROOM_COLORS   = { all:'#1d4ed8', apartments:'#16a34a', studio:'#9ca3af', '1br':'#60a5fa', '2br':'#3b82f6', '3br':'#1d4ed8', '4br+':'#1e3a8a', villa:'#d97706', other:'#a78bfa' };
   // Rooms that make up the "apartments" tab — everything except villa/other.
   const APARTMENT_ROOMS = ['studio','1br','2br','3br','4br+'];
+  const KNOWN_BAD_POINTS = [
+    { d: '2004-10', vol: 6278200 },
+  ];
+  function _stripKnownBadPoints(arr) {
+    if (!arr || !arr.length) return arr;
+    for (const bad of KNOWN_BAD_POINTS) {
+      const i = arr.findIndex(p => p.d === bad.d && p.vol === bad.vol);
+      if (i >= 0) arr.splice(i, 1);
+    }
+    return arr;
+  }
+  function _stripKnownBadFromRecord(a) {
+    if (!a) return;
+    _stripKnownBadPoints(a.timeline);
+    if (a.timeline_by_rooms) {
+      for (const room of Object.keys(a.timeline_by_rooms)) _stripKnownBadPoints(a.timeline_by_rooms[room]);
+    }
+  }
+  function avgPrice(p) {
+    return p.n ? Math.round(p.vol / p.n) : 0;
+  }
+  function medPrice(p, monthly) {
+    return monthly ? Math.round((p.med || 0) / 12) : (p.med || 0);
+  }
 
   function t(k) { return (typeof window.t === 'function') ? window.t(k) : k; }
 
@@ -107,9 +131,6 @@
         ppsqm: n ? Math.round(ppsqmSum / n) : 0,
       };
     }
-  }
-  function roomBreakdownIcon(k) {
-    return (k === 'villa') ? '🏡' : (k === 'other') ? '·' : '🏢';
   }
   function medOf(arr) {
     if (!arr.length) return 0;
@@ -261,7 +282,7 @@
       const style  = hidden
         ? `background:#f1f5f9;border-color:#cbd5e1;color:#94a3b8`
         : `background:${color};border-color:${color};color:#fff`;
-      return `<button class="rb-chip" type="button" data-dp-toggle-room="${_h(k)}" style="${style}" aria-pressed="${hidden ? 'false' : 'true'}">${roomBreakdownIcon(k)} ${roomLabel(k)}<span class="rb-chip-n">${fmtInt(total)}</span></button>`;
+      return `<button class="rb-chip" type="button" data-dp-toggle-room="${_h(k)}" style="${style}" aria-pressed="${hidden ? 'false' : 'true'}">${roomLabel(k)}<span class="rb-chip-n">${fmtInt(total)}</span></button>`;
     }).join('');
     return `
       <div class="dp-section">
@@ -460,7 +481,7 @@
     if (!_vintageBuckets(rec)) return '';
     const paths = (rec.vintage_paths && Object.keys(rec.vintage_paths).length >= 2) ? `
         <div style="margin-top:10px">
-          <div style="font-size:11px;color:#666;margin-bottom:2px">${t(kind === 'rent' ? 'vin_paths_rent' : 'vin_paths')}</div>
+          <div class="dp-chart-title">${t(kind === 'rent' ? 'vin_paths_rent' : 'vin_paths')}</div>
           <div class="dp-chart" style="height:210px">
             <button class="chart-expand-btn" type="button" data-dp-expand="vintage_paths" data-dp-source="${kind}" title="${t('chart_expand')}" aria-label="${t('chart_expand')}">⛶</button>
             <canvas id="ch-vintage-paths-${kind}"></canvas>
@@ -471,7 +492,6 @@
         <h3>${t('dp_section_vintage')}</h3>
         <div class="dp-chart" style="height:170px"><canvas id="ch-vintage-${kind}"></canvas></div>
         ${paths}
-        <div style="font-size:11px;color:#666;margin-top:4px">${t('vintage_hint')}</div>
       </div>`;
   }
   function renderVintagePaths(rec, kind) {
@@ -800,26 +820,41 @@
     return `rgba(${parseInt(m[1],16)},${parseInt(m[2],16)},${parseInt(m[3],16)},${alpha})`;
   }
 
-  function movingAverage(arr, w) {
-    const out = new Array(arr.length).fill(NaN);
-    let s = 0, c = 0;
-    for (let i = 0; i < arr.length; i++) {
-      s += arr[i]; c++;
-      if (c > w) { s -= arr[i-w]; c--; }
-      if (i >= w - 1) out[i] = s / w;
+  function calendarMA(fullDates, fullValues, w) {
+    const out = new Array(fullValues.length).fill(NaN);
+    if (!fullDates || !fullDates.length) return out;
+    const monthIdx = fullDates.map(d => { const [y, m] = d.slice(0, 7).split('-').map(Number); return y * 12 + (m - 1); });
+    const minCount = Math.max(3, Math.round(w * 0.25));
+    let start = 0;
+    for (let i = 0; i < fullValues.length; i++) {
+      const startMonth = monthIdx[i] - (w - 1);
+      while (start < i && monthIdx[start] < startMonth) start++;
+      let s = 0, c = 0;
+      for (let j = start; j <= i; j++) if (Number.isFinite(fullValues[j])) { s += fullValues[j]; c++; }
+      out[i] = c >= minCount ? s / c : NaN;
     }
     return out;
   }
-  function rollingStddev(arr, ma, w) {
-    const out = new Array(arr.length).fill(NaN);
-    for (let i = w - 1; i < arr.length; i++) {
-      let v = 0;
-      for (let j = i - w + 1; j <= i; j++) v += (arr[j] - ma[i]) ** 2;
-      out[i] = Math.sqrt(v / w);
-    }
-    return out;
+  function alignedMA(fullDates, fullValues, displayedLen, w) {
+    if (!fullValues || !fullValues.length) return new Array(displayedLen).fill(NaN);
+    const full = calendarMA(fullDates, fullValues, w);
+    const offset = Math.max(0, full.length - displayedLen);
+    return full.slice(offset);
   }
-  
+  function crossState(ma50, ma200, labels) {
+    let prevSign = null, crossIdx = -1, crossDir = 0, lastSign = null;
+    for (let i = 0; i < ma50.length; i++) {
+      if (!Number.isFinite(ma50[i]) || !Number.isFinite(ma200[i])) continue;
+      const sign = ma50[i] > ma200[i] ? 1 : (ma50[i] < ma200[i] ? -1 : 0);
+      if (sign !== 0) {
+        if (prevSign !== null && sign !== prevSign) { crossIdx = i; crossDir = sign; }
+        prevSign = sign;
+        lastSign = sign;
+      }
+    }
+    if (lastSign == null) return null;
+    return { lastSign, crossIdx, crossDir, crossDate: crossIdx >= 0 ? labels[crossIdx] : null };
+  }
   function linearTrend(arr) {
     const xs = [], ys = [];
     for (let i = 0; i < arr.length; i++) {
@@ -841,24 +876,25 @@
     if (arr.length < 13) return null;
     const last = arr[arr.length - 1];
     const prev = arr[arr.length - 13];
-    if (!prev) return null;
+    if (!Number.isFinite(last) || !prev) return null;
     return ((last - prev) / prev) * 100;
   }
   function renderTimelineCharts(a) {
-    const series = periodSlice(roomTimelineFor(a));
+    const fullSeries = roomTimelineFor(a);
+    const series = periodSlice(fullSeries);
     const labels = series.map(p => p.d.length === 10 ? p.d.slice(5) : p.d);
     const baseColor = ROOM_COLORS[S.roomFilter] || '#1d4ed8';
     // Per-metric colors: avg=indigo (price), count=sky (activity), volume=teal (accumulated money).
     // Kept independent of the room filter so the three timeline charts always read as three
     // distinct series regardless of whether you're looking at Все / Studio / 1BR / 2BR / …
     const perMetric = { avg: '#4f46e5', count: '#0284c7', volume: '#0d9488' };
-
     S.chartData = {
       labels: labels.slice(),
       fullLabels: series.map(p => p.d),
-      count:  { values: series.map(p => p.n),                                    fmtY: v => v,        fmtTip: v => fmtInt(v) + ' ' + t('ch_count').toLowerCase(), label: t('sp_subsection_count'),  color: perMetric.count },
-      volume: { values: series.map(p => p.vol || 0),                             fmtY: fmtAxisAed,    fmtTip: fmtAedDP,                                                label: t('sp_subsection_volume'), color: perMetric.volume },
-      avg:    { values: series.map(p => p.n ? Math.round(p.vol / p.n) : 0),      fmtY: fmtAxisAed,    fmtTip: fmtAedDP,                                                label: t('sp_subsection_avg'),    color: perMetric.avg },
+      fullDates: fullSeries.map(p => p.d),
+      count:  { values: series.map(p => p.n),                                    fullValues: fullSeries.map(p => p.n),                                fmtY: v => v,        fmtTip: v => fmtInt(v) + ' ' + t('ch_count').toLowerCase(), label: t('sp_subsection_count'),  color: perMetric.count },
+      volume: { values: series.map(p => p.vol || 0),                             fullValues: fullSeries.map(p => p.vol || 0),                         fmtY: fmtAxisAed,    fmtTip: fmtAedDP,                                                label: t('sp_subsection_volume'), color: perMetric.volume },
+      avg:    { values: series.map(avgPrice),                                     fullValues: fullSeries.map(avgPrice),                                fmtY: fmtAxisAed,    fmtTip: fmtAedDP,                                                label: t('sp_subsection_avg'),    color: perMetric.avg },
       color: baseColor,
     };
     // secondary: {values, fmtY, fmtTip, label, color} — deal count riding on a right-hand
@@ -980,9 +1016,6 @@
 
     const axis = [...new Set(cohorts.flatMap(c => vp[c].map(p => p.d)))].sort();
     const m = cohorts.length;
-    // NaN-tolerant trailing MA: cohort arrays live on a shared axis with
-    // leading NaNs and gap months — the shared movingAverage() keeps a
-    // running sum that a single NaN poisons permanently.
     const maNan = (arr, w) => arr.map((_, i) => {
       let s = 0, c = 0;
       for (let j = Math.max(0, i - w + 1); j <= i; j++) {
@@ -1070,11 +1103,11 @@
     const data = m.values.slice();
     if (data.length < 2) return;  
 
-    const w = _maWindow(data.length);
-    const ma = movingAverage(data, w);
-    const sd = rollingStddev(data, ma, w);
-    const upper = ma.map((v, i) => Number.isFinite(v) ? v + 1.5 * sd[i] : NaN);
-    const lower = ma.map((v, i) => Number.isFinite(v) ? v - 1.5 * sd[i] : NaN);
+    const ma50 = alignedMA(cd.fullDates, m.fullValues, data.length, 50);
+    const ma200 = alignedMA(cd.fullDates, m.fullValues, data.length, 200);
+    const cross = crossState(ma50, ma200, labels);
+    const w = 50;
+    const ma = ma50;
     const trend = linearTrend(data);
     const trendLine = trend ? data.map((_, i) => trend.intercept + trend.slope * i) : null;
     const median = (() => {
@@ -1086,9 +1119,10 @@
     const yoy = yoyPercent(data);
     const lastVal = data[data.length - 1];
     const lastMa = ma[ma.length - 1];
-    const lastSpread = Number.isFinite(lastMa) && lastMa ? ((lastVal - lastMa) / lastMa) * 100 : null;
-    const meanVal = data.reduce((a,b)=>a+b,0)/data.length;
-    const stdAll = Math.sqrt(data.reduce((s,v)=>s+(v-meanVal)**2,0)/data.length);
+    const lastSpread = Number.isFinite(lastVal) && Number.isFinite(lastMa) && lastMa ? ((lastVal - lastMa) / lastMa) * 100 : null;
+    const validData = data.filter(Number.isFinite);
+    const meanVal = validData.length ? validData.reduce((a,b)=>a+b,0)/validData.length : 0;
+    const stdAll = validData.length ? Math.sqrt(validData.reduce((s,v)=>s+(v-meanVal)**2,0)/validData.length) : 0;
     const vol = meanVal ? (stdAll / meanVal) * 100 : null;
 
     const color = m.color || cd.color || '#1d4ed8';
@@ -1118,7 +1152,15 @@
     if (lastSpread != null) badges.push(badge(lastSpread>=0?'pos':'neg', t('bd_vsma').replace('{w}', w), (lastSpread>=0?'+':'')+lastSpread.toFixed(1)+'%', t('bd_vsma_tip').replace('{w}', w)));
     if (vol != null)        badges.push(badge('muted',                   t('bd_vol'),   vol.toFixed(0)+'%',                                 t('bd_vol_tip')));
     if (trend)              badges.push(badge(trend.slope>=0?'pos':'neg', t('bd_trend'), trend.slope>=0?t('bd_trend_up'):t('bd_trend_dn'), t('bd_trend_tip')));
-    badges.push(badge('muted', t('bd_n'), data.length, t('bd_n_tip')));
+    if (cross) {
+      if (cross.crossIdx >= 0) {
+        const dead = cross.crossDir < 0;
+        badges.push(badge(dead?'neg':'pos', t('bd_cross'), (dead?t('bd_cross_death'):t('bd_cross_golden')) + ' · ' + cross.crossDate, t('bd_cross_tip')));
+      } else {
+        badges.push(badge('muted', t('bd_cross'), cross.lastSign < 0 ? t('bd_cross_below') : t('bd_cross_above'), t('bd_cross_tip')));
+      }
+    }
+    badges.push(badge('muted', t('bd_n'), validData.length, t('bd_n_tip')));
     el.querySelector('#dp-cm-badges').innerHTML = badges.join('');
 
     if (S.modalChart) { S.modalChart.destroy(); S.modalChart = null; }
@@ -1147,7 +1189,7 @@
         const still = document.getElementById('dp-chart-modal');
         if (!still || !still.classList.contains('open') || S.modalEngine !== 'echarts' || still.dataset.metric !== metric || (still.dataset.source || 'sale') !== source) return;
         echartsEl.innerHTML = '';
-        _renderModalECharts({ el: echartsEl, labels, data, ma, upper, lower, trendLine, median, w, color, m, secondary });
+        _renderModalECharts({ el: echartsEl, labels, data, ma, ma50, ma200, median, color, m, secondary });
       }).catch(err => {
         echartsEl.innerHTML = `<div style="padding:20px;color:#dc2626;font-size:12px">ECharts failed to load. Reverting to Chart.js.</div>`;
         console.error('ECharts load failed:', err);
@@ -1155,12 +1197,12 @@
         el.querySelectorAll('.cm-engine').forEach(btn => btn.classList.toggle('active', btn.dataset.dpEngine === 'chartjs'));
         canvasEl.style.display = '';
         echartsEl.style.display = 'none';
-        _renderModalChartJs({ ctx: canvasEl, labels, data, ma, upper, lower, trendLine, median, w, color, m, grnLine, redLine, grnFill, redFill, secondary });
+        _renderModalChartJs({ ctx: canvasEl, labels, data, ma, ma50, ma200, median, color, m, grnLine, redLine, grnFill, redFill, secondary });
       });
     } else {
       canvasEl.style.display = '';
       echartsEl.style.display = 'none';
-      _renderModalChartJs({ ctx: canvasEl, labels, data, ma, upper, lower, trendLine, median, w, color, m, grnLine, redLine, grnFill, redFill, secondary });
+      _renderModalChartJs({ ctx: canvasEl, labels, data, ma, ma50, ma200, median, color, m, grnLine, redLine, grnFill, redFill, secondary });
     }
   }
 
@@ -1187,7 +1229,7 @@
     return _echartsPromise;
   }
 
-  function _renderModalChartJs({ ctx, labels, data, ma, upper, lower, trendLine, median, w, color, m, grnLine, redLine, grnFill, redFill, secondary }) {
+  function _renderModalChartJs({ ctx, labels, data, ma, ma50, ma200, median, color, m, grnLine, redLine, grnFill, redFill, secondary }) {
     const scales = {
       y: { ticks: { font: { size: 11 }, callback: m.fmtY }, beginAtZero: true },
       x: { ticks: { font: { size: 11 }, maxRotation: 0, autoSkip: true, maxTicksLimit: 14 } },
@@ -1195,50 +1237,52 @@
     if (secondary) {
       scales.y1 = { position: 'right', ticks: { font: { size: 11 }, callback: secondary.fmtY }, beginAtZero: true, grid: { drawOnChartArea: false } };
     }
+    const hasFinite = arr => arr.some(v => Number.isFinite(v));
+    const datasets = [];
+    if (secondary) {
+      datasets.push({
+        type: 'bar', label: secondary.label, data: secondary.values,
+        backgroundColor: rgba(secondary.color, .25), borderWidth: 0,
+        yAxisID: 'y1', barPercentage: .6, categoryPercentage: .7, order: 6,
+      });
+    }
+    if (hasFinite(ma200)) datasets.push({ label: t('ch_ma200'), data: ma200, borderColor: '#7c3aed', borderWidth: 1.6, pointRadius: 0, fill: false, order: 5 });
+    let ma50Index = -1;
+    if (hasFinite(ma50)) {
+      ma50Index = datasets.length;
+      datasets.push({ label: t('ch_ma50'), data: ma50, borderColor: '#f59e0b', borderWidth: 1.6, pointRadius: 0, fill: false, order: 4 });
+    }
+    if (median != null) datasets.push({ label: t('ch_median'), data: data.map(() => median), borderColor: 'rgba(29,78,216,0.55)', borderWidth: 1, borderDash: [1, 2], pointRadius: 0, fill: false, order: 2 });
+    datasets.push({
+      label: m.label,
+      data,
+      borderColor: color,
+      borderWidth: 2.5,
+      pointRadius: 2.2,
+      pointHoverRadius: 4,
+      fill: ma50Index >= 0 ? { target: ma50Index, above: grnFill, below: redFill } : false,
+      segment: {
+        borderColor: ctx => {
+          const i = ctx.p0DataIndex;
+          if (i >= ma.length - 1) return color;
+          const v1 = data[i+1];
+          if (!Number.isFinite(ma[i+1])) return color;
+          if (v1 > ma[i+1]) return grnLine;
+          if (v1 < ma[i+1]) return redLine;
+          return color;
+        },
+      },
+      order: 1,
+    });
     S.modalChart = new Chart(ctx, {
       type: 'line',
-      data: {
-        labels,
-        datasets: [
-          ...(secondary ? [{
-            type: 'bar', label: secondary.label, data: secondary.values,
-            backgroundColor: rgba(secondary.color, .25), borderWidth: 0,
-            yAxisID: 'y1', barPercentage: .6, categoryPercentage: .7, order: 7,
-          }] : []),
-          { label: 'lower', data: lower, borderWidth: 0, pointRadius: 0, fill: false, order: 6 },
-          { label: t('ch_channel'), data: upper, borderColor: 'rgba(148,163,184,0.55)', borderWidth: 1, borderDash:[3,3], pointRadius: 0, fill: '-1', backgroundColor: 'rgba(148,163,184,0.10)', order: 5 },
-          { label: t('ch_ma') + ` (${w})`, data: ma, borderColor: '#64748b', borderWidth: 1.5, borderDash: [6,4], pointRadius: 0, fill: false, order: 4 },
-          ...(trendLine ? [{ label: t('ch_trend'), data: trendLine, borderColor: '#0f172a', borderWidth: 1.2, borderDash:[2,3], pointRadius: 0, fill: false, order: 3 }] : []),
-          ...(median != null ? [{ label: t('ch_median'), data: data.map(()=>median), borderColor: 'rgba(29,78,216,0.55)', borderWidth: 1, borderDash:[1,2], pointRadius: 0, fill: false, order: 2 }] : []),
-          {
-            label: m.label,
-            data,
-            borderColor: color,
-            borderWidth: 2.5,
-            pointRadius: 2.2,
-            pointHoverRadius: 4,
-            fill: { target: 2, above: grnFill, below: redFill },
-            segment: {
-              borderColor: ctx => {
-                const i = ctx.p0DataIndex;
-                if (i >= ma.length - 1) return color;
-                const v1 = data[i+1];
-                if (!Number.isFinite(ma[i+1])) return color;
-                if (v1 > ma[i+1]) return grnLine;
-                if (v1 < ma[i+1]) return redLine;
-                return color;
-              },
-            },
-            order: 1,
-          },
-        ],
-      },
+      data: { labels, datasets },
       options: {
         responsive: true,
         maintainAspectRatio: false,
         interaction: { intersect: false, mode: 'index' },
         plugins: {
-          legend: { display: true, position: 'bottom', labels: { boxWidth: 14, font: { size: 11 }, filter: (item) => item.text !== 'lower' } },
+          legend: { display: true, position: 'bottom', labels: { boxWidth: 14, font: { size: 11 } } },
           tooltip: { callbacks: { label: c => c.dataset.type === 'bar' ? ' ' + secondary.fmtTip(c.parsed.y) : ' ' + (c.dataset.label || '') + ': ' + m.fmtTip(c.parsed.y) } },
         },
         scales,
@@ -1246,13 +1290,12 @@
     });
   }
 
-  function _renderModalECharts({ el, labels, data, ma, upper, lower, trendLine, median, w, color, m, secondary }) {
+  function _renderModalECharts({ el, labels, data, ma, ma50, ma200, median, color, m, secondary }) {
     const clean = arr => arr.map(v => Number.isFinite(v) ? v : null);
-    const bandOffset = ma.map((v, i) => Number.isFinite(v) && Number.isFinite(upper[i]) ? upper[i] - v : null);
+    const hasFinite = arr => arr.some(v => Number.isFinite(v));
     const inst = echarts.init(el, null, { renderer: 'canvas' });
     S.echartsInstance = inst;
 
-    // Segmented main series: split into green (above MA) / red (below MA) sub-series
     const above = data.map((v, i) => (Number.isFinite(ma[i]) && v >= ma[i]) ? v : null);
     const below = data.map((v, i) => (Number.isFinite(ma[i]) && v <  ma[i]) ? v : null);
 
@@ -1267,10 +1310,7 @@
         padding: [8, 12],
         formatter: params => {
           const pName = params[0].name;
-          const hidden = new Set(['band-anchor', t('ch_channel'), 'above-ma', 'below-ma']);
-          const idx = params[0].dataIndex;
-          const bandU = Number.isFinite(upper[idx]) ? Math.round(upper[idx]) : null;
-          const bandL = Number.isFinite(lower[idx]) ? Math.round(lower[idx]) : null;
+          const hidden = new Set(['above-ma', 'below-ma']);
           const rows = params
             .filter(p => p.value != null && !hidden.has(p.seriesName))
             .map(p => `<div style="display:flex;justify-content:space-between;gap:12px">
@@ -1278,13 +1318,7 @@
               <span style="font-variant-numeric:tabular-nums;font-weight:600">${secondary && p.seriesName === secondary.label ? secondary.fmtTip(Math.round(p.value)) : m.fmtTip(Math.round(p.value))}</span>
             </div>`)
             .join('');
-          const bandRow = (bandU != null && bandL != null)
-            ? `<div style="display:flex;justify-content:space-between;gap:12px;opacity:.75">
-                 <span>${t('ch_channel')}</span>
-                 <span style="font-variant-numeric:tabular-nums">${m.fmtTip(bandL)} – ${m.fmtTip(bandU)}</span>
-               </div>`
-            : '';
-          return `<div style="opacity:.75;font-size:11px;margin-bottom:4px">${pName}</div>${rows}${bandRow}`;
+          return `<div style="opacity:.75;font-size:11px;margin-bottom:4px">${pName}</div>${rows}`;
         },
       },
       legend: {
@@ -1292,10 +1326,9 @@
         icon: 'roundRect', itemWidth: 12, itemHeight: 8,
         data: [
           m.label,
-          t('ch_ma') + ` (${w})`,
-          ...(trendLine ? [t('ch_trend')] : []),
+          ...(hasFinite(ma200) ? [t('ch_ma200')] : []),
+          ...(hasFinite(ma50) ? [t('ch_ma50')] : []),
           ...(median != null ? [t('ch_median')] : []),
-          t('ch_channel'),
           ...(secondary ? [secondary.label] : []),
         ],
       },
@@ -1319,39 +1352,23 @@
       }] : []),
       ],
       series: [
-        // Deal count bars riding a second axis behind the price line
         ...(secondary ? [{
           name: secondary.label, type: 'bar', yAxisIndex: 1, data: secondary.values,
           itemStyle: { color: secondary.color, opacity: .25 },
           barMaxWidth: 14,
         }] : []),
-        // Bollinger band (anchor + stackable delta = filled area between lower and upper)
-        {
-          name: 'band-anchor', type: 'line', data: clean(lower),
-          lineStyle: { opacity: 0 }, symbol: 'none', stack: 'band', silent: true,
-          areaStyle: { opacity: 0 },
-        },
-        {
-          name: t('ch_channel'), type: 'line', data: clean(bandOffset),
-          lineStyle: { opacity: 0 }, symbol: 'none', stack: 'band', silent: true,
-          itemStyle: { color: 'rgba(148,163,184,0.7)' },
-          areaStyle: { color: 'rgba(148,163,184,0.14)' },
-        },
-        // Moving average
-        {
-          name: t('ch_ma') + ` (${w})`, type: 'line', data: clean(ma),
+        ...(hasFinite(ma200) ? [{
+          name: t('ch_ma200'), type: 'line', data: clean(ma200),
           smooth: true, symbol: 'none',
-          itemStyle: { color: '#64748b' },
-          lineStyle: { color: '#64748b', width: 1.4, type: 'dashed' },
-        },
-        // Trend line
-        ...(trendLine ? [{
-          name: t('ch_trend'), type: 'line', data: clean(trendLine),
-          smooth: false, symbol: 'none',
-          itemStyle: { color: '#0f172a' },
-          lineStyle: { color: '#0f172a', width: 1.2, type: [3, 4] },
+          itemStyle: { color: '#7c3aed' },
+          lineStyle: { color: '#7c3aed', width: 1.6 },
         }] : []),
-        // Median line
+        ...(hasFinite(ma50) ? [{
+          name: t('ch_ma50'), type: 'line', data: clean(ma50),
+          smooth: true, symbol: 'none',
+          itemStyle: { color: '#f59e0b' },
+          lineStyle: { color: '#f59e0b', width: 1.6 },
+        }] : []),
         ...(median != null ? [{
           name: t('ch_median'), type: 'line', data: data.map(() => median),
           symbol: 'none',
@@ -1630,11 +1647,14 @@
   function _projectsDonutData(a) {
     const list = (a.top_projects || []).filter(p => p.n > 0);
     if (!list.length) return null;
+    const named = list.filter(p => p.proj);
+    const unnamed = list.filter(p => !p.proj);
+    if (!named.length) return null;
     const N = 8;
-    const top = list.slice(0, N);
-    const tail = list.slice(N);
+    const top = named.slice(0, N);
+    const tail = named.slice(N).concat(unnamed);
     const tailN = tail.reduce((s,p) => s + (p.n||0), 0);
-    const items = top.map(p => ({ name: p.proj || t('not_specified'), n: p.n, total: p.total }));
+    const items = top.map(p => ({ name: p.proj, n: p.n, total: p.total }));
     if (tailN > 0) items.push({ name: t('donut_others'), n: tailN, total: tail.reduce((s,p)=>s+(p.total||0),0) });
     return {
       labels: items.map(i => i.name),
@@ -1859,14 +1879,17 @@
     const color = '#0ea5e9';
     const bg = 'rgba(14,165,233,.14)';
     const monthly = (S.rentUnit === 'monthly');
-    const medVals = series.map(p => monthly ? Math.round((p.med || 0) / 12) : (p.med || 0));
+    const medVals = series.map(p => medPrice(p, monthly));
     const cntVals = series.map(p => p.n);
+    const fullMedVals = tlSource.map(p => medPrice(p, monthly));
+    const fullCntVals = tlSource.map(p => p.n);
 
     S.rentChartData = {
       labels: labels.slice(),
       fullLabels,
-      count: { values: cntVals, fmtY: v => v,        fmtTip: v => fmtInt(v) + ' ' + t('ch_count').toLowerCase(), label: t('sp_subsection_count') },
-      med:   { values: medVals, fmtY: fmtAxisAed,    fmtTip: fmtAedDP,                                            label: t('rent_th_med') },
+      fullDates: tlSource.map(p => p.d),
+      count: { values: cntVals, fullValues: fullCntVals, fmtY: v => v,        fmtTip: v => fmtInt(v) + ' ' + t('ch_count').toLowerCase(), label: t('sp_subsection_count') },
+      med:   { values: medVals, fullValues: fullMedVals, fmtY: fmtAxisAed,    fmtTip: fmtAedDP,                                            label: t('rent_th_med') },
       color,
     };
     const mkChart = (id, data, fmtY, tooltipFmt) => {
@@ -2065,6 +2088,8 @@
     S.container       = container;
     S.sale            = sale  || null;
     S.rent            = rent  || null;
+    _stripKnownBadFromRecord(S.sale);
+    _stripKnownBadFromRecord(S.rent);
     _addApartmentsBucket(S.sale);
     _addApartmentsBucket(S.rent);
     S.isDubai         = !!isDubai;

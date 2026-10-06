@@ -143,6 +143,7 @@ COPY = {
         'subpages_recent_sale': 'Последние сделки',
         'subpages_recent_rent': 'Последние аренды',
         'loading': 'Загрузка статистики…',
+        'lede_summary': 'Подробнее о рынке',
         'load_err': 'Не удалось загрузить данные',
         'about_title': 'О районе {name}',
         'nearby_title': 'Похожие районы рядом с {name}',
@@ -241,6 +242,7 @@ COPY = {
         'subpages_recent_sale': 'Recent transactions',
         'subpages_recent_rent': 'Recent rentals',
         'loading': 'Loading statistics…',
+        'lede_summary': 'More about the market',
         'load_err': 'Could not load data',
         'about_title': 'About {name}',
         'nearby_title': 'Similar districts near {name}',
@@ -339,6 +341,7 @@ COPY = {
         'subpages_recent_sale': 'آخر الصفقات',
         'subpages_recent_rent': 'آخر عقود الإيجار',
         'loading': 'جاري تحميل الإحصاءات…',
+        'lede_summary': 'المزيد عن السوق',
         'load_err': 'تعذر تحميل البيانات',
         'about_title': 'عن منطقة {name}',
         'nearby_title': 'مناطق مشابهة قريبة من {name}',
@@ -437,6 +440,7 @@ COPY = {
         'subpages_recent_sale': 'हाल के सौदे',
         'subpages_recent_rent': 'हाल के किराया अनुबंध',
         'loading': 'आँकड़े लोड हो रहे हैं…',
+        'lede_summary': 'बाज़ार के बारे में अधिक जानें',
         'load_err': 'डेटा लोड नहीं हो सका',
         'about_title': '{name} के बारे में',
         'nearby_title': '{name} के पास समान जिले',
@@ -535,6 +539,7 @@ COPY = {
         'subpages_recent_sale': '最新交易',
         'subpages_recent_rent': '最新租赁合同',
         'loading': '正在加载统计数据…',
+        'lede_summary': '查看更多市场信息',
         'load_err': '无法加载数据',
         'about_title': '关于 {name}',
         'nearby_title': '{name}附近的相似区域',
@@ -619,6 +624,18 @@ COPY = {
         'crumb_period_5y': '近 5 年',
         'crumb_period_10y':'近 10 年',
         'lang_switch_to': 'RU',
+    },
+}
+
+DUBAI_COPY_OVERRIDES = {
+    'ru': {
+        'h1_sales': 'Сделки с недвижимостью в Дубае {period_h1}',
+        'h1_rent':  'Аренда недвижимости в Дубае {period_h1}',
+        'lede_sales_intro': 'В Дубае {period_h1} совершено {n} сделок с недвижимостью по данным Dubai Land Department.',
+        'lede_rent_intro':  'В Дубае {period_h1} зарегистрировано {n} договоров аренды по данным Dubai Land Department.',
+        'about_title': 'О рынке недвижимости Дубая',
+        'about_intro': 'Сводная статистика по рынку недвижимости Дубая в целом. ',
+        'about_unknown': 'Дубай — крупнейший город и эмират ОАЭ по данным Dubai Land Department.',
     },
 }
 
@@ -1053,15 +1070,22 @@ def period_record_for(period_aggs, key, period):
     return (period_aggs.get(period, {}) or {}).get(key) or {}
 
 
-def build_headline(mode, name, period_h1, n, lang):
+def _copy_for(lang, is_dubai=False):
     c = COPY[lang]
+    if is_dubai and lang in DUBAI_COPY_OVERRIDES:
+        c = {**c, **DUBAI_COPY_OVERRIDES[lang]}
+    return c
+
+
+def build_headline(mode, name, period_h1, n, lang, is_dubai=False):
+    c = _copy_for(lang, is_dubai)
     tmpl = c['h1_sales'] if mode == 'sale' else c['h1_rent']
     text = tmpl.format(name=name, period_h1=period_h1).strip()
     return text, fmt_int(n, lang)
 
 
-def build_lede(mode, name, period_h1, rec, lang):
-    c = COPY[lang]
+def build_lede(mode, name, period_h1, rec, lang, is_dubai=False):
+    c = _copy_for(lang, is_dubai)
     n   = rec.get('n', 0)
     med = rec.get('med', 0)
     ppsqm = rec.get('med_ppsqm', 0)
@@ -1078,10 +1102,10 @@ def build_lede(mode, name, period_h1, rec, lang):
     return ' '.join(pieces)
 
 
-def build_about(name, sale_rec, rent_rec, lang):
+def build_about(name, sale_rec, rent_rec, lang, is_dubai=False):
     """Period-independent paragraph + a stat-pill row — unique facts per
     district that Google can use as descriptive context. Localized via COPY[lang]."""
-    c = COPY[lang]
+    c = _copy_for(lang, is_dubai)
     facts = []
     n_total = sale_rec.get('n', 0)
     flat = sale_rec.get('flat', {}) or {}
@@ -1152,7 +1176,7 @@ def build_about(name, sale_rec, rent_rec, lang):
         grid_html = f'<div class="about-grid">{cells}</div>'
 
     title_text = c['about_title'].format(name=name)
-    return f'<section class="about"><h2>{html_escape(title_text)}</h2>{intro}{grid_html}</section>'
+    return f'<details class="about"><summary>{html_escape(title_text)}</summary>{intro}{grid_html}</details>'
 
 
 def _polygon_centroid(feature):
@@ -1588,6 +1612,7 @@ def main():
         if rent_rec:
             produced_rent_slugs.add(slug)
 
+        is_dubai = (key == '__dubai__')
         for lang in LANGUAGES:
             c = COPY[lang]
             html_lang = c['html_lang']
@@ -1596,7 +1621,7 @@ def main():
             # every text touchpoint (H1, lede, About, FAQ) so RU readers see
             # "Дубай" rather than the raw English key.
             display_name = c['breadcrumb_dubai'] if key == '__dubai__' else name
-            about_html = build_about(display_name, sale_rec, rent_rec, lang)
+            about_html = build_about(display_name, sale_rec, rent_rec, lang, is_dubai=is_dubai)
             district_faq_html = build_district_faq(display_name, sale_rec, rent_rec, lang)
 
             for mode, prefix in MODES:
@@ -1640,8 +1665,8 @@ def main():
                     if not rec_for_period.get('n') and period_code != 'all':
                         rec_for_period = base_rec
                     n_p = rec_for_period.get('n', 0)
-                    headline, _ = build_headline(mode, display_name, period_h1, n_p, lang)
-                    lede = build_lede(mode, display_name, period_h1, rec_for_period, lang)
+                    headline, _ = build_headline(mode, display_name, period_h1, n_p, lang, is_dubai=is_dubai)
+                    lede = build_lede(mode, display_name, period_h1, rec_for_period, lang, is_dubai=is_dubai)
                     period_copy[period_code] = {'h1': headline, 'lede': lede, 'n': n_p, 'rec': rec_for_period}
 
                 bread_mode = c['mode_sales'] if mode == 'sale' else c['mode_rents']
@@ -1678,6 +1703,7 @@ def main():
                     html = html.replace('<!--__ABOUT__-->', about_html)
                     html = html.replace('__INITIAL_H1__', html_escape(copy_now['h1']))
                     html = html.replace('__INITIAL_LEDE__', html_escape(copy_now['lede']))
+                    html = html.replace('__LEDE_SUMMARY__', html_escape(c['lede_summary']))
                     html = html.replace('__LOADING_TEXT__', html_escape(c['loading']))
                     html = html.replace("/*__LOAD_ERR_LABEL__*/'Не удалось загрузить данные'",
                                         json.dumps(c['load_err']))
