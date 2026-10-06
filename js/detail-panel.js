@@ -732,7 +732,7 @@
       <div class="dp-section">
         <h3>${t("rent_section_timeline")}</h3>
         ${hasRooms ? `<div class="room-chips" id="dp-room-chips-rent">${renderRoomChips(r)}</div>` : ''}
-        <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
+        <div class="dp-timeline-grid-2">
           <div>
             <div style="font-size:11px;color:#666;margin-bottom:2px">${t("sp_subsection_count")}</div>
             <div class="dp-chart" style="height:180px">
