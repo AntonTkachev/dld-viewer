@@ -136,6 +136,7 @@ COPY = {
         'mode_sales': 'Продажи', 'mode_rents': 'Аренда',
         'nav_back_map': '← Все районы (карта)',
         'nav_table': 'Таблица всех районов',
+        'pdf_export_label': 'Скачать PDF-отчёт',
         'subpages_title': 'Подробнее по разделам',
         'subpages_top_projects': 'Топ проекты',
         'subpages_top_deals': 'Крупнейшие сделки',
@@ -233,6 +234,7 @@ COPY = {
         'mode_sales': 'Sales', 'mode_rents': 'Rentals',
         'nav_back_map': '← All districts (map)',
         'nav_table': 'Table of all districts',
+        'pdf_export_label': 'Download PDF report',
         'subpages_title': 'Explore further',
         'subpages_top_projects': 'Top projects',
         'subpages_top_deals': 'Top deals',
@@ -330,6 +332,7 @@ COPY = {
         'mode_sales': 'المبيعات', 'mode_rents': 'الإيجارات',
         'nav_back_map': '← جميع الأحياء (الخريطة)',
         'nav_table': 'جدول جميع الأحياء',
+        'pdf_export_label': 'تنزيل تقرير PDF',
         'subpages_title': 'مزيد من التفاصيل',
         'subpages_top_projects': 'أهم المشاريع',
         'subpages_top_deals': 'أكبر الصفقات',
@@ -427,6 +430,7 @@ COPY = {
         'mode_sales': 'बिक्री', 'mode_rents': 'किराया',
         'nav_back_map': '← सभी कम्युनिटी (मानचित्र)',
         'nav_table': 'सभी कम्युनिटी की तालिका',
+        'pdf_export_label': 'पीडीएफ रिपोर्ट डाउनलोड करें',
         'subpages_title': 'और जानकारी',
         'subpages_top_projects': 'शीर्ष परियोजनाएं',
         'subpages_top_deals': 'सबसे बड़े सौदे',
@@ -524,6 +528,7 @@ COPY = {
         'mode_sales': '销售', 'mode_rents': '租赁',
         'nav_back_map': '← 所有社区（地图）',
         'nav_table': '所有社区表格',
+        'pdf_export_label': '下载PDF报告',
         'subpages_title': '更多内容',
         'subpages_top_projects': '热门项目',
         'subpages_top_deals': '最大交易',
@@ -1669,6 +1674,7 @@ def main():
                     html = html.replace('<!--__LANG_SWITCHER__-->', lang_switcher)
                     html = html.replace('__FAQ_URL__', f'{BASE_URL}{lang_prefix(lang)}/faq/')
                     html = html.replace('__BLOG_URL__', f'{BASE_URL}{lang_prefix(lang)}/blog/')
+                    html = html.replace('__PDF_EXPORT_LABEL__', html_escape(c['pdf_export_label']))
                     html = html.replace('<!--__ABOUT__-->', about_html)
                     html = html.replace('__INITIAL_H1__', html_escape(copy_now['h1']))
                     html = html.replace('__INITIAL_LEDE__', html_escape(copy_now['lede']))

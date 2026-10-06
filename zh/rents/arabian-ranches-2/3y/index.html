@@ -54,6 +54,9 @@
   .faq-link:hover { background:#e2e8f0; color:#1d4ed8; }
   .blog-link { display:inline-flex; align-items:center; height:28px; padding:0 10px; background:#f1f5f9; border-radius:8px; font-size:12px; font-weight:600; color:#6b7280; text-decoration:none; }
   .blog-link:hover { background:#e2e8f0; color:#1d4ed8; }
+  .pdf-btn { display:inline-flex; align-items:center; height:28px; padding:0 10px; background:#1d4ed8; color:#fff; border:none; border-radius:8px; font-size:12px; font-weight:600; font-family:inherit; cursor:pointer; white-space:nowrap; }
+  .pdf-btn:hover:not(:disabled) { background:#1e40af; }
+  .pdf-btn:disabled { opacity:.6; cursor:default; }
   .langswitch-dd > summary::-webkit-details-marker { display:none; }
   .langswitch-dd > summary::marker { content:""; }
   .langswitch-dd > summary .globe { font-size:14px; }
@@ -132,6 +135,7 @@
       <details class="langswitch-dd"><summary><span class="globe" aria-hidden="true">🌐</span><span class="lang-current">ZH</span><span class="caret" aria-hidden="true">▾</span></summary><div class="lang-menu"><a href="https://dxbcompass.com/ru/rents/arabian-ranches-2/3y/" lang="ru">RU</a><a href="https://dxbcompass.com/en/rents/arabian-ranches-2/3y/" lang="en">EN</a><a href="https://dxbcompass.com/ar/rents/arabian-ranches-2/3y/" lang="ar">AR</a><a href="https://dxbcompass.com/hi/rents/arabian-ranches-2/3y/" lang="hi">HI</a><a href="https://dxbcompass.com/zh/rents/arabian-ranches-2/3y/" lang="zh" class="active">ZH</a></div></details>
       <a class="faq-link" href="https://dxbcompass.com/zh/faq/" title="FAQ" aria-label="FAQ">?</a>
       <a class="blog-link" href="https://dxbcompass.com/zh/blog/" title="Blog">Blog</a>
+      <button class="pdf-btn" id="btn-pdf-district" type="button">⬇ 下载PDF报告</button>
     </div>
   </div>
   <p class="lede" id="d-lede">根据迪拜土地局数据,Arabian Ranches 2 近 3 年共登记 2,612 份租赁合同。 年租金中位数 — 240,000 AED。 租金 — 753 AED/m²/年。</p>
@@ -159,6 +163,7 @@
 <script defer src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js" integrity="sha384-e6nUZLBkQ86NJ6TVVKAeSaK8jWa3NhkYWZFomE39AvDbQWeie9PlQqM3pmYW5d1g" crossorigin="anonymous"></script>
 <script defer src="/js/i18n.js"></script>
 <script defer src="/js/detail-panel.js"></script>
+<script defer src="/js/district-pdf.js"></script>
 <script>
 const DISTRICT_KEY  = "arabian ranches 2";
 const DISTRICT_NAME = "Arabian Ranches 2";
@@ -213,6 +218,10 @@ function render(d) {
         recent:       BASE_URL + 'recent/' }
     : { top_projects: BASE_URL + 'projects/',
         recent:       BASE_URL + 'recent/' };
+
+  if (typeof DistrictPdf !== 'undefined') {
+    DistrictPdf.init({ sale, rent, mode: PAGE_MODE, title: DISTRICT_NAME, dataUrl: DATA_URL, pageUrl: location.href });
+  }
 
   DetailPanel.mount({
     container: document.getElementById('detail-content'),
