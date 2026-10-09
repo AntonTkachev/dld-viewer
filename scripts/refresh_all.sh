@@ -69,6 +69,9 @@ $PY scripts/build_renamed_area_redirects.py
 phase "8b. Per-building search data (search-index.json + buildings/{slug}/data.json)"
 $PY scripts/build_building_pages.py
 
+phase "8c. iOS app data contract (/app/v1/, needs phase 8 sales|rents/<slug>/data.json)"
+$PY scripts/build_app_v1.py
+
 phase "9. Locale SEO landings + table views"
 $PY scripts/build_pages.py
 
