@@ -202,6 +202,15 @@ LIFECYCLE is still inline in `template.html` inside the `<script data-inlined="p
 
 **Caveat — `osm_subcommunities_merge_into_viewer.py` standalone:** that script mutates `polygons/curated.js` AND rewrites the `?v=hash` in `template.html`, but does NOT touch the 35 SEO landings. Browsers hitting those landings still get the freshly-mutated `curated.js` (the server ignores `?v=`), only cache invalidation lags. To fully sync, run `scripts/build_pages.py` after standalone mutations, or just rely on the next `refresh_all.sh` to regenerate everything.
 
+## iOS app data contract (`/app/v1/`)
+
+The iOS app (`~/SwfitProjects/DXBCompass`) reads ONLY `https://dxbcompass.com/app/v1/` — never site files like `/periods/all.js` or `/sales/<slug>/data.json`. Spec: `~/SwfitProjects/DXBCompass/DATA_CONTRACT.md`.
+
+- Generator: `scripts/build_app_v1.py` (phase 8c of `refresh_all.sh`). Repackages already-built site artifacts; parses `PARENT_OVERRIDES` / `_SEARCH_ALIASES` / `MASKS` from `js/viewer.js` and `KNOWN_BAD_POINTS` from `js/detail-panel.js`, so site-side edits there flow into the app automatically. `data_as_of` = max Sales `instance_date` in `tx.parquet`.
+- Files: `manifest.json` (sha256 per file), eager `map/polygons.geojson` + `map/masks.json` + `areas/index.json` (~2 MB raw), lazy `areas/<slug>.json` (~340 files, 7.6 MB total). Writes only changed files; manifest untouched when nothing changed.
+- **v1 is additive-only.** Old app versions live for months. Never rename/remove a field, change a type or unit, or drop a mask period inside v1 — breaking changes go to a new `/app/v2/` generated alongside v1. The script warns when an area key disappears (it's the favorites id) — handle via `aliases` in `areas/index.json`.
+- Site refactors that rename fields in `sales|rents/<slug>/data.json` or the `*_PERIODS` consts must keep `build_app_v1.py` emitting the same v1 shape.
+
 ## Refresh playbook
 
 Per-source manual refresh:
