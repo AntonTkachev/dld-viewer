@@ -150,7 +150,20 @@
   .chart-modal-body{flex:1;padding:16px;position:relative;min-height:0}
   .chart-modal-echarts{width:100%;height:100%;cursor:crosshair}
   #dp-cm-measure-overlay{user-select:none}
-  .chart-modal-body canvas{width:100%!important;height:100%!important}
+  .chart-modal-body #dp-cm-canvas{width:100%!important;height:100%!important}
+  .chart-modal-lwc{width:100%;height:100%;position:relative;cursor:crosshair;touch-action:pan-y}
+  .cm-lwc-legend{position:absolute;top:4px;left:8px;z-index:3;pointer-events:none;font-size:11.5px;color:#475569;background:rgba(255,255,255,.85);backdrop-filter:blur(4px);padding:6px 10px;border-radius:8px;min-width:180px}
+  .cm-lwc-date{font-size:11px;color:#94a3b8;margin-bottom:3px}
+  .cm-lwc-row{display:flex;align-items:center;gap:8px;line-height:1.55}
+  .cm-lwc-row i{display:inline-block;width:12px;flex:none;border-radius:2px}
+  .cm-lwc-row span{flex:1}
+  .cm-lwc-row b{font-weight:600;font-variant-numeric:tabular-nums;color:#0f172a}
+  .cm-lwc-row.main b{font-size:15px}
+  .cm-lwc-measure{position:absolute;inset:0;pointer-events:none;z-index:4}
+  .cm-m-span{position:absolute;top:0;background:rgba(29,78,216,.06)}
+  .cm-m-vline{position:absolute;top:0;border-left:1.5px dashed;transform:translateX(-.75px)}
+  .cm-m-dot{position:absolute;width:10px;height:10px;border:2px solid #fff;border-radius:50%;transform:translate(-50%,-50%);box-sizing:content-box;box-shadow:0 1px 3px rgba(15,23,42,.25)}
+  .cm-m-panel{position:absolute;padding:10px;font-size:11px;line-height:1.35;color:#0f172a;box-sizing:border-box;background:rgba(255,255,255,.98);border:1px solid #e2e8f0;border-radius:8px;box-shadow:0 3px 12px rgba(15,23,42,.12)}
   .dp-collapsible{margin:8px 0 4px;border-top:1px solid #eef0f3;padding-top:8px}
   .dp-collapsible > summary{cursor:pointer;list-style:none;font-size:13px;font-weight:600;color:#1f2933;padding:6px 4px;margin:-6px -4px;border-radius:4px;display:flex;align-items:center;gap:6px;user-select:none}
   .dp-collapsible > summary::-webkit-details-marker{display:none}
