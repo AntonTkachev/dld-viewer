@@ -14,8 +14,9 @@
     timelineCharts: [],
     rentTimelineCharts: [],
     modalChart: null,
-    modalEngine: (() => { try { return localStorage.getItem('dp-modal-engine') || 'chartjs'; } catch (_) { return 'chartjs'; } })(),
+    modalEngine: (() => { try { return localStorage.getItem('dp-modal-engine') === 'echarts' ? 'echarts' : 'lwc'; } catch (_) { return 'lwc'; } })(),
     echartsInstance: null,
+    lwcInstance: null,
   };
 
   function _roomsRec() { return S.sale || S.rent; }
@@ -169,15 +170,16 @@
 
   function periodSlice(series) {
     if (!series.length) return series;
-    if (S.period === 'all') return series;
     const today = new Date();
     const todayMonth = `${today.getFullYear()}-${String(today.getMonth()+1).padStart(2,'0')}`;
+    // Current month is partial (DLD lags 1-2 weeks) — show only full months
+    if (S.period === 'all') return series.filter(p => p.d.slice(0,7) < todayMonth);
     const monthsBack = PERIODS.find(p => p.k === S.period).months;
-    const cutoffDate = new Date(today.getFullYear(), today.getMonth() - monthsBack + 1, 1);
+    const cutoffDate = new Date(today.getFullYear(), today.getMonth() - monthsBack, 1);
     const cutoff = `${cutoffDate.getFullYear()}-${String(cutoffDate.getMonth()+1).padStart(2,'0')}`;
     return series.filter(p => {
       const month = p.d.length === 10 ? p.d.slice(0,7) : p.d;
-      return month >= cutoff && month <= todayMonth;
+      return month >= cutoff && month < todayMonth;
     });
   }
   function roomTimelineFor(a) {
@@ -835,11 +837,12 @@
     }
     return out;
   }
-  function alignedMA(fullDates, fullValues, displayedLen, w) {
-    if (!fullValues || !fullValues.length) return new Array(displayedLen).fill(NaN);
+  // Align by date, not tail: rent timelines run past the displayed window (forward-dated contracts)
+  function alignedMA(fullDates, fullValues, displayDates, w) {
+    if (!fullValues || !fullValues.length) return new Array(displayDates.length).fill(NaN);
     const full = calendarMA(fullDates, fullValues, w);
-    const offset = Math.max(0, full.length - displayedLen);
-    return full.slice(offset);
+    const byDate = new Map(fullDates.map((d, i) => [d, full[i]]));
+    return displayDates.map(d => byDate.has(d) ? byDate.get(d) : NaN);
   }
   function crossState(ma50, ma200, labels) {
     let prevSign = null, crossIdx = -1, crossDir = 0, lastSign = null;
@@ -961,7 +964,7 @@
           <h3 id="dp-cm-title">…</h3>
           <div class="chart-modal-badges" id="dp-cm-badges"></div>
           <div class="chart-modal-engines" id="dp-cm-engines">
-            <button class="cm-engine active" type="button" data-dp-engine="chartjs">Chart.js</button>
+            <button class="cm-engine active" type="button" data-dp-engine="lwc">Lightweight</button>
             <button class="cm-engine" type="button" data-dp-engine="echarts">ECharts</button>
           </div>
           <button class="chart-modal-close" id="dp-cm-close" type="button" aria-label="Close">✕</button>
@@ -973,6 +976,7 @@
         <div class="chart-modal-body">
           <canvas id="dp-cm-canvas"></canvas>
           <div id="dp-cm-echarts" class="chart-modal-echarts" style="display:none"></div>
+          <div id="dp-cm-lwc" class="chart-modal-lwc" style="display:none"></div>
         </div>
       </div>`;
     document.body.appendChild(el);
@@ -987,6 +991,7 @@
       S.echartsInstance.dispose();
       S.echartsInstance = null;
     }
+    _disposeLwc();
     const overlay = document.getElementById('dp-cm-measure-overlay');
     if (overlay) overlay.remove();
     const engines = el.querySelector('#dp-cm-engines');
@@ -1063,8 +1068,11 @@
 
     if (S.modalChart) { S.modalChart.destroy(); S.modalChart = null; }
     if (S.echartsInstance) { S.echartsInstance.dispose(); S.echartsInstance = null; }
+    _disposeLwc();
     const ec = el.querySelector('#dp-cm-echarts');
     if (ec) ec.style.display = 'none';
+    const lw = el.querySelector('#dp-cm-lwc');
+    if (lw) lw.style.display = 'none';
     const canvas = el.querySelector('#dp-cm-canvas');
     canvas.style.display = '';
     el.classList.add('open');
@@ -1103,8 +1111,8 @@
     const data = m.values.slice();
     if (data.length < 2) return;  
 
-    const ma50 = alignedMA(cd.fullDates, m.fullValues, data.length, 50);
-    const ma200 = alignedMA(cd.fullDates, m.fullValues, data.length, 200);
+    const ma50 = alignedMA(cd.fullDates, m.fullValues, cd.fullLabels, 50);
+    const ma200 = alignedMA(cd.fullDates, m.fullValues, cd.fullLabels, 200);
     const cross = crossState(ma50, ma200, labels);
     const w = 50;
     const ma = ma50;
@@ -1126,10 +1134,6 @@
     const vol = meanVal ? (stdAll / meanVal) * 100 : null;
 
     const color = m.color || cd.color || '#1d4ed8';
-    const grnLine = 'rgba(34,197,94,1)';
-    const redLine = 'rgba(239,68,68,1)';
-    const grnFill = 'rgba(34,197,94,0.16)';
-    const redFill = 'rgba(239,68,68,0.18)';
     // Same deal-count-behind-price overlay as the small inline chart, carried into the
     // fullscreen modal so it doesn't disappear when the user expands the price chart.
     const secondary = (metric === 'avg' && source === 'sale' && cd.count) ? cd.count : null;
@@ -1169,6 +1173,7 @@
       S.echartsInstance.dispose();
       S.echartsInstance = null;
     }
+    _disposeLwc();
     const _oldOverlay = document.getElementById('dp-cm-measure-overlay');
     if (_oldOverlay) _oldOverlay.remove();
     el.classList.add('open');
@@ -1179,115 +1184,236 @@
     });
     const canvasEl = el.querySelector('#dp-cm-canvas');
     const echartsEl = el.querySelector('#dp-cm-echarts');
-
-    if (S.modalEngine === 'echarts') {
-      canvasEl.style.display = 'none';
-      echartsEl.style.display = '';
-      echartsEl.innerHTML = `<div style="display:flex;align-items:center;justify-content:center;height:100%;color:#94a3b8;font-size:13px">${t('chart_loading') || 'Loading…'}</div>`;
-      _ensureECharts().then(() => {
-        // If the modal was closed or switched to Chart.js while loading, bail out
-        const still = document.getElementById('dp-chart-modal');
-        if (!still || !still.classList.contains('open') || S.modalEngine !== 'echarts' || still.dataset.metric !== metric || (still.dataset.source || 'sale') !== source) return;
-        echartsEl.innerHTML = '';
-        _renderModalECharts({ el: echartsEl, labels, data, ma, ma50, ma200, median, color, m, secondary });
-      }).catch(err => {
-        echartsEl.innerHTML = `<div style="padding:20px;color:#dc2626;font-size:12px">ECharts failed to load. Reverting to Chart.js.</div>`;
-        console.error('ECharts load failed:', err);
-        S.modalEngine = 'chartjs';
-        el.querySelectorAll('.cm-engine').forEach(btn => btn.classList.toggle('active', btn.dataset.dpEngine === 'chartjs'));
-        canvasEl.style.display = '';
-        echartsEl.style.display = 'none';
-        _renderModalChartJs({ ctx: canvasEl, labels, data, ma, ma50, ma200, median, color, m, grnLine, redLine, grnFill, redFill, secondary });
-      });
-    } else {
-      canvasEl.style.display = '';
-      echartsEl.style.display = 'none';
-      _renderModalChartJs({ ctx: canvasEl, labels, data, ma, ma50, ma200, median, color, m, grnLine, redLine, grnFill, redFill, secondary });
-    }
+    const lwcEl = el.querySelector('#dp-cm-lwc');
+    const engine = S.modalEngine;
+    const useEc = engine === 'echarts';
+    const target = useEc ? echartsEl : lwcEl;
+    canvasEl.style.display = 'none';
+    echartsEl.style.display = useEc ? '' : 'none';
+    lwcEl.style.display = useEc ? 'none' : '';
+    target.innerHTML = `<div style="display:flex;align-items:center;justify-content:center;height:100%;color:#94a3b8;font-size:13px">${t('chart_loading') || 'Loading…'}</div>`;
+    (useEc ? _ensureECharts() : _ensureLwc()).then(() => {
+      // Bail out if the modal was closed or switched while the library was loading
+      const still = document.getElementById('dp-chart-modal');
+      if (!still || !still.classList.contains('open') || S.modalEngine !== engine || still.dataset.metric !== metric || (still.dataset.source || 'sale') !== source) return;
+      target.innerHTML = '';
+      if (useEc) _renderModalECharts({ el: echartsEl, labels, data, ma, ma50, ma200, median, color, m, secondary });
+      else _renderModalLwc({ el: lwcEl, dates: cd.fullLabels, data, ma50, ma200, median, color, m, secondary, cross });
+    }).catch(err => {
+      target.innerHTML = `<div style="padding:20px;color:#dc2626;font-size:12px">${useEc ? 'ECharts' : 'Lightweight Charts'} failed to load.</div>`;
+      console.error('Chart library load failed:', err);
+    });
   }
 
-  let _echartsPromise = null;
-  function _ensureECharts() {
-    if (typeof echarts !== 'undefined') return Promise.resolve();
-    if (_echartsPromise) return _echartsPromise;
-    _echartsPromise = new Promise((resolve, reject) => {
-      const existing = document.querySelector('script[data-dp-echarts]');
-      if (existing) {
-        existing.addEventListener('load', () => resolve(), { once: true });
-        existing.addEventListener('error', reject, { once: true });
-        return;
-      }
+  const _libPromises = {};
+  function _loadLib(key, isLoaded, src, integrity) {
+    if (isLoaded()) return Promise.resolve();
+    if (_libPromises[key]) return _libPromises[key];
+    return (_libPromises[key] = new Promise((resolve, reject) => {
       const s = document.createElement('script');
-      s.src = 'https://cdn.jsdelivr.net/npm/echarts@5.5.1/dist/echarts.min.js';
+      s.src = src;
       s.crossOrigin = 'anonymous';
-      s.integrity = 'sha384-Mx5lkUEQPM1pOJCwFtUICyX45KNojXbkWdYhkKUKsbv391mavbfoAmONbzkgYPzR';
-      s.setAttribute('data-dp-echarts', '1');
+      s.integrity = integrity;
       s.onload = () => resolve();
-      s.onerror = reject;
+      s.onerror = e => { delete _libPromises[key]; s.remove(); reject(e); };
       document.head.appendChild(s);
-    });
-    return _echartsPromise;
+    }));
+  }
+  const _ensureECharts = () => _loadLib('echarts', () => typeof echarts !== 'undefined',
+    'https://cdn.jsdelivr.net/npm/echarts@5.5.1/dist/echarts.min.js',
+    'sha384-Mx5lkUEQPM1pOJCwFtUICyX45KNojXbkWdYhkKUKsbv391mavbfoAmONbzkgYPzR');
+  const _ensureLwc = () => _loadLib('lwc', () => typeof LightweightCharts !== 'undefined',
+    'https://cdn.jsdelivr.net/npm/lightweight-charts@5.2.1/dist/lightweight-charts.standalone.production.js',
+    'sha384-KkYqTZlM13Zya6fVUF3IGCBOQ1ehFeJVVgxaVvD/0MebineF9EI8Jkd3NnWNChqN');
+
+  function _disposeLwc() {
+    if (S.lwcInstance) { S.lwcInstance.remove(); S.lwcInstance = null; }
   }
 
-  function _renderModalChartJs({ ctx, labels, data, ma, ma50, ma200, median, color, m, grnLine, redLine, grnFill, redFill, secondary }) {
-    const scales = {
-      y: { ticks: { font: { size: 11 }, callback: m.fmtY }, beginAtZero: true },
-      x: { ticks: { font: { size: 11 }, maxRotation: 0, autoSkip: true, maxTicksLimit: 14 } },
-    };
-    if (secondary) {
-      scales.y1 = { position: 'right', ticks: { font: { size: 11 }, callback: secondary.fmtY }, beginAtZero: true, grid: { drawOnChartArea: false } };
-    }
+  function _renderModalLwc({ el, dates, data, ma50, ma200, median, color, m, secondary, cross }) {
+    const L = LightweightCharts;
+    const lang = document.documentElement.lang || 'en';
+    const daily = dates.some(d => d.length === 10);
+    const dateFmt = new Intl.DateTimeFormat(lang, daily
+      ? { day: 'numeric', month: 'short', year: 'numeric', timeZone: 'UTC' }
+      : { month: 'long', year: 'numeric', timeZone: 'UTC' });
+    const toDate = tm => typeof tm === 'string' ? new Date(tm + 'T00:00:00Z')
+      : typeof tm === 'object' ? new Date(Date.UTC(tm.year, tm.month - 1, tm.day))
+      : new Date(tm * 1000);
+    const fmtTime = tm => dateFmt.format(toDate(tm));
+    const toTime = d => d.length === 7 ? d + '-01' : d;
+    // Nulls are dropped so the line connects across empty months instead of breaking
+    const pts = arr => dates.flatMap((d, i) => Number.isFinite(arr[i]) ? [{ time: toTime(d), value: arr[i] }] : []);
     const hasFinite = arr => arr.some(v => Number.isFinite(v));
-    const datasets = [];
+    const fmtAxis = v => { const r = m.fmtY(Math.round(v)); return typeof r === 'number' ? fmtInt(r) : r; };
+    const pf = { type: 'custom', minMove: 1, formatter: fmtAxis };
+    const crossLine = { color: '#94a3b8', width: 1, style: L.LineStyle.Dashed, labelBackgroundColor: '#0f172a' };
+
+    const chart = L.createChart(el, {
+      autoSize: true,
+      layout: {
+        background: { type: 'solid', color: '#ffffff' },
+        textColor: '#64748b', fontSize: 11,
+        fontFamily: getComputedStyle(document.body).fontFamily,
+      },
+      grid: { vertLines: { visible: false }, horzLines: { color: '#f1f5f9' } },
+      rightPriceScale: { borderVisible: false, scaleMargins: { top: 0.14, bottom: secondary ? 0.3 : 0.05 } },
+      timeScale: { borderVisible: false, fixLeftEdge: true, fixRightEdge: true },
+      crosshair: { mode: L.CrosshairMode.Magnet, vertLine: crossLine, horzLine: crossLine },
+      localization: { locale: lang, timeFormatter: fmtTime },
+      // Drag is reserved for the measure tool; wheel zooms, trackpad swipe pans
+      handleScroll: { pressedMouseMove: false, horzTouchDrag: false, vertTouchDrag: false, mouseWheel: true },
+    });
+    S.lwcInstance = chart;
+
+    const legendRows = [];
     if (secondary) {
-      datasets.push({
-        type: 'bar', label: secondary.label, data: secondary.values,
-        backgroundColor: rgba(secondary.color, .25), borderWidth: 0,
-        yAxisID: 'y1', barPercentage: .6, categoryPercentage: .7, order: 6,
+      const vol = chart.addSeries(L.HistogramSeries, {
+        priceScaleId: 'vol', color: 'rgba(148,163,184,0.4)',
+        priceLineVisible: false, lastValueVisible: false,
+      });
+      vol.setData(pts(secondary.values));
+      chart.priceScale('vol').applyOptions({ scaleMargins: { top: 0.58, bottom: 0 }, visible: false });
+      legendRows.push({ s: vol, label: secondary.label, swatch: 'rgba(148,163,184,0.6)', fmt: secondary.fmtTip });
+    }
+    const maOpts = { lineWidth: 1, priceLineVisible: false, lastValueVisible: false, crosshairMarkerVisible: false, priceFormat: pf };
+    if (hasFinite(ma200)) {
+      const s200 = chart.addSeries(L.LineSeries, { ...maOpts, color: '#94a3b8', lineStyle: L.LineStyle.Dashed });
+      s200.setData(pts(ma200));
+      legendRows.push({ s: s200, label: t('ch_ma200'), swatch: '#94a3b8', fmt: m.fmtTip, dashed: true });
+    }
+    if (hasFinite(ma50)) {
+      const s50 = chart.addSeries(L.LineSeries, { ...maOpts, color: '#475569' });
+      s50.setData(pts(ma50));
+      legendRows.push({ s: s50, label: t('ch_ma50'), swatch: '#475569', fmt: m.fmtTip });
+    }
+    const main = chart.addSeries(L.AreaSeries, {
+      lineColor: color, lineWidth: 2,
+      topColor: rgba(color, 0.22), bottomColor: rgba(color, 0),
+      priceFormat: pf, priceLineVisible: false,
+      crosshairMarkerRadius: 4, crosshairMarkerBorderColor: '#ffffff', crosshairMarkerBorderWidth: 2,
+    });
+    const mainPts = pts(data);
+    main.setData(mainPts);
+    legendRows.unshift({ s: main, label: m.label, swatch: color, fmt: m.fmtTip, main: true });
+
+    if (median != null) {
+      main.createPriceLine({
+        price: median, color: '#cbd5e1', lineWidth: 1, lineStyle: L.LineStyle.Dotted,
+        axisLabelVisible: false, title: t('ch_median'),
       });
     }
-    if (hasFinite(ma200)) datasets.push({ label: t('ch_ma200'), data: ma200, borderColor: '#7c3aed', borderWidth: 1.6, pointRadius: 0, fill: false, order: 5 });
-    let ma50Index = -1;
-    if (hasFinite(ma50)) {
-      ma50Index = datasets.length;
-      datasets.push({ label: t('ch_ma50'), data: ma50, borderColor: '#f59e0b', borderWidth: 1.6, pointRadius: 0, fill: false, order: 4 });
+    if (cross && cross.crossIdx >= 0 && Number.isFinite(data[cross.crossIdx])) {
+      const up = cross.crossDir > 0;
+      L.createSeriesMarkers(main, [{
+        time: toTime(dates[cross.crossIdx]),
+        position: up ? 'belowBar' : 'aboveBar',
+        shape: up ? 'arrowUp' : 'arrowDown',
+        color: up ? '#16a34a' : '#dc2626',
+        text: up ? t('bd_cross_golden') : t('bd_cross_death'),
+      }]);
     }
-    if (median != null) datasets.push({ label: t('ch_median'), data: data.map(() => median), borderColor: 'rgba(29,78,216,0.55)', borderWidth: 1, borderDash: [1, 2], pointRadius: 0, fill: false, order: 2 });
-    datasets.push({
-      label: m.label,
-      data,
-      borderColor: color,
-      borderWidth: 2.5,
-      pointRadius: 2.2,
-      pointHoverRadius: 4,
-      fill: ma50Index >= 0 ? { target: ma50Index, above: grnFill, below: redFill } : false,
-      segment: {
-        borderColor: ctx => {
-          const i = ctx.p0DataIndex;
-          if (i >= ma.length - 1) return color;
-          const v1 = data[i+1];
-          if (!Number.isFinite(ma[i+1])) return color;
-          if (v1 > ma[i+1]) return grnLine;
-          if (v1 < ma[i+1]) return redLine;
-          return color;
-        },
-      },
-      order: 1,
+    chart.timeScale().fitContent();
+
+    // Floating legend: tracks the crosshair, falls back to the latest values
+    const legend = document.createElement('div');
+    legend.className = 'cm-lwc-legend';
+    el.appendChild(legend);
+    const lastOf = s => { const d = s.data(); return d.length ? d[d.length - 1] : null; };
+    const paintLegend = param => {
+      const hover = param && param.time !== undefined && param.seriesData && param.seriesData.size;
+      const mainPt = hover ? param.seriesData.get(main) : lastOf(main);
+      const time = hover ? param.time : (mainPt && mainPt.time);
+      const rows = legendRows.map(r => {
+        const pt = hover ? param.seriesData.get(r.s) : lastOf(r.s);
+        if (!pt || !Number.isFinite(pt.value)) return '';
+        const sw = r.dashed
+          ? `border-top:2px dashed ${r.swatch};height:0`
+          : `background:${r.swatch};height:${r.main ? 3 : 2}px`;
+        return `<div class="cm-lwc-row${r.main ? ' main' : ''}"><i style="${sw}"></i><span>${_h(r.label)}</span><b>${r.fmt(Math.round(pt.value))}</b></div>`;
+      }).join('');
+      legend.innerHTML = (time !== undefined && time !== null ? `<div class="cm-lwc-date">${fmtTime(time)}</div>` : '') + rows;
+    };
+    chart.subscribeCrosshairMove(paintLegend);
+    paintLegend(null);
+
+    _installLwcMeasure({ el, chart, main, mainPts, m, color, fmtTime, legend });
+  }
+
+  function _installLwcMeasure({ el, chart, main, mainPts, m, color, fmtTime, legend }) {
+    if (mainPts.length < 2) return;
+    const ts = chart.timeScale();
+    const layer = document.createElement('div');
+    layer.className = 'cm-lwc-measure';
+    el.appendChild(layer);
+    const monthNo = tm => +tm.slice(0, 4) * 12 + +tm.slice(5, 7);
+    let a = null, c = null, dragging = false;
+
+    const plotWidth = () => el.clientWidth - chart.priceScale('right').width();
+    const nearestIdx = x => {
+      let best = -1, bestD = Infinity;
+      mainPts.forEach((p, i) => {
+        const px = ts.timeToCoordinate(p.time);
+        if (px == null) return;
+        const d = Math.abs(px - x);
+        if (d < bestD) { bestD = d; best = i; }
+      });
+      return best < 0 ? null : best;
+    };
+    const localX = e => e.clientX - el.getBoundingClientRect().left;
+
+    const paint = () => {
+      if (a == null) { layer.innerHTML = ''; return; }
+      const pa = mainPts[a], pc = mainPts[c];
+      const ax = ts.timeToCoordinate(pa.time), cx = ts.timeToCoordinate(pc.time);
+      if (ax == null || cx == null) { layer.innerHTML = ''; return; }
+      const ay = main.priceToCoordinate(pa.value), cy = main.priceToCoordinate(pc.value);
+      const isRange = a !== c;
+      const info = _measureInfo({
+        aLabel: fmtTime(pa.time), aVal: pa.value, cLabel: fmtTime(pc.time), cVal: pc.value,
+        months: monthNo(pc.time) - monthNo(pa.time), isRange, m,
+      });
+      const h = el.clientHeight - ts.height();
+      const vline = (x, col) => `<div class="cm-m-vline" style="left:${x}px;height:${h}px;border-color:${col}"></div>`;
+      const dot = (x, y, col) => y == null ? '' : `<div class="cm-m-dot" style="left:${x}px;top:${y}px;background:${col}"></div>`;
+      const left = Math.min(ax, cx), right = Math.max(ax, cx);
+
+      // Panel goes right of the range, else left of it, else docks top-right; drops below the legend if they'd collide
+      const panelW = 200, gap = 12, W = plotWidth();
+      let px = right + gap + panelW + 8 <= W ? right + gap
+        : left - gap - panelW - 8 >= 0 ? left - gap - panelW
+        : W - panelW - gap;
+      const lr = legend.getBoundingClientRect(), er = el.getBoundingClientRect();
+      const py = px < lr.right - er.left + 8 ? lr.bottom - er.top + 8 : 8;
+
+      layer.innerHTML =
+        (isRange ? `<div class="cm-m-span" style="left:${left}px;width:${right - left}px;height:${h}px"></div>` : '') +
+        vline(ax, color) + dot(ax, ay, color) +
+        (isRange ? vline(cx, info.deltaColor) + dot(cx, cy, info.deltaColor) : '') +
+        `<div class="cm-m-panel" style="left:${px}px;top:${py}px;width:${panelW}px">${info.html}</div>`;
+    };
+
+    el.addEventListener('pointerdown', e => {
+      if (e.button !== 0) return;
+      const x = localX(e);
+      if (x > plotWidth() || e.clientY - el.getBoundingClientRect().top > el.clientHeight - ts.height()) return;
+      const i = nearestIdx(x);
+      if (i == null) return;
+      a = c = i;
+      dragging = true;
+      el.setPointerCapture(e.pointerId);
+      paint();
     });
-    S.modalChart = new Chart(ctx, {
-      type: 'line',
-      data: { labels, datasets },
-      options: {
-        responsive: true,
-        maintainAspectRatio: false,
-        interaction: { intersect: false, mode: 'index' },
-        plugins: {
-          legend: { display: true, position: 'bottom', labels: { boxWidth: 14, font: { size: 11 } } },
-          tooltip: { callbacks: { label: c => c.dataset.type === 'bar' ? ' ' + secondary.fmtTip(c.parsed.y) : ' ' + (c.dataset.label || '') + ': ' + m.fmtTip(c.parsed.y) } },
-        },
-        scales,
-      },
+    el.addEventListener('pointermove', e => {
+      if (!dragging) return;
+      const i = nearestIdx(localX(e));
+      if (i != null && i !== c) { c = i; paint(); }
     });
+    const stop = () => { dragging = false; };
+    el.addEventListener('pointerup', stop);
+    el.addEventListener('pointercancel', stop);
+    ts.subscribeVisibleLogicalRangeChange(paint);
+    ts.subscribeSizeChange(paint);
   }
 
   function _renderModalECharts({ el, labels, data, ma, ma50, ma200, median, color, m, secondary }) {
@@ -1379,6 +1505,7 @@
         {
           name: m.label, type: 'line', data,
           smooth: true, symbol: 'circle', symbolSize: 5,
+          connectNulls: true,
           itemStyle: { color },
           lineStyle: { color, width: 2.5, shadowColor: color, shadowBlur: 6, shadowOffsetY: 2 },
           areaStyle: {
@@ -1459,35 +1586,8 @@
 
       const isRange = cIdx !== anchorIdx;
       const dx = cPx - aPx;
-      const delta = (Number.isFinite(aVal) && Number.isFinite(cVal)) ? cVal - aVal : null;
-      const pctDelta = (delta != null && aVal) ? (delta / aVal) * 100 : null;
-      const monthsDelta = cIdx - anchorIdx;
-      const deltaColor = delta == null ? '#334155' : (delta >= 0 ? '#16a34a' : '#dc2626');
-      const deltaBg = delta == null ? '#f1f5f9' : (delta >= 0 ? '#dcfce7' : '#fee2e2');
-
-      // Info panel content
-      const fmt = v => Number.isFinite(v) ? m.fmtTip(Math.round(v)) : '—';
-      const sign = v => v == null ? '' : (v > 0 ? '+' : '');
-      const lines = [];
-      lines.push(`<div style="opacity:.7;font-size:10px">${t('ch_measure_from') || 'От'}</div>`);
-      lines.push(`<div style="font-weight:600">${labels[anchorIdx]}</div>`);
-      lines.push(`<div style="font-variant-numeric:tabular-nums">${fmt(aVal)}</div>`);
-      if (isRange) {
-        lines.push(`<div style="opacity:.7;font-size:10px;margin-top:6px">${t('ch_measure_to') || 'До'}</div>`);
-        lines.push(`<div style="font-weight:600">${labels[cIdx]}</div>`);
-        lines.push(`<div style="font-variant-numeric:tabular-nums">${fmt(cVal)}</div>`);
-        if (delta != null) {
-          lines.push(`<div style="margin-top:8px;padding:4px 6px;border-radius:4px;background:${deltaBg};color:${deltaColor};font-weight:600;font-variant-numeric:tabular-nums">
-            ${sign(delta)}${fmt(delta)} (${sign(pctDelta)}${pctDelta.toFixed(1)}%)
-          </div>`);
-        }
-        const monthsLabel = Math.abs(monthsDelta) === 1
-          ? (t('ch_measure_month') || 'мес.')
-          : (t('ch_measure_months') || 'мес.');
-        lines.push(`<div style="opacity:.65;font-size:10px;margin-top:4px">Δ ${Math.abs(monthsDelta)} ${monthsLabel}</div>`);
-      } else {
-        lines.push(`<div style="opacity:.55;font-size:10px;margin-top:8px;line-height:1.4">${t('ch_measure_hint') || 'Тяните курсор в сторону для сравнения'}</div>`);
-      }
+      const info = _measureInfo({ aLabel: labels[anchorIdx], aVal, cLabel: labels[cIdx], cVal, months: cIdx - anchorIdx, isRange, m });
+      const deltaColor = info.deltaColor;
 
       // Position info panel — right of the range, else left of it, else pinned to a corner
       const chartW = inst.getWidth();
@@ -1546,7 +1646,7 @@
       ];
 
       inst.setOption({ graphic: graphics }, { replaceMerge: 'graphic' });
-      _paintMeasureHtml(inst, panelX, panelY, panelW, lines.join(''));
+      _paintMeasureHtml(inst, panelX, panelY, panelW, info.html);
     };
 
     const zr = inst.getZr();
@@ -1584,6 +1684,39 @@
       currentIdx = null;
       dragging = false;
     };
+  }
+
+  // Shared "from → to" readout for the drag-to-measure tool (both chart engines)
+  function _measureInfo({ aLabel, aVal, cLabel, cVal, months, isRange, m }) {
+    const delta = (Number.isFinite(aVal) && Number.isFinite(cVal)) ? cVal - aVal : null;
+    const pctDelta = (delta != null && aVal) ? (delta / aVal) * 100 : null;
+    const deltaColor = delta == null ? '#334155' : (delta >= 0 ? '#16a34a' : '#dc2626');
+    const deltaBg = delta == null ? '#f1f5f9' : (delta >= 0 ? '#dcfce7' : '#fee2e2');
+
+    // Info panel content
+    const fmt = v => Number.isFinite(v) ? m.fmtTip(Math.round(v)) : '—';
+    const sign = v => v == null ? '' : (v > 0 ? '+' : '');
+    const lines = [];
+    lines.push(`<div style="opacity:.7;font-size:10px">${t('ch_measure_from') || 'От'}</div>`);
+    lines.push(`<div style="font-weight:600">${aLabel}</div>`);
+    lines.push(`<div style="font-variant-numeric:tabular-nums">${fmt(aVal)}</div>`);
+    if (isRange) {
+      lines.push(`<div style="opacity:.7;font-size:10px;margin-top:6px">${t('ch_measure_to') || 'До'}</div>`);
+      lines.push(`<div style="font-weight:600">${cLabel}</div>`);
+      lines.push(`<div style="font-variant-numeric:tabular-nums">${fmt(cVal)}</div>`);
+      if (delta != null) {
+        lines.push(`<div style="margin-top:8px;padding:4px 6px;border-radius:4px;background:${deltaBg};color:${deltaColor};font-weight:600;font-variant-numeric:tabular-nums">
+          ${sign(delta)}${fmt(delta)} (${sign(pctDelta)}${pctDelta.toFixed(1)}%)
+        </div>`);
+      }
+      const monthsLabel = Math.abs(months) === 1
+        ? (t('ch_measure_month') || 'мес.')
+        : (t('ch_measure_months') || 'мес.');
+      lines.push(`<div style="opacity:.65;font-size:10px;margin-top:4px">Δ ${Math.abs(months)} ${monthsLabel}</div>`);
+    } else {
+      lines.push(`<div style="opacity:.55;font-size:10px;margin-top:8px;line-height:1.4">${t('ch_measure_hint') || 'Тяните курсор в сторону для сравнения'}</div>`);
+    }
+    return { html: lines.join(''), deltaColor };
   }
 
   function _paintMeasureHtml(inst, x, y, w, html) {
