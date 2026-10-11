@@ -316,7 +316,7 @@ const I18N = {
     
     metro_line:'Линия', metro_interchange:'пересадка',
 
-    abbr_m:'млн', abbr_b:'млрд', abbr_k:'тыс',
+    abbr_m:'млн', abbr_b:'млрд', abbr_t:'трлн', abbr_k:'тыс',
     legend_no_data:'нет данных', chart_yax_count:'сделок',
     level_label:'Уровни:',
     search_title:'Поиск района или здания', search_placeholder:'Поиск района или здания...', search_empty:'Ничего не найдено',
@@ -636,7 +636,7 @@ const I18N = {
     ml_levels:'Levels', ml_addr:'Address', ml_access:'Accessibility', ml_wifi:'Wi-Fi',
     metro_line:'Line', metro_interchange:'interchange',
 
-    abbr_m:'M', abbr_b:'B', abbr_k:'K',
+    abbr_m:'M', abbr_b:'B', abbr_t:'T', abbr_k:'K',
     legend_no_data:'no data', chart_yax_count:'count',
     level_label:'Levels:',
     search_title:'Search district or building', search_placeholder:'Search district or building...', search_empty:'Nothing found',
@@ -956,7 +956,7 @@ const I18N = {
     ml_levels:'الطوابق', ml_addr:'العنوان', ml_access:'إمكانية الوصول', ml_wifi:'واي فاي',
     metro_line:'الخط', metro_interchange:'تبادل',
 
-    abbr_m:'مليون', abbr_b:'مليار', abbr_k:'ألف',
+    abbr_m:'مليون', abbr_b:'مليار', abbr_t:'تريليون', abbr_k:'ألف',
     legend_no_data:'لا توجد بيانات', chart_yax_count:'صفقات',
     level_label:'المستويات:',
     search_title:'ابحث عن منطقة أو مبنى', search_placeholder:'ابحث عن منطقة أو مبنى...', search_empty:'لا توجد نتائج',
@@ -1276,7 +1276,7 @@ const I18N = {
     ml_levels:'मंज़िलें', ml_addr:'पता', ml_access:'सुलभता', ml_wifi:'वाई-फ़ाई',
     metro_line:'लाइन', metro_interchange:'इंटरचेंज',
 
-    abbr_m:'M', abbr_b:'B', abbr_k:'K',
+    abbr_m:'M', abbr_b:'B', abbr_t:'T', abbr_k:'K',
     legend_no_data:'डेटा नहीं', chart_yax_count:'सौदे',
     level_label:'स्तर:',
     search_title:'जिला या इमारत खोजें', search_placeholder:'जिला या इमारत खोजें...', search_empty:'कुछ नहीं मिला',
@@ -1596,7 +1596,7 @@ const I18N = {
     ml_levels:'楼层', ml_addr:'地址', ml_access:'无障碍', ml_wifi:'Wi-Fi',
     metro_line:'线路', metro_interchange:'换乘',
 
-    abbr_m:'M', abbr_b:'B', abbr_k:'K',
+    abbr_m:'M', abbr_b:'B', abbr_t:'T', abbr_k:'K',
     legend_no_data:'无数据', chart_yax_count:'数量',
     level_label:'层级:',
     search_title:'搜索社区或建筑', search_placeholder:'搜索社区或建筑...', search_empty:'未找到',

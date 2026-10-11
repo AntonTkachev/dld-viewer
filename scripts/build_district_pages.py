@@ -143,7 +143,6 @@ COPY = {
         'subpages_recent_sale': 'Последние сделки',
         'subpages_recent_rent': 'Последние аренды',
         'loading': 'Загрузка статистики…',
-        'lede_summary': 'Подробнее о рынке',
         'load_err': 'Не удалось загрузить данные',
         'about_title': 'О районе {name}',
         'nearby_title': 'Похожие районы рядом с {name}',
@@ -242,7 +241,6 @@ COPY = {
         'subpages_recent_sale': 'Recent transactions',
         'subpages_recent_rent': 'Recent rentals',
         'loading': 'Loading statistics…',
-        'lede_summary': 'More about the market',
         'load_err': 'Could not load data',
         'about_title': 'About {name}',
         'nearby_title': 'Similar districts near {name}',
@@ -341,7 +339,6 @@ COPY = {
         'subpages_recent_sale': 'آخر الصفقات',
         'subpages_recent_rent': 'آخر عقود الإيجار',
         'loading': 'جاري تحميل الإحصاءات…',
-        'lede_summary': 'المزيد عن السوق',
         'load_err': 'تعذر تحميل البيانات',
         'about_title': 'عن منطقة {name}',
         'nearby_title': 'مناطق مشابهة قريبة من {name}',
@@ -440,7 +437,6 @@ COPY = {
         'subpages_recent_sale': 'हाल के सौदे',
         'subpages_recent_rent': 'हाल के किराया अनुबंध',
         'loading': 'आँकड़े लोड हो रहे हैं…',
-        'lede_summary': 'बाज़ार के बारे में अधिक जानें',
         'load_err': 'डेटा लोड नहीं हो सका',
         'about_title': '{name} के बारे में',
         'nearby_title': '{name} के पास समान जिले',
@@ -539,7 +535,6 @@ COPY = {
         'subpages_recent_sale': '最新交易',
         'subpages_recent_rent': '最新租赁合同',
         'loading': '正在加载统计数据…',
-        'lede_summary': '查看更多市场信息',
         'load_err': '无法加载数据',
         'about_title': '关于 {name}',
         'nearby_title': '{name}附近的相似区域',
@@ -1176,7 +1171,8 @@ def build_about(name, sale_rec, rent_rec, lang, is_dubai=False):
         grid_html = f'<div class="about-grid">{cells}</div>'
 
     title_text = c['about_title'].format(name=name)
-    return f'<details class="about"><summary>{html_escape(title_text)}</summary>{intro}{grid_html}</details>'
+    # <!--__LEDE_P__--> = per-period lede, filled per page so one "about" block holds all market copy
+    return f'<details class="about"><summary>{html_escape(title_text)}</summary><!--__LEDE_P__-->{intro}{grid_html}</details>'
 
 
 def _polygon_centroid(feature):
@@ -1546,7 +1542,7 @@ def build_list_page(template, name, slug, mode, prefix, list_type, rec, about_ht
     html = html.replace('__BLOG_URL__', f'{BASE_URL}{lang_prefix(lang)}/blog/')
     html = html.replace('<!--__CROSSLINKS__-->', crosslinks)
     html = html.replace('<!--__TABLE__-->', table_html)
-    html = html.replace('<!--__ABOUT__-->', about_html)
+    html = html.replace('<!--__ABOUT__-->', about_html.replace('<!--__LEDE_P__-->', ''))
     html = html.replace('<!--__ITEMLIST_LD__-->', itemlist_ld)
     html = html.replace('__NAV_BACK_LABEL__', html_escape(back_label))
     html = html.replace('__NAV_MAP_LABEL__', html_escape(c['nav_back_map']))
@@ -1700,10 +1696,9 @@ def main():
                     html = html.replace('__FAQ_URL__', f'{BASE_URL}{lang_prefix(lang)}/faq/')
                     html = html.replace('__BLOG_URL__', f'{BASE_URL}{lang_prefix(lang)}/blog/')
                     html = html.replace('__PDF_EXPORT_LABEL__', html_escape(c['pdf_export_label']))
-                    html = html.replace('<!--__ABOUT__-->', about_html)
+                    html = html.replace('<!--__ABOUT__-->', about_html.replace(
+                        '<!--__LEDE_P__-->', f'<p class="lede" id="d-lede">{html_escape(copy_now["lede"])}</p>'))
                     html = html.replace('__INITIAL_H1__', html_escape(copy_now['h1']))
-                    html = html.replace('__INITIAL_LEDE__', html_escape(copy_now['lede']))
-                    html = html.replace('__LEDE_SUMMARY__', html_escape(c['lede_summary']))
                     html = html.replace('__LOADING_TEXT__', html_escape(c['loading']))
                     html = html.replace("/*__LOAD_ERR_LABEL__*/'Не удалось загрузить данные'",
                                         json.dumps(c['load_err']))
