@@ -68,18 +68,21 @@
   .langswitch-dd .lang-menu a:hover { background:#f3f4f6; }
   .langswitch-dd .lang-menu a.active { background:#1d4ed8; color:#fff; font-weight:600; }
   html[dir="rtl"] .langswitch-dd .lang-menu { inset-inline-end:auto; inset-inline-start:0; }
-  .lede-details { margin:4px 0 16px; max-width:760px; }
-  .lede-summary { cursor:pointer; font-size:13px; color:#6b7280; font-weight:500; }
-  .lede { font-size:15px; color:#374151; margin:8px 0 0; line-height:1.55; }
   .panel { background:#fff; border:1px solid #e5e7eb; border-radius:12px; padding:18px 20px; margin-bottom:18px; }
   .loading { color:#94a3b8; padding:40px 0; text-align:center; font-size:14px; }
   .nav { margin-top:24px; padding-top:18px; border-top:1px solid #e5e7eb; font-size:14px; }
   .nav a { color:#1d4ed8; text-decoration:none; margin-right:18px; }
   .err { color:#b91c1c; padding:16px; }
 
-  .about { background:#fff; border:1px solid #e5e7eb; border-radius:12px; padding:18px 20px; margin-bottom:18px; }
-  .about summary { font-size:17px; font-weight:600; color:#0f172a; cursor:pointer; }
-  .about p { margin:10px 0 12px; color:#374151; line-height:1.6; font-size:14px; }
+  .about { background:#fff; border:1px solid #e5e7eb; border-radius:12px; padding:0; margin-bottom:14px; }
+  .about summary { list-style:none; display:flex; align-items:center; gap:8px; padding:14px 20px; font-size:15px; font-weight:600; color:#0f172a; cursor:pointer; }
+  .about summary::-webkit-details-marker { display:none; }
+  .about summary::after { content:"›"; margin-inline-start:auto; font-size:18px; color:#94a3b8; transition:transform .15s; }
+  .about[open] summary::after { transform:rotate(90deg); }
+  .about > :not(summary) { margin-inline:20px; }
+  .about > :last-child { margin-bottom:18px; }
+  .about p { margin:4px 20px 12px; color:#374151; line-height:1.6; font-size:14px; }
+  .about .lede { font-size:15px; color:#1f2937; }
   .about-grid { display:grid; grid-template-columns:repeat(auto-fit,minmax(150px,1fr)); gap:10px; margin-top:8px; }
   .about-stat { padding:10px 12px; background:#f8fafc; border:1px solid #e2e8f0; border-radius:8px; }
   .about-stat .k { font-size:11px; color:#6b7280; text-transform:uppercase; letter-spacing:0.04em; margin-bottom:4px; }
@@ -140,12 +143,7 @@
       <button class="pdf-btn" id="btn-pdf-district" type="button">⬇ تنزيل تقرير PDF</button>
     </div>
   </div>
-  <details class="lede-details">
-    <summary class="lede-summary">المزيد عن السوق</summary>
-    <p class="lede" id="d-lede">في حي Business Bay خلال 3 سنوات تم تسجيل 40,955 صفقة عقارية وفقًا لبيانات دائرة الأراضي والأملاك بدبي. السعر الوسيط للعقار — 1.59 مليون درهم. السعر للمتر المربع — 23,578 درهم. المساحة الوسيطة — 77 م².</p>
-  </details>
-
-  <details class="about"><summary>عن منطقة Business Bay</summary><p>Business Bay — حي من أحياء دبي. جميع الصفقات شقق سكنية؛ لا يوجد فلل ولا تاون هاوس في هذه المنطقة. نحو 53% من الصفقات قبل التسليم (Off-Plan) في مشاريع قيد الإنشاء. أكثر الأنواع شيوعًا — غرفة واحدة (30,332 صفقة). أحد أكثر المشاريع نشاطًا — Damac Towers By Paramount. تم تسجيل 302,321 عقد إيجار أيضًا — المنطقة مناسبة للشراء والإقامة طويلة الأمد.</p><div class="about-grid"><div class="about-stat"><div class="k">إجمالي الصفقات</div><div class="v">97,987</div></div><div class="about-stat"><div class="k">السعر الوسيط</div><div class="v">1.38 مليون AED</div></div><div class="about-stat"><div class="k">السعر للمتر</div><div class="v">18,177 AED</div></div><div class="about-stat"><div class="k">عقود الإيجار</div><div class="v">302,321</div></div><div class="about-stat"><div class="k">الإيجار الوسيط</div><div class="v">72,000 AED</div></div></div></details>
+  <details class="about"><summary>عن منطقة Business Bay</summary><p class="lede" id="d-lede">في حي Business Bay خلال 3 سنوات تم تسجيل 40,955 صفقة عقارية وفقًا لبيانات دائرة الأراضي والأملاك بدبي. السعر الوسيط للعقار — 1.59 مليون درهم. السعر للمتر المربع — 23,578 درهم. المساحة الوسيطة — 77 م².</p><p>Business Bay — حي من أحياء دبي. جميع الصفقات شقق سكنية؛ لا يوجد فلل ولا تاون هاوس في هذه المنطقة. نحو 53% من الصفقات قبل التسليم (Off-Plan) في مشاريع قيد الإنشاء. أكثر الأنواع شيوعًا — غرفة واحدة (30,332 صفقة). أحد أكثر المشاريع نشاطًا — Damac Towers By Paramount. تم تسجيل 302,321 عقد إيجار أيضًا — المنطقة مناسبة للشراء والإقامة طويلة الأمد.</p><div class="about-grid"><div class="about-stat"><div class="k">إجمالي الصفقات</div><div class="v">97,987</div></div><div class="about-stat"><div class="k">السعر الوسيط</div><div class="v">1.38 مليون AED</div></div><div class="about-stat"><div class="k">السعر للمتر</div><div class="v">18,177 AED</div></div><div class="about-stat"><div class="k">عقود الإيجار</div><div class="v">302,321</div></div><div class="about-stat"><div class="k">الإيجار الوسيط</div><div class="v">72,000 AED</div></div></div></details>
 
   <div class="panel">
     <div id="detail-content" class="loading">جاري تحميل الإحصاءات…</div>
@@ -188,7 +186,8 @@ function applyPeriodCopy(period) {
   if (!PERIOD_COPY || !PERIOD_COPY[period]) return;
   const c = PERIOD_COPY[period];
   document.getElementById('d-name').textContent = c.h1;
-  document.getElementById('d-lede').textContent = c.lede;
+  const ledeEl = document.getElementById('d-lede');
+  if (ledeEl) ledeEl.textContent = c.lede;
   if (c.h1) document.title = c.h1 + ' — DXBCompass';
 }
 

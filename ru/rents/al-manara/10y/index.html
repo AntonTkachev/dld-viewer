@@ -68,18 +68,21 @@
   .langswitch-dd .lang-menu a:hover { background:#f3f4f6; }
   .langswitch-dd .lang-menu a.active { background:#1d4ed8; color:#fff; font-weight:600; }
   html[dir="rtl"] .langswitch-dd .lang-menu { inset-inline-end:auto; inset-inline-start:0; }
-  .lede-details { margin:4px 0 16px; max-width:760px; }
-  .lede-summary { cursor:pointer; font-size:13px; color:#6b7280; font-weight:500; }
-  .lede { font-size:15px; color:#374151; margin:8px 0 0; line-height:1.55; }
   .panel { background:#fff; border:1px solid #e5e7eb; border-radius:12px; padding:18px 20px; margin-bottom:18px; }
   .loading { color:#94a3b8; padding:40px 0; text-align:center; font-size:14px; }
   .nav { margin-top:24px; padding-top:18px; border-top:1px solid #e5e7eb; font-size:14px; }
   .nav a { color:#1d4ed8; text-decoration:none; margin-right:18px; }
   .err { color:#b91c1c; padding:16px; }
 
-  .about { background:#fff; border:1px solid #e5e7eb; border-radius:12px; padding:18px 20px; margin-bottom:18px; }
-  .about summary { font-size:17px; font-weight:600; color:#0f172a; cursor:pointer; }
-  .about p { margin:10px 0 12px; color:#374151; line-height:1.6; font-size:14px; }
+  .about { background:#fff; border:1px solid #e5e7eb; border-radius:12px; padding:0; margin-bottom:14px; }
+  .about summary { list-style:none; display:flex; align-items:center; gap:8px; padding:14px 20px; font-size:15px; font-weight:600; color:#0f172a; cursor:pointer; }
+  .about summary::-webkit-details-marker { display:none; }
+  .about summary::after { content:"›"; margin-inline-start:auto; font-size:18px; color:#94a3b8; transition:transform .15s; }
+  .about[open] summary::after { transform:rotate(90deg); }
+  .about > :not(summary) { margin-inline:20px; }
+  .about > :last-child { margin-bottom:18px; }
+  .about p { margin:4px 20px 12px; color:#374151; line-height:1.6; font-size:14px; }
+  .about .lede { font-size:15px; color:#1f2937; }
   .about-grid { display:grid; grid-template-columns:repeat(auto-fit,minmax(150px,1fr)); gap:10px; margin-top:8px; }
   .about-stat { padding:10px 12px; background:#f8fafc; border:1px solid #e2e8f0; border-radius:8px; }
   .about-stat .k { font-size:11px; color:#6b7280; text-transform:uppercase; letter-spacing:0.04em; margin-bottom:4px; }
@@ -140,12 +143,7 @@
       <button class="pdf-btn" id="btn-pdf-district" type="button">⬇ Скачать PDF-отчёт</button>
     </div>
   </div>
-  <details class="lede-details">
-    <summary class="lede-summary">Подробнее о рынке</summary>
-    <p class="lede" id="d-lede">В районе Al Manara за 10 лет зарегистрировано 7 172 договоров аренды по данным Dubai Land Department. Медианная годовая аренда — 215 250 AED. Стоимость аренды — 648 AED/м²/год.</p>
-  </details>
-
-  <details class="about"><summary>О районе Al Manara</summary><p>Al Manara — один из районов Дубая. Около 0% сделок — off-plan покупки в строящихся проектах. Самый частый тип — прочее (447 сделок). Также зарегистрировано 9 822 договоров аренды — район интересен как для покупки, так и для долгосрочного проживания.</p><div class="about-grid"><div class="about-stat"><div class="k">Всего сделок</div><div class="v">447</div></div><div class="about-stat"><div class="k">Медианная цена</div><div class="v">5.50 млн AED</div></div><div class="about-stat"><div class="k">Цена за м²</div><div class="v">4 306 AED</div></div><div class="about-stat"><div class="k">Договоров аренды</div><div class="v">9 822</div></div><div class="about-stat"><div class="k">Медианная аренда</div><div class="v">210 000 AED</div></div></div></details>
+  <details class="about"><summary>О районе Al Manara</summary><p class="lede" id="d-lede">В районе Al Manara за 10 лет зарегистрировано 7 172 договоров аренды по данным Dubai Land Department. Медианная годовая аренда — 215 250 AED. Стоимость аренды — 648 AED/м²/год.</p><p>Al Manara — один из районов Дубая. Около 0% сделок — off-plan покупки в строящихся проектах. Самый частый тип — прочее (447 сделок). Также зарегистрировано 9 822 договоров аренды — район интересен как для покупки, так и для долгосрочного проживания.</p><div class="about-grid"><div class="about-stat"><div class="k">Всего сделок</div><div class="v">447</div></div><div class="about-stat"><div class="k">Медианная цена</div><div class="v">5.50 млн AED</div></div><div class="about-stat"><div class="k">Цена за м²</div><div class="v">4 306 AED</div></div><div class="about-stat"><div class="k">Договоров аренды</div><div class="v">9 822</div></div><div class="about-stat"><div class="k">Медианная аренда</div><div class="v">210 000 AED</div></div></div></details>
 
   <div class="panel">
     <div id="detail-content" class="loading">Загрузка статистики…</div>
@@ -188,7 +186,8 @@ function applyPeriodCopy(period) {
   if (!PERIOD_COPY || !PERIOD_COPY[period]) return;
   const c = PERIOD_COPY[period];
   document.getElementById('d-name').textContent = c.h1;
-  document.getElementById('d-lede').textContent = c.lede;
+  const ledeEl = document.getElementById('d-lede');
+  if (ledeEl) ledeEl.textContent = c.lede;
   if (c.h1) document.title = c.h1 + ' — DXBCompass';
 }
 

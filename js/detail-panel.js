@@ -69,6 +69,7 @@
   function fmtInt(v) { return (v||0).toLocaleString('ru-RU'); }
   function fmtAedDP(v) {
     if (!v) return '—';
+    if (v >= 1e12) return (v/1e12).toFixed(2) + ' ' + t('abbr_t');
     if (v >= 1e9) return (v/1e9).toFixed(2) + ' ' + t('abbr_b');
     if (v >= 1e6) return (v/1e6).toFixed(2) + ' ' + t('abbr_m');
     if (v >= 1e3) return (v/1e3).toFixed(0) + t('abbr_k');
@@ -447,10 +448,7 @@
       if (total === 0) return '';  
       const hidden = (S.roomBreakdownHidden && S.roomBreakdownHidden.has(k));
       const color  = ROOM_COLORS[k] || '#94a3b8';
-      const style  = hidden
-        ? `background:#f1f5f9;border-color:#cbd5e1;color:#94a3b8`
-        : `background:${color};border-color:${color};color:#fff`;
-      return `<button class="rb-chip" type="button" data-dp-toggle-room="${_h(k)}" style="${style}" aria-pressed="${hidden ? 'false' : 'true'}">${roomLabel(k)}<span class="rb-chip-n">${fmtInt(total)}</span></button>`;
+      return `<button class="rb-chip" type="button" data-dp-toggle-room="${_h(k)}" style="--c:${color}" aria-pressed="${hidden ? 'false' : 'true'}">${roomLabel(k)}<span class="rb-chip-n">${fmtInt(total)}</span></button>`;
     }).join('');
     return `
       <div class="dp-section">
@@ -962,12 +960,14 @@
   }
   function renderBodySale(a) {
     return `
-      <div class="period-chips" id="dp-period-chips">${renderPeriodChips()}</div>
+      <div class="dp-toolbar">
+        <div class="period-chips" id="dp-period-chips">${renderPeriodChips()}</div>
+        <div class="room-chips" id="dp-room-chips">${renderRoomChips(a)}</div>
+      </div>
       <div class="dp-stats" id="dp-stats-sale">${renderStatsSale(a)}</div>
 
       <div class="dp-section">
         <h3>${t("sp_section_timeline")}</h3>
-        <div class="room-chips" id="dp-room-chips">${renderRoomChips(a)}</div>
         <div class="dp-timeline-grid">
           <div>
             <div style="font-size:11px;color:#666;margin-bottom:2px">${t("sp_subsection_avg")}</div>
@@ -1060,12 +1060,14 @@
     const hasRooms = !!(r.by_rooms_unit && Object.keys(r.by_rooms_unit).length);
 
     return `
-      <div class="period-chips" id="dp-period-chips-rent">${renderPeriodChipsRent()}</div>
+      <div class="dp-toolbar">
+        <div class="period-chips" id="dp-period-chips-rent">${renderPeriodChipsRent()}</div>
+        ${hasRooms ? `<div class="room-chips" id="dp-room-chips-rent">${renderRoomChips(r)}</div>` : ''}
+      </div>
       <div class="dp-stats" id="dp-stats-rent">${renderStatsRent(r)}</div>
 
       <div class="dp-section">
         <h3>${t("rent_section_timeline")}</h3>
-        ${hasRooms ? `<div class="room-chips" id="dp-room-chips-rent">${renderRoomChips(r)}</div>` : ''}
         <div class="dp-timeline-grid">
           <div>
             <div style="font-size:11px;color:#666;margin-bottom:2px">${t("sp_subsection_count")}</div>
