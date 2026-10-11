@@ -182,6 +182,25 @@
       return month >= cutoff && month < todayMonth;
     });
   }
+  // Partial as_of month scaled by Mon–Fri working days (DLD doesn't register on weekends)
+  function _projectedPoint(series, asOf) {
+    if (!asOf || !series.length) return null;
+    const last = series[series.length - 1];
+    if (last.d !== asOf.slice(0, 7)) return null;
+    const [y, m, day] = asOf.split('-').map(Number);
+    const dim = new Date(y, m, 0).getDate();
+    let done = 0, total = 0;
+    for (let i = 1; i <= dim; i++) {
+      const wd = new Date(y, m - 1, i).getDay();
+      if (wd === 0 || wd === 6) continue;
+      total++;
+      if (i <= day) done++;
+    }
+    if (!done) return null;
+    if (done >= total) return last;
+    const f = total / done;
+    return { ...last, n: Math.round(last.n * f), vol: Math.round((last.vol || 0) * f), est: { a: done, b: total } };
+  }
   function _workdays(from, to) {
     let n = 0;
     for (const d = new Date(from); d <= to; d.setDate(d.getDate() + 1)) {
@@ -824,7 +843,7 @@
       <div class="dp-section">
         <h3>${t("rent_section_timeline")}</h3>
         ${hasRooms ? `<div class="room-chips" id="dp-room-chips-rent">${renderRoomChips(r)}</div>` : ''}
-        <div class="dp-timeline-grid-2">
+        <div class="dp-timeline-grid">
           <div>
             <div style="font-size:11px;color:#666;margin-bottom:2px">${t("sp_subsection_count")}</div>
             <div class="dp-chart" style="height:180px">
@@ -837,6 +856,13 @@
             <div class="dp-chart" style="height:180px">
               <button class="chart-expand-btn" type="button" data-dp-expand="med" data-dp-source="rent" title="${t('chart_expand')}" aria-label="${t('chart_expand')}">⛶</button>
               <canvas id="ch-rent-med"></canvas>
+            </div>
+          </div>
+          <div>
+            <div style="font-size:11px;color:#666;margin-bottom:2px">${t("rent_sc_ppsqm")}</div>
+            <div class="dp-chart" style="height:180px">
+              <button class="chart-expand-btn" type="button" data-dp-expand="ppsqm" data-dp-source="rent" title="${t('chart_expand')}" aria-label="${t('chart_expand')}">⛶</button>
+              <canvas id="ch-rent-ppsqm"></canvas>
             </div>
           </div>
         </div>
@@ -973,8 +999,12 @@
     return ((last - prev) / prev) * 100;
   }
   function renderTimelineCharts(a) {
-    const fullSeries = roomTimelineFor(a);
-    const series = periodSlice(fullSeries);
+    const raw = roomTimelineFor(a);
+    const pt = _projectedPoint(raw, a.as_of);
+    const withPt = arr => pt ? arr.filter(p => p.d < pt.d).concat(pt) : arr;
+    const fullSeries = withPt(raw);
+    const series = withPt(periodSlice(raw));
+    const est = pt && pt.est ? { idx: series.length - 1, label: pt.d, note: _estNote(pt.est) } : null;
     const labels = series.map(p => p.d.length === 10 ? p.d.slice(5) : p.d);
     const baseColor = ROOM_COLORS[S.roomFilter] || '#1d4ed8';
     // Per-metric colors: avg=indigo (price), count=sky (activity), volume=teal (accumulated money).
@@ -989,6 +1019,7 @@
       volume: { values: series.map(p => p.vol || 0),                             fullValues: fullSeries.map(p => p.vol || 0),                         fmtY: fmtAxisAed,    fmtTip: fmtAedDP,                                                label: t('sp_subsection_volume'), color: perMetric.volume },
       avg:    { values: series.map(avgPrice),                                     fullValues: fullSeries.map(avgPrice),                                fmtY: fmtAxisAed,    fmtTip: fmtAedDP,                                                label: t('sp_subsection_avg'),    color: perMetric.avg },
       color: baseColor,
+      est,
     };
     // secondary: {values, fmtY, fmtTip, label, color} — deal count riding on a right-hand
     // axis behind the price line, so the two series' divergence (price is sticky, volume
@@ -997,15 +1028,19 @@
       const ctx = document.getElementById(id);
       if (!ctx) return;
       const bg = rgba(color, .14);
+      const estIdx = est ? est.idx : -1;
       const datasets = [];
       if (secondary) {
         datasets.push({
           type:'bar', label: secondary.label, data: secondary.values,
-          backgroundColor: rgba(secondary.color, .25), borderWidth: 0,
+          backgroundColor: c => rgba(secondary.color, c.dataIndex === estIdx ? .1 : .25), borderWidth: 0,
           yAxisID: 'y1', barPercentage: .6, categoryPercentage: .7, order: 2,
         });
       }
-      datasets.push({ label, data, borderColor:color, backgroundColor:bg, tension:.3, pointRadius:1.5, fill:true, order: 1 });
+      datasets.push({ label, data, borderColor:color, backgroundColor:bg, tension:.3, fill:true, order: 1,
+        pointRadius: c => c.dataIndex === estIdx ? 3 : 1.5,
+        pointBackgroundColor: c => c.dataIndex === estIdx ? '#fff' : color,
+        segment: { borderDash: c => c.p1DataIndex === estIdx ? [4, 3] : undefined } });
       const scales = {
         y:{ticks:{font:{size:10}, callback: fmtY}, beginAtZero:true},
         x:{ticks:{font:{size:10}, maxRotation:0, autoSkip:true, maxTicksLimit:6}},
@@ -1021,7 +1056,10 @@
           interaction:{intersect:false, mode:'index'},
           plugins:{
             legend:{ display: !!secondary, labels:{ font:{size:9}, boxWidth:10, padding:6 } },
-            tooltip:{callbacks:{label: c => c.dataset.type === 'bar' ? ' ' + secondary.fmtTip(c.parsed.y) : ' ' + tooltipFmt(c.parsed.y)}},
+            tooltip:{callbacks:{
+              afterTitle: items => items.length && items[0].dataIndex === estIdx ? est.note : '',
+              label: c => c.dataset.type === 'bar' ? ' ' + secondary.fmtTip(c.parsed.y) : ' ' + tooltipFmt(c.parsed.y),
+            }},
           },
           scales,
         }
@@ -1296,8 +1334,8 @@
       const still = document.getElementById('dp-chart-modal');
       if (!still || !still.classList.contains('open') || S.modalEngine !== engine || still.dataset.metric !== metric || (still.dataset.source || 'sale') !== source) return;
       target.innerHTML = '';
-      if (useEc) _renderModalECharts({ el: echartsEl, labels, data, ma, ma50, ma200, median, color, m, secondary });
-      else _renderModalLwc({ el: lwcEl, dates: cd.fullLabels, data, ma50, ma200, median, color, m, secondary, cross });
+      if (useEc) _renderModalECharts({ el: echartsEl, labels, data, ma, ma50, ma200, median, color, m, secondary, est: cd.est });
+      else _renderModalLwc({ el: lwcEl, dates: cd.fullLabels, data, ma50, ma200, median, color, m, secondary, cross, est: cd.est });
     }).catch(err => {
       target.innerHTML = `<div style="padding:20px;color:#dc2626;font-size:12px">${useEc ? 'ECharts' : 'Lightweight Charts'} failed to load.</div>`;
       console.error('Chart library load failed:', err);
@@ -1329,7 +1367,7 @@
     if (S.lwcInstance) { S.lwcInstance.remove(); S.lwcInstance = null; }
   }
 
-  function _renderModalLwc({ el, dates, data, ma50, ma200, median, color, m, secondary, cross }) {
+  function _renderModalLwc({ el, dates, data, ma50, ma200, median, color, m, secondary, cross, est }) {
     const L = LightweightCharts;
     const lang = document.documentElement.lang || 'en';
     const daily = dates.some(d => d.length === 10);
@@ -1344,6 +1382,8 @@
     // Nulls are dropped so the line connects across empty months instead of breaking
     const pts = arr => dates.flatMap((d, i) => Number.isFinite(arr[i]) ? [{ time: toTime(d), value: arr[i] }] : []);
     const hasFinite = arr => arr.some(v => Number.isFinite(v));
+    const estTime = est ? toTime(est.label) : null;
+    const estStyle = (arr, style) => arr.map(p => p.time === estTime ? { ...p, ...style } : p);
     const fmtAxis = v => { const r = m.fmtY(Math.round(v)); return typeof r === 'number' ? fmtInt(r) : r; };
     const pf = { type: 'custom', minMove: 1, formatter: fmtAxis };
     const crossLine = { color: '#94a3b8', width: 1, style: L.LineStyle.Dashed, labelBackgroundColor: '#0f172a' };
@@ -1371,7 +1411,7 @@
         priceScaleId: 'vol', color: 'rgba(148,163,184,0.4)',
         priceLineVisible: false, lastValueVisible: false,
       });
-      vol.setData(pts(secondary.values));
+      vol.setData(estStyle(pts(secondary.values), { color: 'rgba(148,163,184,0.15)' }));
       chart.priceScale('vol').applyOptions({ scaleMargins: { top: 0.58, bottom: 0 }, visible: false });
       legendRows.push({ s: vol, label: secondary.label, swatch: 'rgba(148,163,184,0.6)', fmt: secondary.fmtTip });
     }
@@ -1393,7 +1433,7 @@
       crosshairMarkerRadius: 4, crosshairMarkerBorderColor: '#ffffff', crosshairMarkerBorderWidth: 2,
     });
     const mainPts = pts(data);
-    main.setData(mainPts);
+    main.setData(estStyle(mainPts, { lineColor: rgba(color, 0.4), topColor: rgba(color, 0.08) }));
     legendRows.unshift({ s: main, label: m.label, swatch: color, fmt: m.fmtTip, main: true });
 
     if (median != null) {
@@ -1431,7 +1471,8 @@
           : `background:${r.swatch};height:${r.main ? 3 : 2}px`;
         return `<div class="cm-lwc-row${r.main ? ' main' : ''}"><i style="${sw}"></i><span>${_h(r.label)}</span><b>${r.fmt(Math.round(pt.value))}</b></div>`;
       }).join('');
-      legend.innerHTML = (time !== undefined && time !== null ? `<div class="cm-lwc-date">${fmtTime(time)}</div>` : '') + rows;
+      const isEst = est && time != null && fmtTime(time) === fmtTime(estTime);
+      legend.innerHTML = (time !== undefined && time !== null ? `<div class="cm-lwc-date">${fmtTime(time)}${isEst ? ` · ${_h(est.note)}` : ''}</div>` : '') + rows;
     };
     chart.subscribeCrosshairMove(paintLegend);
     paintLegend(null);
@@ -1515,7 +1556,7 @@
     ts.subscribeSizeChange(paint);
   }
 
-  function _renderModalECharts({ el, labels, data, ma, ma50, ma200, median, color, m, secondary }) {
+  function _renderModalECharts({ el, labels, data, ma, ma50, ma200, median, color, m, secondary, est }) {
     const clean = arr => arr.map(v => Number.isFinite(v) ? v : null);
     const hasFinite = arr => arr.some(v => Number.isFinite(v));
     const inst = echarts.init(el, null, { renderer: 'canvas' });
@@ -1543,7 +1584,8 @@
               <span style="font-variant-numeric:tabular-nums;font-weight:600">${secondary && p.seriesName === secondary.label ? secondary.fmtTip(Math.round(p.value)) : m.fmtTip(Math.round(p.value))}</span>
             </div>`)
             .join('');
-          return `<div style="opacity:.75;font-size:11px;margin-bottom:4px">${pName}</div>${rows}`;
+          const note = est && pName === est.label ? ` · ${_h(est.note)}` : '';
+          return `<div style="opacity:.75;font-size:11px;margin-bottom:4px">${pName}${note}</div>${rows}`;
         },
       },
       legend: {
@@ -2123,6 +2165,7 @@
       fullDates: tlSource.map(p => p.d),
       count: { values: cntVals, fullValues: fullCntVals, fmtY: v => v,        fmtTip: v => fmtInt(v) + ' ' + t('ch_count').toLowerCase(), label: t('sp_subsection_count') },
       med:   { values: medVals, fullValues: fullMedVals, fmtY: fmtAxisAed,    fmtTip: fmtAedDP,                                            label: t('rent_th_med') },
+      ppsqm: { values: series.map(p => p.ppsqm || null), fullValues: tlSource.map(p => p.ppsqm || null), fmtY: v => fmtInt(v), fmtTip: v => fmtInt(v) + ' AED', label: t('rent_sc_ppsqm') },
       color,
     };
     const mkChart = (id, data, fmtY, tooltipFmt) => {
@@ -2146,6 +2189,7 @@
     };
     mkChart('ch-rent-count', series.map(p => p.n), v => v,        v => v + ' ' + t('ch_count').toLowerCase());
     mkChart('ch-rent-med',   medVals, fmtAxisAed, fmtAedDP);
+    mkChart('ch-rent-ppsqm', S.rentChartData.ppsqm.values, S.rentChartData.ppsqm.fmtY, S.rentChartData.ppsqm.fmtTip);
 
     if (r.by_rooms_unit && Object.keys(r.by_rooms_unit).length) {
       try { renderRoomBreakdownChart(r); } catch(e) { console.error('rent rooms chart:', e); }

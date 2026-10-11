@@ -27,6 +27,10 @@ MASK_CONSTS = {
 ROOM_AXIS = {'studio', '1br', '2br', '3br', '4br_plus', 'villa'}
 APARTMENT_ROOMS = ['studio', '1br', '2br', '3br', '4br+']
 PERIOD_MONTHS = {'1y': 12, '3y': 36, '5y': 60, '10y': 120, 'all': None}
+# Retired area key → current key, so favorites stored under the old key keep resolving
+KEY_ALIASES = {
+    'nad al shiba villas': 'nad al sheba',  # DLD renamed the master project in the 2026-10-10 snapshot
+}
 
 _DEC = json.JSONDecoder()
 
@@ -386,7 +390,7 @@ def build(S, asof):
     files = {
         'map/polygons.geojson': (polygons, True),
         'map/masks.json': (masks, True),
-        'areas/index.json': ({'areas': index, 'aliases': {}}, True),
+        'areas/index.json': ({'areas': index, 'aliases': {k: v for k, v in KEY_ALIASES.items() if v in areas}}, True),
     }
     for a in areas.values():
         files[f"areas/{a['slug']}.json"] = (drop_none(a), False)
