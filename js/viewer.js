@@ -216,12 +216,6 @@ function _districtHrefForKey(key, name, legacyKey, masterKey) {
 window.openDistrictByKey = function(key) {
   window.location.href = _districtHrefForKey(key);
 };
-window.openDubai = function() {  };
-function openDistrict(props) {
-  if (!props) return;
-  const href = _districtHrefForKey(props.real_area_key, props.name, props.legacy_area_key, props.master_project_key);
-  if (href) window.location.href = href;
-}
 
 document.body.insertAdjacentHTML('beforeend',
   '<svg width="0" height="0" style="position:absolute" aria-hidden="true">'
@@ -264,13 +258,14 @@ const RAMP_GREEN   = ['#ebf6ee','#b6dcc2','#7bc090','#3a9a55','#188a37'];
 const _PALETTE_KEY = 'dxbc_choro_palette';
 const _PALETTES = {viridis: RAMP_VIRIDIS, blue: RAMP_BLUE, green: RAMP_GREEN};
 const _PALETTE_ORDER = ['viridis', 'blue', 'green'];
-let _paletteName = _PALETTES[localStorage.getItem(_PALETTE_KEY)] ? localStorage.getItem(_PALETTE_KEY) : 'viridis';
+let _paletteName = 'viridis';
+try { const v = localStorage.getItem(_PALETTE_KEY); if (_PALETTES[v]) _paletteName = v; } catch (e) {}
 let RAMP = _PALETTES[_paletteName];
 window.togglePalette = function() {
   const next = _PALETTE_ORDER[(_PALETTE_ORDER.indexOf(_paletteName) + 1) % _PALETTE_ORDER.length];
   _paletteName = next;
   RAMP = _PALETTES[next];
-  localStorage.setItem(_PALETTE_KEY, next);
+  try { localStorage.setItem(_PALETTE_KEY, next); } catch (e) {}
   if (typeof renderChoro === 'function') renderChoro();
 };
 const METRIC_FMT = {
@@ -519,7 +514,7 @@ const MASKS = {
       { key: 'price_pct',  labelKey: 'tv_col_lifecycle_price',  type: 'pct', width: '16%' },
       { key: 'rent_pct',   labelKey: 'tv_col_lifecycle_rent',   type: 'pct', width: '16%' },
       { key: r => Math.round(Math.min(r.pipeline || 0, 1) * 100),
-                           labelKey: 'tv_col_lifecycle_pipeline', type: 'pct', width: '16%' },
+                           labelKey: 'tv_col_lifecycle_pipeline', type: 'pct_abs', width: '16%' },
     ],
   },
   payback: {
@@ -555,8 +550,8 @@ const MASKS = {
       return `
       <div class="stat"><span class="k">${t('pp_payback_years')}</span><span class="v" style="font-weight:700">${p.real_metric.toFixed(1)} ${t('unit_years')}</span></div>
       <div class="stat"><span class="k">${t('tv_col_yield')}</span><span class="v" style="font-weight:700">${yld}</span></div>
-      <div class="stat"><span class="k">${t('pp_sale_ppsqm')}</span><span class="v">${(p.real_med_price||0).toLocaleString('ru-RU')} AED/м²</span></div>
-      <div class="stat"><span class="k">${t('pp_rent_ppsqm')}</span><span class="v">${(p.real_med_ppsqm||0).toLocaleString('ru-RU')} AED/м²/${t('unit_year_short')}</span></div>
+      <div class="stat"><span class="k">${t('pp_sale_ppsqm')}</span><span class="v">${(p.real_med_price||0).toLocaleString('ru-RU')} ${t('tv_col_ppsqm')}</span></div>
+      <div class="stat"><span class="k">${t('pp_rent_ppsqm')}</span><span class="v">${(p.real_med_ppsqm||0).toLocaleString('ru-RU')} ${t('tv_col_ppsqm_year')}</span></div>
       <div class="stat"><span class="k">${t('pp_n_sale')}</span><span class="v">${(p.real_n_sale||0).toLocaleString('ru-RU')}</span></div>
       <div class="stat"><span class="k">${t('pp_n_rent')}</span><span class="v">${(p.real_n_rent||0).toLocaleString('ru-RU')}</span></div>
     `; },
@@ -629,7 +624,7 @@ const MASKS = {
           ? `<div class="stat"><span class="k">${t('pp_overdue_share')}</span><span class="v"${p.real_overdue > 25 ? ' style="color:#b45309;font-weight:600"' : ''}>${p.real_overdue > 25 ? '⚠ ' : ''}${p.real_overdue.toFixed(0)}%</span></div>`
           : '';
         return head + `
-      <div class="stat"><span class="k">${t('pp_offplan_ppsqm')}</span><span class="v">${(p.real_offplan_ppsqm||0).toLocaleString('ru-RU')} AED/м²</span></div>
+      <div class="stat"><span class="k">${t('pp_offplan_ppsqm')}</span><span class="v">${(p.real_offplan_ppsqm||0).toLocaleString('ru-RU')} ${t('tv_col_ppsqm')}</span></div>
       ${prem}${fresh}${od}${past}
       <div class="stat"><span class="k">${t('pp_n_sale_1y')}</span><span class="v">${(p.real_n_offplan||0).toLocaleString('ru-RU')}</span></div>
     `;
@@ -643,8 +638,8 @@ const MASKS = {
       return head + `
       <div class="stat"><span class="k">${t('pp_yield')}</span><span class="v" style="font-weight:700">${(p.real_yield || 0).toFixed(1)}%</span></div>
       ${past}${peak}
-      <div class="stat"><span class="k">${t('pp_sale_ppsqm')}</span><span class="v">${(p.real_med_price||0).toLocaleString('ru-RU')} AED/м²</span></div>
-      <div class="stat"><span class="k">${t('pp_rent_ppsqm')}</span><span class="v">${(p.real_med_ppsqm||0).toLocaleString('ru-RU')} AED/м²/${t('unit_year_short')}</span></div>
+      <div class="stat"><span class="k">${t('pp_sale_ppsqm')}</span><span class="v">${(p.real_med_price||0).toLocaleString('ru-RU')} ${t('tv_col_ppsqm')}</span></div>
+      <div class="stat"><span class="k">${t('pp_rent_ppsqm')}</span><span class="v">${(p.real_med_ppsqm||0).toLocaleString('ru-RU')} ${t('tv_col_ppsqm_year')}</span></div>
       ${pipe}
       <div class="stat"><span class="k">${t('pp_n_sale_1y')}</span><span class="v">${(p.real_n_sale||0).toLocaleString('ru-RU')}</span></div>
     `;
@@ -765,8 +760,8 @@ const MASKS = {
       <div class="stat"><span class="k">${t('pp_investor_score')}</span><span class="v" style="font-weight:700">${p.real_metric}</span></div>
       <div class="stat"><span class="k">${t('pp_yield')}</span><span class="v" style="font-weight:700">${(p.real_yield || 0).toFixed(1)}%</span></div>
       ${trend}${renew}
-      <div class="stat"><span class="k">${t('pp_sale_ppsqm')}</span><span class="v">${(p.real_med_price||0).toLocaleString('ru-RU')} AED/м²</span></div>
-      <div class="stat"><span class="k">${t('pp_rent_ppsqm')}</span><span class="v">${(p.real_med_ppsqm||0).toLocaleString('ru-RU')} AED/м²/${t('unit_year_short')}</span></div>
+      <div class="stat"><span class="k">${t('pp_sale_ppsqm')}</span><span class="v">${(p.real_med_price||0).toLocaleString('ru-RU')} ${t('tv_col_ppsqm')}</span></div>
+      <div class="stat"><span class="k">${t('pp_rent_ppsqm')}</span><span class="v">${(p.real_med_ppsqm||0).toLocaleString('ru-RU')} ${t('tv_col_ppsqm_year')}</span></div>
       <div class="stat"><span class="k">${t('pp_n_rent_1y')}</span><span class="v">${(p.real_n_rent||0).toLocaleString('ru-RU')}</span></div>
     `;
     },
@@ -806,7 +801,7 @@ const MASKS = {
     legendFmt: v => v >= 1e6 ? (v/1e6).toFixed(1) + 'M' : Math.round(v/1e3) + 'K',
     popupRows: (p, t) => (p.real_metric === null || p.real_metric === undefined) ? '' : `
       <div class="stat"><span class="k">${t('pp_median')}</span><span class="v" style="font-weight:700">${(p.real_med_price/1e6).toFixed(2)} ${t('abbr_m')}</span></div>
-      <div class="stat"><span class="k">${t('pp_sale_ppsqm')}</span><span class="v">${(p.real_med_ppsqm||0).toLocaleString('ru-RU')} AED/м²</span></div>
+      <div class="stat"><span class="k">${t('pp_sale_ppsqm')}</span><span class="v">${(p.real_med_ppsqm||0).toLocaleString('ru-RU')} ${t('tv_col_ppsqm')}</span></div>
       <div class="stat"><span class="k">${t('pp_n_sale_1y')}</span><span class="v">${(p.real_count||0).toLocaleString('ru-RU')}</span></div>
     `,
     tableColumns: [
@@ -842,7 +837,7 @@ const MASKS = {
     legendFmt: v => v >= 1e6 ? (v/1e6).toFixed(1) + 'M' : Math.round(v/1e3) + 'K',
     popupRows: (p, t) => (p.real_metric === null || p.real_metric === undefined) ? '' : `
       <div class="stat"><span class="k">${t('pp_median_annual')}</span><span class="v" style="font-weight:700">${(p.real_med_price||0).toLocaleString('ru-RU')} AED</span></div>
-      <div class="stat"><span class="k">${t('pp_rent_ppsqm')}</span><span class="v">${(p.real_med_ppsqm||0).toLocaleString('ru-RU')} AED/м²/${t('unit_year_short')}</span></div>
+      <div class="stat"><span class="k">${t('pp_rent_ppsqm')}</span><span class="v">${(p.real_med_ppsqm||0).toLocaleString('ru-RU')} ${t('tv_col_ppsqm_year')}</span></div>
       <div class="stat"><span class="k">${t('pp_n_rent_1y')}</span><span class="v">${(p.real_count||0).toLocaleString('ru-RU')}</span></div>
     `,
     tableColumns: [
@@ -958,7 +953,6 @@ function _currentPageState() {
   }
   return { mask: null, view: 'map' };
 }
-function _currentPageMask() { return _currentPageState().mask; }
 
 function _hrefForPage(targetMask, targetView) {
   targetView = targetView || 'map';
@@ -979,10 +973,12 @@ function _pushPageUrl(maskId, view) {
   if (!_isSeoMask(maskId)) return;
   const cur = _currentPageState();
   if (cur.mask === maskId && cur.view === view) return;
-  const href = _hrefForPage(maskId, view);
+  let href = _hrefForPage(maskId, view);
   if (!href) return;
   
   if (window.location.protocol === 'file:') { window.location.href = href; return; }
+  const layers = new URLSearchParams(window.location.search).get('layers');
+  if (layers) { const u = new URL(href); u.searchParams.set('layers', layers); href = u.href; }
   try { history.pushState({ mask: maskId, view }, '', href); }
   catch (e) { window.location.href = href; }
 }
@@ -1018,8 +1014,7 @@ function _tableFmt(col, v) {
     }
     case 'pct':     return (v >= 0 ? '+' : '') + Number(v).toFixed(1) + '%';
     case 'pct_abs': return Number(v).toFixed(1) + '%';
-    case 'yrs':
-    case 'yrs_opt': return Number(v).toFixed(1) + ' ' + t('unit_years');
+    case 'yrs':     return Number(v).toFixed(1) + ' ' + t('unit_years');
     case 'phase':   return v;  
     default:        return String(v);
   }
@@ -1334,7 +1329,10 @@ function renderTable() {
     th.addEventListener('click', () => {
       const k = th.dataset.col;
       if (state.sortKey === k) state.sortDir = state.sortDir === 'asc' ? 'desc' : 'asc';
-      else { state.sortKey = k; state.sortDir = (sortCol.type === 'str') ? 'asc' : 'desc'; }
+      else {
+        const clicked = mask.tableColumns.find(c => _tableColIdent(c) === k);
+        state.sortKey = k; state.sortDir = (clicked && clicked.type === 'str') ? 'asc' : 'desc';
+      }
       state.page = 1;
       renderTable();
     });
@@ -1371,11 +1369,6 @@ const _FEAT_BY_KEY = (function () {
 function _featureForAreaKey(areaKey) {
   if (!areaKey || areaKey === '__dubai__') return null;
   return _FEAT_BY_KEY.get(areaKey) || _FEAT_BY_KEY.get(String(areaKey).toLowerCase()) || null;
-}
-
-function _openDistrictByKey(areaKey) {
-  
-  window.openDistrictByKey(areaKey);
 }
 
 function _openDistrictFromTable(areaKey) {
@@ -1552,7 +1545,7 @@ function renderMaskList() {
     tblRoot.addEventListener('mouseout', e => {
       if (e.target.closest('th[data-tip]')) hide();
     });
-    document.getElementById('tv-scroll')?.addEventListener('scroll', hide);
+    document.querySelector('#table-view .tv-scroll')?.addEventListener('scroll', hide);
   }
 })();
 function _refreshViewSwitchLabel() {
@@ -2147,27 +2140,7 @@ for (const s of SCHOOLS) {
   m.addTo(schoolLayer);
 }
 
-const POI_DEFS = {
-};
-const POI_LAYERS = {};
-for (const [key, def] of Object.entries(POI_DEFS)) {
-  const grp = L.layerGroup();
-  for (const p of (POIS[key] || [])) {
-    const icon = L.divIcon({className:'', html:`<div class="pin ${_h(key)}">${def.emoji}</div>`, iconSize:[24,24], iconAnchor:[12,12]});
-    const m = L.marker([p.lat, p.lon], {icon});
-    const lines = [`<h3>${def.emoji} ${p.name ? _h(p.name) : ('<span style="color:#888">' + t('no_name') + '</span>')} <span class="src-tag src-osm">OSM</span></h3>`];
-    lines.push(`<div class="muted" style="color:#888;margin-bottom:4px">${_h(def.label)}</div>`);
-    if (p.op) lines.push(`<div class="stat"><span class="k">${t('uni_op')}</span><span class="v">${_h(p.op)}</span></div>`);
-    if (p.kind) lines.push(`<div class="stat"><span class="k">${t('uni_op_type')}</span><span class="v">${_h(p.kind)}</span></div>`);
-    if (p.start_date) lines.push(`<div class="stat"><span class="k">${t("pj_start")}</span><span class="v">${_h(p.start_date)}</span></div>`);
-    m.bindPopup(lines.join(''));
-    m.addTo(grp);
-  }
-  POI_LAYERS[key] = grp;
-}
-
 const uniLayer = L.layerGroup();
-const fmtAedU = v => v >= 1e6 ? (v/1e6).toFixed(2)+' '+t('abbr_m') : v.toLocaleString();
 for (const u of UNIVERSITIES) {
   const icon = L.divIcon({className:'', html:`<div class="pin university">🎓</div>`, iconSize:[24,24], iconAnchor:[12,12]});
   const m = L.marker([u.lat, u.lon], {icon});
@@ -2272,7 +2245,7 @@ for (const mo of MOSQUES) {
   }
   if (mo.addr_street) realRows.push(`<div class="stat"><span class="k">${t("mo_street")}</span><span class="v">${_h(mo.addr_street)}</span></div>`);
   if (mo.addr_city) realRows.push(`<div class="stat"><span class="k">${t("mo_city")}</span><span class="v">${_h(mo.addr_city)}</span></div>`);
-  if (mo.wheelchair) realRows.push(`<div class="stat"><span class="k">${t("mo_wheel")}</span><span class="v">${mo.wheelchair==='yes'?'✓ да':_h(mo.wheelchair)}</span></div>`);
+  if (mo.wheelchair) realRows.push(`<div class="stat"><span class="k">${t("mo_wheel")}</span><span class="v">${mo.wheelchair==='yes'?t('yes_t'):_h(mo.wheelchair)}</span></div>`);
   if (mo.image) realRows.push(`<div class="stat"><span class="k">${t("mo_image")}</span><span class="v"><a href="${_h(_safeUrl(mo.image))}" target="_blank" rel="noopener noreferrer">${t("view_t")}</a></span></div>`);
 
   const synth = `
@@ -2413,7 +2386,6 @@ const buildingLayer = L.layerGroup();
 const _bldShapes = new Map(); // slug → Leaflet shape, for ?bld= deep-link
 // Viridis 5-step (same direction as district choropleth: low=dark purple, high=yellow)
 const _BLD_RAMP = RAMP_VIRIDIS;
-const _BLD_BREAKS = [20, 50, 100, 500]; // deals thresholds (4 breaks → 5 buckets)
 
 // BUILDINGS is fetched lazily — only when the buildings layer is actually used.
 let _buildingsLoadPromise = null;
@@ -2541,18 +2513,11 @@ function poiBuiltinDefs() {
     {key:'mosques',   label:t('mosques'),       count:MOSQUES.length,        layer:mosqueLayer},
     {key:'proj',      label:t('construction'),  count:PROJECTS.length,       layer:projectLayer},
     {key:'malls',     label:t('malls'),         count:MALLS.length,          layer:mallLayer},
-    {key:'buildings', label:t('buildings'),     count:(typeof BUILDINGS!=='undefined'?BUILDINGS.length:0), layer:buildingLayer},
+    {key:'buildings', label:t('buildings'),     count:(typeof BUILDINGS!=='undefined'?BUILDINGS.length:null), layer:buildingLayer},
   ];
 }
 
 let _POI_DEFS = [];
-function _allPoiDefs() {
-  const defs = poiBuiltinDefs();
-  for (const [key, def] of Object.entries(POI_DEFS)) {
-    defs.push({key:'poi-'+key, label:`${def.emoji} ${def.label}`, count:(POIS[key]||[]).length, layer:POI_LAYERS[key]});
-  }
-  return defs;
-}
 function _readLayersFromUrl() {
   try {
     const raw = new URLSearchParams(window.location.search).get('layers') || '';
@@ -2574,10 +2539,11 @@ function _writeLayersToUrl(activeKeys) {
 function _applyLayersFromUrl() {
   const want = _readLayersFromUrl();
   _POI_DEFS.forEach(d => {
-    const should = want.has(d.key);
+    const should = want.has(d.key) || (d.key === 'buildings' && minLevel === 99);
     const has = map.hasLayer(d.layer);
     if (should && !has) d.layer.addTo(map);
     if (!should && has) map.removeLayer(d.layer);
+    if (should && d.key === 'buildings') _ensureBuildingsData();
   });
   
   const el = document.getElementById('mp-poi-list');
@@ -2596,17 +2562,19 @@ function _currentActiveLayerKeys() {
 function renderPoiList() {
   const el = document.getElementById('mp-poi-list');
   if (!el) return;
-  _POI_DEFS = _allPoiDefs();
+  _POI_DEFS = poiBuiltinDefs();
   el.innerHTML = _POI_DEFS.map((d,i) => {
     const checked = map.hasLayer(d.layer) ? 'checked' : '';
-    return `<label data-i="${i}"><input type="checkbox" ${checked}><span class="poi-label">${d.label}</span><span class="poi-count">${d.count}</span></label>`;
+    return `<label data-i="${i}"><input type="checkbox" ${checked}><span class="poi-label">${d.label}</span><span class="poi-count">${d.count ?? ''}</span></label>`;
   }).join('');
   el.querySelectorAll('label').forEach((lab, i) => {
     const inp = lab.querySelector('input');
     inp.addEventListener('change', () => {
       const d = _POI_DEFS[i];
+      if (!inp.checked && d.key === 'buildings' && minLevel === 99) { _switchLevel(0); _writeLayersToUrl(_currentActiveLayerKeys()); return; }
       if (inp.checked) d.layer.addTo(map);
       else map.removeLayer(d.layer);
+      if (inp.checked && d.key === 'buildings') _ensureBuildingsData();
       _writeLayersToUrl(_currentActiveLayerKeys());
     });
   });

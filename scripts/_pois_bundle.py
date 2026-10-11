@@ -1,5 +1,5 @@
-"""Shared read/write for pois/all.js — the externalized bundle of the 16
-POI-layer consts (POIS, METRO_*, SCHOOLS, UNIVERSITIES, MEDICAL, MOSQUES,
+"""Shared read/write for pois/all.js — the externalized bundle of the 15
+POI-layer consts (METRO_*, SCHOOLS, UNIVERSITIES, MEDICAL, MOSQUES,
 PROJECTS, MALLS, TRAM_*, ETIHAD_*, GOLD_*) that used to be inlined directly
 into template.html. Every generator that used to patch one of these consts
 into template.html now calls patch_const() here instead.
@@ -14,7 +14,7 @@ HTML = ROOT / 'template.html'
 JS_OUT = ROOT / 'pois' / 'all.js'
 
 CONST_ORDER = [
-    'POIS', 'METRO_LINES', 'METRO_STATIONS', 'SCHOOLS', 'UNIVERSITIES',
+    'METRO_LINES', 'METRO_STATIONS', 'SCHOOLS', 'UNIVERSITIES',
     'MEDICAL', 'MOSQUES', 'PROJECTS', 'MALLS', 'TRAM_LINE', 'TRAM_STATIONS',
     'ETIHAD_LINE', 'ETIHAD_STATIONS', 'GOLD_LINE', 'GOLD_STATIONS',
     'GOLD_INTERCHANGES',
