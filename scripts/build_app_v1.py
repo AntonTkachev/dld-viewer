@@ -44,21 +44,22 @@ def load_json(path):
         return json.load(f)
 
 
-def js_block(src, start_re):
+def js_block(src, start_re, name):
     m = re.search(start_re, src)
     if not m:
-        sys.exit(f'js/viewer.js: {start_re!r} not found')
+        sys.exit(f'{name}: {start_re!r} not found')
     depth, i = 0, m.end() - 1
     for j in range(i, len(src)):
         depth += {'{': 1, '}': -1}.get(src[j], 0)
         if depth == 0:
             return src[i:j + 1], j + 1
-    sys.exit(f'js/viewer.js: unbalanced block after {start_re!r}')
+    sys.exit(f'{name}: unbalanced block after {start_re!r}')
 
 
 def parse_viewer(path, masks_path):
-    src = open(path, encoding='utf-8').read() + '\n' + open(masks_path, encoding='utf-8').read()
-    body, end = js_block(src, r'const PARENT_OVERRIDES = \{')
+    src = open(path, encoding='utf-8').read()
+    masks_src = open(masks_path, encoding='utf-8').read()
+    body, end = js_block(src, r'const PARENT_OVERRIDES = \{', 'js/viewer.js')
     overrides = {n: (k, p) for n, k, p in re.findall(
         r"'([^']+)':\s*\{\s*parent_key:\s*'([^']+)',\s*parent_name:\s*'([^']+)'\s*\}", body)}
     loop = re.match(r";?\s*for \(const n of \[(.*?)\]\)\s*\{\s*PARENT_OVERRIDES\[n\] = \{\s*parent_key:\s*'([^']+)',"
@@ -68,18 +69,18 @@ def parse_viewer(path, masks_path):
     for n in re.findall(r"'([^']+)'", loop.group(1)):
         overrides[n] = (loop.group(2), loop.group(3))
 
-    body, _ = js_block(src, r'const _SEARCH_ALIASES = \{')
+    body, _ = js_block(src, r'const _SEARCH_ALIASES = \{', 'js/viewer.js')
     aliases = {k: re.findall(r"'([^']+)'", v)
                for k, v in re.findall(r"'([^']+)':\s*\[([^\]]*)\]", body)}
 
-    body, _ = js_block(src, r'const MASKS = \{')
+    body, _ = js_block(masks_src, r'const MASKS = \{', 'js/masks.js')
     masks = []
     for mid, pers, default in re.findall(
             r"\n  (\w+): \{.*?periods: \[([^\]]*)\], defaultPeriod: '([^']+)'", body, re.S):
         if mid in MASK_CONSTS:
             masks.append((mid, re.findall(r"'([^']+)'", pers), default))
     if len(overrides) < 30 or len(masks) != len(MASK_CONSTS):
-        sys.exit(f'js/viewer.js parse drifted: {len(overrides)} overrides, masks={[m[0] for m in masks]}')
+        sys.exit(f'js/viewer.js + js/masks.js parse drifted: {len(overrides)} overrides, masks={[m[0] for m in masks]}')
     return overrides, aliases, masks
 
 
