@@ -31,6 +31,45 @@ const _INVESTOR_P = (typeof INVESTOR_PERIODS !== 'undefined') ? INVESTOR_PERIODS
 const _INCOME_P   = (typeof INCOME_PERIODS   !== 'undefined') ? INCOME_PERIODS   : {};
 const _FORMULA_P  = (typeof FORMULA_PERIODS  !== 'undefined') ? FORMULA_PERIODS  : {};
 
+(function _stubSplitAggregates() {
+  const EMPTY_BUCKET = {n:0,total:0,med:0,mean:0,p25:0,p75:0,p90:0,med_sqm:0,med_ppsqm:0};
+  function stubSale(r) {
+    return {
+      name: r.name || '', n: r.n || 0, total: r.total || 0,
+      med: r.med || 0, mean: r.med || 0,
+      p25: 0, p75: 0, p90: 0,
+      med_sqm: r.med_sqm || 0, med_ppsqm: r.med_ppsqm || 0,
+      avg_per_day: 0,
+      flat: {...EMPTY_BUCKET}, villa: {...EMPTY_BUCKET},
+      commercial: {...EMPTY_BUCKET}, land: {...EMPTY_BUCKET},
+      rooms_flat: {}, rooms_villa: {}, offplan: {},
+      timeline: [], top_projects: [], top_deals: [], recent: [],
+      _isStub: true,
+    };
+  }
+  function stubRent(r) {
+    return {
+      name: r.name || '', n: r.n || 0,
+      med: r.med || 0, med_annual: r.med || 0, mean: r.med || 0,
+      p25: 0, p75: 0, p90: 0,
+      med_sqm: r.med_sqm || 0, med_ppsqm: r.med_ppsqm || 0,
+      ejari: {}, rooms: {}, timeline: [], top_projects: [], recent: [],
+      _isStub: true,
+    };
+  }
+  if (typeof AGGREGATES !== 'undefined') {
+    const tx = (_TX_P && _TX_P.all) || {};
+    for (const k of Object.keys(tx)) {
+      if (!AGGREGATES[k]) AGGREGATES[k] = stubSale(tx[k]);
+    }
+  }
+  if (typeof RENT_AGGREGATES !== 'undefined') {
+    const rt = (_RENTS_P && _RENTS_P.all) || {};
+    for (const k of Object.keys(rt)) {
+      if (!RENT_AGGREGATES[k]) RENT_AGGREGATES[k] = stubRent(rt[k]);
+    }
+  }
+})();
 const MASKS = {
   sales: {
     labelKey: 'mask_sales', descKey: 'mask_sales_desc',
