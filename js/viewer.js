@@ -248,7 +248,7 @@ window.togglePalette = function() {
   if (typeof renderChoro === 'function') renderChoro();
 };
 const METRIC_FMT = {
-  count: v => v.toLocaleString('ru-RU'),
+  count: v => Math.round(v).toLocaleString('ru-RU'),
   total_aed: v => v >= 1e9 ? (v/1e9).toFixed(2)+' '+t('abbr_b') : v >= 1e6 ? (v/1e6).toFixed(2)+' '+t('abbr_m') : v.toLocaleString(),
   median_price_aed: v => v >= 1e6 ? (v/1e6).toFixed(2)+' '+t('abbr_m') : v.toLocaleString(),
   avg_sqm: v => v.toLocaleString('ru-RU',{maximumFractionDigits:1}),
