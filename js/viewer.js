@@ -503,6 +503,7 @@ function _tableFmt(col, v) {
     }
     case 'pct':     return (v >= 0 ? '+' : '') + Number(v).toFixed(1) + '%';
     case 'pct_abs': return Number(v).toFixed(1) + '%';
+    case 'pct_int': return Math.round(Number(v)) + '%';
     case 'yrs':     return Number(v).toFixed(1) + ' ' + t('unit_years');
     case 'phase':   return v;  
     default:        return String(v);
@@ -1069,6 +1070,7 @@ function _switchLevel(lvl) {
   } else if (prevLevel === 99 && lvl !== 99 && map.hasLayer(buildingLayer)) {
     map.removeLayer(buildingLayer);
     if (typeof renderPoiList === 'function') renderPoiList();
+    _writeLayersToUrl(_currentActiveLayerKeys());
   }
   if (typeof renderChoro === 'function') renderChoro();
 }
@@ -2039,12 +2041,12 @@ function _applyLayersFromUrl() {
   if (el) el.querySelectorAll('label').forEach((lab, i) => {
     const inp = lab.querySelector('input');
     const def = _POI_DEFS[i];
-    if (inp && def) inp.checked = want.has(def.key);
+    if (inp && def) inp.checked = map.hasLayer(def.layer);
   });
 }
 function _currentActiveLayerKeys() {
   const out = new Set();
-  _POI_DEFS.forEach(d => { if (map.hasLayer(d.layer)) out.add(d.key); });
+  _POI_DEFS.forEach(d => { if (map.hasLayer(d.layer) && !(d.key === 'buildings' && minLevel === 99)) out.add(d.key); });
   return out;
 }
 
@@ -2060,7 +2062,7 @@ function renderPoiList() {
     const inp = lab.querySelector('input');
     inp.addEventListener('change', () => {
       const d = _POI_DEFS[i];
-      if (!inp.checked && d.key === 'buildings' && minLevel === 99) { _switchLevel(0); _writeLayersToUrl(_currentActiveLayerKeys()); return; }
+      if (!inp.checked && d.key === 'buildings' && minLevel === 99) { _switchLevel(0); return; }
       if (inp.checked) d.layer.addTo(map);
       else map.removeLayer(d.layer);
       if (inp.checked && d.key === 'buildings') _ensureBuildingsData();

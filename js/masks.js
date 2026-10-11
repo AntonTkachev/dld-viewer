@@ -174,7 +174,7 @@ const MASKS = {
       { key: 'price_pct',  labelKey: 'tv_col_lifecycle_price',  type: 'pct', width: '16%' },
       { key: 'rent_pct',   labelKey: 'tv_col_lifecycle_rent',   type: 'pct', width: '16%' },
       { key: r => Math.round(Math.min(r.pipeline || 0, 1) * 100),
-                           labelKey: 'tv_col_lifecycle_pipeline', type: 'pct_abs', width: '16%' },
+                           labelKey: 'tv_col_lifecycle_pipeline', type: 'pct_int', width: '16%' },
     ],
   },
   payback: {

@@ -14,7 +14,7 @@
     timelineCharts: [],
     rentTimelineCharts: [],
     modalChart: null,
-    modalEngine: (typeof localStorage !== 'undefined' && localStorage.getItem('dp-modal-engine')) || 'chartjs',
+    modalEngine: (() => { try { return localStorage.getItem('dp-modal-engine') || 'chartjs'; } catch (_) { return 'chartjs'; } })(),
     echartsInstance: null,
   };
 
