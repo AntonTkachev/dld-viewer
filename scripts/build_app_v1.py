@@ -6,7 +6,7 @@ additive only (new fields/files/keys); anything breaking goes to /app/v2/.
 
 Reads the already-built site artifacts (polygons/curated.js, periods/all.js,
 {transactions,rents}/data/choropleth.js, sales|rents/<slug>/data.json) plus
-PARENT_OVERRIDES / _SEARCH_ALIASES / MASKS from js/viewer.js, so the app
+PARENT_OVERRIDES / _SEARCH_ALIASES from js/viewer.js and MASKS from js/masks.js, so the app
 resolves polygons exactly like the site does. Must run after phase 8.
 
 Writes only files whose bytes changed and deletes stale ones; if nothing
@@ -56,8 +56,8 @@ def js_block(src, start_re):
     sys.exit(f'js/viewer.js: unbalanced block after {start_re!r}')
 
 
-def parse_viewer(path):
-    src = open(path, encoding='utf-8').read()
+def parse_viewer(path, masks_path):
+    src = open(path, encoding='utf-8').read() + '\n' + open(masks_path, encoding='utf-8').read()
     body, end = js_block(src, r'const PARENT_OVERRIDES = \{')
     overrides = {n: (k, p) for n, k, p in re.findall(
         r"'([^']+)':\s*\{\s*parent_key:\s*'([^']+)',\s*parent_name:\s*'([^']+)'\s*\}", body)}
@@ -274,7 +274,7 @@ def build_rent(src, asof_month, bad):
 
 
 def build(S, asof):
-    overrides, search_aliases, mask_defs = parse_viewer(f'{S}/js/viewer.js')
+    overrides, search_aliases, mask_defs = parse_viewer(f'{S}/js/viewer.js', f'{S}/js/masks.js')
     bad = parse_bad_points(f'{S}/js/detail-panel.js')
     geo = load_const(f'{S}/polygons/curated.js', 'GEOJSON')
     AG = load_const(f'{S}/transactions/data/choropleth.js', 'AGGREGATES')

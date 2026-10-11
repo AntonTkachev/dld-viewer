@@ -45,6 +45,7 @@ def _content_hash(path, length=8):
 
 
 _VIEWER_VER = _content_hash(os.path.join(ROOT, 'js', 'viewer.js'))
+_MASKS_VER  = _content_hash(os.path.join(ROOT, 'js', 'masks.js'))
 _I18N_VER   = _content_hash(os.path.join(ROOT, 'js', 'i18n.js'))
 
 LANGUAGES = ('ru', 'en', 'ar', 'hi', 'zh')
@@ -661,6 +662,7 @@ def build(page_key, cfg, view, lang):
     s = s.replace('href="icon-512.png"',    f'href="{asset_prefix}icon-512.png"')
     s = s.replace('href="apple-touch-icon.png"', f'href="{asset_prefix}apple-touch-icon.png"')
     s = s.replace('src="js/i18n.js"',       f'src="{asset_prefix}js/i18n.js?v={_I18N_VER}"')
+    s = s.replace('src="js/masks.js"',      f'src="{asset_prefix}js/masks.js?v={_MASKS_VER}"')
     s = s.replace('src="js/viewer.js"',     f'src="{asset_prefix}js/viewer.js?v={_VIEWER_VER}"')
 
     boot = (
