@@ -80,6 +80,134 @@
     if (v >= 1e3) return (v/1e3).toFixed(0) + 'K';
     return v;
   }
+  // Shared look for the panel's Chart.js charts: body font, muted ink, faint grid, dark rounded tooltips
+  let _themed = false;
+  function _chartTheme() {
+    if (_themed || typeof Chart === 'undefined') return;
+    _themed = true;
+    const d = Chart.defaults;
+    d.font.family = getComputedStyle(document.body).fontFamily;
+    d.color = '#64748b';
+    d.borderColor = '#eef2f6';
+    Object.assign(d.plugins.tooltip, {
+      backgroundColor: 'rgba(15,23,42,0.92)', padding: 8, cornerRadius: 6, boxPadding: 4,
+      usePointStyle: true, titleFont: { size: 11, weight: '600' }, bodyFont: { size: 12 },
+    });
+    Object.assign(d.plugins.legend.labels, { usePointStyle: true, pointStyle: 'circle', boxWidth: 7, boxHeight: 7 });
+  }
+  // Minimal axes: no vertical grid, no axis lines, a handful of ticks
+  function _xAxis(extra) {
+    return Object.assign({ grid: { display: false }, border: { display: false }, ticks: { font: { size: 10 }, maxRotation: 0, autoSkip: true, maxTicksLimit: 6 } }, extra || {});
+  }
+  function _yAxis(fmt, extra) {
+    return Object.assign({ border: { display: false }, ticks: { font: { size: 10 }, maxTicksLimit: 5, callback: fmt } }, extra || {});
+  }
+  function _areaFill(color) {
+    return ctx => {
+      const a = ctx.chart.chartArea;
+      if (!a) return rgba(color, 0.12);
+      const g = ctx.chart.ctx.createLinearGradient(0, a.top, 0, a.bottom);
+      g.addColorStop(0, rgba(color, 0.24));
+      g.addColorStop(1, rgba(color, 0));
+      return g;
+    };
+  }
+  function _pill(c, text, x, y, bg) {
+    c.font = '600 10px ' + _chartFont();
+    const w = c.measureText(text).width + 10, h = 16;
+    c.fillStyle = bg;
+    c.beginPath();
+    c.roundRect(x, y, w, h, 8);
+    c.fill();
+    c.fillStyle = '#fff';
+    c.textAlign = 'left';
+    c.fillText(text, x + 5, y + 11.5);
+    return w;
+  }
+  // Latest value as a pill above the line's last point (dataset._tag = { fmt, color })
+  const _lastValueTag = {
+    id: 'lastValueTag',
+    afterDatasetsDraw(chart) {
+      chart.data.datasets.forEach((ds, i) => {
+        if (!ds._tag || !chart.isDatasetVisible(i)) return;
+        const pts = chart.getDatasetMeta(i).data;
+        let j = ds.data.length - 1;
+        while (j >= 0 && !Number.isFinite(ds.data[j])) j--;
+        if (j < 0 || !pts[j]) return;
+        const c = chart.ctx, text = ds._tag.fmt(ds.data[j]);
+        c.save();
+        c.font = '600 10px ' + _chartFont();
+        const w = c.measureText(text).width + 10;
+        const x = Math.min(pts[j].x - w / 2, chart.chartArea.right - w);
+        // Above the point, unless that would hit the top edge / expand button
+        const y = pts[j].y - 24 < chart.chartArea.top + 26 ? pts[j].y + 8 : pts[j].y - 24;
+        _pill(c, text, x, y, ds._tag.color);
+        c.restore();
+      });
+    },
+  };
+  // Stack total above each bar (includes a forecast segment, prefixed with ≈)
+  const _stackTotals = {
+    id: 'stackTotals',
+    afterDatasetsDraw(chart) {
+      const n = chart.data.labels.length, y = chart.scales.y, c = chart.ctx;
+      const first = chart.getDatasetMeta(0).data[0];
+      if (!first || first.width < 22) return;
+      c.save();
+      c.font = '600 10px ' + _chartFont();
+      c.textAlign = 'center';
+      c.fillStyle = '#475569';
+      for (let k = 0; k < n; k++) {
+        let sum = 0, fc = false, x = null;
+        chart.data.datasets.forEach((ds, i) => {
+          if (ds.type === 'line' || !chart.isDatasetVisible(i) || !ds.data[k]) return;
+          sum += ds.data[k];
+          if (ds._forecast) fc = true;
+          x = chart.getDatasetMeta(i).data[k].x;
+        });
+        if (!sum || x == null) continue;
+        c.fillText((fc ? '≈' : '') + fmtAxisAed(Math.round(sum)), x, y.getPixelForValue(sum) - 5);
+      }
+      c.restore();
+    },
+  };
+  // Leading share in the donut hole (dataset._center = true)
+  const _donutCenter = {
+    id: 'donutCenter',
+    afterDatasetsDraw(chart) {
+      const ds = chart.data.datasets[0];
+      if (!ds || !ds._center) return;
+      const arc = chart.getDatasetMeta(0).data[0];
+      if (!arc) return;
+      let total = 0, best = -1;
+      const others = new Set([t('donut_others'), t('rent_subtype_other')]);
+      ds.data.forEach((v, i) => {
+        if (!chart.getDataVisibility(i)) return;
+        total += v;
+        // "Others" bucket isn't a leader worth headlining
+        if (!others.has(chart.data.labels[i]) && (best < 0 || v > ds.data[best])) best = i;
+      });
+      if (!total || best < 0) return;
+      const c = chart.ctx, r = arc.innerRadius;
+      if (r < 22) return;
+      let label = String(chart.data.labels[best]);
+      c.save();
+      c.textAlign = 'center';
+      c.fillStyle = '#0f172a';
+      c.font = `700 ${Math.min(20, r * 0.5)}px ` + _chartFont();
+      c.fillText(Math.round(ds.data[best] / total * 100) + '%', arc.x, arc.y + 2);
+      c.font = '500 10px ' + _chartFont();
+      c.fillStyle = '#64748b';
+      while (label.length > 4 && c.measureText(label).width > r * 1.6) label = label.slice(0, -2);
+      if (label !== String(chart.data.labels[best])) label += '…';
+      c.fillText(label, arc.x, arc.y + 16);
+      c.restore();
+    },
+  };
+  // One hue, fading by rank — biggest slice darkest
+  function _tints(n, hue) {
+    return Array.from({ length: n }, (_, i) => rgba(hue || '#4f46e5', n > 1 ? 1 - i * (0.72 / (n - 1)) : 1));
+  }
   function projName(p) { return _h(p || t('not_specified')); }
   function roomLabel(k){
     if (k==='all')        return t('room_chip_all');
@@ -475,12 +603,15 @@
       hidden: hidden.has(k),
       _roomKey: k,
     }));
+    // Round only the top visible segment of each stack
+    const topKey = [...ser.used].reverse().find(k => !hidden.has(k));
+    datasets.forEach(ds => { ds.borderRadius = ds._roomKey === topKey ? { topLeft: 3, topRight: 3 } : 0; ds.borderSkipped = false; });
     const fc = _roomForecast(ser, hidden);
     if (fc) datasets.push(fc.dataset);
     const ch = new Chart(ctx, {
       type: 'bar',
       data: { labels: ser.labels, datasets },
-      plugins: [_forecastOutline],
+      plugins: [_forecastOutline, _stackTotals],
       options: {
         responsive: true, maintainAspectRatio: false,
         interaction: { intersect: false, mode: 'index' },
@@ -488,9 +619,10 @@
           legend: { display: false },  
           tooltip: { callbacks: _roomForecastTooltip(fc) },
         },
+        layout: { padding: { top: 14 } },
         scales: {
-          x: { stacked: true, ticks: { font: { size: 10 }, maxRotation: 0, autoSkip: true, maxTicksLimit: 14 } },
-          y: { stacked: true, ticks: { font: { size: 10 } }, beginAtZero: true },
+          x: _xAxis({ stacked: true, ticks: { font: { size: 10 }, maxRotation: 0, autoSkip: true, maxTicksLimit: 14 } }),
+          y: _yAxis(v => fmtAxisAed(v), { stacked: true, beginAtZero: true }),
         },
       },
     });
@@ -1117,35 +1249,37 @@
     const mkChart = (id, data, fmtY, tooltipFmt, color, label, secondary) => {
       const ctx = document.getElementById(id);
       if (!ctx) return;
-      const bg = rgba(color, .14);
       const estIdx = est ? est.idx : -1;
       const datasets = [];
       if (secondary) {
+        // Deal-count bars on a hidden axis stretched so they sit in the bottom ~40%
+        const secMax = Math.max(...secondary.values.filter(Number.isFinite), 1) * 2.4;
         datasets.push({
-          type:'bar', label: secondary.label, data: secondary.values,
-          backgroundColor: c => rgba(secondary.color, c.dataIndex === estIdx ? .1 : .25), borderWidth: 0,
-          yAxisID: 'y1', barPercentage: .6, categoryPercentage: .7, order: 2,
+          type:'bar', label: secondary.label, data: secondary.values, _secMax: secMax,
+          backgroundColor: c => c.dataIndex === estIdx ? 'rgba(148,163,184,0.15)' : 'rgba(148,163,184,0.38)', borderWidth: 0,
+          borderRadius: 1.5, yAxisID: 'y1', barPercentage: .8, categoryPercentage: .9, order: 2,
         });
       }
-      datasets.push({ label, data, borderColor:color, backgroundColor:bg, tension:.3, fill:true, order: 1,
-        pointRadius: c => c.dataIndex === estIdx ? 3 : 1.5,
-        pointBackgroundColor: c => c.dataIndex === estIdx ? '#fff' : color,
+      datasets.push({ label, data, borderColor:color, backgroundColor:_areaFill(color), borderWidth: 2, tension:.25, fill:true, order: 1,
+        _tag: { fmt: v => fmtAxisAed(Math.round(v)), color },
+        pointRadius: c => c.dataIndex === estIdx ? 3 : 0,
+        pointHoverRadius: 4, pointHoverBorderColor: '#fff', pointHoverBorderWidth: 2, pointHoverBackgroundColor: color,
+        pointBackgroundColor: '#fff', pointBorderColor: color,
         segment: { borderDash: c => c.p1DataIndex === estIdx ? [4, 3] : undefined } });
       const scales = {
-        y:{ticks:{font:{size:10}, callback: fmtY}, beginAtZero:true},
-        x:{ticks:{font:{size:10}, maxRotation:0, autoSkip:true, maxTicksLimit:6}},
+        y: _yAxis(fmtY, { beginAtZero: !secondary, grace: '12%' }),
+        x: _xAxis(),
       };
-      if (secondary) {
-        scales.y1 = { position:'right', ticks:{font:{size:10}, callback: secondary.fmtY}, beginAtZero:true, grid:{drawOnChartArea:false} };
-      }
+      if (secondary) scales.y1 = { display: false, min: 0, max: datasets[0]._secMax };
       const ch = new Chart(ctx, {
         type:'line',
         data:{ labels, datasets },
+        plugins: [_lastValueTag],
         options:{
           responsive:true, maintainAspectRatio:false,
           interaction:{intersect:false, mode:'index'},
           plugins:{
-            legend:{ display: !!secondary, labels:{ font:{size:9}, boxWidth:10, padding:6 } },
+            legend:{ display: !!secondary, position: 'bottom', align: 'start', labels:{ font:{size:9.5}, padding:8 } },
             tooltip:{callbacks:{
               afterTitle: items => items.length && items[0].dataIndex === estIdx ? est.note : '',
               label: c => c.dataset.type === 'bar' ? ' ' + secondary.fmtTip(c.parsed.y) : ' ' + tooltipFmt(c.parsed.y),
@@ -1985,8 +2119,7 @@
     overlay.innerHTML = html;
   }
 
-  const DONUT_FALLBACK_COLORS = ['#1d4ed8','#0ea5e9','#22c55e','#eab308','#f97316','#ef4444','#a855f7','#ec4899','#14b8a6','#64748b'];
-  const OP_COLORS = { 'Off-Plan': '#f0a020', 'Ready': '#21918c' };
+  const OP_COLORS = { 'Off-Plan': '#f59e0b', 'Ready': '#4f46e5' };
   const ROOM_DONUT_COLORS = {
     'Studio': '#9ca3af',
     '1BR': '#60a5fa', '2BR': '#3b82f6', '3BR': '#1d4ed8', '4BR+': '#1e3a8a',
@@ -2009,9 +2142,7 @@
   }
   function _donutPalette(n, hint) {
     if (hint && hint.length >= n) return hint.slice(0, n);
-    const out = [];
-    for (let i = 0; i < n; i++) out.push(DONUT_FALLBACK_COLORS[i % DONUT_FALLBACK_COLORS.length]);
-    return out;
+    return _tints(n);
   }
 
   function _offplanData(a) {
@@ -2042,7 +2173,7 @@
       labels: items.map(i => i.name),
       values: items.map(i => i.n),
       totals: items.map(i => i.total),
-      colors: _donutPalette(items.length),
+      colors: _donutPalette(items.length).map((c, i) => tailN > 0 && i === items.length - 1 ? '#cbd5e1' : c),
       fmt: v => fmtInt(v) + ' ' + t('ch_count').toLowerCase(),
     };
   }
@@ -2059,7 +2190,7 @@
     return {
       labels: sorted.map(([y]) => y),
       values: sorted.map(([, v]) => v),
-      colors: _donutPalette(sorted.length),
+      colors: _tints(sorted.length).reverse(),
       fmt: fmtAedDP,
     };
   }
@@ -2091,7 +2222,7 @@
     return {
       labels: [t('donut_payment_cash'), t('donut_payment_financed')],
       values: [cash, fin],
-      colors: ['#0ea5e9', '#f59e0b'],
+      colors: ['#4f46e5', '#f59e0b'],
       fmt: v => fmtInt(v) + ' ' + t('ch_count').toLowerCase(),
     };
   }
@@ -2101,11 +2232,22 @@
     if (!d) { _donutEmpty(canvasId, t('donut_empty')); return null; }
     const ch = new Chart(ctx, {
       type: 'doughnut',
-      data: { labels: d.labels, datasets: [{ data: d.values, backgroundColor: d.colors, borderWidth: 1, borderColor: '#fff' }] },
+      data: { labels: d.labels, datasets: [{ data: d.values, backgroundColor: d.colors, borderWidth: 2, borderColor: '#fff', borderRadius: 3, _center: true }] },
+      plugins: [_donutCenter],
       options: {
-        responsive: true, maintainAspectRatio: false, cutout: '58%',
+        responsive: true, maintainAspectRatio: false, cutout: '70%',
         plugins: {
-          legend: { position: 'bottom', labels: { boxWidth: 9, font: { size: 10.5 }, padding: 5 } },
+          legend: { position: 'bottom', labels: { font: { size: 10.5 }, padding: 6,
+            // "Ready 42%" — share in the legend, long project names clipped
+            generateLabels: chart => {
+              const items = Chart.overrides.doughnut.plugins.legend.labels.generateLabels(chart);
+              const vals = chart.data.datasets[0].data, tot = vals.reduce((s, v) => s + v, 0);
+              return items.filter(it => !tot || vals[it.index] / tot >= 0.01).map(it => {
+                const name = String(it.text);
+                return Object.assign(it, { text: (name.length > 16 ? name.slice(0, 15) + '…' : name) + (tot ? ' ' + Math.round(vals[it.index] / tot * 100) + '%' : '') });
+              });
+            },
+          } },
           tooltip: {
             callbacks: {
               label: c => {
@@ -2153,7 +2295,9 @@
     if (controls) controls.style.display = 'none';
     el.querySelector('#dp-cm-title').textContent = t(titleKey);
     const total = d.values.reduce((s,v)=>s+v,0);
-    const leadIdx = d.values.indexOf(Math.max(...d.values));
+    const others = new Set([t('donut_others'), t('rent_subtype_other')]);
+    const named = d.values.reduce((b, v, i) => others.has(d.labels[i]) || (b >= 0 && d.values[b] >= v) ? b : i, -1);
+    const leadIdx = named >= 0 ? named : d.values.indexOf(Math.max(...d.values));
     const leadLabel = d.labels[leadIdx];
     const leadPct = total ? (d.values[leadIdx]/total*100).toFixed(1) : 0;
     const badges = [
@@ -2208,7 +2352,7 @@
     return {
       labels: items.map(i => i.name),
       values: items.map(i => i.n),
-      colors: _donutPalette(items.length),
+      colors: _donutPalette(items.length).map((c, i) => tailN > 0 && i === items.length - 1 ? '#cbd5e1' : c),
       fmt: v => fmtInt(v) + ' ' + t('rent_sc_contracts').toLowerCase(),
     };
   }
@@ -2232,7 +2376,7 @@
     return {
       labels: [t('rent_v_new_label'), t('rent_v_renew_label')],
       values: [ne, re],
-      colors: ['#10b981', '#a78bfa'],
+      colors: ['#4f46e5', '#a5b4fc'],
       fmt: v => fmtInt(v) + ' ' + t('rent_sc_contracts').toLowerCase(),
     };
   }
@@ -2240,7 +2384,7 @@
   function _rentTenantDonutData(r) {
     const tn = r.by_tenant || {};
     const label = { 'Person': t('rent_tenant_person'), 'Authority': t('rent_tenant_authority'), 'Unknown': t('rent_tenant_unknown') };
-    const color = { 'Person': '#0ea5e9', 'Authority': '#f59e0b', 'Unknown': '#94a3b8' };
+    const color = { 'Person': '#4f46e5', 'Authority': '#f59e0b', 'Unknown': '#cbd5e1' };
     const entries = Object.entries(tn).filter(([, n]) => n > 0);
     if (!entries.length) return null;
     entries.sort((a,b) => b[1] - a[1]);
@@ -2260,7 +2404,6 @@
     const labels = series.map(p => p.d.length === 10 ? p.d.slice(5) : p.d);
     const fullLabels = series.map(p => p.d);
     const color = '#0ea5e9';
-    const bg = 'rgba(14,165,233,.14)';
     const monthly = (S.rentUnit === 'monthly');
     const medVals = series.map(p => medPrice(p, monthly));
     const cntVals = series.map(p => p.n);
@@ -2281,15 +2424,15 @@
       if (!ctx) return;
       const ch = new Chart(ctx, {
         type:'line',
-        data:{ labels, datasets:[{ data, borderColor:color, backgroundColor:bg, tension:.3, pointRadius:1.2, fill:true }]},
+        data:{ labels, datasets:[{ data, borderColor:color, backgroundColor:_areaFill(color), borderWidth: 2, tension:.25, fill:true,
+          pointRadius: 0, pointHoverRadius: 4, pointHoverBorderColor: '#fff', pointHoverBorderWidth: 2, pointHoverBackgroundColor: color,
+          _tag: { fmt: v => fmtAxisAed(Math.round(v)), color } }]},
+        plugins: [_lastValueTag],
         options:{
           responsive:true, maintainAspectRatio:false,
           interaction:{intersect:false, mode:'index'},
           plugins:{legend:{display:false}, tooltip:{callbacks:{label: c => ' ' + tooltipFmt(c.parsed.y)}}},
-          scales:{
-            y:{ticks:{font:{size:10}, callback: fmtY}, beginAtZero:true},
-            x:{ticks:{font:{size:10}, maxRotation:0, autoSkip:true, maxTicksLimit:6}},
-          }
+          scales:{ y: _yAxis(fmtY, { beginAtZero: true, grace: '12%' }), x: _xAxis() },
         }
       });
       S.activeCharts.push(ch);
@@ -2476,6 +2619,7 @@
   function mount({ container, sale, rent, title, isDubai, mode, initialPeriod, periodHref, onPeriodChange }) {
     if (!container) throw new Error('DetailPanel.mount: container required');
     destroyCharts();
+    _chartTheme();
     S.container       = container;
     S.sale            = sale  || null;
     S.rent            = rent  || null;
