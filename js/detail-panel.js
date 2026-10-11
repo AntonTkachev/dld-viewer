@@ -204,10 +204,18 @@
       c.restore();
     },
   };
-  // One hue, fading by rank — biggest slice darkest
-  function _tints(n, hue) {
-    return Array.from({ length: n }, (_, i) => rgba(hue || '#4f46e5', n > 1 ? 1 - i * (0.72 / (n - 1)) : 1));
+  // Indigo scale 800→200, spread across all slices so neighbours differ clearly; biggest slice darkest
+  const _INDIGO = ['#3730a3', '#4f46e5', '#6366f1', '#818cf8', '#a5b4fc', '#c7d2fe'];
+  function _tints(n) {
+    if (n <= 1) return [_INDIGO[1]];
+    const rgb = h => h.slice(1).match(/../g).map(x => parseInt(x, 16));
+    return Array.from({ length: n }, (_, i) => {
+      const t = i / (n - 1) * (_INDIGO.length - 1), k = Math.min(Math.floor(t), _INDIGO.length - 2), f = t - k;
+      const [a, b] = [rgb(_INDIGO[k]), rgb(_INDIGO[k + 1])];
+      return '#' + a.map((v, j) => Math.round(v + (b[j] - v) * f).toString(16).padStart(2, '0')).join('');
+    });
   }
+
   function projName(p) { return _h(p || t('not_specified')); }
   function roomLabel(k){
     if (k==='all')        return t('room_chip_all');
@@ -1001,14 +1009,6 @@
             <div class="dp-donut-foot">${t('donut_offplan_hint')}</div>
           </div>
           <div class="dp-donut-card">
-            <div class="dp-donut-title">${t("donut_proj_title")}</div>
-            <div class="dp-chart dp-donut" style="height:160px">
-              <button class="chart-expand-btn" type="button" data-dp-expand-donut="projects" title="${t('chart_expand')}" aria-label="${t('chart_expand')}">⛶</button>
-              <canvas id="ch-donut-projects"></canvas>
-            </div>
-            <div class="dp-donut-foot">${listLinkFooter('top_projects', t('open_full_top_projects'))}</div>
-          </div>
-          <div class="dp-donut-card">
             <div class="dp-donut-title">${t("donut_deals_title")}</div>
             <div class="dp-chart dp-donut" style="height:160px">
               <button class="chart-expand-btn" type="button" data-dp-expand-donut="deals" title="${t('chart_expand')}" aria-label="${t('chart_expand')}">⛶</button>
@@ -1033,6 +1033,7 @@
             <div class="dp-donut-foot">${t('donut_payment_hint')}</div>
           </div>
         </div>
+        ${listLinkFooter('top_projects', t('open_full_top_projects'))}
       </div>
     `;
   }
@@ -1105,7 +1106,7 @@
             <div class="dp-donut-title">${t("rent_donut_usage")}</div>
             <div class="dp-chart dp-donut" style="height:160px"><canvas id="ch-rent-donut-usage"></canvas></div>
           </div>
-          <div class="dp-donut-card">
+          <div class="dp-donut-card" id="dp-rent-tenant-card">
             <div class="dp-donut-title">${t("rent_donut_tenant")}</div>
             <div class="dp-chart dp-donut" style="height:160px"><canvas id="ch-rent-donut-tenant"></canvas></div>
           </div>
@@ -2140,9 +2141,12 @@
     c2.fillText(msg || '—', ctx.width/2, ctx.height/2);
     c2.restore();
   }
-  function _donutPalette(n, hint) {
-    if (hint && hint.length >= n) return hint.slice(0, n);
-    return _tints(n);
+  // Values sorted desc: spread the scale over slices ≥2% only, crumbs go neutral grey
+  function _donutPalette(values) {
+    const tot = values.reduce((s, v) => s + v, 0) || 1;
+    const m = Math.max(1, values.filter(v => v / tot >= 0.02).length);
+    const steps = _tints(m);
+    return values.map((_, i) => i < m ? steps[i] : '#cbd5e1');
   }
 
   function _offplanData(a) {
@@ -2153,27 +2157,6 @@
       labels,
       values: labels.map(k => op[k]),
       colors: labels.map(k => OP_COLORS[k] || '#64748b'),
-      fmt: v => fmtInt(v) + ' ' + t('ch_count').toLowerCase(),
-    };
-  }
-
-  function _projectsDonutData(a) {
-    const list = (a.top_projects || []).filter(p => p.n > 0);
-    if (!list.length) return null;
-    const named = list.filter(p => p.proj);
-    const unnamed = list.filter(p => !p.proj);
-    if (!named.length) return null;
-    const N = 8;
-    const top = named.slice(0, N);
-    const tail = named.slice(N).concat(unnamed);
-    const tailN = tail.reduce((s,p) => s + (p.n||0), 0);
-    const items = top.map(p => ({ name: p.proj, n: p.n, total: p.total }));
-    if (tailN > 0) items.push({ name: t('donut_others'), n: tailN, total: tail.reduce((s,p)=>s+(p.total||0),0) });
-    return {
-      labels: items.map(i => i.name),
-      values: items.map(i => i.n),
-      totals: items.map(i => i.total),
-      colors: _donutPalette(items.length).map((c, i) => tailN > 0 && i === items.length - 1 ? '#cbd5e1' : c),
       fmt: v => fmtInt(v) + ' ' + t('ch_count').toLowerCase(),
     };
   }
@@ -2268,13 +2251,11 @@
     
     S.donutData = {
       offplan:  _offplanData(a),
-      projects: _projectsDonutData(a),
       deals:    _dealsByYearData(a),
       recent:   _recentByRoomData(a),
       payment:  _paymentData(a),
     };
     _renderDonut('ch-offplan',           S.donutData.offplan);
-    _renderDonut('ch-donut-projects',    S.donutData.projects);
     _renderDonut('ch-donut-deals',       S.donutData.deals);
     _renderDonut('ch-donut-recent',      S.donutData.recent);
     _renderDonut('ch-donut-payment',     S.donutData.payment);
@@ -2285,7 +2266,6 @@
     const d = S.donutData[kind];
     const titleKey = {
       offplan:  'sp_section_offplan',
-      projects: 'donut_proj_title_full',
       deals:    'donut_deals_title_full',
       recent:   'donut_recent_title_full',
       payment:  'donut_payment_title_full',
@@ -2352,7 +2332,7 @@
     return {
       labels: items.map(i => i.name),
       values: items.map(i => i.n),
-      colors: _donutPalette(items.length).map((c, i) => tailN > 0 && i === items.length - 1 ? '#cbd5e1' : c),
+      colors: _donutPalette(items.map(i => i.n)).map((c, i) => tailN > 0 && i === items.length - 1 ? '#cbd5e1' : c),
       fmt: v => fmtInt(v) + ' ' + t('rent_sc_contracts').toLowerCase(),
     };
   }
@@ -2364,7 +2344,7 @@
     return {
       labels: entries.map(([k]) => k),
       values: entries.map(([, n]) => n),
-      colors: _donutPalette(entries.length),
+      colors: _donutPalette(entries.map(([, n]) => n)),
       fmt: v => fmtInt(v) + ' ' + t('rent_sc_contracts').toLowerCase(),
     };
   }
@@ -2451,7 +2431,11 @@
     try {
       _renderDonut('ch-rent-donut-subtype',  _rentSubtypeDonutData(r));
       _renderDonut('ch-rent-donut-usage',    _rentUsageDonutData(r));
-      _renderDonut('ch-rent-donut-tenant',   _rentTenantDonutData(r));
+      const tenant = _rentTenantDonutData(r);
+      // 64 districts (and the Dubai total) ship no tenant split — hide the card instead of an empty ring
+      const tenantCard = document.getElementById('dp-rent-tenant-card');
+      if (tenantCard) tenantCard.style.display = tenant ? '' : 'none';
+      if (tenant) _renderDonut('ch-rent-donut-tenant', tenant);
       _renderDonut('ch-rent-donut-newrenew', _rentNewRenewDonutData(r));
     } catch(e) { console.error('rent donuts:', e); }
   }
