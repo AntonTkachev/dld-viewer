@@ -182,6 +182,17 @@
       return month >= cutoff && month < todayMonth;
     });
   }
+  function _workdays(from, to) {
+    let n = 0;
+    for (const d = new Date(from); d <= to; d.setDate(d.getDate() + 1)) {
+      const wd = d.getDay();
+      if (wd !== 0 && wd !== 6) n++;
+    }
+    return n;
+  }
+  function _estNote(est) {
+    return t('ch_est').replace('{a}', est.a).replace('{b}', est.b);
+  }
   function roomTimelineFor(a) {
     if (S.roomFilter === 'all') return a.timeline || [];
     return (a.timeline_by_rooms || {})[S.roomFilter] || [];
@@ -297,6 +308,32 @@
       </div>
     `;
   }
+  const _monthIdx = d => +d.slice(0, 4) * 12 + (+d.slice(5, 7) - 1);
+  // Group YYYY-MM months into calendar buckets (quarters, halves, years); drops the leading bucket the period cut through
+  function _calendarBuckets(months, size) {
+    const groups = new Map();
+    for (const d of months) {
+      const key = Math.floor(_monthIdx(d) / size);
+      if (!groups.has(key)) groups.set(key, []);
+      groups.get(key).push(d);
+    }
+    let keys = [...groups.keys()].sort((x, y) => x - y);
+    const per = PERIODS.find(x => x.k === S.period);
+    if (per && per.months && keys.length > 1) {
+      const now = new Date();
+      if (keys[0] * size < now.getFullYear() * 12 + now.getMonth() - per.months) keys = keys.slice(1);
+    }
+    return keys.map(key => {
+      const first = key * size, y = Math.floor(first / 12), yy = String(y % 100).padStart(2, '0');
+      const sub = Math.floor((first % 12) / size) + 1;
+      const label = size === 1 ? `${yy}-${String(first % 12 + 1).padStart(2, '0')}`
+        : size === 3 ? `Q${sub} '${yy}`
+        : size === 6 ? `H${sub} '${yy}`
+        : size === 12 ? String(y)
+        : `${y}–${String((y + 1) % 100).padStart(2, '0')}`;
+      return { key, slab: groups.get(key), label };
+    });
+  }
   function _roomBreakdownSeries(a) {
 
     const tbr = a.timeline_by_rooms || {};
@@ -312,15 +349,11 @@
     }
     const sparseLabels = Array.from(labelSet).sort();
 
-    function monthIndex(d) {
-      const [y, m] = d.split('-').map(Number);
-      return y * 12 + (m - 1);
-    }
     function indexToYM(idx) {
       return `${Math.floor(idx / 12)}-${String((idx % 12) + 1).padStart(2,'0')}`;
     }
-    const startIdx = monthIndex(sparseLabels[0]);
-    const endIdx = monthIndex(sparseLabels[sparseLabels.length - 1]);
+    const startIdx = _monthIdx(sparseLabels[0]);
+    const endIdx = _monthIdx(sparseLabels[sparseLabels.length - 1]);
     const refLabels = [];
     for (let i = startIdx; i <= endIdx; i++) refLabels.push(indexToYM(i));
     const matrix = new Map();
@@ -338,23 +371,74 @@
                      : months <= 96 ? 6
                      : months <= 144 ? 12
                      : 24;
-    const buckets = [];
-    for (let i = 0; i < refLabels.length; i += bucketSize) {
-      const slab = refLabels.slice(i, i + bucketSize);
-      const label = bucketSize === 1
-        ? slab[0].slice(2)  
-        : bucketSize === 12
-          ? slab[0].slice(0, 4)  
-          : slab[0].slice(0,7) + '…' + slab[slab.length-1].slice(2,7);
+    const cal = _calendarBuckets(refLabels, bucketSize);
+    const buckets = cal.map(({ key, slab, label }, i) => {
       const totals = {};
       for (const d of slab) {
         const cell = matrix.get(d) || {};
         for (const k of used) totals[k] = (totals[k] || 0) + (cell[k] || 0);
       }
-      buckets.push({ label, totals });
-    }
+      // Bucket still running at as_of → scale by elapsed working days, same rule as _projectedPoint (≤1y buckets only)
+      let est = null;
+      if (a.as_of && i === cal.length - 1 && bucketSize <= 12) {
+        const [ay, am, ad] = a.as_of.split('-').map(Number);
+        const [ly, lm] = slab[slab.length - 1].split('-').map(Number);
+        // periodSlice drops the partial current month, so count only up to the last month we actually have
+        const upTo = new Date(Math.min(new Date(ay, am - 1, ad), new Date(ly, lm, 0)));
+        const start = new Date(Math.floor(key * bucketSize / 12), key * bucketSize % 12, 1);
+        const end = new Date(start.getFullYear(), start.getMonth() + bucketSize, 0);
+        if (upTo >= start && upTo < end) {
+          const done = _workdays(start, upTo), total = _workdays(start, end);
+          if (done) est = { a: done, b: total, f: total / done };
+        }
+      }
+      return { label, totals, est };
+    });
     return { labels: buckets.map(b => b.label), buckets, used };
   }
+  function _roomForecast(ser, hidden) {
+    const last = ser.buckets[ser.buckets.length - 1];
+    if (!last || !last.est) return null;
+    const actual = ser.used.filter(k => !hidden.has(k)).reduce((s, k) => s + (last.totals[k] || 0), 0);
+    const extra = Math.round(actual * (last.est.f - 1));
+    if (extra <= 0) return null;
+    const idx = ser.buckets.length - 1;
+    return {
+      idx, actual, extra, est: last.est,
+      dataset: {
+        type: 'bar', label: t('ch_forecast'), stack: 'rooms', _forecast: true,
+        data: ser.buckets.map((_, i) => i === idx ? extra : null),
+        backgroundColor: 'rgba(148,163,184,0.12)', borderWidth: 0,
+      },
+    };
+  }
+  function _roomForecastTooltip(fc) {
+    return {
+      afterTitle: items => fc && items.length && items[0].dataIndex === fc.idx ? _estNote(fc.est) : '',
+      label: c => ' ' + c.dataset.label + ': ' + (c.dataset._forecast ? '+' : '') + fmtInt(Math.round(c.parsed.y)),
+      footer: items => fc && items.length && items[0].dataIndex === fc.idx ? t('ch_forecast_total') + ': ≈' + fmtInt(fc.actual + fc.extra) : '',
+    };
+  }
+  // Dashed outline for the projected remainder of the running period
+  const _forecastOutline = {
+    id: 'forecastOutline',
+    afterDatasetsDraw(chart) {
+      chart.data.datasets.forEach((ds, i) => {
+        if (!ds._forecast || !chart.isDatasetVisible(i)) return;
+        chart.getDatasetMeta(i).data.forEach((bar, j) => {
+          if (!ds.data[j]) return;
+          const { x, y, base, width } = bar.getProps(['x', 'y', 'base', 'width'], true);
+          const c = chart.ctx;
+          c.save();
+          c.setLineDash([4, 3]);
+          c.strokeStyle = '#64748b';
+          c.lineWidth = 1.2;
+          c.strokeRect(x - width / 2 + 0.6, y + 0.6, width - 1.2, base - y - 1.2);
+          c.restore();
+        });
+      });
+    },
+  };
   function renderRoomBreakdownChart(a) {
     const ctx = document.getElementById('ch-room-breakdown');
     if (!ctx) return;
@@ -372,15 +456,18 @@
       hidden: hidden.has(k),
       _roomKey: k,
     }));
+    const fc = _roomForecast(ser, hidden);
+    if (fc) datasets.push(fc.dataset);
     const ch = new Chart(ctx, {
       type: 'bar',
       data: { labels: ser.labels, datasets },
+      plugins: [_forecastOutline],
       options: {
         responsive: true, maintainAspectRatio: false,
         interaction: { intersect: false, mode: 'index' },
         plugins: {
           legend: { display: false },  
-          tooltip: { callbacks: { label: c => ' ' + c.dataset.label + ': ' + fmtInt(c.parsed.y) } },
+          tooltip: { callbacks: _roomForecastTooltip(fc) },
         },
         scales: {
           x: { stacked: true, ticks: { font: { size: 10 }, maxRotation: 0, autoSkip: true, maxTicksLimit: 14 } },
@@ -422,16 +509,18 @@
     el.querySelector('#dp-cm-title').textContent = t('rooms_breakdown_title');
     
     const totals = ser.buckets.map(b => Object.values(b.totals).reduce((s,v)=>s+v,0));
-    const trend = linearTrend(totals);
+    const fc = _roomForecast(ser, hidden);
+    const trend = linearTrend(ser.buckets.map((b, i) => b.est ? totals[i] * b.est.f : totals[i]));
     const trendLine = trend ? totals.map((_, i) => Math.max(0, trend.intercept + trend.slope * i)) : null;
     const grand = totals.reduce((s,v)=>s+v,0);
     const badges = [];
     badges.push(`<span class="cm-badge muted">Σ ${fmtInt(grand)}</span>`);
     if (trend) badges.push(`<span class="cm-badge ${trend.slope>=0?'pos':'neg'}">${t('ch_trend')}: ${trend.slope>=0?'↑':'↓'} ${Math.abs(trend.slope).toFixed(1)}/bin</span>`);
     el.querySelector('#dp-cm-badges').innerHTML = badges.join('');
-    if (S.modalChart) { S.modalChart.destroy(); S.modalChart = null; }
+    delete el.dataset.metric;
+    delete el.dataset.source;
+    const ctx = _useCanvasPane(el);
     el.classList.add('open');
-    const ctx = el.querySelector('#dp-cm-canvas');
     const datasets = ser.used.map(k => ({
       type: 'bar',
       label: roomLabel(k),
@@ -441,6 +530,7 @@
       stack: 'rooms',
       hidden: hidden.has(k),
     }));
+    if (fc) datasets.push(fc.dataset);
     if (trendLine) {
       datasets.push({
         type: 'line',
@@ -456,12 +546,13 @@
     }
     S.modalChart = new Chart(ctx, {
       data: { labels: ser.labels, datasets },
+      plugins: [_forecastOutline],
       options: {
         responsive: true, maintainAspectRatio: false,
         interaction: { intersect: false, mode: 'index' },
         plugins: {
           legend: { display: true, position: 'bottom', labels: { boxWidth: 14, font: { size: 11 } } },
-          tooltip: { callbacks: { label: c => ' ' + c.dataset.label + ': ' + fmtInt(c.parsed.y) } },
+          tooltip: { callbacks: _roomForecastTooltip(fc) },
         },
         scales: {
           x: { stacked: true, ticks: { font: { size: 11 }, maxRotation: 0, autoSkip: true, maxTicksLimit: 20 } },
@@ -568,9 +659,8 @@
     const labels = [];
     const data = {};
     keys.forEach(b => { data[b] = []; });
-    for (let i = 0; i < ref.length; i += bs) {
-      const slab = ref.slice(i, i + bs);
-      labels.push(bs === 1 ? slab[0].slice(2) : bs === 12 ? slab[0].slice(0, 4) : slab[0].slice(2));
+    for (const { slab, label } of _calendarBuckets(ref, bs)) {
+      labels.push(label);
       for (const b of keys) {
         let n = 0, wsum = 0;
         for (const m of slab) {
@@ -982,6 +1072,24 @@
     document.body.appendChild(el);
     return el;
   }
+  // Chart.js modals (rooms, donuts, vintage) draw on the canvas; tear down the engine panes they share it with
+  function _useCanvasPane(el) {
+    if (S.modalChart) { S.modalChart.destroy(); S.modalChart = null; }
+    if (S.echartsInstance) {
+      if (S.echartsInstance._measureTeardown) S.echartsInstance._measureTeardown();
+      S.echartsInstance.dispose();
+      S.echartsInstance = null;
+    }
+    _disposeLwc();
+    const overlay = document.getElementById('dp-cm-measure-overlay');
+    if (overlay) overlay.remove();
+    el.querySelector('#dp-cm-echarts').style.display = 'none';
+    el.querySelector('#dp-cm-lwc').style.display = 'none';
+    el.querySelector('#dp-cm-engines').style.display = 'none';
+    const canvas = el.querySelector('#dp-cm-canvas');
+    canvas.style.display = '';
+    return canvas;
+  }
   function _closeChartModal() {
     const el = document.getElementById('dp-chart-modal');
     if (!el) return;
@@ -1016,8 +1124,6 @@
     el.querySelector('#dp-cm-title').textContent = t(source === 'rent' ? 'vin_paths_rent' : 'vin_paths');
     const controls = el.querySelector('#dp-cm-controls');
     if (controls) controls.style.display = 'none';
-    const engines = el.querySelector('#dp-cm-engines');
-    if (engines) engines.style.display = 'none';
 
     const axis = [...new Set(cohorts.flatMap(c => vp[c].map(p => p.d)))].sort();
     const m = cohorts.length;
@@ -1066,15 +1172,7 @@
     if (monthly) badges.push(`<span class="cm-badge muted">${t('vin_smoothing')}</span>`);
     el.querySelector('#dp-cm-badges').innerHTML = badges.join('');
 
-    if (S.modalChart) { S.modalChart.destroy(); S.modalChart = null; }
-    if (S.echartsInstance) { S.echartsInstance.dispose(); S.echartsInstance = null; }
-    _disposeLwc();
-    const ec = el.querySelector('#dp-cm-echarts');
-    if (ec) ec.style.display = 'none';
-    const lw = el.querySelector('#dp-cm-lwc');
-    if (lw) lw.style.display = 'none';
-    const canvas = el.querySelector('#dp-cm-canvas');
-    canvas.style.display = '';
+    const canvas = _useCanvasPane(el);
     el.classList.add('open');
 
     S.modalChart = new Chart(canvas, {
@@ -1144,6 +1242,7 @@
     el.querySelector('#dp-cm-title').textContent = m.label;
     const controls = el.querySelector('#dp-cm-controls');
     if (controls) controls.style.display = '';
+    el.querySelector('#dp-cm-engines').style.display = '';
     const pchips = el.querySelector('#dp-cm-periods');
     if (pchips) pchips.innerHTML = renderPeriodChips();
     const rchips = el.querySelector('#dp-cm-rooms');
@@ -1913,9 +2012,10 @@
       `<span class="cm-badge muted">n=${d.labels.length}</span>`,
     ];
     el.querySelector('#dp-cm-badges').innerHTML = badges.join('');
-    if (S.modalChart) { S.modalChart.destroy(); S.modalChart = null; }
+    delete el.dataset.metric;
+    delete el.dataset.source;
+    const ctx = _useCanvasPane(el);
     el.classList.add('open');
-    const ctx = el.querySelector('#dp-cm-canvas');
     S.modalChart = new Chart(ctx, {
       type: 'doughnut',
       data: { labels: d.labels, datasets: [{ data: d.values, backgroundColor: d.colors, borderWidth: 2, borderColor: '#fff' }] },
