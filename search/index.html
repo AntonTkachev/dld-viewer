@@ -191,7 +191,7 @@ const resultEl = document.getElementById('result');
 
 fetch('/buildings/search-index.json')
   .then(r => { if (!r.ok) throw r.status; return r.json(); })
-  .then(d  => { INDEX = d; hintEl.textContent = d.length.toLocaleString() + ' buildings indexed'; tryHash(); })
+  .then(d  => { INDEX = d; hintEl.textContent = d.length.toLocaleString() + ' buildings indexed'; const typed = qEl.value.trim(); tryHash(); if (typed && !currentSlug) onInput(); })
   .catch(() => { hintEl.textContent = 'Index unavailable'; });
 
 qEl.addEventListener('input',   onInput);
@@ -326,7 +326,8 @@ function renderRoomChips() {
     const active = r === room;
     const col    = ROOM_COLORS[r];
     const style  = active ? ` style="background:${col};border-color:${col};color:#fff"` : '';
-    const n      = r === 'all' ? DATA.sn : ((DATA.sr[r] || []).reduce((s, x) => s + x.n, 0));
+    const sum    = a => (a || []).reduce((s, x) => s + (x.n || 0), 0);
+    const n      = r === 'all' ? (DATA.sn || 0) + (DATA.rn || 0) : sum(DATA.sr[r]) + sum(DATA.rr[r]);
     return `<button class="room-chip${active?' active':''}" data-room="${r}"${style}>${h(ROOM_LABEL[r])}<span class="chip-n">${fmtNum(n)}</span></button>`;
   }).join('');
   document.getElementById('room-chips').querySelectorAll('.room-chip').forEach(el =>
@@ -339,7 +340,7 @@ function renderPeriodChips() {
     '<span class="pc-lbl">Period:</span>' +
     PERIODS.map(p => `<button class="period-chip${p.k===period?' active':''}" data-p="${p.k}">${p.label}</button>`).join('');
   document.getElementById('period-chips').querySelectorAll('.period-chip').forEach(el =>
-    el.addEventListener('click', () => { period = el.dataset.p; renderAll(); })
+    el.addEventListener('click', () => { period = el.dataset.p; txPage = 0; rnPage = 0; renderAll(); })
   );
 }
 
@@ -554,10 +555,7 @@ function renderRentsPanel() {
 function filteredTxs() {
   let txs = DATA.txs || [];
   if (room !== 'all') txs = txs.filter(t => t.r === room);
-  if (period !== 'all') {
-    const p = PERIODS.find(x => x.k === period);
-    if (p?.yrs) { const cut = new Date().getFullYear() - p.yrs; txs = txs.filter(t => parseInt(t.d) >= cut); }
-  }
+  if (period !== 'all') { const cut = monthCutoff(); txs = txs.filter(t => String(t.d).slice(0, 7) >= cut); }
   return txs;
 }
 function renderTxTable() {
@@ -600,10 +598,7 @@ function renderTxTable() {
 function filteredRents() {
   let rnts = DATA.rnts || [];
   if (room !== 'all') rnts = rnts.filter(t => t.r === room);
-  if (period !== 'all') {
-    const p = PERIODS.find(x => x.k === period);
-    if (p?.yrs) { const cut = new Date().getFullYear() - p.yrs; rnts = rnts.filter(t => parseInt(t.d) >= cut); }
-  }
+  if (period !== 'all') { const cut = monthCutoff(); rnts = rnts.filter(t => String(t.d).slice(0, 7) >= cut); }
   return rnts;
 }
 function renderRentTable() {

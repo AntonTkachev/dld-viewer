@@ -1612,8 +1612,6 @@ const I18N = {
 let currentLang = 'ru';
 function t(key) { return (I18N[currentLang] && I18N[currentLang][key]) || I18N.ru[key] || key; }
 
-const currentPType = 'all';
-
 function applyLang(newLang) {
   if (!I18N[newLang]) return;
   currentLang = newLang;
@@ -1660,14 +1658,4 @@ function applyLang(newLang) {
   if (typeof _refreshViewSwitchLabel === 'function') _refreshViewSwitchLabel();
   
   if (typeof renderChoro === 'function') renderChoro();
-  
-  const panel = document.getElementById('detail-panel');
-  if (panel && panel.classList.contains('open')) {
-    const titleEl = document.getElementById('dp-title');
-    if (titleEl && titleEl.dataset.key) {
-      const fs = panel.classList.contains('fullscreen');
-      if (titleEl.dataset.key === '__dubai__') window.openDubai({fullscreen: fs});
-      else window.openDistrictByKey(titleEl.dataset.key, fs);
-    }
-  }
 }
