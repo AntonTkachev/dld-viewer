@@ -582,13 +582,102 @@
   }
 
   const VINTAGE_ORDER = ['v0_1', 'v2_4', 'v5_10', 'v11p'];
-  const VINTAGE_COLORS = { v0_1: '#16a34a', v2_4: '#0ea5e9', v5_10: '#f59e0b', v11p: '#64748b' };
   function _vintageBuckets(rec) {
     const v = rec && rec.vintage;
     if (!v) return null;
     const present = VINTAGE_ORDER.filter(b => v[b] && v[b].ppsqm);
     return present.length >= 2 ? present : null;
   }
+  // Per purchase-year cohort: baseline = seed-year average, return measured to the latest point
+  function _vintageCohorts(rec) {
+    const vp = rec && (rec.vintage_paths_m || rec.vintage_paths);
+    if (!vp) return null;
+    const monthly = !!rec.vintage_paths_m;
+    const mid = d => d.length === 4 ? +d * 12 + 5.5 : _monthIdx(d);
+    const cohorts = Object.keys(vp).sort().filter(y => vp[y].length >= (monthly ? 12 : 3)).map(c => {
+      const pts = vp[c];
+      const seed = pts.filter(p => p.d.slice(0, 4) === c).map(p => p.med);
+      const buy = seed.length ? seed.reduce((a, b) => a + b, 0) / seed.length : pts[0].med;
+      const last = pts[pts.length - 1];
+      const yrs = Math.max(1, (mid(last.d) - (+c * 12 + 5.5)) / 12);
+      return {
+        c, pts, buy, last: last.med, yrs,
+        ret: (last.med / buy - 1) * 100,
+        cagr: (Math.pow(last.med / buy, 1 / yrs) - 1) * 100,
+        x: d => (mid(d) - (+c * 12 + 5.5)) / 12,
+      };
+    }).filter(x => x.buy > 0);
+    return cohorts.length >= 2 ? { monthly, cohorts } : null;
+  }
+  const _pct = v => (v > 0 ? '+' : '') + Math.round(v) + '%';
+  const _hatchCache = {};
+  function _hatch(color) {
+    if (_hatchCache[color]) return _hatchCache[color];
+    const cv = document.createElement('canvas');
+    cv.width = cv.height = 6;
+    const g = cv.getContext('2d');
+    g.fillStyle = rgba(color, 0.08);
+    g.fillRect(0, 0, 6, 6);
+    g.strokeStyle = rgba(color, 0.5);
+    g.beginPath();
+    g.moveTo(0, 6); g.lineTo(6, 0);
+    g.moveTo(-1, 1); g.lineTo(1, -1);
+    g.moveTo(5, 7); g.lineTo(7, 5);
+    g.stroke();
+    return (_hatchCache[color] = g.createPattern(cv, 'repeat'));
+  }
+  const _chartFont = () => getComputedStyle(document.body).fontFamily;
+  // Dashed line at the newest-building level + hatched gap showing each older bucket's discount
+  const _vintageGap = {
+    id: 'vintageGap',
+    afterDatasetsDraw(chart) {
+      const ds = chart.data.datasets[0];
+      if (!ds || !ds._base) return;
+      const c = chart.ctx, area = chart.chartArea, font = _chartFont();
+      const baseY = chart.scales.y.getPixelForValue(ds._base);
+      c.save();
+      c.setLineDash([4, 3]);
+      c.strokeStyle = '#94a3b8';
+      c.beginPath(); c.moveTo(area.left, baseY); c.lineTo(area.right, baseY); c.stroke();
+      c.setLineDash([]);
+      c.textAlign = 'center';
+      chart.getDatasetMeta(0).data.forEach((bar, i) => {
+        const { x, y, width, base } = bar.getProps(['x', 'y', 'width', 'base'], true);
+        c.font = `600 ${width < 80 ? 9.5 : 11}px ` + font;
+        c.fillStyle = ds._ink[i];
+        if (base - y > 20) c.fillText(fmtInt(ds.data[i]), x, base - 7);
+        if (i === 0) return;
+        const rel = (ds.data[i] / ds._base - 1) * 100;
+        if (Math.abs(rel) < 0.5) return;
+        const col = rel > 0 ? '#16a34a' : '#dc2626';
+        const y1 = Math.min(y, baseY), y2 = Math.max(y, baseY);
+        c.fillStyle = _hatch(col);
+        c.fillRect(x - width / 2, y1, width, y2 - y1);
+        c.font = '700 13px ' + font;
+        c.fillStyle = col;
+        c.fillText(_pct(rel), x, y2 - y1 >= 20 ? (y1 + y2) / 2 + 5 : y1 - 6);
+      });
+      c.restore();
+    },
+  };
+  // "+128%" above positive bars, below negative ones
+  const _signedBarLabels = {
+    id: 'signedBarLabels',
+    afterDatasetsDraw(chart) {
+      const ds = chart.data.datasets[0], c = chart.ctx;
+      c.save();
+      c.textAlign = 'center';
+      chart.getDatasetMeta(0).data.forEach((bar, i) => {
+        const { x, y, width } = bar.getProps(['x', 'y', 'width'], true);
+        if (width < 14) return;
+        const v = ds.data[i];
+        c.font = `700 ${width < 24 ? 9 : 11}px ` + _chartFont();
+        c.fillStyle = v >= 0 ? '#15803d' : '#b91c1c';
+        c.fillText(_pct(v), x, v >= 0 ? y - 5 : y + 13);
+      });
+      c.restore();
+    },
+  };
   function renderVintageSection(rec, kind) {
     if (!_vintageBuckets(rec)) return '';
     const paths = (rec.vintage_paths && Object.keys(rec.vintage_paths).length >= 2) ? `
@@ -609,48 +698,43 @@
   function renderVintagePaths(rec, kind) {
     kind = kind || 'sale';
     const ctx = document.getElementById('ch-vintage-paths-' + kind);
-    const vp = rec && rec.vintage_paths;
-    if (!ctx || !vp) return;
+    const vc = _vintageCohorts(rec);
+    if (!ctx || !vc) return;
+    const cs = vc.cohorts;
     const unit = kind === 'rent' ? ' AED/м²/' + t('unit_year_short') : ' AED/м²';
-    // Every 2nd cohort keeps the fan readable; each line = the buildings
-    // that traded in year Y, followed from Y to today.
-    const cohorts = Object.keys(vp).sort().filter(y => (+y) % 2 === 0 && vp[y].length >= 3);
-    if (cohorts.length < 2) return;
-    const years = [...new Set(cohorts.flatMap(c => vp[c].map(p => p.d)))].sort();
-    const m = cohorts.length;
-    const datasets = cohorts.map((c, i) => {
-      const byYear = new Map(vp[c].map(p => [p.d, p]));
-      const buy = vp[c][0].med;
-      return {
-        label: c,
-        data: years.map(y => { const p = byYear.get(y); return p ? p.med : null; }),
-        borderColor: `hsl(${255 - Math.round(i / Math.max(m - 1, 1) * 235)}, 62%, 46%)`,
-        backgroundColor: 'transparent',
-        borderWidth: 1.6,
-        pointRadius: 0.5,
-        tension: 0.25,
-        spanGaps: true,
-        _buy: buy,
-      };
-    });
+    const vals = cs.map(x => Math.round(x.ret));
     const ch = new Chart(ctx, {
-      type: 'line',
-      data: { labels: years, datasets },
+      type: 'bar',
+      data: {
+        labels: cs.map(x => x.c),
+        datasets: [{
+          data: vals,
+          backgroundColor: vals.map(v => v >= 0 ? 'rgba(22,163,74,0.75)' : 'rgba(220,38,38,0.75)'),
+          borderRadius: 3, barPercentage: 0.75, categoryPercentage: 0.85,
+        }],
+      },
+      plugins: [_signedBarLabels],
       options: {
         responsive: true, maintainAspectRatio: false,
-        interaction: { intersect: false, mode: 'index' },
+        layout: { padding: { top: 16 } },
         plugins: {
-          legend: { display: true, position: 'bottom', labels: { boxWidth: 10, font: { size: 9 } } },
-          tooltip: { callbacks: { label: c => {
-            const buy = c.dataset._buy;
-            const rel = buy ? Math.round((c.parsed.y / buy - 1) * 100) : null;
-            return ' ' + c.dataset.label + ': ' + fmtInt(c.parsed.y) + unit
-              + (rel === null || c.label === c.dataset.label ? '' : ' (' + (rel >= 0 ? '+' : '') + rel + '% ' + t('vin_since_buy') + ')');
-          } } },
+          legend: { display: false },
+          tooltip: { callbacks: {
+            title: items => t(kind === 'rent' ? 'vin_pick_rent' : 'vin_pick') + ' ' + items[0].label,
+            label: c => {
+              const x = cs[c.dataIndex];
+              return [' ' + fmtInt(Math.round(x.buy)) + ' → ' + fmtInt(x.last) + unit,
+                      ' ' + _pct(x.ret) + ' · ' + (x.cagr >= 0 ? '+' : '') + x.cagr.toFixed(1) + '%' + t('vin_per_year')];
+            },
+          } },
         },
         scales: {
-          x: { ticks: { font: { size: 10 }, maxRotation: 0, autoSkip: true } },
-          y: { ticks: { font: { size: 10 } } },
+          x: { grid: { display: false }, ticks: { font: { size: 10 }, maxRotation: 0, autoSkip: true } },
+          y: {
+            grace: '10%',
+            ticks: { font: { size: 10 }, callback: v => _pct(v) },
+            grid: { color: c => c.tick.value === 0 ? '#475569' : '#f1f5f9', lineWidth: c => c.tick.value === 0 ? 1.5 : 1 },
+          },
         },
       },
     });
@@ -698,33 +782,39 @@
     const labels = { v0_1: t('vin_0_1'), v2_4: t('vin_2_4'), v5_10: t('vin_5_10'), v11p: t('vin_11p') };
     const vals = present.map(b => rec.vintage[b].ppsqm);
     const ns   = present.map(b => rec.vintage[b].n);
-    const base = rec.vintage[present[0]].ppsqm;
+    const base = vals[0];
     const unit = kind === 'rent' ? ' AED/м²/' + t('unit_year_short') : ' AED/м²';
+    // One hue that fades with age: newest = solid, oldest = washed out
+    const hue = kind === 'rent' ? '#0ea5e9' : '#4f46e5';
+    const fade = { v0_1: 1, v2_4: 0.7, v5_10: 0.48, v11p: 0.3 };
     const ch = new Chart(ctx, {
       type: 'bar',
       data: {
         labels: present.map(b => labels[b]),
         datasets: [{
           data: vals,
-          backgroundColor: present.map(b => VINTAGE_COLORS[b]),
-          borderWidth: 0,
-          barPercentage: 0.55,
+          backgroundColor: present.map(b => rgba(hue, fade[b])),
+          borderWidth: 0, borderRadius: 3,
+          barPercentage: 0.6,
+          _base: base,
+          _ink: present.map(b => fade[b] >= 0.6 ? '#ffffff' : '#334155'),
         }],
       },
+      plugins: [_vintageGap],
       options: {
         responsive: true, maintainAspectRatio: false,
+        layout: { padding: { top: 18 } },
         plugins: {
           legend: { display: false },
           tooltip: { callbacks: { label: c => {
             const i = c.dataIndex;
-            const rel = base ? Math.round((vals[i] / base - 1) * 100) : 0;
-            const relTxt = i === 0 ? '' : ' · ' + (rel >= 0 ? '+' : '') + rel + '% vs ≤1 г.';
+            const relTxt = i === 0 ? '' : ' · ' + _pct((vals[i] / base - 1) * 100) + ' vs ' + labels[present[0]];
             return ' ' + fmtInt(vals[i]) + unit + ' · n=' + fmtInt(ns[i]) + relTxt;
           } } },
         },
         scales: {
-          x: { ticks: { font: { size: 11 } } },
-          y: { ticks: { font: { size: 10 } }, beginAtZero: true },
+          x: { grid: { display: false }, ticks: { font: { size: 11 } } },
+          y: { display: false, beginAtZero: true, grace: '8%' },
         },
       },
     });
@@ -1149,90 +1239,108 @@
   function openVintagePathsModal(source) {
     source = source || 'sale';
     const rec = source === 'rent' ? S.rent : S.sale;
-    const vp = rec && (rec.vintage_paths_m || rec.vintage_paths);
-    if (!vp) return;
-    const monthly = !!rec.vintage_paths_m;
+    const vc = _vintageCohorts(rec);
+    if (!vc) return;
+    const { monthly, cohorts } = vc;
     const unit = source === 'rent' ? ' AED/м²/' + t('unit_year_short') : ' AED/м²';
-    const cohorts = Object.keys(vp).sort().filter(y => vp[y].length >= (monthly ? 12 : 3));
-    if (cohorts.length < 2) return;
+    const pick = cohorts.some(x => x.c === S.vinPick) ? S.vinPick : cohorts[0].c;
 
     const el = _modalDOM();
     el.dataset.metric = 'vintage_paths';
     el.dataset.source = source;
     el.querySelector('#dp-cm-title').textContent = t(source === 'rent' ? 'vin_paths_rent' : 'vin_paths');
     const controls = el.querySelector('#dp-cm-controls');
-    if (controls) controls.style.display = 'none';
+    if (controls) controls.style.display = '';
+    el.querySelector('#dp-cm-periods').innerHTML = '';
+    const chip = v => `<button class="period-chip${v === pick ? ' active' : ''}" type="button" data-dp-vin-pick="${v}">${v}</button>`;
+    el.querySelector('#dp-cm-rooms').innerHTML = `<span class="pc-lbl">${t(source === 'rent' ? 'vin_pick_rent' : 'vin_pick')}:</span>`
+      + cohorts.map(x => chip(x.c)).join('');
 
-    const axis = [...new Set(cohorts.flatMap(c => vp[c].map(p => p.d)))].sort();
-    const m = cohorts.length;
     const maNan = (arr, w) => arr.map((_, i) => {
       let s = 0, c = 0;
       for (let j = Math.max(0, i - w + 1); j <= i; j++) {
-        const v = arr[j];
-        if (Number.isFinite(v)) { s += v; c++; }
+        if (Number.isFinite(arr[j])) { s += arr[j]; c++; }
       }
       return c >= Math.max(2, Math.ceil(w / 2)) ? s / c : NaN;
     });
-    const perf = [];
-    const datasets = cohorts.map((c, i) => {
-      const byD = new Map(vp[c].map(p => [p.d, p]));
-      const raw = axis.map(d => { const p = byD.get(d); return p ? p.med : NaN; });
-      // Purchase baseline = the cohort's first 12 months (its seed year).
-      const seedVals = vp[c].filter(p => p.d.slice(0, 4) === c).map(p => p.med);
-      const buy = seedVals.length
-        ? seedVals.reduce((a, b) => a + b, 0) / seedVals.length
-        : vp[c][0].med;
-      const w = monthly ? _maWindow(vp[c].length) : 1;
+    // x = years since purchase, y = % vs purchase price: every line starts at the same origin
+    const datasets = cohorts.map(x => {
+      const w = monthly ? _maWindow(x.pts.length) : 1;
+      const raw = x.pts.map(p => p.med);
       const smooth = w > 1 ? maNan(raw, w) : raw;
-      const lastReal = [...vp[c]].reverse()[0];
-      perf.push({ c, buy, last: lastReal.med, ret: buy ? (lastReal.med / buy - 1) * 100 : null });
+      const data = [{ x: 0, y: 0, v: x.buy }];
+      x.pts.forEach((p, i) => {
+        const px = x.x(p.d);
+        if (px > 0 && Number.isFinite(smooth[i])) data.push({ x: px, y: (smooth[i] / x.buy - 1) * 100, v: raw[i] });
+      });
+      const on = pick === x.c;
       return {
-        label: c,
-        data: smooth.map(v => Number.isFinite(v) ? Math.round(v) : null),
-        borderColor: `hsl(${255 - Math.round(i / Math.max(m - 1, 1) * 235)}, 62%, 46%)`,
-        backgroundColor: 'transparent',
-        borderWidth: 1.8,
-        pointRadius: 0,
-        tension: 0.25,
-        spanGaps: true,
-        _buy: buy,
-        _raw: raw,
+        label: x.c, data, _ret: x.ret, _on: on, _labelCol: x.ret >= 0 ? '#15803d' : '#b91c1c',
+        borderColor: on ? '#16a34a' : 'rgba(203,213,225,0.7)',
+        // Red while the picked cohort sits below its purchase price
+        segment: on ? { borderColor: c => c.p1.parsed.y < 0 ? '#dc2626' : undefined } : undefined,
+        borderWidth: on ? 3 : 1.6,
+        pointRadius: 0, pointHoverRadius: on ? 4 : 0, tension: 0.25, order: on ? 0 : 1,
       };
     });
 
-    const ranked = perf.filter(p => p.ret !== null).sort((a, b) => b.ret - a.ret);
-    const badges = [];
-    if (ranked.length) {
-      const bst = ranked[0], wst = ranked[ranked.length - 1];
-      badges.push(`<span class="cm-badge pos">${t('vin_best')}: ${bst.c} ${bst.ret >= 0 ? '+' : ''}${Math.round(bst.ret)}%</span>`);
-      badges.push(`<span class="cm-badge ${wst.ret >= 0 ? 'muted' : 'neg'}">${t('vin_worst')}: ${wst.c} ${wst.ret >= 0 ? '+' : ''}${Math.round(wst.ret)}%</span>`);
-    }
+    const ranked = cohorts.slice().sort((a, b) => b.ret - a.ret);
+    const bst = ranked[0], wst = ranked[ranked.length - 1];
+    const badges = [
+      `<span class="cm-badge pos">${t('vin_best')}: ${bst.c} ${_pct(bst.ret)}</span>`,
+      `<span class="cm-badge ${wst.ret >= 0 ? 'muted' : 'neg'}">${t('vin_worst')}: ${wst.c} ${_pct(wst.ret)}</span>`,
+    ];
     if (monthly) badges.push(`<span class="cm-badge muted">${t('vin_smoothing')}</span>`);
     el.querySelector('#dp-cm-badges').innerHTML = badges.join('');
 
     const canvas = _useCanvasPane(el);
     el.classList.add('open');
 
+    // Picked cohort's result at its line end
+    const endLabels = {
+      id: 'vinEndLabels',
+      afterDatasetsDraw(chart) {
+        const i = chart.data.datasets.findIndex(ds => ds._on);
+        const pt = i >= 0 && chart.getDatasetMeta(i).data.at(-1);
+        if (!pt) return;
+        const ds = chart.data.datasets[i], c = chart.ctx;
+        c.save();
+        c.font = '600 12px ' + _chartFont();
+        c.fillStyle = ds._labelCol;
+        c.fillText(ds.label + ' ' + _pct(ds._ret), pt.x + 6, pt.y + 4);
+        c.restore();
+      },
+    };
+    const yearsLbl = t(source === 'rent' ? 'vin_years_held_rent' : 'vin_years_held');
     S.modalChart = new Chart(canvas, {
       type: 'line',
-      data: { labels: axis.map(d => monthly ? d : d), datasets },
+      data: { datasets },
+      plugins: [endLabels],
       options: {
-        responsive: true, maintainAspectRatio: false,
-        interaction: { intersect: false, mode: 'nearest', axis: 'x' },
+        responsive: true, maintainAspectRatio: false, parsing: false,
+        layout: { padding: { right: 72 } },
+        interaction: { intersect: false, mode: 'nearest' },
         plugins: {
-          legend: { display: true, position: 'bottom', labels: { boxWidth: 12, font: { size: 11 } } },
-          tooltip: { callbacks: { label: c => {
-            const rawV = c.dataset._raw && c.dataset._raw[c.dataIndex];
-            const v = Number.isFinite(rawV) ? rawV : c.parsed.y;
-            const buy = c.dataset._buy;
-            const rel = buy ? Math.round((v / buy - 1) * 100) : null;
-            return ' ' + c.dataset.label + ': ' + fmtInt(v) + unit
-              + (rel === null ? '' : ' (' + (rel >= 0 ? '+' : '') + rel + '% ' + t('vin_since_buy') + ')');
-          } } },
+          legend: { display: false },
+          tooltip: {
+            filter: it => it.dataset._on,
+            callbacks: {
+              title: items => items.length ? items[0].parsed.x.toFixed(1) + ' ' + yearsLbl : '',
+              label: c => ' ' + c.dataset.label + ': ' + _pct(c.parsed.y) + ' · ' + fmtInt(Math.round(c.raw.v)) + unit,
+            },
+          },
         },
         scales: {
-          x: { ticks: { font: { size: 11 }, maxRotation: 0, autoSkip: true, maxTicksLimit: 18 } },
-          y: { ticks: { font: { size: 11 }, callback: v => fmtInt(v) } },
+          x: {
+            type: 'linear', min: 0,
+            title: { display: true, text: yearsLbl, font: { size: 11 }, color: '#64748b' },
+            ticks: { font: { size: 11 }, stepSize: 1 },
+            grid: { color: '#f1f5f9' },
+          },
+          y: {
+            ticks: { font: { size: 11 }, callback: v => _pct(v) },
+            grid: { color: c => c.tick.value === 0 ? '#475569' : '#f1f5f9', lineWidth: c => c.tick.value === 0 ? 1.5 : 1 },
+          },
         },
       },
     });
@@ -2246,6 +2354,12 @@
         return;
       }
 
+      const vinBtn = e.target.closest('[data-dp-vin-pick]');
+      if (vinBtn && modalEl && modalEl.contains(vinBtn)) {
+        S.vinPick = vinBtn.dataset.dpVinPick;
+        openVintagePathsModal(modalEl.dataset.source || 'sale');
+        return;
+      }
       const engineBtn = e.target.closest('[data-dp-engine]');
       if (engineBtn && modalEl && modalEl.contains(engineBtn)) {
         const eng = engineBtn.dataset.dpEngine;
