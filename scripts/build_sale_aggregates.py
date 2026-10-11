@@ -756,6 +756,11 @@ if len(tl) >= 24:
 
 out['__dubai__'] = dubai
 
+# Last data day — lets the client project the partial current month
+AS_OF = q("SELECT MAX(d) AS m FROM tx").iloc[0]['m']
+for v in out.values():
+    v['as_of'] = AS_OF
+
 with open(OUT, 'w', encoding='utf-8') as f:
     json.dump(out, f, ensure_ascii=False, separators=(',',':'))
 

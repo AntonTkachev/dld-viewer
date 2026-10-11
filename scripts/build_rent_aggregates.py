@@ -77,9 +77,14 @@ SELECT {KEY_EXPR} AS k,
        TRY_CAST(actual_area   AS DOUBLE) AS sqm,
        -- Room bucket parsed from Ejari's freeform sub-type ("1bed room+Hall",
        -- "2 bed rooms+hall", "Studio", "Penthouse", …). Mapped to the same
-       -- studio/1br/2br/3br/4br+/other vocabulary as sales' by_rooms_unit so
+       -- studio/1br/2br/3br/4br+/villa/other vocabulary as sales' by_rooms_unit so
        -- renderRoomChips/renderRoomBreakdown can be reused 1:1 across modes.
+       -- Villas get their own bucket; bedroom buckets only for apartment types
+       -- (labor-camp rooms, office "studios" etc. go to other).
        CASE
+         WHEN ejari_property_type_en IN ('Villa', 'Complex Villas') THEN 'villa'
+         WHEN COALESCE(ejari_property_type_en, '') NOT IN ('Flat', 'Studio', 'Penthouse', 'Hotel apartments') THEN 'other'
+         WHEN ejari_property_type_en = 'Penthouse'           THEN '4br+'
          WHEN ejari_property_sub_type_en ILIKE '%studio%'    THEN 'studio'
          WHEN ejari_property_sub_type_en ILIKE 'penthouse%'  THEN '4br+'
          WHEN ejari_property_sub_type_en ILIKE '1%bed%'      THEN '1br'
@@ -130,7 +135,7 @@ FROM r GROUP BY k
 print(f'  areas: {len(totals)}', file=sys.stderr)
 
 # ─── by_rooms_unit (sales-parity) ────────────────────────────────
-print('by_rooms_unit (Studio/1BR/2BR/3BR/4BR+/other)...', file=sys.stderr)
+print('by_rooms_unit (Studio/1BR/2BR/3BR/4BR+/villa/other)...', file=sys.stderr)
 rooms_agg = q("""
 SELECT k, rooms,
        COUNT(*) AS n,
@@ -441,6 +446,24 @@ FROM r GROUP BY sub
 
 d_usage = q("SELECT usage AS u, COUNT(*) AS n FROM r GROUP BY usage")
 
+d_rooms = q("""
+SELECT rooms,
+       COUNT(*) AS n,
+       ROUND(MEDIAN(amt)     FILTER (WHERE amt > 0)) AS med,
+       ROUND(MEDIAN(sqm)     FILTER (WHERE sqm > 0), 1) AS med_sqm,
+       ROUND(MEDIAN(amt/sqm) FILTER (WHERE amt > 0 AND sqm > 0)) AS med_ppsqm
+FROM r GROUP BY rooms
+""")
+
+d_tl_rooms = q("""
+SELECT rooms, substr(d, 1, 7) AS d,
+       COUNT(*) AS n,
+       ROUND(MEDIAN(amt)     FILTER (WHERE amt > 0))             AS med,
+       ROUND(SUM(amt))                                           AS vol,
+       ROUND(MEDIAN(amt/sqm) FILTER (WHERE amt > 0 AND sqm > 0)) AS ppsqm
+FROM r GROUP BY rooms, substr(d, 1, 7) ORDER BY rooms, d
+""")
+
 d_proj = q("""
 SELECT proj, COUNT(*) AS n,
        ROUND(MEDIAN(amt) FILTER (WHERE amt > 0)) AS med
@@ -480,6 +503,12 @@ dubai = {
                                   'med_ppsqm': safe_int(row['med_ppsqm'])}
                     for _, row in d_subt.iterrows()},
     'by_usage':    {row['u']: safe_int(row['n']) for _, row in d_usage.iterrows()},
+    'by_rooms_unit': {row['rooms']: {'n': safe_int(row['n']),
+                                     'med': safe_int(row['med']),
+                                     'med_sqm': safe_float(row['med_sqm']),
+                                     'med_ppsqm': safe_int(row['med_ppsqm'])}
+                      for _, row in d_rooms.iterrows()},
+    'timeline_by_rooms': {},
     'top_projects':[{'proj': row['proj'], 'n': safe_int(row['n']), 'med': safe_int(row['med'])}
                     for _, row in d_proj.iterrows()],
     'recent':      [{'d': row['d'], 'proj': row['proj'], 'sub': row['sub'],
@@ -505,6 +534,15 @@ if len(series) >= 24:
         mh = head[len(head)//2]; mt = tail[len(tail)//2]
         if mh:
             dubai['trend_pct'] = round((mt - mh) / mh * 100, 1)
+
+for _, row in d_tl_rooms.iterrows():
+    dubai['timeline_by_rooms'].setdefault(row['rooms'], []).append({
+        'd':     row['d'],
+        'n':     safe_int(row['n']),
+        'med':   safe_int(row['med']),
+        'vol':   safe_int(row['vol']),
+        'ppsqm': safe_int(row['ppsqm']),
+    })
 
 out['__dubai__']  = dubai
 out['__period__'] = {'min': DATE_FROM, 'max': DATE_TO}
