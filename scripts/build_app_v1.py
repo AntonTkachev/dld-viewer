@@ -278,7 +278,7 @@ def build_rent(src, asof_month, bad):
     })
 
 
-def build(S, asof):
+def build(S, asof, prev_index=None):
     overrides, search_aliases, mask_defs = parse_viewer(f'{S}/js/viewer.js', f'{S}/js/masks.js')
     bad = parse_bad_points(f'{S}/js/detail-panel.js')
     geo = load_const(f'{S}/polygons/curated.js', 'GEOJSON')
@@ -334,6 +334,12 @@ def build(S, asof):
             'web_rents': r_slug if has_page('rents', r_slug) else None,
             'sale': sale, 'rent': rent,
         }
+    # v1 is additive-only: previously published areas stay as empty stubs (favorites keep resolving)
+    for a in (prev_index or {}).get('areas', []):
+        if a['k'] not in areas and a['k'] not in KEY_ALIASES and a['slug'] not in slug_owner:
+            slug_owner[a['slug']] = a['k']
+            areas[a['k']] = {'k': a['k'], 'slug': a['slug'], 'name': a['name'], 'name_ar': a.get('name_ar'),
+                             'web_sales': None, 'web_rents': None, 'sale': None, 'rent': None}
     by_slug = {a['slug']: a for a in areas.values()}
 
     feats = geo['features']
@@ -486,7 +492,8 @@ def main():
     args = ap.parse_args()
 
     asof = data_as_of()
-    files = build(ROOT, asof)
+    prev_path = os.path.join(args.out, 'areas/index.json')
+    files = build(ROOT, asof, load_json(prev_path) if os.path.exists(prev_path) else None)
     validate(files)
     compat_warnings(args.out, files)
     changed, removed, entries, new_manifest = write(args.out, files, asof)

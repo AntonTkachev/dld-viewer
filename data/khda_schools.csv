@@ -14,7 +14,7 @@ school_id,center_id,name,area,phone,curriculum,grade_range,overall_rating,wellbe
 200,51,Jumeirah English Speaking School,AL SAFA FIRST,97143945515,UK (13 Y),FS 1 - YEAR 6,Outstanding,Outstanding,Outstanding
 276,56,Horizons English School L.L.C,AL WASL,97143422891,UK (13 Y),FS 1 - YEAR 6,Outstanding,Outstanding,Outstanding
 281,64,GEMS Jumeira Primary School - Dubai Branch,JUMEIRA THIRD,97143943500,UK (13 Y),FS 1 - YEAR 6,Outstanding,Very good,Very good
-192,70,Dubai College,AL SAFOUH FIRST,97143999111,UK (13 Y),YEAR 7 - YEAR 13,Outstanding,Outstanding,Outstanding
+192,70,Dubai College,AL SAFOUH FIRST,043999111,UK (13 Y),YEAR 7 - YEAR 13,Outstanding,Outstanding,Outstanding
 205,71,Jumeirah College,AL SAFA FIRST,97143955524,UK (13 Y),YEAR 7 - YEAR 13,Outstanding,Very good,Outstanding
 239,78,GEMS Modern Academy,NADD AL SHIBA FIRST,97143263339,"Indian,Indian/IB","GRADE 6 - GRADE 12,Pre primary - GRADE 12",Outstanding,Outstanding,Outstanding
 272,122,GEMS Wellington International School - Dubai Branch,AL SAFOUH FIRST,043073000,"IB (13 Y),UK (13 Y),UK/IB (13 Y)","FS 1 - YEAR 13,YEAR 12 - YEAR 13",Outstanding,Outstanding,Outstanding
@@ -26,7 +26,7 @@ school_id,center_id,name,area,phone,curriculum,grade_range,overall_rating,wellbe
 284,341,Lycee Francais International,OUD METHA,97143368552,French,Pre primary - GRADE 12,Outstanding,Outstanding,Outstanding
 255,357,Dubai English Speaking School - (College),Academic City,97143604866,UK (13 Y),YEAR 7 - YEAR 13,Outstanding,Very good,Very good
 316,371,Lycee Francais International Georges Pompidou School Oud Metha,OUD METHA,043374161,French,Pre primary - KG 2,Outstanding,Outstanding,Outstanding
-4443,1281,Safa Community School,AL BARSHA SOUTH FIRST,97143851810,"UK (13 Y),UK/IB (13 Y)",",FS 1 - YEAR 13",Outstanding,Outstanding,Outstanding
+4443,1281,Safa Community School LLC,AL BARSHA SOUTH FIRST,97143851810,"UK (13 Y),UK/IB (13 Y)",",FS 1 - YEAR 13",Outstanding,Outstanding,Outstanding
 4429,1423,Victory Heights Primary School L.L.C,Dubai Sports City,97144231100,UK (13 Y),FS 1 - YEAR 6,Outstanding,Outstanding,Outstanding
 4441,2222,Nord Anglia International School L.L.C,AL BARSHA SECOND,97142199999,"UK (13 Y),UK/IB (13 Y)","FS 1 - YEAR 11,YEAR 12 - YEAR 13",Outstanding,Very good,Outstanding
 4446,2409,Kings School Al Barsha L.L.C,AL BARSHA SECOND,97143566900,UK (13 Y),FS 1 - YEAR 13,Outstanding,Very good,Outstanding
@@ -41,7 +41,7 @@ school_id,center_id,name,area,phone,curriculum,grade_range,overall_rating,wellbe
 291,103,Emirates International School L.L.C.,UMM SUQEIM FIRST,043489804,"IB (13 Y),UK (13 Y),UK/IB (13 Y)",FS 1 - YEAR 13,Very good,Outstanding,Very good
 243,112,Delhi Private School L.L.C,JABAL ALI FIRST,97148821848,Indian,Pre primary - GRADE 12,Very good,Good,Very good
 286,116,German International School Dubai,Academic City,97144562718,German,Pre primary - GRADE 12,Very good,Outstanding,Outstanding
-194,120,Safa British School,AL SAFA FIRST,97143884300,UK (13 Y),FS 1 - YEAR 13,Very good,Very good,Outstanding
+194,120,Safa British School L.L.C,AL SAFA FIRST,97143884300,UK (13 Y),FS 1 - YEAR 13,Very good,Very good,Outstanding
 312,123,GEMS Royal Dubai School - Dubai Branch,MIRDIF,97142886499,UK (13 Y),ECC (2-3) - YEAR 8,Very good,Very good,Very good
 264,125,Universal American School - Branch,RAS AL KHOR,97145240444,US/IB,Pre primary - GRADE 12,Very good,Very good,Very good
 186,133,EMIRATES INTERNATIONAL SCHOOL MEADOWS,Meadows,043629009,"IB (13 Y),International Baccalaureate",",FS 1 - YEAR 13",Very good,Good,Very good
@@ -81,7 +81,6 @@ school_id,center_id,name,area,phone,curriculum,grade_range,overall_rating,wellbe
 5557,502308,Lycee Libanais Francophone Prive Meydan L.L.C - FZ,Meydan City,97145607800,French,Pre primary - GRADE 12,Good,Good,Good
 252,3,Al Shurooq Private School,JUMEIRA FIRST,043442026,Ministry of Education,KG 1 - GRADE 12,Good,Good,Good
 250,10,Al Rashid Al Saleh Private School,OUD METHA,97143376126,Ministry of Education,KG 1 - GRADE 12,Good,Good,Good
-341,15,Al Basateen Private Nursery,AL KHWANEEJ FIRST,97142892261,Ministry of Education,KG 1 - KG 2,Good,Good,Good
 249,17,Sheikh Rashid Bin Saeed Islamic Institute,AL ROWAIYAH FIRST,97143688532,Ministry of Education,GRADE 5 - GRADE 12,Good,Good,Good
 198,19,Al Mawakeb School Al Garhoud L.L.C,AL GARHOUD,97142851415,American,Pre primary - GRADE 12,Good,Good,Good
 207,20,Al Mawakeb School Al Barsha L.L.C,AL BARSHA SECOND,97143478288,American,KG 1 - GRADE 12,Good,Good,Good
@@ -96,7 +95,7 @@ school_id,center_id,name,area,phone,curriculum,grade_range,overall_rating,wellbe
 315,32,American International School,AL QUSAIS FIRST,+97142540509,American,KG 1 - GRADE 12,Good,Very good,Very good
 201,34,American School Dubai,AL BARSHA SECOND,97143950005,American,Pre primary - GRADE 12,Good,Good,Good
 247,37,Himayah Kindergarten For Education- Karama,AL KARAMA,97145070444,Ministry of Education,KG 1 - KG 2,Good,Very good,Very good
-317,42,The School of Research Science L.L.C,AL WARQA FOURTH,97146011011,"UK (13 Y),UK*","FS 1 - YEAR 13,GRADE 10 - GRADE 12",Good,Good,Good
+317,42,The School of Research Science L.L.C,AL WARQA FOURTH,97146011011,"UK (12Y),UK (13 Y)","FS 1 - YEAR 13,GRADE 10 - GRADE 12",Good,Good,Good
 277,43,Al Salam Private School,AL NAHDA SECOND,97142679594,UK (13 Y),FS 1 - YEAR 11,Good,Good,Good
 190,46,Oxford School,MUHAISANAH FOURTH,042543666,UK (13 Y),FS 1 - YEAR 13,Good,Good,Good
 275,47,ST. Mary Catholic High School - Dubai,UMM HURAIR FIRST,043370252,UK (13 Y),YEAR 1 - YEAR 13,Good,Very good,Very good
@@ -168,7 +167,7 @@ school_id,center_id,name,area,phone,curriculum,grade_range,overall_rating,wellbe
 216,25,Dubai International Private School,AL GARHOUD,042823524,American,KG 1 - GRADE 12,Acceptable,Very good,Acceptable
 322,35,United International Private School L.L.C,MUHAISNAH FIRST,042543888,Philippine,KG 1 - GRADE 12,Acceptable,Acceptable,Acceptable
 326,39,Dubai Carmel School,AL QUSAIS FIRST,97142675424,UK (13 Y),FS 1 - YEAR 13,Acceptable,Acceptable,Acceptable
-188,40,Queen International School,Deira,97142652600,"UK (13 Y),UK*",FS 1 - YEAR 13,Acceptable,Acceptable,Good
+188,40,Queen International School,Deira,97142652600,"UK (12Y),UK (13 Y)",FS 1 - YEAR 13,Acceptable,Acceptable,Good
 214,44,Arab Unity School L.L.C,AL MIZHAR FIRST,97142886226,UK (13 Y),FS 2 - YEAR 13,Acceptable,Good,Good
 223,53,English Language Private School,UMM HURAIR FIRST,043377503,UK (13 Y),FS 2 - YEAR 13,Acceptable,Acceptable,Acceptable
 279,60,Grammar School,AL GARHOUD,97142824822,UK (13 Y),FS 2 - YEAR 13,Acceptable,Good,Good
@@ -190,7 +189,7 @@ school_id,center_id,name,area,phone,curriculum,grade_range,overall_rating,wellbe
 4419,872,The International School of Choueifat (Branch),DUBAI INVESTMENT PARK FIRST,048847884,SABIS (UK/US),Pre primary - GRADE 12,Acceptable,Acceptable,Weak
 4447,1687,Woodlem Park School L.L.C,AL QUSAIS FIRST,042040900,Indian,Pre primary - GRADE 12,Acceptable,Acceptable,Acceptable
 5539,151831,Vernus International Primary School - FZCO,Dubai Silicon Oasis,97143208000,American,Pre primary - GRADE 5,Acceptable,Acceptable,Acceptable
-5477,151864,Oak Tree Primary School,AL QOUZ FOURTH,971433339,UK (13 Y),FS 1 - YEAR 6,Acceptable,Good,Acceptable
+5477,151864,Oak Tree Primary School,AL QOUZ FOURTH,043333911,UK (13 Y),FS 1 - YEAR 6,Acceptable,Good,Acceptable
 5501,152733,GEMS Albarsha National School - Dubai Branch,Al barsha South Second,97145069222,UK (13 Y),FS 1 - YEAR 13,Acceptable,Good,Good
 5507,152884,Ignite School L.L.C,AL WARQA THIRD,042110771,American,Pre primary - GRADE 12,Acceptable,Good,Acceptable
 5523,500572,Himayah School For Education Girls - Al Karama,AL KARAMA,97143482255,Ministry of Education,KG 1 - GRADE 12,Acceptable,Acceptable,Acceptable
@@ -226,4 +225,6 @@ school_id,center_id,name,area,phone,curriculum,grade_range,overall_rating,wellbe
 5602,506257,Victory Heights Primary School City of Arabia LLC,Wadi Al Safa 2,,UK (13 Y),,Not inspected yet,,
 5621,506557,GEMS FOUNDERS SCHOOL NAD AL HAMAR (Br of FZEGEMS WELLINGTON ACADEMY) - DUBAI BRANCH,NADD AL HAMAR,,UK (13 Y),,Not inspected yet,,
 5607,506702,Dubai English Speaking School - Academic City,Academic City,04 614 6999,UK (13 Y),,Not inspected yet,,
-5620,506837,The Scholars School,AL QOUZ FIRST,,"UK (13 Y),UK/BTEC",,,,
+5620,506837,The Scholars School,AL QOUZ FIRST,,"UK (13 Y),UK/BTEC",,Not inspected yet,,
+5614,507697,DUBAI INTERNATIONAL ACADEMY TOWN SQUARE,Dubai Land,,"Early Years Foundation Stage,International Baccalaureate",,Not inspected yet,,
+5622,507700,Ash Mount School LLC,Mudon,,International Baccalaureate,,,,

@@ -69,7 +69,9 @@ SELECT
   rooms_en AS rooms,
   reg_type_en AS reg,
   TRY_CAST(actual_worth   AS DOUBLE) AS val,
-  TRY_CAST(procedure_area AS DOUBLE) AS sqm,
+  -- DLD sometimes stores the price in procedure_area (→ 1 AED/m²); drop area below 10 AED/m²
+  CASE WHEN TRY_CAST(actual_worth AS DOUBLE) / NULLIF(TRY_CAST(procedure_area AS DOUBLE), 0) < 10
+       THEN NULL ELSE TRY_CAST(procedure_area AS DOUBLE) END AS sqm,
   master_project_en AS master,
   project_name_en   AS proj,
   trans_group_en    AS grp,
@@ -397,7 +399,7 @@ for _, r in totals.iterrows():
         'top_projects': top_proj[k],
         'top_deals':  top_deals[k],
         'recent':     recent[k],
-        'trend_pct':  0,
+        'trend_pct':  None,
     }
     # by_rooms_unit — also period-stable med + ppsqm per room
     bu = {}
@@ -439,18 +441,26 @@ for _, r in totals.iterrows():
         entry[b].setdefault('med_ppsqm', 0)
     out[k] = entry
 
-# ─── Trend per area: prior-12-mo median vs last-12-mo median (YoY)
-print('trend_pct (YoY)...', file=sys.stderr)
-for k, entry in out.items():
-    tl = entry['timeline']
-    if len(tl) >= 24:
-        head = sorted([p['med'] for p in tl[-24:-12] if p['med']])
-        tail = sorted([p['med'] for p in tl[-12:] if p['med']])
-        if head and tail:
-            mh = head[len(head)//2]
-            mt = tail[len(tail)//2]
-            if mh:
-                entry['trend_pct'] = round((mt - mh) / mh * 100, 1)
+# ─── Trend per area: like-for-like AED/m², last 365d vs prior 365d
+# Same project + type + rooms in both windows; plain medians swing with the sales mix
+print('trend_pct (YoY, like-for-like)...', file=sys.stderr)
+TREND_MIN_CELL, TREND_MIN_MATCHED = 3, 20
+con.execute(f"""
+CREATE TEMP TABLE trend_cells AS
+WITH w AS (
+  SELECT k, COALESCE(NULLIF(proj, ''), NULLIF(bn, ''), master) AS cp, pt, rooms, val / sqm AS pps,
+         CASE WHEN d::DATE > (SELECT MAX(d)::DATE FROM tx) - INTERVAL 365 DAY THEN 1 ELSE 0 END AS win
+  FROM tx
+  WHERE val > 0 AND sqm > 0 AND d::DATE > (SELECT MAX(d)::DATE FROM tx) - INTERVAL 730 DAY
+),
+c AS (SELECT k, cp, pt, rooms, win, MEDIAN(pps) AS m, COUNT(*) AS n FROM w GROUP BY ALL)
+SELECT a.k, b.m / a.m - 1 AS r, LEAST(a.n, b.n) AS n
+FROM c a JOIN c b USING (k, cp, pt, rooms)
+WHERE a.win = 0 AND b.win = 1 AND a.n >= {TREND_MIN_CELL} AND b.n >= {TREND_MIN_CELL}
+""")
+for _, r in q(f"SELECT k, MEDIAN(r) AS r FROM trend_cells GROUP BY k HAVING SUM(n) >= {TREND_MIN_MATCHED}").iterrows():
+    if r['k'] in out:
+        out[r['k']]['trend_pct'] = round(float(r['r']) * 100, 1)
 
 # ─── Vintage: ready prices by building-age cohort (last 365d) ──────────
 # The district median is refreshed by new stock every year (same-building
@@ -666,7 +676,7 @@ dubai = {
     'vintage': dubai_vintage,
     'vintage_paths': dubai_paths,
     'vintage_paths_m': dubai_paths_m,
-    'trend_pct': 0,
+    'trend_pct': None,
 }
 
 # Aggregate __dubai__ from per-area data (cheap and avoids re-querying)
@@ -745,14 +755,8 @@ all_recent = [d for k, e in out.items() for d in e['recent']]
 all_recent.sort(key=lambda x: x['d'], reverse=True)
 dubai['recent'] = all_recent[:20]
 
-# __dubai__ trend_pct (YoY)
-tl = dubai['timeline']
-if len(tl) >= 24:
-    head = sorted([p['med'] for p in tl[-24:-12] if p['med']])
-    tail = sorted([p['med'] for p in tl[-12:] if p['med']])
-    if head and tail:
-        mh = head[len(head)//2]; mt = tail[len(tail)//2]
-        if mh: dubai['trend_pct'] = round((mt - mh) / mh * 100, 1)
+# __dubai__ trend_pct (YoY, like-for-like across all areas)
+dubai['trend_pct'] = round(float(q("SELECT MEDIAN(r) AS r FROM trend_cells").iloc[0]['r']) * 100, 1)
 
 out['__dubai__'] = dubai
 
