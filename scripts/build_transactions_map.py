@@ -34,6 +34,15 @@ DATE_TO = '2026-12-31'
 KEY_EXPR, NAME_EXPR, _ = build_curated_sql()
 
 con = duckdb.connect()
+# Sales only (same as build_sale_aggregates); drop area when DLD put the price there (<10 AED/m²)
+con.execute(f"""
+CREATE TEMP VIEW tx_sales AS
+SELECT * REPLACE (
+  CASE WHEN TRY_CAST(actual_worth AS DOUBLE) / NULLIF(TRY_CAST(procedure_area AS DOUBLE), 0) < 10
+       THEN NULL ELSE procedure_area END AS procedure_area)
+FROM '{TX}'
+WHERE trans_group_en = 'Sales'
+""")
 
 def safe_int(v):   return int(v) if v == v and v else 0
 def safe_float(v): return round(float(v), 1) if v == v and v else 0
@@ -51,7 +60,7 @@ for code, dfrom in PERIODS:
            ROUND(MEDIAN(TRY_CAST(procedure_area AS DOUBLE)) FILTER (WHERE TRY_CAST(procedure_area AS DOUBLE) > 0), 1) AS med_sqm,
            ROUND(MEDIAN(TRY_CAST(actual_worth AS DOUBLE) / NULLIF(TRY_CAST(procedure_area AS DOUBLE), 0))
                  FILTER (WHERE TRY_CAST(actual_worth AS DOUBLE) > 0 AND TRY_CAST(procedure_area AS DOUBLE) > 0)) AS med_ppsqm
-    FROM '{TX}'
+    FROM tx_sales
     WHERE area_name_en IS NOT NULL
       AND instance_date BETWEEN '{dfrom_s}' AND '{DATE_TO}'
     GROUP BY k
@@ -79,7 +88,7 @@ for code, dfrom in PERIODS:
            ROUND(MEDIAN(TRY_CAST(procedure_area AS DOUBLE)) FILTER (WHERE TRY_CAST(procedure_area AS DOUBLE) > 0), 1) AS med_sqm,
            ROUND(MEDIAN(TRY_CAST(actual_worth AS DOUBLE) / NULLIF(TRY_CAST(procedure_area AS DOUBLE), 0))
                  FILTER (WHERE TRY_CAST(actual_worth AS DOUBLE) > 0 AND TRY_CAST(procedure_area AS DOUBLE) > 0)) AS med_ppsqm
-    FROM '{TX}'
+    FROM tx_sales
     WHERE area_name_en IS NOT NULL
       AND instance_date BETWEEN '{dfrom_s}' AND '{DATE_TO}'
     """).fetchdf().iloc[0]
