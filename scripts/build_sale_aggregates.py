@@ -65,7 +65,7 @@ SELECT
   transaction_id AS tid,
   instance_date AS d,
   property_type_en AS pt,
-  property_sub_type_en AS sbt,
+  COALESCE(property_sub_type_en, CASE WHEN property_type_en = 'Villa' THEN 'Villa' END) AS sbt,  -- 77K villa sales have no subtype
   rooms_en AS rooms,
   reg_type_en AS reg,
   TRY_CAST(actual_worth   AS DOUBLE) AS val,
