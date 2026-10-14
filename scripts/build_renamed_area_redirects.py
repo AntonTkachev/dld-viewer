@@ -53,6 +53,9 @@ LEGACY_SLUG_PAIRS = (
     ('mohammed-bin-rashid-al-maktoum-district-11', 'mbr-city-district-11'),
     ('dubai-south-residential-district', 'dubai-south-residential'),
     ('nad-al-shiba-villas', 'nad-al-sheba'),
+    ('al-jadaf', 'jaddaf-waterfront'),
+    ('wadi-al-safa-2', 'liwan'),
+    ('al-safouh-first', 'sufouh-gardens'),
 )
 
 
