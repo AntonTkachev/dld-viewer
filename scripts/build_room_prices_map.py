@@ -29,13 +29,13 @@ MIN_OBS = 5
 # Each bucket: (rooms_filter, villa_clause). rooms_filter='*' means
 # "no rooms filter, take the villa subtype as-is".
 BUCKETS = {
-    'studio':   ("rooms_en = 'Studio'",                                          "property_sub_type_en <> 'Villa'"),
-    '1br':      ("rooms_en = '1 B/R'",                                           "property_sub_type_en <> 'Villa'"),
-    '2br':      ("rooms_en = '2 B/R'",                                           "property_sub_type_en <> 'Villa'"),
-    '3br':      ("rooms_en = '3 B/R'",                                           "property_sub_type_en <> 'Villa'"),
+    'studio':   ("rooms_en = 'Studio'",                                          "property_type_en <> 'Villa' AND property_sub_type_en IS DISTINCT FROM 'Villa'"),
+    '1br':      ("rooms_en = '1 B/R'",                                           "property_type_en <> 'Villa' AND property_sub_type_en IS DISTINCT FROM 'Villa'"),
+    '2br':      ("rooms_en = '2 B/R'",                                           "property_type_en <> 'Villa' AND property_sub_type_en IS DISTINCT FROM 'Villa'"),
+    '3br':      ("rooms_en = '3 B/R'",                                           "property_type_en <> 'Villa' AND property_sub_type_en IS DISTINCT FROM 'Villa'"),
     '4br_plus': ("rooms_en IN ('4 B/R','5 B/R','6 B/R','7 B/R','8 B/R','9 B/R','10 B/R','PENTHOUSE')",
-                 "property_sub_type_en <> 'Villa'"),
-    'villa':    ("1=1",                                                          "property_sub_type_en = 'Villa'"),
+                 "property_type_en <> 'Villa' AND property_sub_type_en IS DISTINCT FROM 'Villa'"),
+    'villa':    ("1=1",                                                          "(property_sub_type_en = 'Villa' OR property_type_en = 'Villa')"),
 }
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
