@@ -2041,7 +2041,12 @@ _applyLayersFromUrl();
   _ensureBuildingsData().then(() => _onSearchSelectBuilding(bld));
 })();
 
-if (!new URLSearchParams(window.location.search).get('bld')) {
+// Deep-link: ?at=lat,lon[,zoom] → centre on a point (district-page POI links) and ring it
+const _atParam = (new URLSearchParams(window.location.search).get('at') || '').split(',').map(Number);
+if (_atParam.length >= 2 && _atParam.slice(0, 2).every(Number.isFinite)) {
+  map.setView([_atParam[0], _atParam[1]], _atParam[2] || 16);
+  if ((_atParam[2] || 16) >= 15) L.circleMarker([_atParam[0], _atParam[1]], {radius: 18, color: '#2563eb', weight: 3, fill: false, interactive: false}).addTo(map);
+} else if (!new URLSearchParams(window.location.search).get('bld')) {
   map.fitBounds(L.geoJSON(GEOJSON).getBounds(), {padding:[20,20]});
 }
 
