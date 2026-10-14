@@ -105,7 +105,7 @@
   <div class="breadcrumb">
     <a href="__DUBAI_HOME_URL__">__BREADCRUMB_DUBAI__</a> ›
     <a href="__MODE_INDEX_URL__">__MODE_BREADCRUMB__</a> ›
-    <a href="__DISTRICT_URL__" id="bc-name">…</a>
+    <a href="__DISTRICT_URL__" id="bc-name">__DISTRICT_LABEL_HTML__</a>
     <span id="bc-period"></span>
   </div>
 
@@ -146,6 +146,7 @@
 <script>
 const DISTRICT_KEY  = /*__DISTRICT_KEY__*/'';
 const DISTRICT_NAME = /*__DISTRICT_NAME__*/'';
+const DISTRICT_LABEL = /*__DISTRICT_LABEL__*/'';
 const PAGE_MODE     = /*__PAGE_MODE__*/'sale';
 const PAGE_PERIOD   = /*__PAGE_PERIOD__*/'all';
 const PAGE_LANG     = /*__PAGE_LANG__*/'ru';
@@ -164,7 +165,7 @@ function applyPeriodCopy(period) {
   document.getElementById('d-name').textContent = c.h1;
   const ledeEl = document.getElementById('d-lede');
   if (ledeEl) ledeEl.textContent = c.lede;
-  if (c.h1) document.title = c.h1 + ' — DXBCompass';
+  if (c.title) document.title = c.title;
 }
 
 async function load() {
@@ -180,7 +181,7 @@ async function load() {
 }
 
 function render(d) {
-  document.getElementById('bc-name').textContent = DISTRICT_NAME;
+  document.getElementById('bc-name').textContent = DISTRICT_LABEL || DISTRICT_NAME;
   applyPeriodCopy(PAGE_PERIOD);
 
   // Free + premium merge. data.json ships {sales, sales_premium}. Today
