@@ -1,8 +1,9 @@
-"""District → POIs (metro, tram, schools, medical, malls, universities, mosques).
+"""District → nearby POIs (metro, tram, schools, healthcare, malls, universities)
+plus a server-rendered SVG mini-map. Used by build_district_pages.py.
 
-Point-in-polygon against data/curated_polygons.geojson (same keys as the
-district pages). A POI inside both a child polygon and its "(other)" parent
-remainder goes to the child only. Used by build_district_pages.py.
+Polygons = data/curated_polygons.geojson (same keys as the district pages);
+POIs = pois/all.js. Each POI carries `dist` = metres to the district boundary
+(0 inside), kept when within AROUND_M.
 """
 import json
 import math
@@ -14,13 +15,18 @@ POIS_JS = os.path.join(ROOT, 'pois', 'all.js')
 CURATED_GEO = os.path.join(ROOT, 'data', 'curated_polygons.geojson')
 OSM_METRO = os.path.join(ROOT, 'data', 'osm_metro_stations.json')
 
-NEAREST_N = 2
-BLUE_RADIUS_M = 1000
+AROUND_M = 1500
+WALK_M = 1000
 EDGE_M = 300
+NEAREST_N = 2
+KX, KY = 111320 * math.cos(math.radians(25.15)), 110540  # metres per degree at Dubai
 MALL_JUNK = re.compile(r'supermarket|hyper ?market|grand hyper|\bmart$|carpet|shiseido|sparkle|hotel|under construction|pavalion|trading|grocery', re.I)
 HOSPITAL_RE = re.compile(r'hospital|hosptial|مستشفى', re.I)
+CLINIC_RE = re.compile(r'clinic|medical|medicare|health ?cent|polyclinic|dental|diagnostic|pharmacy|عيادة|مركز', re.I)
 UNI_RE = re.compile(r'universit|college', re.I)
 RATING_ORDER = {'outstanding': 0, 'very good': 1, 'good': 2, 'acceptable': 3, 'weak': 4, 'very weak': 5}
+LINE_COLOR = {'red': '#d71920', 'green': '#00a651', 'tram': '#f7941d', 'blue': '#1565c0'}
+CAT_COLOR = {'schools': '#d97706', 'health': '#dc2626', 'malls': '#7c3aed', 'unis': '#0d9488'}
 
 # Blue Line (u/c, opening 2029) stations are stored under Arabic OSM names.
 BLUE_EN = {
@@ -39,14 +45,20 @@ def _consts():
     with open(POIS_JS, encoding='utf-8') as f:
         text = f.read()
     out = {}
-    for name in ('METRO_STATIONS', 'TRAM_STATIONS', 'SCHOOLS', 'UNIVERSITIES', 'MEDICAL', 'MOSQUES', 'MALLS'):
+    for name in ('METRO_STATIONS', 'TRAM_STATIONS', 'SCHOOLS', 'UNIVERSITIES', 'MEDICAL', 'MALLS'):
         m = re.search(r'const ' + name + r'\s*=\s*(\[.*?\]);', text, re.S)
         out[name] = json.loads(m.group(1)) if m else []
+    m = re.search(r'const METRO_LINES\s*=\s*(\{.*?\});\s*\n', text, re.S)
+    out['METRO_LINES'] = json.loads(m.group(1))['features'] if m else []
+    m = re.search(r'const TRAM_LINE\s*=\s*(\{.*?\});\s*\n', text, re.S)
+    if m:
+        tl = json.loads(m.group(1))
+        out['METRO_LINES'].append({'properties': {'group': 'tram'}, 'geometry': tl['geometry']})
     return out
 
 
 def _clean(name):
-    return re.sub(r'[\u200b-\u200f\ufeff]', '', name or '').strip().rstrip(',')
+    return re.sub(r'[​-‏﻿]', '', name or '').strip().rstrip(',')
 
 
 def _mall_ok(r):
@@ -54,16 +66,6 @@ def _mall_ok(r):
     if not n or (MALL_JUNK.search(n) and not n.lower().startswith('dragon mart')):
         return False
     return r.get('kind') == 'mall' or bool(re.search(r'souk|souq', n, re.I))
-
-
-def _dedup(names):
-    seen, out = set(), []
-    for n in names:
-        k = re.sub(r'[^a-z0-9]', '', n.lower())
-        if k and k not in seen:
-            seen.add(k)
-            out.append(n)
-    return out
 
 
 def _rings(geom):
@@ -98,14 +100,12 @@ def _dist_m(polys, lon, lat):
     """Metres from a point to the polygon boundary (0 if inside)."""
     if _contains(polys, lon, lat):
         return 0.0
-    kx = 111320 * math.cos(math.radians(lat))
-    ky = 110540
     best = float('inf')
     for poly in polys:
         for ring in poly:
             for (x1, y1), (x2, y2) in zip(ring, ring[1:]):
-                ax, ay = (x1 - lon) * kx, (y1 - lat) * ky
-                bx, by = (x2 - lon) * kx, (y2 - lat) * ky
+                ax, ay = (x1 - lon) * KX, (y1 - lat) * KY
+                bx, by = (x2 - lon) * KX, (y2 - lat) * KY
                 dx, dy = bx - ax, by - ay
                 L = dx * dx + dy * dy
                 t = 0 if L == 0 else max(0, min(1, -(ax * dx + ay * dy) / L))
@@ -124,9 +124,7 @@ def _stations(consts):
         name = BLUE_EN.get(s['name'], s['name'])
         k = re.sub(r'[^a-z0-9&]', '', name.lower())
         if k in merged:
-            for g in groups:
-                if g not in merged[k]['groups']:
-                    merged[k]['groups'].append(g)
+            merged[k]['groups'] += [g for g in groups if g not in merged[k]['groups']]
             continue
         ar = s['name'] if s['name'] in BLUE_EN else name_ar.get(s['name'])
         merged[k] = {'name': name, 'name_ar': ar, 'lat': s['lat'], 'lon': s['lon'], 'groups': list(groups)}
@@ -143,8 +141,28 @@ def _stations(consts):
     return metro, blue, list(tram.values())
 
 
+def _bbox(polys):
+    xs = [c[0] for p in polys for r in p for c in r]
+    ys = [c[1] for p in polys for r in p for c in r]
+    return min(xs), min(ys), max(xs), max(ys)
+
+
+def _centroid(polys):
+    """Area-weighted centroid of the largest ring."""
+    ring = max((p[0] for p in polys if p), key=len)
+    a = cx = cy = 0.0
+    for (x1, y1), (x2, y2) in zip(ring, ring[1:]):
+        f = x1 * y2 - x2 * y1
+        a += f
+        cx += (x1 + x2) * f
+        cy += (y1 + y2) * f
+    if abs(a) < 1e-12:
+        return ring[0][0], ring[0][1]
+    return cx / (3 * a), cy / (3 * a)
+
+
 def build_index():
-    """key -> {metro_in, metro_near, tram_in, blue, schools, hospitals, clinics, malls, unis, mosques}."""
+    """key -> {metro, tram, blue, schools, hospitals, clinics, malls, unis, polys, center}."""
     if not (os.path.exists(POIS_JS) and os.path.exists(CURATED_GEO)):
         return {}
     with open(CURATED_GEO, encoding='utf-8') as f:
@@ -154,55 +172,178 @@ def build_index():
         k = (ft.get('properties') or {}).get('key')
         if k and ft.get('geometry'):
             polys[k] = _rings(ft['geometry'])
-    bbox = {}
-    for k, ps in polys.items():
-        xs = [c[0] for p in ps for r in p for c in r]
-        ys = [c[1] for p in ps for r in p for c in r]
-        bbox[k] = (min(xs), min(ys), max(xs), max(ys))
-
-    def locate(lon, lat):
-        hits = [k for k, (x0, y0, x1, y1) in bbox.items()
-                if x0 <= lon <= x1 and y0 <= lat <= y1 and _contains(polys[k], lon, lat)]
-        specific = [k for k in hits if not k.endswith('(other)')]
-        return specific or hits
+    pad_x, pad_y = AROUND_M / KX, AROUND_M / KY
+    bbox = {k: _bbox(ps) for k, ps in polys.items()}
 
     consts = _consts()
     metro, blue, tram = _stations(consts)
-    idx = {k: {'metro_in': [], 'metro_near': [], 'tram_in': [], 'blue': [], 'schools': [],
-               'hospitals': [], 'clinics': 0, 'malls': [], 'unis': [], 'mosques': 0} for k in polys}
-
-    def put(rows, field, pick=lambda r: r):
-        for r in rows:
-            if r.get('lat') is None or r.get('lon') is None:
-                continue
-            for k in locate(r['lon'], r['lat']):
-                v = pick(r)
-                if v is None:
-                    continue
-                if isinstance(idx[k][field], int):
-                    idx[k][field] += 1
-                else:
-                    idx[k][field].append(v)
-
-    put(tram, 'tram_in')
     med_name = lambda r: _clean(r.get('name_en') or r.get('name'))
-    put(consts['SCHOOLS'], 'schools', lambda r: r if r.get('in_khda') and r.get('name') else None)
-    put(consts['MEDICAL'], 'hospitals', lambda r: med_name(r) if HOSPITAL_RE.search(med_name(r)) else None)
-    put(consts['MEDICAL'], 'clinics', lambda r: r if med_name(r) and not HOSPITAL_RE.search(med_name(r)) else None)
-    put(consts['MALLS'], 'malls', lambda r: r if _mall_ok(r) else None)
     uni_ok = lambda r: (r.get('in_khda') or UNI_RE.search(r.get('name') or '')) and not r['name'].startswith('Block')
-    put(consts['UNIVERSITIES'], 'unis', lambda r: re.sub(r'\s*-\s*Block \d+$', '', _clean(r['name'])) if uni_ok(r) else None)
-    put(consts['MOSQUES'], 'mosques')
+    cats = {
+        'schools': [r for r in consts['SCHOOLS'] if r.get('in_khda') and r.get('name')],
+        'hospitals': [{**r, 'name': med_name(r)} for r in consts['MEDICAL'] if HOSPITAL_RE.search(med_name(r))],
+        'clinics': [{**r, 'name': med_name(r)} for r in consts['MEDICAL']
+                    if CLINIC_RE.search(med_name(r)) and not HOSPITAL_RE.search(med_name(r))],
+        'malls': [{**r, 'name': _clean(r['name'])} for r in consts['MALLS'] if _mall_ok(r)],
+        'unis': [{**r, 'name': re.sub(r'\s*-\s*Block \d+$', '', _clean(r['name']))} for r in consts['UNIVERSITIES'] if uni_ok(r)],
+    }
 
+    def near(k, rows, radius):
+        x0, y0, x1, y1 = bbox[k]
+        rx, ry = radius / KX, radius / KY
+        out = []
+        for r in rows:
+            if r.get('lat') is None or not (x0 - rx <= r['lon'] <= x1 + rx and y0 - ry <= r['lat'] <= y1 + ry):
+                continue
+            d = _dist_m(polys[k], r['lon'], r['lat'])
+            if d <= radius:
+                out.append({**r, 'dist': d})
+        return out
+
+    def dedup(rows):
+        seen, out = set(), []
+        for r in rows:
+            nk = re.sub(r'[^a-z0-9]', '', r['name'].lower()) or r['name']
+            if nk not in seen:
+                seen.add(nk)
+                out.append(r)
+        return out
+
+    idx = {}
     for k, ps in polys.items():
-        d = idx[k]
-        dists = sorted(((_dist_m(ps, s['lon'], s['lat']), s) for s in metro), key=lambda t: t[0])
-        d['metro_in'] = [s for dist, s in dists if dist <= EDGE_M]
-        if not d['metro_in']:
-            d['metro_near'] = [(s, dist) for dist, s in dists[:NEAREST_N]]
-        d['blue'] = [s for s in blue if _dist_m(ps, s['lon'], s['lat']) <= BLUE_RADIUS_M]
-        d['schools'].sort(key=lambda r: (RATING_ORDER.get((r.get('rating') or '').lower(), 9), r['name']))
-        d['malls'] = _dedup(_clean(r['name']) for r in sorted(d['malls'], key=lambda r: (r.get('kind') != 'mall', _clean(r['name']))))
-        d['hospitals'] = _dedup(sorted(d['hospitals']))
-        d['unis'] = _dedup(sorted(d['unis']))
+        d = {'polys': ps, 'center': _centroid(ps)}
+        all_m = sorted(({**s, 'dist': _dist_m(ps, s['lon'], s['lat'])} for s in metro), key=lambda s: s['dist'])
+        walk = [s for s in all_m if s['dist'] <= WALK_M]
+        d['metro'] = walk if len(walk) >= NEAREST_N else all_m[:max(NEAREST_N, len(walk))]
+        d['tram'] = sorted(near(k, tram, WALK_M), key=lambda s: s['dist'])
+        d['blue'] = sorted(near(k, blue, WALK_M), key=lambda s: s['dist'])
+        sch = near(k, cats['schools'], AROUND_M)
+        sch.sort(key=lambda r: (r['dist'] > 0, RATING_ORDER.get((r.get('rating') or '').lower(), 9), r['dist'], r['name']))
+        d['schools'] = dedup(sch)
+        for c in ('hospitals', 'clinics', 'malls', 'unis'):
+            rows = near(k, cats[c], AROUND_M)
+            if c == 'malls':
+                rows.sort(key=lambda r: (r['dist'] > 0, r.get('kind') != 'mall', r['dist'], r['name']))
+            else:
+                rows.sort(key=lambda r: (r['dist'], r['name']))
+            d[c] = dedup(rows)
+        idx[k] = d
+    idx['__polys__'] = polys
+    idx['__lines__'] = consts['METRO_LINES']
     return idx
+
+
+# ───────────────────────── SVG mini-map ─────────────────────────
+
+SVG_W, SVG_H = 480, 340
+
+
+def render_svg(idx, key, shown):
+    """Standalone SVG: district polygon, neighbours, metro lines, shown POIs.
+    `shown` = [(cat, row)] where cat ∈ metro|tram|blue|schools|health|malls|unis."""
+    d = idx[key]
+    pts = [(r['lon'], r['lat']) for _c, r in shown]
+    x0, y0, x1, y1 = _bbox(d['polys'])
+    for x, y in pts:
+        x0, y0, x1, y1 = min(x0, x), min(y0, y), max(x1, x), max(y1, y)
+    # pad and fit to the SVG aspect in metric space
+    w, h = (x1 - x0) * KX, (y1 - y0) * KY
+    w, h = max(w, 600) * 1.16, max(h, 600) * 1.16
+    if w / h > SVG_W / SVG_H:
+        h = w * SVG_H / SVG_W
+    else:
+        w = h * SVG_W / SVG_H
+    cx, cy = (x0 + x1) / 2, (y0 + y1) / 2
+    vx0, vx1 = cx - w / 2 / KX, cx + w / 2 / KX
+    vy0, vy1 = cy - h / 2 / KY, cy + h / 2 / KY
+    sx = SVG_W / (vx1 - vx0)
+    sy = SVG_H / (vy1 - vy0)
+    P = lambda x, y: ((x - vx0) * sx, (vy1 - y) * sy)
+    inview = lambda x, y, m=0.5: (vx0 - (vx1 - vx0) * m <= x <= vx1 + (vx1 - vx0) * m
+                                  and vy0 - (vy1 - vy0) * m <= y <= vy1 + (vy1 - vy0) * m)
+
+    def path(coords_list, close=True, m=0.5, tol=0.8):
+        out = []
+        for coords in coords_list:
+            seg, last = [], None
+            for x, y in coords:
+                if not inview(x, y, m):
+                    if len(seg) > 1:
+                        out.append(seg)
+                    seg, last = [], None
+                    continue
+                px, py = P(x, y)
+                if last and abs(px - last[0]) < tol and abs(py - last[1]) < tol:
+                    continue
+                seg.append((px, py))
+                last = (px, py)
+            if len(seg) > 1:
+                out.append(seg)
+        return ''.join('M' + ' '.join(f'{x:.0f},{y:.0f}' for x, y in s) + ('Z' if close else '') for s in out)
+
+    parts = [f'<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 {SVG_W} {SVG_H}" width="{SVG_W}" height="{SVG_H}">'
+             '<style>.l{font:600 11px system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;fill:#0f172a;'
+             'paint-order:stroke;stroke:#fff;stroke-width:3px;stroke-linejoin:round}'
+             '.s{font:600 10px system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;fill:#334155}</style>',
+             f'<rect width="{SVG_W}" height="{SVG_H}" fill="#f8fafc"/>']
+    neigh = []
+    for ok, ops in idx['__polys__'].items():
+        if ok == key:
+            continue
+        bx0, by0, bx1, by1 = _bbox(ops)
+        if bx1 < vx0 or bx0 > vx1 or by1 < vy0 or by0 > vy1:
+            continue
+        p = path([r for poly in ops for r in poly[:1]], close=False, m=0.02, tol=3)
+        if p:
+            neigh.append(p)
+    if neigh:
+        parts.append(f'<path d="{"".join(neigh)}" fill="none" stroke="#cbd5e1" stroke-width="0.8"/>')
+    p = path([r for poly in d['polys'] for r in poly[:1]])
+    parts.append(f'<path d="{p}" fill="#dbeafe" fill-opacity="0.75" stroke="#2563eb" stroke-width="2.2" stroke-linejoin="round"/>')
+    seen_refs = set()
+    for ft in idx['__lines__']:
+        g = ft['properties'].get('group')
+        ref = ft['properties'].get('ref') or g
+        if ref in seen_refs:
+            continue
+        seen_refs.add(ref)
+        coords = ft['geometry']['coordinates'] if ft['geometry']['type'] == 'MultiLineString' else [ft['geometry']['coordinates']]
+        p = path(coords, close=False, m=0.05, tol=1.5)
+        if p:
+            dash = ' stroke-dasharray="6 4"' if ft['properties'].get('status') == 'construction' else ''
+            parts.append(f'<path d="{p}" fill="none" stroke="{LINE_COLOR.get(g, "#888")}" stroke-width="3" '
+                         f'stroke-linecap="round" stroke-opacity="0.85"{dash}/>')
+    labels = []
+    for cat, r in sorted(shown, key=lambda cr: cr[0] in ('metro', 'tram', 'blue')):
+        px, py = P(r['lon'], r['lat'])
+        if cat in ('metro', 'tram', 'blue'):
+            col = LINE_COLOR[r['groups'][0]]
+            parts.append(f'<circle cx="{px:.1f}" cy="{py:.1f}" r="6" fill="#fff" stroke="{col}" stroke-width="3"/>')
+            labels.append((px, py, r['name']))
+        else:
+            parts.append(f'<circle cx="{px:.1f}" cy="{py:.1f}" r="4.5" fill="{CAT_COLOR[cat]}" stroke="#fff" stroke-width="1.5"/>')
+    # 1 km scale bar
+    bar = 1000 * sx / KX
+    if bar > SVG_W * 0.45:
+        bar, lbl = bar / 2, '500 m'
+    else:
+        lbl = '1 km'
+    placed = [(0, SVG_H - 34, bar + 40, SVG_H)]
+    for px, py, name in labels:
+        anchor, dx = ('end', -9) if px > SVG_W * 0.7 else ('start', 9)
+        tw = len(name) * 6.2
+        lx0 = px + dx - (tw if anchor == 'end' else 0)
+        box = (lx0, py - 8, lx0 + tw, py + 6)
+        if any(not (box[2] < b[0] or box[0] > b[2] or box[3] < b[1] or box[1] > b[3]) for b in placed):
+            continue
+        placed.append(box)
+        parts.append(f'<text x="{px + dx:.1f}" y="{py + 4:.1f}" text-anchor="{anchor}" class="l">{_esc(name)}</text>')
+    parts.append(f'<g><rect x="12" y="{SVG_H - 30}" width="{bar + 16:.1f}" height="20" rx="4" fill="#fff" fill-opacity="0.85"/>'
+                 f'<path d="M20,{SVG_H - 16}h{bar:.1f}" stroke="#334155" stroke-width="2"/>'
+                 f'<text x="{20 + bar / 2:.1f}" y="{SVG_H - 19}" text-anchor="middle" class="s">{lbl}</text></g>')
+    parts.append('</svg>')
+    return ''.join(parts)
+
+
+def _esc(s):
+    return (str(s).replace('&', '&amp;').replace('<', '&lt;').replace('>', '&gt;').replace('"', '&quot;'))
