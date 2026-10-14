@@ -20,26 +20,15 @@ WALK_M = 1000
 EDGE_M = 300
 NEAREST_N = 2
 KX, KY = 111320 * math.cos(math.radians(25.15)), 110540  # metres per degree at Dubai
-MALL_JUNK = re.compile(r'supermarket|hyper ?market|grand hyper|\bmart$|carpet|shiseido|sparkle|hotel|under construction|pavalion|trading|grocery', re.I)
+MALL_JUNK = re.compile(r'supermarket|hyper ?market|grand hyper|\bmart$|carpet|shiseido|sparkle|hotel|under construction|pavalion|trading|grocery|business (time )?cent|^mmi\b', re.I)
 HOSPITAL_RE = re.compile(r'hospital|hosptial|مستشفى', re.I)
-CLINIC_RE = re.compile(r'clinic|medical|medicare|health ?cent|polyclinic|dental|diagnostic|pharmacy|عيادة|مركز', re.I)
+CLINIC_RE = re.compile(r'clinic|medical|medicare|health ?cent|polyclinic|dental|diagnostic|عيادة|مركز', re.I)
 UNI_RE = re.compile(r'universit|college', re.I)
+GENERIC = set('medical center centre clinic clinics polyclinic health healthcare care hospital dental pharmacy mall shopping plaza souq souk market and the of مركز طبي عيادة مستشفى صيدلية'.split())
+DUP_M = 300
 RATING_ORDER = {'outstanding': 0, 'very good': 1, 'good': 2, 'acceptable': 3, 'weak': 4, 'very weak': 5}
 LINE_COLOR = {'red': '#d71920', 'green': '#00a651', 'tram': '#f7941d', 'blue': '#1565c0'}
 CAT_COLOR = {'schools': '#d97706', 'health': '#dc2626', 'malls': '#7c3aed', 'unis': '#0d9488'}
-
-# Blue Line (u/c, opening 2029) stations are stored under Arabic OSM names.
-BLUE_EN = {
-    'إعمار العقارية': 'Emaar Properties',
-    'دبي فيستيفال سيتي': 'Dubai Festival City',
-    'سوق التنبن': 'Dragon Mart',
-    'سوق السيارات': 'Dubai Auto Market',
-    'مدينة الأكاديمية': 'Academic City',
-    'مدينة العالمية 1': 'International City 1',
-    'مدينة العالمية 2': 'International City 2',
-    'واحة دبي السيليكون': 'Dubai Silicon Oasis',
-}
-
 
 def _consts():
     with open(POIS_JS, encoding='utf-8') as f:
@@ -58,7 +47,18 @@ def _consts():
 
 
 def _clean(name):
-    return re.sub(r'[​-‏﻿]', '', name or '').strip().rstrip(',')
+    name = re.sub(r'[​-‏﻿]', '', name or '')
+    return re.sub(r'\s+(L\.?L\.?C\.?\b.*|\+?\d[\d ]{5,})$', '', name, flags=re.I).strip().rstrip(',')
+
+
+def _generic(name):
+    toks = re.findall(r'\w+', name.lower())
+    return not toks or all(t in GENERIC for t in toks)
+
+
+def _tier(r):
+    """OSM richness as a proxy for size/importance: wikidata > polygon or website > bare node."""
+    return 0 if r.get('wikidata') else 1 if (r.get('website') or r.get('osm_type') in ('way', 'relation')) else 2
 
 
 def _mall_ok(r):
@@ -115,18 +115,18 @@ def _dist_m(polys, lon, lat):
 
 
 def _stations(consts):
-    """Dedup metro stations by normalized name (Bur Juman / BurJuman), merge line groups."""
+    """Dedup metro stations by normalized name, merge line groups."""
     with open(OSM_METRO, encoding='utf-8') as f:
         name_ar = {x['name']: x.get('name_ar') for x in json.load(f)}
     merged = {}
     for s in consts['METRO_STATIONS']:
         groups = s.get('groups') or [s.get('group')]
-        name = BLUE_EN.get(s['name'], s['name'])
+        name = s['name']
         k = re.sub(r'[^a-z0-9&]', '', name.lower())
         if k in merged:
             merged[k]['groups'] += [g for g in groups if g not in merged[k]['groups']]
             continue
-        ar = s['name'] if s['name'] in BLUE_EN else name_ar.get(s['name'])
+        ar = s.get('name_ar') or name_ar.get(name)
         merged[k] = {'name': name, 'name_ar': ar, 'lat': s['lat'], 'lon': s['lon'], 'groups': list(groups)}
     metro, blue = [], []
     for s in merged.values():
@@ -181,10 +181,11 @@ def build_index():
     uni_ok = lambda r: (r.get('in_khda') or UNI_RE.search(r.get('name') or '')) and not r['name'].startswith('Block')
     cats = {
         'schools': [r for r in consts['SCHOOLS'] if r.get('in_khda') and r.get('name')],
-        'hospitals': [{**r, 'name': med_name(r)} for r in consts['MEDICAL'] if HOSPITAL_RE.search(med_name(r))],
+        'hospitals': [{**r, 'name': med_name(r)} for r in consts['MEDICAL']
+                      if HOSPITAL_RE.search(med_name(r)) and not _generic(med_name(r))],
         'clinics': [{**r, 'name': med_name(r)} for r in consts['MEDICAL']
-                    if CLINIC_RE.search(med_name(r)) and not HOSPITAL_RE.search(med_name(r))],
-        'malls': [{**r, 'name': _clean(r['name'])} for r in consts['MALLS'] if _mall_ok(r)],
+                    if CLINIC_RE.search(med_name(r)) and not HOSPITAL_RE.search(med_name(r)) and not _generic(med_name(r))],
+        'malls': [{**r, 'name': _clean(r['name'])} for r in consts['MALLS'] if _mall_ok(r) and not _generic(_clean(r['name']))],
         'unis': [{**r, 'name': re.sub(r'\s*-\s*Block \d+$', '', _clean(r['name']))} for r in consts['UNIVERSITIES'] if uni_ok(r)],
     }
 
@@ -201,13 +202,17 @@ def build_index():
         return out
 
     def dedup(rows):
-        seen, out = set(), []
+        """Drop exact-name repeats and same-place twins (Festival City Mall / Dubai Festival City Mall)."""
+        out = []
         for r in rows:
             nk = re.sub(r'[^a-z0-9]', '', r['name'].lower()) or r['name']
-            if nk not in seen:
-                seen.add(nk)
-                out.append(r)
-        return out
+            words = [t for t in re.findall(r'\w+', r['name'].lower()) if t not in GENERIC and t != 'dubai']
+            toks = {t for t in words if len(t) >= 4} | {''.join(words)}
+            if any(o['_nk'] == nk or (toks & o['_toks'] and math.hypot((r['lon'] - o['lon']) * KX, (r['lat'] - o['lat']) * KY) < DUP_M)
+                   for o in out):
+                continue
+            out.append({**r, '_nk': nk, '_toks': toks})
+        return [{k: v for k, v in r.items() if k not in ('_nk', '_toks')} for r in out]
 
     idx = {}
     for k, ps in polys.items():
@@ -223,9 +228,11 @@ def build_index():
         for c in ('hospitals', 'clinics', 'malls', 'unis'):
             rows = near(k, cats[c], AROUND_M)
             if c == 'malls':
-                rows.sort(key=lambda r: (r['dist'] > 0, r.get('kind') != 'mall', r['dist'], r['name']))
-            else:
+                rows.sort(key=lambda r: (r['dist'] > 0, r.get('kind') != 'mall', _tier(r), r['dist'], r['name']))
+            elif c == 'unis':
                 rows.sort(key=lambda r: (r['dist'], r['name']))
+            else:
+                rows.sort(key=lambda r: (r['dist'] > 0, _tier(r), r['dist'], r['name']))
             d[c] = dedup(rows)
         idx[k] = d
     idx['__polys__'] = polys
