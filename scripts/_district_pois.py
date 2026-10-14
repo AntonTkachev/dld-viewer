@@ -24,7 +24,9 @@ MALL_JUNK = re.compile(r'supermarket|hyper ?market|grand hyper|\bmart$|carpet|sh
 HOSPITAL_RE = re.compile(r'hospital|hosptial|مستشفى', re.I)
 CLINIC_RE = re.compile(r'clinic|medical|medicare|health ?cent|polyclinic|dental|diagnostic|عيادة|مركز', re.I)
 UNI_RE = re.compile(r'universit|college', re.I)
-GENERIC = set('medical center centre clinic clinics polyclinic health healthcare care hospital dental pharmacy mall shopping plaza souq souk market and the of مركز طبي عيادة مستشفى صيدلية'.split())
+GENERIC = set('medical center centre clinic clinics polyclinic polyclinics health healthcare care hospital hosptial dental pharmacy '
+              'diagnostic mall shopping plaza souq souk market and the of al dubai block مركز طبي عيادة مستشفى صيدلية'.split())
+KIND_NORM = {'centre': 'center', 'hosptial': 'hospital', 'souk': 'souq', 'clinics': 'clinic', 'polyclinics': 'polyclinic'}
 DUP_M = 300
 RATING_ORDER = {'outstanding': 0, 'very good': 1, 'good': 2, 'acceptable': 3, 'weak': 4, 'very weak': 5}
 LINE_COLOR = {'red': '#d71920', 'green': '#00a651', 'tram': '#f7941d', 'blue': '#1565c0'}
@@ -48,12 +50,32 @@ def _consts():
 
 def _clean(name):
     name = re.sub(r'[​-‏﻿]', '', name or '')
-    return re.sub(r'\s+(L\.?L\.?C\.?\b.*|\+?\d[\d ]{5,})$', '', name, flags=re.I).strip().rstrip(',')
+    return re.sub(r'\s+(L\.?L\.?C\.?\b.*|\+?\d[\d ]{5,}|-\s*Block \w+)$', '', name, flags=re.I).strip().rstrip(',')
 
 
 def _generic(name):
     toks = re.findall(r'\w+', name.lower())
-    return not toks or all(t in GENERIC for t in toks)
+    return not toks or all(t in GENERIC and t not in ('al', 'dubai', 'block') for t in toks)
+
+
+def _core(name):
+    """(distinctive words, their concatenation, kind words) — 'Bur Juman Shopping Center' → ({bur, juman}, 'burjuman', {shopping, center})."""
+    toks = re.findall(r'\w+', re.sub(r"['’`]", '', name.lower()))
+    words = frozenset(t for t in toks if t not in GENERIC and len(t) > 1)
+    kinds = frozenset(KIND_NORM.get(t, t) for t in toks if t in GENERIC and t not in ('al', 'dubai', 'the', 'of', 'and', 'block'))
+    return words, ''.join(t for t in toks if t in words), kinds
+
+
+def _same_place(a, b, places):
+    """Two nearby POIs are one place when one name's distinctive words contain the other's.
+    Names made only of place words (Jumeirah Center vs Jumeirah Plaza) must also match on kind."""
+    (wa, ja, ka), (wb, jb, kb) = _core(a), _core(b)
+    if not wa or not wb:
+        return False
+    small = wa if len(wa) <= len(wb) else wb
+    if small <= places:
+        return (wa == wb or ja == jb) and ka == kb
+    return ja == jb or wa <= wb or wb <= wa
 
 
 def _tier(r):
@@ -201,18 +223,19 @@ def build_index():
                 out.append({**r, 'dist': d})
         return out
 
+    places = {t for k in polys for t in re.findall(r'\w+', k.lower())} | {'city', 'university'}
+
     def dedup(rows):
-        """Drop exact-name repeats and same-place twins (Festival City Mall / Dubai Festival City Mall)."""
+        """Drop exact-name repeats and same-place twins within DUP_M."""
         out = []
         for r in rows:
             nk = re.sub(r'[^a-z0-9]', '', r['name'].lower()) or r['name']
-            words = [t for t in re.findall(r'\w+', r['name'].lower()) if t not in GENERIC and t != 'dubai']
-            toks = {t for t in words if len(t) >= 4} | {''.join(words)}
-            if any(o['_nk'] == nk or (toks & o['_toks'] and math.hypot((r['lon'] - o['lon']) * KX, (r['lat'] - o['lat']) * KY) < DUP_M)
-                   for o in out):
-                continue
-            out.append({**r, '_nk': nk, '_toks': toks})
-        return [{k: v for k, v in r.items() if k not in ('_nk', '_toks')} for r in out]
+            if not any(re.sub(r'[^a-z0-9]', '', o['name'].lower()) == nk
+                       or (math.hypot((r['lon'] - o['lon']) * KX, (r['lat'] - o['lat']) * KY) < DUP_M
+                           and _same_place(r['name'], o['name'], places))
+                       for o in out):
+                out.append(r)
+        return out
 
     idx = {}
     for k, ps in polys.items():
