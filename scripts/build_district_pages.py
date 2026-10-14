@@ -38,6 +38,7 @@ NEARBY_N = 4
 # Single source of truth for BASE_URL (env-overridable for dev builds).
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 from _seo_config import BASE_URL
+from _district_pois import build_index as build_poi_index
 
 # SEO indexation whitelist — only top/lifecycle districts are indexable;
 # everything else (long-tail district mains + ALL period/list subpages) gets
@@ -815,6 +816,116 @@ FAQ_COPY = {
     },
 }
 
+# "What's in the district" block (metro / schools / healthcare / malls) — data from _district_pois.
+POI_COPY = {
+    'ru': {
+        'title': 'Метро, школы и инфраструктура: {name}',
+        'metro': 'Метро', 'schools': 'Школы (KHDA)', 'health': 'Медицина', 'malls': 'Моллы и рынки',
+        'unis': 'Университеты', 'mosques': 'Мечети',
+        'metro_in': 'Станции в районе или на его границе: {list}.',
+        'metro_near': 'Внутри района станций метро нет. Ближайшие: {list}.',
+        'tram_in': 'Трамвай: {list}.',
+        'blue': 'Синяя линия (строится, открытие в 2029 г.): {list}.',
+        'km': '{km} км от района', 'dec': ',',
+        'lines': {'red': 'красная ветка', 'green': 'зелёная ветка'},
+        'hospitals': 'Больницы: {list}.', 'clinics': 'Клиник и медцентров: {n}.',
+        'mosques_n': 'Мечетей в районе: {n}.',
+        'more': 'Все — {n} →',
+        'source': 'Источник: OpenStreetMap; рейтинги школ — KHDA.',
+        'ratings': {'outstanding': 'выдающийся', 'very good': 'очень хороший', 'good': 'хороший',
+                    'acceptable': 'приемлемый', 'weak': 'слабый', 'very weak': 'очень слабый'},
+        'q_metro': 'Есть ли метро в {name}?',
+        'a_metro_in': 'Да, в {name} или на его границе есть станции метро: {list}.',
+        'a_metro_near': 'Внутри {name} станций метро нет. Ближайшие: {list}.',
+        'a_tram': ' Также есть остановки трамвая: {list}.',
+    },
+    'en': {
+        'title': 'Metro, schools and amenities in {name}',
+        'metro': 'Metro', 'schools': 'Schools (KHDA)', 'health': 'Healthcare', 'malls': 'Malls and souqs',
+        'unis': 'Universities', 'mosques': 'Mosques',
+        'metro_in': 'Stations in or right next to the district: {list}.',
+        'metro_near': 'No metro station inside the district. Nearest: {list}.',
+        'tram_in': 'Tram: {list}.',
+        'blue': 'Blue Line (under construction, opening 2029): {list}.',
+        'km': '{km} km from the district', 'dec': '.',
+        'lines': {'red': 'Red Line', 'green': 'Green Line'},
+        'hospitals': 'Hospitals: {list}.', 'clinics': 'Clinics and medical centres: {n}.',
+        'mosques_n': 'Mosques in the district: {n}.',
+        'more': 'All {n} →',
+        'source': 'Source: OpenStreetMap; school ratings by KHDA.',
+        'ratings': {'outstanding': 'Outstanding', 'very good': 'Very good', 'good': 'Good',
+                    'acceptable': 'Acceptable', 'weak': 'Weak', 'very weak': 'Very weak'},
+        'q_metro': 'Is there a metro station in {name}?',
+        'a_metro_in': 'Yes, there are metro stations in or right next to {name}: {list}.',
+        'a_metro_near': 'There is no metro station inside {name}. The nearest are {list}.',
+        'a_tram': ' There are also tram stops: {list}.',
+    },
+    'ar': {
+        'title': 'المترو والمدارس والخدمات في {name}',
+        'metro': 'المترو', 'schools': 'المدارس (KHDA)', 'health': 'الرعاية الصحية', 'malls': 'المراكز التجارية والأسواق',
+        'unis': 'الجامعات', 'mosques': 'المساجد',
+        'metro_in': 'محطات داخل المنطقة أو على حدودها: {list}.',
+        'metro_near': 'لا توجد محطة مترو داخل المنطقة. الأقرب: {list}.',
+        'tram_in': 'الترام: {list}.',
+        'blue': 'الخط الأزرق (قيد الإنشاء، الافتتاح 2029): {list}.',
+        'km': '{km} كم من المنطقة', 'dec': '.',
+        'lines': {'red': 'الخط الأحمر', 'green': 'الخط الأخضر'},
+        'hospitals': 'المستشفيات: {list}.', 'clinics': 'العيادات والمراكز الطبية: {n}.',
+        'mosques_n': 'عدد المساجد في المنطقة: {n}.',
+        'more': 'الكل ({n}) ←',
+        'source': 'المصدر: OpenStreetMap؛ تقييمات المدارس من KHDA.',
+        'ratings': {'outstanding': 'متميز', 'very good': 'جيد جداً', 'good': 'جيد',
+                    'acceptable': 'مقبول', 'weak': 'ضعيف', 'very weak': 'ضعيف جداً'},
+        'q_metro': 'هل توجد محطة مترو في {name}؟',
+        'a_metro_in': 'نعم، توجد محطات مترو داخل {name} أو على حدودها: {list}.',
+        'a_metro_near': 'لا توجد محطة مترو داخل {name}. أقرب المحطات: {list}.',
+        'a_tram': ' وتوجد أيضاً محطات ترام: {list}.',
+    },
+    'hi': {
+        'title': '{name} में मेट्रो, स्कूल और सुविधाएं',
+        'metro': 'मेट्रो', 'schools': 'स्कूल (KHDA)', 'health': 'स्वास्थ्य सेवा', 'malls': 'मॉल और बाज़ार',
+        'unis': 'विश्वविद्यालय', 'mosques': 'मस्जिदें',
+        'metro_in': 'ज़िले में या उसकी सीमा पर स्टेशन: {list}।',
+        'metro_near': 'ज़िले के अंदर कोई मेट्रो स्टेशन नहीं है। निकटतम: {list}।',
+        'tram_in': 'ट्राम: {list}।',
+        'blue': 'ब्लू लाइन (निर्माणाधीन, 2029 में शुरू): {list}।',
+        'km': 'ज़िले से {km} किमी', 'dec': '.',
+        'lines': {'red': 'रेड लाइन', 'green': 'ग्रीन लाइन'},
+        'hospitals': 'अस्पताल: {list}।', 'clinics': 'क्लिनिक और मेडिकल सेंटर: {n}।',
+        'mosques_n': 'ज़िले में मस्जिदें: {n}।',
+        'more': 'सभी {n} →',
+        'source': 'स्रोत: OpenStreetMap; स्कूल रेटिंग KHDA द्वारा।',
+        'ratings': {'outstanding': 'Outstanding', 'very good': 'Very good', 'good': 'Good',
+                    'acceptable': 'Acceptable', 'weak': 'Weak', 'very weak': 'Very weak'},
+        'q_metro': 'क्या {name} में मेट्रो स्टेशन है?',
+        'a_metro_in': 'हाँ, {name} में या उसकी सीमा पर मेट्रो स्टेशन हैं: {list}।',
+        'a_metro_near': '{name} के अंदर कोई मेट्रो स्टेशन नहीं है। निकटतम स्टेशन: {list}।',
+        'a_tram': ' ट्राम स्टॉप भी हैं: {list}।',
+    },
+    'zh': {
+        'title': '{name}的地铁、学校和配套设施',
+        'metro': '地铁', 'schools': '学校（KHDA）', 'health': '医疗', 'malls': '商场和市集',
+        'unis': '大学', 'mosques': '清真寺',
+        'metro_in': '区内或边界上的车站：{list}。',
+        'metro_near': '区内没有地铁站。最近的车站：{list}。',
+        'tram_in': '有轨电车：{list}。',
+        'blue': '蓝线（在建，2029 年开通）：{list}。',
+        'km': '距该区 {km} 公里', 'dec': '.',
+        'lines': {'red': '红线', 'green': '绿线'},
+        'hospitals': '医院：{list}。', 'clinics': '诊所和医疗中心：{n} 家。',
+        'mosques_n': '区内清真寺：{n} 座。',
+        'more': '全部 {n} 个 →',
+        'source': '来源：OpenStreetMap；学校评级来自 KHDA。',
+        'ratings': {'outstanding': '杰出', 'very good': '非常好', 'good': '良好',
+                    'acceptable': '可接受', 'weak': '薄弱', 'very weak': '非常薄弱'},
+        'q_metro': '{name}有地铁站吗？',
+        'a_metro_in': '有，{name}区内或边界上有地铁站：{list}。',
+        'a_metro_near': '{name}区内没有地铁站。最近的车站：{list}。',
+        'a_tram': '另有有轨电车站：{list}。',
+    },
+}
+POI_LIST_MAX = 6
+
 # Sub-page list types — all label/text references go through COPY[lang][key].
 # Format per row: (mode, url-fragment, data-field, breadcrumb-key, h1-key,
 #                  lede-key, [(label-key, data-key, kind), ...])
@@ -1321,6 +1432,110 @@ def build_top_projects_html(name, mode, slug, rec, lang):
     return f'<section class="top-projects-preview"><h2>{html_escape(title_text)}</h2>{table_html}{more_link}</section>'
 
 
+_POI_JOIN = {'ru': ', ', 'en': ', ', 'ar': '، ', 'hi': ', ', 'zh': '、'}
+
+
+def _station_label(s, lang):
+    pc = POI_COPY[lang]
+    name = (s.get('name_ar') if lang == 'ar' else None) or s['name']
+    lines = ' + '.join(pc['lines'][g] for g in s['groups'] if g in pc['lines'])
+    return f'{name} ({lines})' if lines else name
+
+
+def _near_label(s, dist, lang):
+    pc = POI_COPY[lang]
+    km = pc['km'].format(km=f'{dist / 1000:.1f}'.replace('.', pc['dec']))
+    return f'{_station_label(s, lang)} — {km}'
+
+
+def _metro_sentences(d, lang, faq=False):
+    """(main sentence, tram sentence) about metro access for a district."""
+    pc = POI_COPY[lang]
+    j = _POI_JOIN[lang]
+    if d['metro_in']:
+        main = (pc['a_metro_in'] if faq else pc['metro_in']), j.join(_station_label(s, lang) for s in d['metro_in'])
+    elif d['metro_near']:
+        main = (pc['a_metro_near'] if faq else pc['metro_near']), j.join(_near_label(s, x, lang) for s, x in d['metro_near'])
+    else:
+        return None, None
+    tram = j.join(s['name'] for s in d['tram_in']) if d['tram_in'] else None
+    return main, tram
+
+
+def build_metro_faq(name, d, lang):
+    """(q, a) for 'Is there a metro station in X?' or None."""
+    if not d:
+        return None
+    pc = POI_COPY[lang]
+    main, tram = _metro_sentences(d, lang, faq=True)
+    if not main:
+        return None
+    a = main[0].format(name=name, list=main[1])
+    if tram:
+        a += pc['a_tram'].format(list=tram)
+    return pc['q_metro'].format(name=name), a
+
+
+def build_pois_html(name, d, lang):
+    """Server-rendered metro / schools / healthcare / malls block for a district page."""
+    if not d:
+        return ''
+    pc = POI_COPY[lang]
+    j = _POI_JOIN[lang]
+    esc = html_escape
+    poi_url = lambda slug: f'{BASE_URL}{lang_prefix(lang)}/{slug}/'
+
+    def card(slug, title, body, n_total=0, shown=0):
+        more = (f'<a class="poi-more" href="{poi_url(slug)}">{esc(pc["more"].format(n=n_total))}</a>'
+                if n_total > shown else '')
+        return f'<div class="poi-card"><h3><a href="{poi_url(slug)}">{esc(title)}</a></h3>{body}{more}</div>'
+
+    cards = []
+    main, tram = _metro_sentences(d, lang)
+    if main:
+        body = f'<p>{esc(main[0].format(list=main[1]))}</p>'
+        if tram:
+            body += f'<p>{esc(pc["tram_in"].format(list=tram))}</p>'
+        if d['blue']:
+            body += f'<p>{esc(pc["blue"].format(list=j.join((s.get("name_ar") if lang == "ar" else None) or s["name"] for s in d["blue"])))}</p>'
+        cards.append(card('metro', pc['metro'], body))
+
+    schools = d['schools']
+    if schools:
+        items = []
+        for r in schools[:POI_LIST_MAX]:
+            meta = [pc['ratings'].get((r.get('rating') or '').lower()), r.get('curriculum')]
+            meta = ' · '.join(m for m in meta if m)
+            items.append(f'<li>{esc(r["name"])}' + (f' <span class="poi-meta">{esc(meta)}</span>' if meta else '') + '</li>')
+        cards.append(card('schools', pc['schools'], f'<ul>{"".join(items)}</ul>', len(schools), POI_LIST_MAX))
+
+    hosp, clinics = d['hospitals'], d['clinics']
+    if hosp or clinics:
+        body = ''
+        if hosp:
+            body += f'<p>{esc(pc["hospitals"].format(list=j.join(hosp[:POI_LIST_MAX])))}</p>'
+        if clinics:
+            body += f'<p>{esc(pc["clinics"].format(n=clinics))}</p>'
+        cards.append(card('medical', pc['health'], body))
+
+    if d['malls']:
+        cards.append(card('malls', pc['malls'], f'<p>{esc(j.join(d["malls"][:POI_LIST_MAX]))}</p>',
+                          len(d['malls']), POI_LIST_MAX))
+
+    if d['unis']:
+        cards.append(card('universities', pc['unis'], f'<p>{esc(j.join(d["unis"][:POI_LIST_MAX]))}</p>',
+                          len(d['unis']), POI_LIST_MAX))
+
+    if d['mosques']:
+        cards.append(card('mosques', pc['mosques'], f'<p>{esc(pc["mosques_n"].format(n=d["mosques"]))}</p>'))
+
+    if not cards:
+        return ''
+    return (f'<section class="district-pois"><h2>{esc(pc["title"].format(name=name))}</h2>'
+            f'<div class="poi-grid">{"".join(cards)}</div>'
+            f'<p class="poi-source">{esc(pc["source"])}</p></section>')
+
+
 RENT_TYPE_MIN_N = 20
 
 
@@ -1340,7 +1555,7 @@ def _rent_type_parts(rent_rec, lang):
         for k, r in rows)
 
 
-def build_district_faq(name, sale_rec, rent_rec, lang):
+def build_district_faq(name, sale_rec, rent_rec, lang, pois=None):
     """Per-district Q&A — visible HTML section + FAQPage JSON-LD, returned
     as one combined string ready to drop into __DISTRICT_FAQ__. Empty if
     the district has too little data for any of the 5 question templates."""
@@ -1401,6 +1616,10 @@ def build_district_faq(name, sale_rec, rent_rec, lang):
             c['q_top'].format(name=name),
             c['a_top'].format(name=name, proj=named_top['proj'].title()),
         ))
+
+    metro_qa = build_metro_faq(name, pois, lang)
+    if metro_qa:
+        qa.append(metro_qa)
 
     if not qa:
         return ''
@@ -1650,6 +1869,7 @@ def main():
     with open(os.path.join(ROOT, 'data', 'aggregates_intermediate', 'rent.json'), encoding='utf-8') as f:
         rent = json.load(f)
     nearby_index = build_nearby_index(agg, rent)
+    poi_index = build_poi_index()
     tx_periods, rents_periods = load_period_aggregates()
     with open(TPL, encoding='utf-8') as f:
         template = f.read()
@@ -1703,7 +1923,9 @@ def main():
                     display_name = ar
                     heading_name = ar if name.endswith('(other)') else f'{ar} ({name})'
             about_html = build_about(display_name, sale_rec, rent_rec, lang, is_dubai=is_dubai)
-            district_faq_html = build_district_faq(display_name, sale_rec, rent_rec, lang)
+            district_pois = poi_index.get(key)
+            district_faq_html = build_district_faq(display_name, sale_rec, rent_rec, lang, district_pois)
+            pois_html = build_pois_html(display_name, district_pois, lang)
 
             for mode, prefix in MODES:
                 base_rec = sale_rec if mode == 'sale' else rent_rec
@@ -1809,6 +2031,7 @@ def main():
                     html = html.replace('<!--__DISTRICT_FAQ__-->', district_faq_html)
                     html = html.replace('<!--__NEARBY__-->', nearby_html)
                     html = html.replace('<!--__TOP_PROJECTS__-->', top_projects_html)
+                    html = html.replace('<!--__DISTRICT_POIS__-->', pois_html)
 
                     html_path = os.path.join(out_dir, 'index.html')
                     with open(html_path, 'w', encoding='utf-8') as f:
