@@ -51,6 +51,27 @@ RENTS_WHITELIST = set(_SEO_WL['rents'])
 PERIOD_EXCEPTIONS = set(_SEO_WL.get('period_subpage_exceptions', []))
 NOINDEX_META = '<meta name="robots" content="noindex,follow">'
 
+# Arabic district names for /ar/ pages: curated polygon name_ar, DLD spelling where a key has no polygon.
+_AR_NAME_FALLBACK = {
+    'al mararr': 'المرر',
+    'dubai maritime city': 'مدينة دبي الملاحية',
+    'al kheeran': 'الخيران',
+    'international media production zone': 'المنطقة العالمية للإنتاج الإعلامي',
+    'dmcc master community': 'مركز دبي للسلع المتعددة',
+}
+with open(os.path.join(ROOT, 'data', 'curated_polygons.geojson'), encoding='utf-8') as _f:
+    AR_NAMES = {**_AR_NAME_FALLBACK,
+                **{ft['properties']['key']: ft['properties']['name_ar']
+                   for ft in json.load(_f)['features']
+                   if ft['properties'].get('key') and ft['properties'].get('name_ar')}}
+
+
+def ar_name_for(key, name):
+    ar = AR_NAMES.get(key)
+    if ar and name.endswith('(other)') and 'أخرى' not in ar:
+        ar += ' (مناطق أخرى)'
+    return ar
+
 
 def _should_noindex(mode, slug, lang, *, sub_slug=None, period_code=None):
     """Return True iff this URL must carry the noindex meta tag.
@@ -268,7 +289,7 @@ COPY = {
         'about_room_villa':   'villas',
         'about_room_other':   'other',
         'h1_sales': 'Real estate transactions in {name} {period_h1}',
-        'h1_rent':  'Real estate rentals in {name} {period_h1}',
+        'h1_rent':  'Rent prices in {name}, Dubai — {period_h1}',
         'lede_sales_intro':    'In {name} {period_h1}, {n} property transactions have been recorded according to the Dubai Land Department.',
         'lede_sales_median':   'Median property price — {v} AED.',
         'lede_sales_ppsqm':    'Price per square meter — {v} AED.',
@@ -278,12 +299,12 @@ COPY = {
         'lede_rent_ppsqm':     'Rent per area — {v} AED/m²/year.',
         'title_sales':       '{name} Sale Transactions{period_title}: Median AED {med} — {n} DLD Deals',
         'title_sales_nomed': '{name} Sale Transactions{period_title}: {n} DLD Deals',
-        'title_rent':        '{name} Rent Transactions{period_title}: Median AED {med}/Year — {n} DLD Contracts',
-        'title_rent_nomed':  '{name} Rent Transactions{period_title}: {n} DLD Contracts',
+        'title_rent':        '{name} Rent Prices{period_title}: Median AED {med}/Year — {n} DLD Contracts',
+        'title_rent_nomed':  '{name} Rent Prices{period_title}: {n} DLD Contracts',
         'desc_sales':        '{n} real sale transactions in {name} from Dubai Land Department. Median price AED {med}. Top projects, price per m², monthly trend — free.',
         'desc_sales_nomed':  'Sale transactions in {name}: {n} real Dubai Land Department deals. Top projects, price per m², monthly trend — free.',
-        'desc_rent':         '{n} real rent transactions in {name} from Dubai Land Department. Median annual rent AED {med}. Studio to 4BR+ prices, monthly trend — free.',
-        'desc_rent_nomed':   'Rent transactions in {name}: {n} real Dubai Land Department lease contracts. Studio to 4BR+ prices, monthly trend — free.',
+        'desc_rent':         'Rent prices in {name}: median annual rent AED {med} across {n} registered Ejari contracts (Dubai Land Department). Studio to 4BR+ and villa rents, monthly trend — free.',
+        'desc_rent_nomed':   'Rent prices in {name} from {n} registered Ejari contracts (Dubai Land Department). Studio to 4BR+ and villa rents, monthly trend — free.',
         'list_h1_top_projects_sale': 'Top projects in {name} by sales',
         'list_h1_top_deals':         'Largest transactions in {name}',
         'list_h1_recent_sale':       'Recent transactions in {name}',
@@ -366,7 +387,7 @@ COPY = {
         'about_room_villa':   'فلل',
         'about_room_other':   'أخرى',
         'h1_sales': 'صفقات العقارات في {name} {period_h1}',
-        'h1_rent':  'إيجار العقارات في {name} {period_h1}',
+        'h1_rent':  'إيجارات العقارات في {name} {period_h1}',
         'lede_sales_intro':    'في حي {name} {period_h1} تم تسجيل {n} صفقة عقارية وفقًا لبيانات دائرة الأراضي والأملاك بدبي.',
         'lede_sales_median':   'السعر الوسيط للعقار — {v} درهم.',
         'lede_sales_ppsqm':    'السعر للمتر المربع — {v} درهم.',
@@ -376,8 +397,8 @@ COPY = {
         'lede_rent_ppsqm':     'الإيجار للمتر — {v} درهم/م²/سنة.',
         'title_sales':       '{name}: صفقات بيع العقارات{period_title} — متوسط {med} درهم، {n} صفقة DLD',
         'title_sales_nomed': '{name}: صفقات بيع العقارات{period_title} — {n} صفقة DLD',
-        'title_rent':        '{name}: صفقات الإيجار{period_title} — متوسط {med} درهم/سنة، {n} عقد DLD',
-        'title_rent_nomed':  '{name}: صفقات الإيجار{period_title} — {n} عقد DLD',
+        'title_rent':        'إيجارات {name}{period_title}: متوسط {med} درهم/سنة — {n} عقد إيجار DLD',
+        'title_rent_nomed':  'إيجارات {name}{period_title}: {n} عقد إيجار DLD',
         'desc_sales':        '{n} صفقة بيع حقيقية في {name} من دائرة الأراضي والأملاك بدبي. متوسط السعر {med} درهم. أهم المشاريع، السعر للمتر، التغير الشهري — مجانًا.',
         'desc_sales_nomed':  'صفقات بيع العقارات في {name}: {n} صفقة حقيقية من دائرة الأراضي والأملاك بدبي. أهم المشاريع، السعر للمتر، التغير الشهري — مجانًا.',
         'desc_rent':         '{n} عقد إيجار حقيقي في {name} من دائرة الأراضي والأملاك بدبي. متوسط الإيجار السنوي {med} درهم. الأسعار من الاستوديو إلى 4+ غرف، التغير الشهري — مجانًا.',
@@ -623,6 +644,9 @@ COPY = {
 }
 
 DUBAI_COPY_OVERRIDES = {
+    'en': {
+        'h1_rent': 'Rent prices in Dubai — {period_h1}',
+    },
     'ru': {
         'h1_sales': 'Сделки с недвижимостью в Дубае {period_h1}',
         'h1_rent':  'Аренда недвижимости в Дубае {period_h1}',
@@ -657,6 +681,11 @@ FAQ_COPY = {
         'q_rent':   'Какая средняя аренда в {name}?',
         'a_rent':   'Медианная годовая аренда в {name} — {med} AED. '
                     'Всего зарегистрировано {n} договоров аренды (Ejari).',
+        'q_rent_types': 'Сколько стоит аренда квартиры или виллы в {name}?',
+        'a_rent_types': 'Медианная годовая аренда в {name} по типам: {parts}. По зарегистрированным договорам Ejari в Dubai Land Department.',
+        'rent_type_labels': {'studio': 'студия', '1br': '1 спальня', '2br': '2 спальни', '3br': '3 спальни', '4br+': '4+ спальни', 'villa': 'вилла'},
+        'rent_type_fmt': '{label} — {v} AED',
+        'rent_type_join': '; ',
         'q_rent_history': 'Есть ли данные по договорам аренды в {name}?',
         'a_rent_history': 'Да — на DXBCompass доступна история договоров аренды (Ejari) '
                           'в {name}: {n} зарегистрированных договоров с суммой аренды, '
@@ -682,6 +711,11 @@ FAQ_COPY = {
         'q_rent':   'What is the average rent in {name}?',
         'a_rent':   'The median annual rent in {name} is {med} AED. '
                     'A total of {n} rental contracts (Ejari) are registered.',
+        'q_rent_types': 'How much does it cost to rent an apartment or villa in {name}?',
+        'a_rent_types': 'Median annual rent in {name} by unit type: {parts}. Based on registered Ejari contracts in the Dubai Land Department.',
+        'rent_type_labels': {'studio': 'studio', '1br': '1-bedroom', '2br': '2-bedroom', '3br': '3-bedroom', '4br+': '4+ bedrooms', 'villa': 'villa'},
+        'rent_type_fmt': '{label} — {v} AED',
+        'rent_type_join': '; ',
         'q_rent_history': 'Is rental transaction data available for {name}?',
         'a_rent_history': 'Yes — DXBCompass tracks the rent transaction history for {name}: '
                           '{n} registered Ejari contracts with rent amount, date and property '
@@ -708,6 +742,11 @@ FAQ_COPY = {
         'q_rent':   'ما متوسط الإيجار في {name}؟',
         'a_rent':   'الإيجار السنوي الوسيط في {name} هو {med} درهم. '
                     'إجمالي {n} عقد إيجار مسجل (إيجاري).',
+        'q_rent_types': 'كم تبلغ تكلفة استئجار شقة أو فيلا في {name}؟',
+        'a_rent_types': 'الإيجار السنوي الوسيط في {name} حسب نوع الوحدة: {parts}. استنادًا إلى عقود إيجاري المسجلة في دائرة الأراضي والأملاك في دبي.',
+        'rent_type_labels': {'studio': 'استوديو', '1br': 'غرفة نوم واحدة', '2br': 'غرفتا نوم', '3br': '3 غرف نوم', '4br+': '4+ غرف نوم', 'villa': 'فيلا'},
+        'rent_type_fmt': '{label} — {v} درهم',
+        'rent_type_join': '؛ ',
         'q_rent_history': 'هل تتوفر بيانات عقود الإيجار في {name}؟',
         'a_rent_history': 'نعم — يوفر DXBCompass سجل عقود الإيجار (إيجاري) في {name}: '
                           '{n} عقد مسجل مع قيمة الإيجار والتاريخ ونوع العقار، ويُحدَّث أسبوعيًا.',
@@ -732,6 +771,11 @@ FAQ_COPY = {
         'q_rent':   '{name} में औसत किराया क्या है?',
         'a_rent':   '{name} में मध्यिका वार्षिक किराया {med} AED है। '
                     'कुल {n} किराये के अनुबंध (Ejari) पंजीकृत हैं।',
+        'q_rent_types': '{name} में अपार्टमेंट या विला किराए पर लेने में कितना खर्च आता है?',
+        'a_rent_types': '{name} में यूनिट प्रकार के अनुसार मध्यिका वार्षिक किराया: {parts}। Dubai Land Department में पंजीकृत Ejari अनुबंधों पर आधारित।',
+        'rent_type_labels': {'studio': 'स्टूडियो', '1br': '1 बेडरूम', '2br': '2 बेडरूम', '3br': '3 बेडरूम', '4br+': '4+ बेडरूम', 'villa': 'विला'},
+        'rent_type_fmt': '{label} — AED {v}',
+        'rent_type_join': '; ',
         'q_rent_history': 'क्या {name} में किराये के अनुबंधों का डेटा उपलब्ध है?',
         'a_rent_history': 'हाँ — DXBCompass पर {name} के Ejari किराया अनुबंधों का इतिहास '
                           'उपलब्ध है: {n} पंजीकृत अनुबंध किराया राशि, तारीख और प्रॉपर्टी '
@@ -756,6 +800,11 @@ FAQ_COPY = {
         'q_rent':   '{name} 的平均租金是多少？',
         'a_rent':   '{name} 的年租金中位数为 {med} 迪拉姆。'
                     '已登记 {n} 份租赁合同（Ejari）。',
+        'q_rent_types': '在 {name} 租一套公寓或别墅要多少钱？',
+        'a_rent_types': '{name} 按户型划分的年租金中位数：{parts}。基于迪拜土地局登记的 Ejari 租约。',
+        'rent_type_labels': {'studio': '开间', '1br': '一居室', '2br': '两居室', '3br': '三居室', '4br+': '四居及以上', 'villa': '别墅'},
+        'rent_type_fmt': '{label} {v} 迪拉姆',
+        'rent_type_join': '；',
         'q_rent_history': '{name} 是否有租赁合同数据？',
         'a_rent_history': '有 — DXBCompass 提供 {name} 的 Ejari 租赁合同历史记录：'
                           '{n} 份登记合同，包含租金、日期和物业类型，每周更新。',
@@ -1240,7 +1289,8 @@ def build_nearby_html(name, mode, lang, key, nearby_index, sale_agg, rent_agg):
             continue
         n_name = rec.get('name') or nk.title()
         n_slug = slugify(n_name)
-        items.append((n_name, base_url(mode, n_slug, lang)))
+        label = (ar_name_for(nk, n_name) if lang == 'ar' else None) or n_name
+        items.append((label, base_url(mode, n_slug, lang)))
 
     if not items:
         return ''
@@ -1269,6 +1319,25 @@ def build_top_projects_html(name, mode, slug, rec, lang):
     full_url = base_url(mode, slug, lang) + 'projects/'
     more_link = f'<p><a href="{full_url}">{html_escape(c["see_full_list"])}</a></p>'
     return f'<section class="top-projects-preview"><h2>{html_escape(title_text)}</h2>{table_html}{more_link}</section>'
+
+
+RENT_TYPE_MIN_N = 20
+
+
+def _rent_type_parts(rent_rec, lang):
+    """'studio — 54,000 AED; 1-bedroom — …; villa — …' from rent medians by unit type."""
+    c = FAQ_COPY[lang]
+    rooms = rent_rec.get('by_rooms_unit') or {}
+    rows = [(k, rooms[k]) for k in ('studio', '1br', '2br', '3br', '4br+') if k in rooms]
+    villa = (rent_rec.get('by_subtype') or {}).get('Villa')
+    if villa:
+        rows.append(('villa', villa))
+    rows = [(k, r) for k, r in rows if r.get('n', 0) >= RENT_TYPE_MIN_N and r.get('med')]
+    if len(rows) < 2:
+        return ''
+    return c['rent_type_join'].join(
+        c['rent_type_fmt'].format(label=c['rent_type_labels'][k], v=fmt_aed(r['med'], lang))
+        for k, r in rows)
 
 
 def build_district_faq(name, sale_rec, rent_rec, lang):
@@ -1303,6 +1372,12 @@ def build_district_faq(name, sale_rec, rent_rec, lang):
                                med=fmt_aed(rent_rec['med_annual'], lang),
                                n=fmt_int(rent_rec['n'], lang)),
         ))
+        parts = _rent_type_parts(rent_rec, lang)
+        if parts:
+            qa.append((
+                c['q_rent_types'].format(name=name),
+                c['a_rent_types'].format(name=name, parts=parts),
+            ))
         qa.append((
             c['q_rent_history'].format(name=name),
             c['a_rent_history'].format(name=name, n=fmt_int(rent_rec['n'], lang)),
@@ -1370,7 +1445,7 @@ def _breadcrumb_ld(items):
             + '</script>')
 
 
-def build_seo_head(mode, name, slug, rec, period_code, lang):
+def seo_title_desc(mode, name, rec, period_code, lang):
     c = COPY[lang]
     n = rec.get('n', 0) if isinstance(rec, dict) else int(rec)
     # Sales aggregates store the median as `med`; the rent intermediate uses
@@ -1387,8 +1462,6 @@ def build_seo_head(mode, name, slug, rec, period_code, lang):
         period_title_suffix = f' {datetime.date.today().year}'
     else:
         period_title_suffix = PERIOD_SUFFIX[lang][period_code]['title']
-    base_canon = base_url(mode, slug, lang)
-    canon = base_canon if period_code == 'all' else base_canon + period_code + '/'
     has_med = bool(med)
     if mode == 'sale':
         title_key = 'title_sales' if has_med else 'title_sales_nomed'
@@ -1399,8 +1472,14 @@ def build_seo_head(mode, name, slug, rec, period_code, lang):
     fmt_kwargs = dict(name=name, period_title=period_title_suffix, n=n_s)
     if has_med:
         fmt_kwargs['med'] = fmt_aed(med, lang)
-    title = c[title_key].format(**fmt_kwargs)
-    desc  = c[desc_key].format(**fmt_kwargs)
+    return c[title_key].format(**fmt_kwargs), c[desc_key].format(**fmt_kwargs)
+
+
+def build_seo_head(mode, name, slug, rec, period_code, lang):
+    c = COPY[lang]
+    title, desc = seo_title_desc(mode, name, rec, period_code, lang)
+    base_canon = base_url(mode, slug, lang)
+    canon = base_canon if period_code == 'all' else base_canon + period_code + '/'
 
     def period_url(l):
         u = base_url(mode, slug, l)
@@ -1617,6 +1696,12 @@ def main():
             # every text touchpoint (H1, lede, About, FAQ) so RU readers see
             # "Дубай" rather than the raw English key.
             display_name = c['breadcrumb_dubai'] if key == '__dubai__' else name
+            heading_name = display_name
+            if lang == 'ar' and not is_dubai:
+                ar = ar_name_for(key, name)
+                if ar:
+                    display_name = ar
+                    heading_name = ar if name.endswith('(other)') else f'{ar} ({name})'
             about_html = build_about(display_name, sale_rec, rent_rec, lang, is_dubai=is_dubai)
             district_faq_html = build_district_faq(display_name, sale_rec, rent_rec, lang)
 
@@ -1661,9 +1746,10 @@ def main():
                     if not rec_for_period.get('n') and period_code != 'all':
                         rec_for_period = base_rec
                     n_p = rec_for_period.get('n', 0)
-                    headline, _ = build_headline(mode, display_name, period_h1, n_p, lang, is_dubai=is_dubai)
+                    headline, _ = build_headline(mode, heading_name, period_h1, n_p, lang, is_dubai=is_dubai)
                     lede = build_lede(mode, display_name, period_h1, rec_for_period, lang, is_dubai=is_dubai)
-                    period_copy[period_code] = {'h1': headline, 'lede': lede, 'n': n_p, 'rec': rec_for_period}
+                    title, _ = seo_title_desc(mode, heading_name, rec_for_period, period_code, lang)
+                    period_copy[period_code] = {'h1': headline, 'title': title, 'lede': lede, 'n': n_p, 'rec': rec_for_period}
 
                 bread_mode = c['mode_sales'] if mode == 'sale' else c['mode_rents']
 
@@ -1684,7 +1770,7 @@ def main():
                     html = html.replace('<html lang="ru">',
                                         f'<html lang="{html_lang}" dir="{html_dir}">')
                     html = html.replace('<!--__SEO_HEAD__-->',
-                                        build_seo_head(mode, display_name, slug, copy_now['rec'], period_code, lang))
+                                        build_seo_head(mode, heading_name, slug, copy_now['rec'], period_code, lang))
                     html = html.replace('__ASSET_BASE__', '')
                     html = html.replace('__BREADCRUMB_DUBAI__', html_escape(c['breadcrumb_dubai']))
                     html = html.replace('__MODE_INDEX_URL__', f'{lang_prefix(lang)}/{prefix}/')
@@ -1706,6 +1792,8 @@ def main():
                     html = html.replace('__NAV_TABLE_LABEL__', html_escape(c['nav_table']))
                     html = html.replace("/*__DISTRICT_KEY__*/''",  json.dumps(key))
                     html = html.replace("/*__DISTRICT_NAME__*/''", json.dumps(name))
+                    html = html.replace("/*__DISTRICT_LABEL__*/''", json.dumps(display_name, ensure_ascii=False))
+                    html = html.replace('__DISTRICT_LABEL_HTML__', html_escape(display_name))
                     html = html.replace("/*__PAGE_MODE__*/'sale'", json.dumps(mode))
                     html = html.replace("/*__PAGE_PERIOD__*/'all'", json.dumps(period_code))
                     html = html.replace("/*__PAGE_LANG__*/'ru'", json.dumps(lang))
