@@ -270,7 +270,8 @@
     {
       "_comment": "Al Hebiah Fourth — Dubai Sports City (41k) + Tilal Al Ghaf (6.7k). 99% clean two-way split, no remainder needed.",
       "area_name_en": "Al Hebiah Fourth",
-      "keep_remainder": false,
+      "keep_remainder": true,
+      "remainder_name": "Al Hebiah Fourth",
       "sub_polygons": [
         {
           "name": "Dubai Sports City",
@@ -350,7 +351,8 @@
     {
       "_comment": "Madinat Al Mataar — admin shell of Dubai South (rebrand of Dubai World Central, 2015). 3 clean splits: Dubai South (21k, the umbrella zone — aviation/logistics/business/golf), Dubai South Residential (15k), Expo City (4k). DLD master_project_en still uses the old 'Dubai World Central' string; we surface the modern brand 'Dubai South' as the display name.",
       "area_name_en": "Madinat Al Mataar",
-      "keep_remainder": false,
+      "keep_remainder": true,
+      "remainder_name": "Madinat Al Mataar",
       "sub_polygons": [
         {
           "name": "Dubai South Residential",
@@ -452,7 +454,8 @@
     {
       "_comment": "Al Hebiah Third — DAMAC Hills is 94.9% of data. Mudon (4.8%) already has its own DM polygon under Al Hebiah Sixth (15.9k), no split needed here.",
       "area_name_en": "Al Hebiah Third",
-      "keep_remainder": false,
+      "keep_remainder": true,
+      "remainder_name": "Al Hebiah Third",
       "sub_polygons": [
         {
           "name": "DAMAC Hills",
@@ -542,7 +545,8 @@
     {
       "_comment": "Al Kheeran — Festival City is 94% of data (1156/1236 tx). A few nulls go unattributed.",
       "area_name_en": "Al Kheeran",
-      "keep_remainder": false,
+      "keep_remainder": true,
+      "remainder_name": "Al Kheeran",
       "sub_polygons": [
         {
           "name": "Dubai Festival City",

@@ -212,13 +212,29 @@
       "dld_area_name_en": "Nad Al Shiba First",
       "display_name": "Meydan",
       "display_name_ar": "ميدان"
+    },
+    {
+      "_comment": "Same Arabic name (المرر). 229k rentals, Deira.",
+      "dm_name": "AL MURAR",
+      "dld_area_name_en": "Al Mararr"
+    },
+    {
+      "_comment": "Same Arabic name (أم الدمن).",
+      "dm_name": "UMM AL DAMAN",
+      "dld_area_name_en": "Umm Addamin"
+    },
+    {
+      "_comment": "DLD 'Island 2' (master Jumeira Bay) is the Bulgari island — OSM Bulgari Hotel and Jumeira Bay Island sit in the DM JUMEIRA BAY polygon, not JUMEIRA ISLAND 2.",
+      "dm_name": "JUMEIRA BAY",
+      "dld_area_name_en": "Island 2",
+      "display_name": "Jumeira Bay",
+      "display_name_ar": "جزيرة خليج جميرا"
     }
   ],
 
   "_unsure_skipped": [
     "AL THANYAH SECOND — fuzzy says 'Al Nahda Second' but they're likely different",
     "OUD AL MUTEENA → Al Muteena — these may be separate Deira neighbourhoods",
-    "AL MURAR — DLD has only 'Al-Murar Qadeem' (59) / 'Al-Murar Jadeed' (29); skipping till verified",
     "AL HATHMAH → AL Athbah — different places",
     "MEREIYEEL, AL O'SHOOSH, AL WOHOOSH, HEFAIR, MARGAB, ENKHALI — peripheral, ≤50 tx if anything"
   ],
