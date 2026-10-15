@@ -571,6 +571,70 @@ for _, row in d_tl_rooms.iterrows():
     })
 
 out['__dubai__']  = dubai
+
+# ─── Per-period summaries: the single source for map periods, period pages and the app ─
+# Same windows as the old build_rents_map.py (contract start ≥ today − N×365 days).
+print('period summaries (1y/3y/5y/10y)...', file=sys.stderr)
+from datetime import timedelta
+PERIOD_YEARS = [('1y', 1), ('3y', 3), ('5y', 5), ('10y', 10)]
+
+def period_summaries(dfrom, src, kx):
+    """{key: summary} for contracts starting on/after dfrom. src = r (area + project copies) or r_p."""
+    w = f"FROM {src} WHERE d >= '{dfrom}'"
+    res = {}
+    for _, row in q(f"""SELECT {kx} AS k, ANY_VALUE(area_orig) AS name, COUNT(*) AS n,
+          COUNT(*) FILTER (WHERE rt = 'New') AS new, COUNT(*) FILTER (WHERE rt = 'Renew') AS renewed,
+          ROUND(MEDIAN(amt) FILTER (WHERE amt > 0)) AS med_annual, ROUND(AVG(amt) FILTER (WHERE amt > 0)) AS mean_annual,
+          ROUND(QUANTILE_CONT(amt,0.25) FILTER (WHERE amt > 0)) AS p25, ROUND(QUANTILE_CONT(amt,0.75) FILTER (WHERE amt > 0)) AS p75,
+          ROUND(QUANTILE_CONT(amt,0.90) FILTER (WHERE amt > 0)) AS p90,
+          ROUND(MEDIAN(sqm) FILTER (WHERE sqm > 0), 1) AS med_sqm,
+          ROUND(MEDIAN(amt/sqm) FILTER (WHERE amt > 0 AND sqm > 0)) AS med_ppsqm
+          {w} GROUP BY 1""").iterrows():
+        res[row['k']] = {'name': row['name'], 'n': int(row['n']), 'new': int(row['new']), 'renewed': int(row['renewed']),
+                         'med_annual': safe_int(row['med_annual']), 'mean_annual': safe_int(row['mean_annual']),
+                         'p25': safe_int(row['p25']), 'p75': safe_int(row['p75']), 'p90': safe_int(row['p90']),
+                         'med_sqm': safe_float(row['med_sqm']), 'med_ppsqm': safe_int(row['med_ppsqm']),
+                         'by_rooms_unit': {}, 'by_subtype': {}, 'by_usage': {}, 'top_projects': []}
+    for _, row in q(f"""SELECT {kx} AS k, rooms, COUNT(*) AS n, ROUND(MEDIAN(amt) FILTER (WHERE amt > 0)) AS med,
+          ROUND(MEDIAN(sqm) FILTER (WHERE sqm > 0), 1) AS med_sqm,
+          ROUND(MEDIAN(amt/sqm) FILTER (WHERE amt > 0 AND sqm > 0)) AS med_ppsqm {w} GROUP BY 1, 2""").iterrows():
+        res[row['k']]['by_rooms_unit'][row['rooms']] = {'n': int(row['n']), 'med': safe_int(row['med']),
+                                                        'med_sqm': safe_float(row['med_sqm']), 'med_ppsqm': safe_int(row['med_ppsqm'])}
+    for _, row in q(f"""SELECT {kx} AS k, sub, COUNT(*) AS n, ROUND(MEDIAN(amt) FILTER (WHERE amt > 0)) AS med,
+          ROUND(MEDIAN(sqm) FILTER (WHERE sqm > 0), 1) AS med_sqm,
+          ROUND(MEDIAN(amt/sqm) FILTER (WHERE amt > 0 AND sqm > 0)) AS med_ppsqm {w} GROUP BY 1, 2""").iterrows():
+        res[row['k']]['by_subtype'][row['sub']] = {'n': int(row['n']), 'med': safe_int(row['med']),
+                                                   'med_sqm': safe_float(row['med_sqm']), 'med_ppsqm': safe_int(row['med_ppsqm'])}
+    for _, row in q(f"SELECT {kx} AS k, usage AS u, COUNT(*) AS n {w} GROUP BY 1, 2").iterrows():
+        res[row['k']]['by_usage'][row['u']] = int(row['n'])
+    for _, row in q(f"""WITH g AS (SELECT {kx} AS k, proj, COUNT(*) AS n, ROUND(MEDIAN(amt) FILTER (WHERE amt > 0)) AS med {w} GROUP BY 1, 2),
+          ranked AS (SELECT *, ROW_NUMBER() OVER (PARTITION BY k ORDER BY n DESC) AS rn FROM g)
+          SELECT * FROM ranked WHERE rn <= 10 ORDER BY k, rn""").iterrows():
+        res[row['k']]['top_projects'].append({'proj': row['proj'], 'n': int(row['n']), 'med': safe_int(row['med'])})
+    return res
+
+TODAY_D = date.today()
+SEC_KEYS = {row[0] for row in con.execute("SELECT k FROM sec_keys").fetchall()}
+shards = {}
+for code, yrs in PERIOD_YEARS + [('all', None)]:
+    dfrom = DATE_FROM if yrs is None else (TODAY_D - timedelta(days=365 * yrs)).isoformat()
+    per = period_summaries(dfrom, 'r', 'k')
+    per['__dubai__'] = period_summaries(dfrom, 'r_p', "'__dubai__'").get('__dubai__') or {}
+    if code != 'all':
+        for k, e in out.items():
+            if k in per and isinstance(e, dict) and k != '__period__':
+                e.setdefault('periods', {})[code] = per[k]
+    shards[code] = {k: {'name': (out.get(k) or {}).get('name') or e['name'], 'n': e['n'], 'med': e['med_annual'],
+                        'med_sqm': e['med_sqm'], 'med_ppsqm': e['med_ppsqm']}
+                    for k, e in per.items() if e and e.get('n') and k not in SEC_KEYS}
+    shards[code]['__dubai__']['name'] = 'DUBAI'
+
+# Map period shards (rents/data/{1y..all}.json) — polygon keys only, headline fields, per-unit rent
+MAP_OUT = os.path.join(ROOT, 'rents', 'data')
+for code, shard in shards.items():
+    with open(os.path.join(MAP_OUT, f'{code}.json'), 'w', encoding='utf-8') as f:
+        json.dump(shard, f, ensure_ascii=False, separators=(',', ':'))
+    print(f'  wrote rents/data/{code}.json  areas={len(shard) - 1}', file=sys.stderr)
 out['__period__'] = {'min': DATE_FROM, 'max': DATE_TO}
 
 with open(OUT, 'w', encoding='utf-8') as f:

@@ -174,7 +174,6 @@ COPY = {
         'within_n_rent': '{n} договоров',
         'lede_no_period_sale': 'В {name} {period_h1} сделок не зарегистрировано. Данные за всё время:',
         'lede_no_period_rent': 'В {name} {period_h1} договоров аренды не зарегистрировано. Данные за всё время:',
-        'about_alltime': 'Данные за всё время наблюдений DLD.',
         'about_room_land': 'земельные участки',
         'about_room_commercial': 'коммерческая недвижимость',
         'about_rent_hint_plain': 'Также зарегистрировано {n} договоров аренды.',
@@ -282,7 +281,6 @@ COPY = {
         'within_n_rent': '{n} contracts',
         'lede_no_period_sale': 'No sale transactions were registered in {name} {period_h1}. All-time figures:',
         'lede_no_period_rent': 'No rental contracts were registered in {name} {period_h1}. All-time figures:',
-        'about_alltime': 'All-time figures across DLD records.',
         'about_room_land': 'land plots',
         'about_room_commercial': 'commercial property',
         'about_rent_hint_plain': '{n} rental contracts have also been recorded.',
@@ -390,7 +388,6 @@ COPY = {
         'within_n_rent': '{n} عقد',
         'lede_no_period_sale': 'لم تُسجَّل أي صفقات بيع في {name} {period_h1}. بيانات كل الفترات:',
         'lede_no_period_rent': 'لم تُسجَّل أي عقود إيجار في {name} {period_h1}. بيانات كل الفترات:',
-        'about_alltime': 'بيانات كل الفترات في سجلات دائرة الأراضي.',
         'about_room_land': 'قطع أراضٍ',
         'about_room_commercial': 'عقارات تجارية',
         'about_rent_hint_plain': 'كما سُجّل {n} عقد إيجار.',
@@ -498,7 +495,6 @@ COPY = {
         'within_n_rent': '{n} अनुबंध',
         'lede_no_period_sale': '{name} में {period_h1} कोई बिक्री लेनदेन दर्ज नहीं हुआ। सर्व समय के आंकड़े:',
         'lede_no_period_rent': '{name} में {period_h1} कोई किराया अनुबंध दर्ज नहीं हुआ। सर्व समय के आंकड़े:',
-        'about_alltime': 'DLD रिकॉर्ड के सर्व समय के आंकड़े।',
         'about_room_land': 'भूमि प्लॉट',
         'about_room_commercial': 'वाणिज्यिक संपत्ति',
         'about_rent_hint_plain': '{n} किराया अनुबंध भी दर्ज हैं।',
@@ -606,7 +602,6 @@ COPY = {
         'within_n_rent': '{n} 份合同',
         'lede_no_period_sale': '{name}{period_h1}没有登记的销售交易。以下为全部时间数据：',
         'lede_no_period_rent': '{name}{period_h1}没有登记的租赁合同。以下为全部时间数据：',
-        'about_alltime': 'DLD 全部记录期间的数据。',
         'about_room_land': '土地',
         'about_room_commercial': '商业物业',
         'about_rent_hint_plain': '另有 {n} 份租赁合同登记。',
@@ -1116,20 +1111,6 @@ def extract_const(text, name):
     return json.loads(m.group(1))
 
 
-def load_period_aggregates():
-    """Pulls TX_PERIODS / RENTS_PERIODS from on-disk JSON (more reliable than
-    grepping the 14MB inline HTML)."""
-    tx, rt = {}, {}
-    for code in ('1y','3y','5y','10y','all'):
-        p = os.path.join(ROOT, 'transactions', 'data', f'{code}.json')
-        if os.path.exists(p):
-            with open(p) as f: tx[code] = json.load(f)
-        p = os.path.join(ROOT, 'rents', 'data', f'{code}.json')
-        if os.path.exists(p):
-            with open(p) as f: rt[code] = json.load(f)
-    return tx, rt
-
-
 # Locale-aware number / currency formatters.
 # RU uses a non-breaking space as thousands separator; EN uses comma; AR/HI use comma.
 _INT_SEP = {'ru': ' ', 'en': ',', 'ar': ',', 'hi': ',', 'zh': ','}
@@ -1157,16 +1138,11 @@ def fmt_aed(n, lang='ru'):
 def fmt_int_ru(n): return fmt_int(n, 'ru')
 
 
-def period_n_for(rec, period_aggs, key, period):
-    """Get period-specific transaction/contract count for a district."""
-    d = period_aggs.get(period, {})
-    r = d.get(key)
-    if r and r.get('n'): return r['n']
-    return rec.get('n', 0)
-
-
-def period_record_for(period_aggs, key, period):
-    return (period_aggs.get(period, {}) or {}).get(key) or {}
+def period_record_for(rec, period):
+    """Full summary of one period window from the aggregates; 'all' is the record itself."""
+    if period == 'all':
+        return rec or {}
+    return ((rec or {}).get('periods') or {}).get(period) or {}
 
 
 def _copy_for(lang, is_dubai=False):
@@ -1195,6 +1171,7 @@ def build_lede(mode, name, period_h1, rec, lang, is_dubai=False):
         if ppsqm:  pieces.append(c['lede_sales_ppsqm'].format(v=fmt_int(ppsqm, lang)))
         if sqm:    pieces.append(c['lede_sales_sqm'].format(v=f'{sqm:.0f}'))
         return ' '.join(pieces)
+    med = med or rec.get('med_annual', 0)
     pieces = [c['lede_rent_intro'].format(name=name, period_h1=period_h1, n=fmt_int(n, lang))]
     if med:    pieces.append(c['lede_rent_median'].format(v=fmt_aed(med, lang)))
     if ppsqm:  pieces.append(c['lede_rent_ppsqm'].format(v=fmt_int(ppsqm, lang)))
@@ -1262,8 +1239,7 @@ def build_about(name, sale_rec, rent_rec, lang, is_dubai=False):
     if not facts:
         facts.append(c['about_unknown'].format(name=name))
 
-    intro = (f'<p class="about-note">{html_escape(c["about_alltime"])}</p>'
-             f'<p>{c["about_intro"].format(name=name)}' + ' '.join(facts) + '</p>')
+    intro = f'<p>{c["about_intro"].format(name=name)}' + ' '.join(facts) + '</p>'
 
     grid_items = []
     if n_total:
@@ -1752,7 +1728,6 @@ def main():
     nearby_index = build_nearby_index(agg, rent)
     split_children = load_split_children()
     poi_index = build_poi_index()
-    tx_periods, rents_periods = load_period_aggregates()
     with open(TPL, encoding='utf-8') as f:
         template = f.read()
     with open(TPL_LIST, encoding='utf-8') as f:
@@ -1804,7 +1779,7 @@ def main():
                 if ar:
                     display_name = ar
                     heading_name = ar if name.endswith('(other)') else f'{ar} ({name})'
-            about_html = build_about(display_name, sale_rec, rent_rec, lang, is_dubai=is_dubai)
+            about_html = build_about(display_name, sale_rec, rent_rec, lang, is_dubai=is_dubai)  # all-time (list pages)
             district_pois = poi_index.get(key)
             district_faq_html = build_district_faq(display_name, sale_rec, rent_rec, lang, district_pois)
             pois_html = build_pois_html(display_name, key, slug, poi_index, lang)
@@ -1813,14 +1788,12 @@ def main():
                 base_rec = sale_rec if mode == 'sale' else rent_rec
                 if not base_rec:
                     continue
-                period_aggs = tx_periods if mode == 'sale' else rents_periods
                 nearby_html = (build_within_html(display_name, mode, lang, key, split_children, agg, rent)
                                + build_nearby_html(display_name, mode, lang, key, nearby_index, agg, rent))
-                top_projects_html = build_top_projects_html(display_name, mode, slug, base_rec, lang)
 
                 # Build data.json bundle once per (key, mode) — shared across
                 # all language passes. Hash it for cache-busting the DATA_URL.
-                free_rec, premium_rec = split_tiers(base_rec)
+                free_rec, premium_rec = split_tiers({k: v for k, v in base_rec.items() if k != 'periods'})
                 mode_key = 'sales' if mode == 'sale' else 'rent'
                 bundle = {mode_key: free_rec}
                 if premium_rec:
@@ -1844,14 +1817,19 @@ def main():
                 os.makedirs(mode_dir, exist_ok=True)
 
                 # Pre-compute period-specific copy in the current language.
-                period_copy = {}
+                period_copy, period_seo_rec = {}, {}
                 for period_code in PERIOD_CODES:
                     period_h1 = PERIOD_SUFFIX[lang][period_code]['h1']
-                    rec_for_period = period_record_for(period_aggs, key, period_code) if period_code != 'all' else base_rec
+                    rec_for_period = period_record_for(base_rec, period_code)
                     # No deals in the window: say so, then show all-time figures (never label them "12 months")
                     empty_period = period_code != 'all' and not rec_for_period.get('n')
                     if empty_period:
                         rec_for_period = base_rec
+                    # About + top projects describe the same window as the headline
+                    pc_eff = 'all' if empty_period else period_code
+                    sale_p, rent_p = period_record_for(sale_rec, pc_eff), period_record_for(rent_rec, pc_eff)
+                    about_p = build_about(display_name, sale_p, rent_p, lang, is_dubai=is_dubai)
+                    top_p = build_top_projects_html(display_name, mode, slug, rec_for_period, lang)
                     n_p = 0 if empty_period else rec_for_period.get('n', 0)
                     headline, _ = build_headline(mode, heading_name, period_h1, n_p, lang, is_dubai=is_dubai)
                     if empty_period:
@@ -1862,7 +1840,10 @@ def main():
                     else:
                         lede = build_lede(mode, display_name, period_h1, rec_for_period, lang, is_dubai=is_dubai)
                     title, _ = seo_title_desc(mode, heading_name, {'n': 0} if empty_period else rec_for_period, period_code, lang)
-                    period_copy[period_code] = {'h1': headline, 'title': title, 'lede': lede, 'n': n_p, 'rec': {'n': 0} if empty_period else rec_for_period}
+                    about_full = about_p.replace('<!--__LEDE_P__-->', f'<p class="lede" id="d-lede">{html_escape(lede)}</p>')
+                    period_copy[period_code] = {'h1': headline, 'title': title, 'lede': lede, 'n': n_p,
+                                                'about': about_full, 'top': top_p}
+                    period_seo_rec[period_code] = {'n': 0} if empty_period else rec_for_period
 
                 bread_mode = c['mode_sales'] if mode == 'sale' else c['mode_rents']
 
@@ -1883,7 +1864,7 @@ def main():
                     html = html.replace('<html lang="ru">',
                                         f'<html lang="{html_lang}" dir="{html_dir}">')
                     html = html.replace('<!--__SEO_HEAD__-->',
-                                        build_seo_head(mode, heading_name, slug, copy_now['rec'], period_code, lang))
+                                        build_seo_head(mode, heading_name, slug, period_seo_rec[period_code], period_code, lang))
                     html = html.replace('__ASSET_BASE__', '')
                     html = html.replace('__BREADCRUMB_DUBAI__', html_escape(c['breadcrumb_dubai']))
                     html = html.replace('__MODE_INDEX_URL__', f'{lang_prefix(lang)}/{prefix}/')
@@ -1895,8 +1876,7 @@ def main():
                     html = html.replace('__FAQ_URL__', f'{BASE_URL}{lang_prefix(lang)}/faq/')
                     html = html.replace('__BLOG_URL__', f'{BASE_URL}{lang_prefix(lang)}/blog/')
                     html = html.replace('__PDF_EXPORT_LABEL__', html_escape(c['pdf_export_label']))
-                    html = html.replace('<!--__ABOUT__-->', about_html.replace(
-                        '<!--__LEDE_P__-->', f'<p class="lede" id="d-lede">{html_escape(copy_now["lede"])}</p>'))
+                    html = html.replace('<!--__ABOUT__-->', copy_now['about'])
                     html = html.replace('__INITIAL_H1__', html_escape(copy_now['h1']))
                     html = html.replace('__LOADING_TEXT__', html_escape(c['loading']))
                     html = html.replace("/*__LOAD_ERR_LABEL__*/'Не удалось загрузить данные'",
@@ -1921,7 +1901,7 @@ def main():
                     html = html.replace('<!--__SUBPAGES__-->', '')
                     html = html.replace('<!--__DISTRICT_FAQ__-->', district_faq_html)
                     html = html.replace('<!--__NEARBY__-->', nearby_html)
-                    html = html.replace('<!--__TOP_PROJECTS__-->', top_projects_html)
+                    html = html.replace('<!--__TOP_PROJECTS__-->', f'<div id="d-top-projects">{copy_now["top"]}</div>')
                     html = html.replace('<!--__DISTRICT_POIS__-->', pois_html)
 
                     html_path = os.path.join(out_dir, 'index.html')

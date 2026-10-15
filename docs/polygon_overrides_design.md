@@ -21,8 +21,8 @@ duplicates and nominatim-fallbacks) with a clean curated set keyed to DLD data.
                 ▼
   data/curated_polygons.geojson  (the new ground truth)
                 │
-                ├──→  build_transactions_map.py  (sales per-polygon aggregates)
-                ├──→  build_rents_map.py
+                ├──→  build_sale_aggregates.py  (sales per-polygon aggregates + period shards)
+                ├──→  build_rent_aggregates.py
                 ├──→  build_growth_map.py
                 └──→  build_payback_map.py
 ```
