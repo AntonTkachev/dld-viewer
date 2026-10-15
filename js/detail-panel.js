@@ -306,6 +306,7 @@
     S.activeCharts = [];
     S.timelineCharts = [];
     S.rentTimelineCharts = [];
+    S.donutCharts = [];
     S.roomBreakdownChart = null;
 
     if (S.modalChart) { S.modalChart.destroy(); S.modalChart = null; }
@@ -2182,8 +2183,16 @@
     return values.map((_, i) => i < m ? steps[i] : '#cbd5e1');
   }
 
+  // Period totals from the monthly timeline; 'all' keeps the all-time fields
+  function _periodCounts(a) {
+    if (S.period === 'all') return null;
+    let n = 0, op = 0, mort = 0;
+    for (const p of periodSlice(a.timeline || [])) { n += p.n || 0; op += p.op || 0; mort += p.mort || 0; }
+    return { n, op, mort };
+  }
   function _offplanData(a) {
-    const op = a.offplan || {};
+    const pc = _periodCounts(a);
+    const op = pc ? { 'Ready': pc.n - pc.op, 'Off-Plan': pc.op } : (a.offplan || {});
     const labels = Object.keys(op).filter(k => op[k] > 0);
     if (!labels.length) return null;
     return {
@@ -2231,7 +2240,8 @@
   }
 
   function _paymentData(a) {
-    const p = a.payment || {};
+    const pc = _periodCounts(a);
+    const p = pc ? { financed: Math.min(pc.mort, pc.n), cash: pc.n - Math.min(pc.mort, pc.n) } : (a.payment || {});
     const cash = p.cash || 0;
     const fin  = p.financed || 0;
     if (!(cash + fin)) return null;
@@ -2281,17 +2291,23 @@
     return ch;
   }
   function renderInsightDonuts(a) {
-    
+    for (const c of S.donutCharts || []) {
+      c.destroy();
+      const i = S.activeCharts.indexOf(c);
+      if (i >= 0) S.activeCharts.splice(i, 1);
+    }
     S.donutData = {
       offplan:  _offplanData(a),
       deals:    _dealsByYearData(a),
       recent:   _recentByRoomData(a),
       payment:  _paymentData(a),
     };
-    _renderDonut('ch-offplan',           S.donutData.offplan);
-    _renderDonut('ch-donut-deals',       S.donutData.deals);
-    _renderDonut('ch-donut-recent',      S.donutData.recent);
-    _renderDonut('ch-donut-payment',     S.donutData.payment);
+    S.donutCharts = [
+      _renderDonut('ch-offplan',           S.donutData.offplan),
+      _renderDonut('ch-donut-deals',       S.donutData.deals),
+      _renderDonut('ch-donut-recent',      S.donutData.recent),
+      _renderDonut('ch-donut-payment',     S.donutData.payment),
+    ].filter(Boolean);
   }
 
   function openDonutModal(kind) {
@@ -2606,6 +2622,7 @@
     destroyTimelineCharts();
     renderTimelineCharts(S.sale);
     refreshRoomBreakdown();
+    try { renderInsightDonuts(S.sale); } catch(e) { console.error('donuts:', e); }
 
     const modalEl = document.getElementById('dp-chart-modal');
     if (modalEl && modalEl.classList.contains('open') && modalEl.dataset.metric && (modalEl.dataset.source || 'sale') === 'sale') {

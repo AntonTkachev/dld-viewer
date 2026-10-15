@@ -211,20 +211,23 @@ for _, r in op_df.iterrows():
 print('payment split (cash vs financed)...', file=sys.stderr)
 mort_df = q(f"""
 WITH m AS (
-  SELECT {HSEL}
+  SELECT {HSEL}, substr(instance_date, 1, 7) AS d
   FROM '{TX}'
   WHERE trans_group_en   = 'Mortgages'
     AND procedure_name_en = 'Mortgage Registration'
     AND area_name_en IS NOT NULL
     AND instance_date BETWEEN '{DATE_FROM}' AND '{DATE_TO}'
 )
-SELECT k, COUNT(*) AS mort_n FROM (
-  SELECT k_a AS k FROM m
-  UNION ALL SELECT k_s FROM m WHERE k_s IS NOT NULL
-  UNION ALL SELECT k_m FROM m WHERE k_s IS NULL AND k_m IN (SELECT k FROM tx_base_proj)
-) GROUP BY k
+SELECT k, d, COUNT(*) AS mort_n FROM (
+  SELECT k_a AS k, d FROM m
+  UNION ALL SELECT k_s, d FROM m WHERE k_s IS NOT NULL
+  UNION ALL SELECT k_m, d FROM m WHERE k_s IS NULL AND k_m IN (SELECT k FROM tx_base_proj)
+) GROUP BY k, d
 """)
-mort_n_by_k = {r['k']: int(r['mort_n']) for _, r in mort_df.iterrows()}
+mort_n_by_k, mort_by_km = defaultdict(int), {}
+for _, r in mort_df.iterrows():
+    mort_n_by_k[r['k']] += int(r['mort_n'])
+    mort_by_km[(r['k'], r['d'])] = int(r['mort_n'])
 payment = {}
 for _, r in totals.iterrows():
     k = r['k']
@@ -243,7 +246,8 @@ SELECT k, substr(d,1,7) AS d,
        COUNT(*) AS n,
        ROUND(MEDIAN(val)        FILTER (WHERE val > 0)) AS med,
        ROUND(SUM(val))                                 AS vol,
-       ROUND(MEDIAN(val/sqm)    FILTER (WHERE val > 0 AND sqm > 0)) AS ppsqm
+       ROUND(MEDIAN(val/sqm)    FILTER (WHERE val > 0 AND sqm > 0)) AS ppsqm,
+       COUNT(*) FILTER (WHERE reg LIKE 'Off-Plan%') AS op
 FROM tx GROUP BY k, substr(d,1,7) ORDER BY k, d
 """)
 timeline = defaultdict(list)
@@ -255,6 +259,9 @@ for _, r in tl_df.iterrows():
         'vol': safe_int(r['vol']),
         'ppsqm': safe_int(r['ppsqm']),
     })
+    # Off-plan sales and mortgage filings that month, so the panel donuts follow the period
+    if r['op']: timeline[r['k']][-1]['op'] = int(r['op'])
+    if mort_by_km.get((r['k'], r['d'])): timeline[r['k']][-1]['mort'] = mort_by_km[(r['k'], r['d'])]
 
 # ─── Q6: by_rooms_unit + timeline_by_rooms ─────────────────────
 print('by_rooms_unit + timeline_by_rooms (monthly w/ med, ppsqm)...', file=sys.stderr)
@@ -695,9 +702,12 @@ for k, e in prim.items():
 # __dubai__ timeline (re-aggregate from per-area)
 day_n = defaultdict(int); day_vol = defaultdict(int)
 day_meds = defaultdict(list); day_pps = defaultdict(list)
+day_op = defaultdict(int); day_mort = defaultdict(int)
 for k, e in prim.items():
     for p in e['timeline']:
         day_n[p['d']]   += p['n']
+        day_op[p['d']]   += p.get('op', 0)
+        day_mort[p['d']] += p.get('mort', 0)
         day_vol[p['d']] += p['vol']
         if p['med']:   day_meds[p['d']].append(p['med'])
         if p.get('ppsqm'): day_pps[p['d']].append(p['ppsqm'])
@@ -707,6 +717,8 @@ dubai['timeline'] = [{
     'med': sorted(day_meds[d])[len(day_meds[d])//2] if day_meds[d] else 0,
     'vol': day_vol[d],
     'ppsqm': sorted(day_pps[d])[len(day_pps[d])//2] if day_pps[d] else 0,
+    **({'op': day_op[d]} if day_op[d] else {}),
+    **({'mort': day_mort[d]} if day_mort[d] else {}),
 } for d in sorted(day_n)]
 # __dubai__ timeline_by_rooms — also carry med + ppsqm forward
 for ru in ROOM_ORDER:
