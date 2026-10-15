@@ -54,7 +54,11 @@ def _sub_filter_sql(sub):
         # Defensive — a sub-polygon with no filter would consume everything
         # under its parent, defeating the split.
         raise ValueError(f"sub-polygon {sub.get('name')!r} has no master_projects/master_project_sql filter")
-    return ' AND '.join(parts)
+    # DLD often registers new projects with no master but a community-prefixed name
+    # ("DAMAC LAGOONS - MALTA", "The Lakes Zulal") — catch those by name prefix
+    prefixes = list(dict.fromkeys([sub['name'].split(' (')[0]] + (sub.get('master_projects') or [])))
+    by_name = ' OR '.join(f"upper(project_name_en) LIKE {_q(p.upper() + '%')}" for p in prefixes)
+    return f"(({' AND '.join(parts)}) OR (NULLIF(master_project_en, '') IS NULL AND ({by_name})))"
 
 
 def _load_display_aliases(aliases_path=ALIASES):
