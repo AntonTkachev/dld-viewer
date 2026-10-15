@@ -72,7 +72,7 @@
     },
 
     {
-      "_comment": "Al Hebiah Fifth — Remraam was getting double-counted via Remraam 2/3/4 sub-polygons in OSM. DAMAC Lagoons is a major new dev users search for. The Oasis is Emaar's new master.",
+      "_comment": "Al Hebiah Fifth — Remraam was getting double-counted via Remraam 2/3/4 sub-polygons in OSM. DAMAC Lagoons is a major new dev users search for.",
       "area_name_en": "Al Hebiah Fifth",
       "keep_remainder": true,
       "remainder_name": "Al Hebiah Fifth",
@@ -88,12 +88,6 @@
           "name_ar": "داماك لاجونز",
           "osm_polygon": "DAMAC Lagoons",
           "master_projects": ["DAMAC Lagoons"]
-        },
-        {
-          "name": "The Oasis",
-          "name_ar": "ذا أويسز",
-          "osm_polygon": "The Oasis",
-          "master_projects": ["The Oasis"]
         }
       ]
     },
@@ -483,7 +477,7 @@
     },
 
     {
-      "_comment": "Me'Aisem First — IMPZ (68k, 85%) + JGE (11k, 14%). Both have OSM polygons.",
+      "_comment": "Me'Aisem First — IMPZ (68k, 85%) + JGE (11k, 14%). OSM 'IMPZ' is the old masterplan over Me'Aisem Second (now The Oasis) and holds none of the IMPZ buildings, so IMPZ is drawn as the area minus JGE.",
       "area_name_en": "Me'Aisem First",
       "keep_remainder": true,
       "remainder_name": "Me'Aisem First",
@@ -491,7 +485,7 @@
         {
           "name": "IMPZ (International Media Production Zone)",
           "name_ar": "المنطقة الإعلامية الدولية",
-          "osm_polygon": "IMPZ",
+          "geometry": "parent_minus_siblings",
           "master_projects": ["IMPZ", "International Media Production Zone"]
         },
         {
@@ -534,10 +528,12 @@
     },
 
     {
-      "_comment": "Me'Aisem Second DM polygon (lat=24.978-25.011) is geographically identical to the OSM 'IMPZ' polygon (osm-admin-clone). Suppress it so it doesn't obscure the IMPZ sub-polygon in the Me'Aisem First split.",
+      "_comment": "Me'Aisem Second — Emaar's The Oasis (all sales: 'The Oasis - …' / 'Mareva' projects, no master).",
       "area_name_en": "Me'Aisem Second",
       "area_name_dm": "ME'AISEM SECOND",
-      "keep_remainder": false,
+      "keep_remainder": true,
+      "remainder_name": "The Oasis",
+      "remainder_name_ar": "ذا أويسز",
       "sub_polygons": []
     },
 

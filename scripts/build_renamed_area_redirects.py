@@ -74,6 +74,7 @@ LEGACY_SLUG_PAIRS = (
     ('dubai-health-care-city-phase-2', 'al-jadaf'), ('falcon-city', 'wadi-al-safa-2'),
     ('meydan-racecourse-community', 'meydan'), ('nad-al-sheba-gardens', 'meydan'),
     ('tecom-site-b', 'al-safouh-first'),
+    ('me-aisem-second', 'the-oasis'),  # Me'Aisem Second area is shown as The Oasis
 )
 
 STUB_MARKER = '<!-- renamed-area-redirect -->'

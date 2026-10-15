@@ -38,6 +38,7 @@ KEY_ALIASES = {
     # master-project keys superseded by a sub-community polygon
     'down town jabal ali': 'downtown jebel ali',
     'international media production zone': 'impz (international media production zone)',
+    "me'aisem second": 'the oasis',
 }
 
 _DEC = json.JSONDecoder()
