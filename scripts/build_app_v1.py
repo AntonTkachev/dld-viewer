@@ -30,6 +30,14 @@ PERIOD_MONTHS = {'1y': 12, '3y': 36, '5y': 60, '10y': 120, 'all': None}
 # Retired area key → current key, so favorites stored under the old key keep resolving
 KEY_ALIASES = {
     'nad al shiba villas': 'nad al sheba',  # DLD renamed the master project in the 2026-10-10 snapshot
+    # 2026-10 hierarchy: split remainders became the area itself
+    **{f'{a} (other)': a for a in (
+        'marsa dubai', 'hadaeq smbr', 'al hebiah fifth', 'al thanyah fifth', 'al merkadh', 'wadi al safa 5',
+        'wadi al safa 7', 'wadi al safa 3', 'al wasl', 'al thanyah third', 'jabal ali first', 'al yelayiss 1',
+        'jumeirah first', 'emirates living', 'al jadaf', "me'aisem first", 'al safouh first', 'wadi al safa 2')},
+    # master-project keys superseded by a sub-community polygon
+    'down town jabal ali': 'downtown jebel ali',
+    'international media production zone': 'impz (international media production zone)',
 }
 
 _DEC = json.JSONDecoder()

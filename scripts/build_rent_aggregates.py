@@ -24,14 +24,10 @@ DATE_FROM = '2001-01-01'      # parquet starts 2001-02-15
 DATE_TO   = '2030-12-31'      # include forward-dated leases
 TODAY     = date.today().isoformat()
 
-# Key + display name come from _curated_sql.build_curated_sql() — see the
-# extended comment in build_sale_aggregates.py for the why. Same fix here:
-# without it, project_name_sql-driven splits (Springs/Meadows/City Walk/…)
-# never get their own RENT_AGGREGATES bucket and the polygon click falls
-# through to a near-empty admin parent.
+# Keys: area → sub-community polygon → master project page, same hierarchy as
+# build_sale_aggregates.py (see _curated_sql.hierarchy_select).
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
-from _curated_sql import build_curated_sql
-_KEY_RAW, _NAME_RAW, _ = build_curated_sql()
+from _curated_sql import hierarchy_select, hierarchy_views
 ROLLUP_SQL = """
 CASE
   WHEN master_project_en LIKE 'DUBAI HILLS - %'              THEN 'Dubai Hills Estate'
@@ -43,24 +39,12 @@ CASE
   ELSE master_project_en
 END
 """
-NAME_EXPR = _NAME_RAW.replace(
-    'ELSE area_name_en',
-    f"ELSE COALESCE(NULLIF(({ROLLUP_SQL}), ''), area_name_en)"
-)
-KEY_EXPR = _KEY_RAW.replace(
-    'ELSE lower(area_name_en)',
-    f"ELSE lower(COALESCE(NULLIF(({ROLLUP_SQL}), ''), area_name_en))"
-)
-
 con = duckdb.connect()
 print(f'period: {DATE_FROM} → {DATE_TO} (today={TODAY})', file=sys.stderr)
 
 con.execute(f"""
 CREATE TEMP TABLE r_base AS
-SELECT {_KEY_RAW} AS k_p,
-       {_NAME_RAW} AS name_p,
-       {KEY_EXPR} AS k_m,
-       {NAME_EXPR} AS name_m,
+SELECT {hierarchy_select(ROLLUP_SQL)},
        contract_start_date AS d,
        COALESCE(ejari_property_type_en,'Other')     AS sub,
        COALESCE(property_usage_en,'Unknown')        AS usage,
@@ -112,22 +96,10 @@ FROM '{RENTS}'
 WHERE area_name_en IS NOT NULL
   AND contract_start_date BETWEEN '{DATE_FROM}' AND '{DATE_TO}'
 """)
-# Area pages count everything inside the polygon (same key as the map); contracts of a
-# master project without its own polygon are also copied to that project's page (sec=1)
-con.execute("""
-CREATE TEMP TABLE sec_keys AS
-SELECT DISTINCT k_m AS k FROM r_base
-WHERE k_m <> k_p AND k_m NOT IN (SELECT DISTINCT k_p FROM r_base WHERE k_p IS NOT NULL)
-""")
-con.execute("""
-CREATE TEMP VIEW r AS
-SELECT k_p AS k, CASE WHEN k_m = k_p THEN name_m ELSE name_p END AS area_orig, 0 AS sec,
-       * EXCLUDE (k_p, name_p, k_m, name_m) FROM r_base
-UNION ALL
-SELECT k_m AS k, name_m AS area_orig, 1 AS sec,
-       * EXCLUDE (k_p, name_p, k_m, name_m) FROM r_base WHERE k_m IN (SELECT k FROM sec_keys)
-""")
-con.execute("CREATE TEMP VIEW r_p AS SELECT * FROM r WHERE sec = 0")
+# Hierarchy: a contract counts in its area (lvl 0), its sub-community polygon (lvl 1)
+# and its master project's own page when that project has no polygon (lvl 2)
+KEY_LVL = hierarchy_views(con, 'r_base', 'r', 'r_p')
+SEC_KEYS = {k for k, l in KEY_LVL.items() if l == 2}
 
 def q(sql, **params):
     return con.execute(sql, params).fetchdf()
@@ -340,14 +312,14 @@ TREND_MIN_CELL, TREND_MIN_MATCHED = 3, 20
 con.execute(f"""
 CREATE TEMP TABLE trend_cells AS
 WITH w AS (
-  SELECT k, sec, COALESCE(NULLIF(proj, ''), master) AS cp, sub, subt, amt,
+  SELECT k, lvl, COALESCE(NULLIF(proj, ''), master) AS cp, sub, subt, amt,
          (d::DATE > DATE '{TODAY}' - INTERVAL 365 DAY)::INT AS win
   FROM r
   WHERE amt > 0 AND d::DATE <= DATE '{TODAY}' AND d::DATE > DATE '{TODAY}' - INTERVAL 730 DAY
 ),
-c AS (SELECT k, sec, cp, sub, subt, win, MEDIAN(amt) AS m, COUNT(*) AS n FROM w WHERE cp IS NOT NULL GROUP BY ALL)
-SELECT a.k, a.sec, b.m / a.m - 1 AS r, LEAST(a.n, b.n) AS n
-FROM c a JOIN c b USING (k, sec, cp, sub, subt)
+c AS (SELECT k, lvl, cp, sub, subt, win, MEDIAN(amt) AS m, COUNT(*) AS n FROM w WHERE cp IS NOT NULL GROUP BY ALL)
+SELECT a.k, a.lvl, b.m / a.m - 1 AS r, LEAST(a.n, b.n) AS n
+FROM c a JOIN c b USING (k, lvl, cp, sub, subt)
 WHERE a.win = 0 AND b.win = 1 AND a.n >= {TREND_MIN_CELL} AND b.n >= {TREND_MIN_CELL}
 """)
 for _, row in q(f"SELECT k, MEDIAN(r) AS r FROM trend_cells GROUP BY k HAVING SUM(n) >= {TREND_MIN_MATCHED}").iterrows():
@@ -357,7 +329,9 @@ for _, row in q(f"SELECT k, MEDIAN(r) AS r FROM trend_cells GROUP BY k HAVING SU
 # Filter low-volume areas
 out = {k: v for k, v in out.items() if v['n'] >= 5}
 # Projects with their own page inside this polygon — linked from the area page
-for _, row in q("""SELECT k_p, k_m, COUNT(*) AS n FROM r_base WHERE k_m IN (SELECT k FROM sec_keys)
+for _, row in q("""SELECT k_a AS k_p, c AS k_m, COUNT(*) AS n FROM (
+                     SELECT k_a, k_s AS c FROM r_base WHERE k_s IS NOT NULL
+                     UNION ALL SELECT k_a, k_m FROM r_base WHERE k_s IS NULL AND k_m IN (SELECT k FROM r_base_proj))
                    GROUP BY ALL ORDER BY n DESC""").iterrows():
     if row['k_p'] in out and row['k_m'] in out:
         out[row['k_p']].setdefault('sub_masters', []).append({'k': row['k_m'], 'n': int(row['n'])})
@@ -559,7 +533,7 @@ dubai = {
     'vintage_paths_m': dubai_paths_m,
     'trend_pct':   None,
 }
-dubai['trend_pct'] = round(float(q("SELECT MEDIAN(r) AS r FROM trend_cells WHERE sec = 0").iloc[0]['r']) * 100, 1)
+dubai['trend_pct'] = round(float(q("SELECT MEDIAN(r) AS r FROM trend_cells WHERE lvl = 0").iloc[0]['r']) * 100, 1)
 
 for _, row in d_tl_rooms.iterrows():
     dubai['timeline_by_rooms'].setdefault(row['rooms'], []).append({
@@ -614,7 +588,6 @@ def period_summaries(dfrom, src, kx):
     return res
 
 TODAY_D = date.today()
-SEC_KEYS = {row[0] for row in con.execute("SELECT k FROM sec_keys").fetchall()}
 shards = {}
 for code, yrs in PERIOD_YEARS + [('all', None)]:
     dfrom = DATE_FROM if yrs is None else (TODAY_D - timedelta(days=365 * yrs)).isoformat()

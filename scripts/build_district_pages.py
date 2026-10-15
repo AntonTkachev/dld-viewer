@@ -1318,21 +1318,12 @@ def build_nearby_index(sale_agg, rent_agg):
     return index
 
 
-def load_split_children():
-    """Remainder key of a split admin area → its sub-polygon keys (Jabal Ali Industrial Second → Downtown Jebel Ali)."""
-    with open(os.path.join(ROOT, 'data', 'polygon_overrides.json'), encoding='utf-8') as f:
-        splits = json.load(f).get('splits', [])
-    return {s.get('remainder_name', s['area_name_en'] + ' (other)').lower(): [sp['name'].lower() for sp in s['sub_polygons']]
-            for s in splits if s.get('keep_remainder')}
-
-
-def build_within_html(name, mode, lang, key, split_children, sale_agg, rent_agg):
-    """Links to pages covering part of this district: master projects with their own page + split sub-polygons."""
+def build_within_html(name, mode, lang, key, sale_agg, rent_agg):
+    """Links to pages covering part of this district: sub-community polygons + master-project pages."""
     c = COPY[lang]
     agg = sale_agg if mode == 'sale' else rent_agg
     rec = agg.get(key) or {}
     kids = [(m['k'], m['n']) for m in rec.get('sub_masters') or []]
-    kids += [(sk, (agg.get(sk) or {}).get('n', 0)) for sk in split_children.get(key, [])]
     items = []
     for ck, n in sorted(kids, key=lambda x: -x[1])[:10]:
         crec = agg.get(ck) or {}
@@ -1726,7 +1717,6 @@ def main():
     with open(os.path.join(ROOT, 'data', 'aggregates_intermediate', 'rent.json'), encoding='utf-8') as f:
         rent = json.load(f)
     nearby_index = build_nearby_index(agg, rent)
-    split_children = load_split_children()
     poi_index = build_poi_index()
     with open(TPL, encoding='utf-8') as f:
         template = f.read()
@@ -1788,7 +1778,7 @@ def main():
                 base_rec = sale_rec if mode == 'sale' else rent_rec
                 if not base_rec:
                     continue
-                nearby_html = (build_within_html(display_name, mode, lang, key, split_children, agg, rent)
+                nearby_html = (build_within_html(display_name, mode, lang, key, agg, rent)
                                + build_nearby_html(display_name, mode, lang, key, nearby_index, agg, rent))
 
                 # Build data.json bundle once per (key, mode) — shared across
@@ -1925,6 +1915,9 @@ def main():
     print(f'done — {built} page(s) across {len(LANGUAGES)} language(s)', file=sys.stderr)
 
     if DISTRICTS is None:
+        # Slugs this run produced — build_renamed_area_redirects.py replaces retired district pages
+        with open(os.path.join(ROOT, 'data', 'aggregates_intermediate', 'district_slugs.json'), 'w') as f:
+            json.dump({'sales': sorted(produced_sale_slugs), 'rents': sorted(produced_rent_slugs)}, f)
         missing_sales = sorted(SALES_WHITELIST - produced_sale_slugs)
         missing_rents = sorted(RENTS_WHITELIST - produced_rent_slugs)
         if missing_sales or missing_rents:

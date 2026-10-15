@@ -15,6 +15,7 @@ slug, so those dead links redirect instead of 404.
 Run after any dm_to_dld_aliases.json edit + full page rebuild:
     python3 scripts/build_renamed_area_redirects.py
 """
+import json
 import os
 import re
 import sys
@@ -53,22 +54,61 @@ LEGACY_SLUG_PAIRS = (
     ('mohammed-bin-rashid-al-maktoum-district-11', 'mbr-city-district-11'),
     ('dubai-south-residential-district', 'dubai-south-residential'),
     ('nad-al-shiba-villas', 'nad-al-sheba'),
-    ('al-jadaf', 'jaddaf-waterfront'),
-    ('wadi-al-safa-2', 'liwan'),
-    ('al-safouh-first', 'sufouh-gardens'),
+    # Hierarchy (2026-10): split remainders are the area itself, no "(other)" pages
+    ('marsa-dubai-other', 'marsa-dubai'), ('hadaeq-smbr-other', 'hadaeq-smbr'),
+    ('al-hebiah-fifth-other', 'al-hebiah-fifth'), ('al-hebiah-third-other', 'al-hebiah-third'),
+    ('al-thanyah-fifth-other', 'al-thanyah-fifth'), ('al-thanyah-third-other', 'al-thanyah-third'),
+    ('al-merkadh-other', 'al-merkadh'), ('al-wasl-other', 'al-wasl'), ('al-jadaf-other', 'al-jadaf'),
+    ('al-yelayiss-1-other', 'al-yelayiss-1'), ('al-safouh-first-other', 'al-safouh-first'),
+    ('jabal-ali-first-other', 'jabal-ali-first'), ('jumeirah-first-other', 'jumeirah-first'),
+    ('emirates-living-other', 'emirates-living'), ('me-aisem-first-other', 'me-aisem-first'),
+    ('nad-al-shiba-first-other', 'nad-al-shiba-first'),
+    ('wadi-al-safa-2-other', 'wadi-al-safa-2'), ('wadi-al-safa-3-other', 'wadi-al-safa-3'),
+    ('wadi-al-safa-5-other', 'wadi-al-safa-5'), ('wadi-al-safa-7-other', 'wadi-al-safa-7'),
+    # Master-project pages superseded by a sub-community polygon / their area
+    ('down-town-jabal-ali', 'downtown-jebel-ali'),
+    ('international-media-production-zone', 'impz-international-media-production-zone'),
+    ('business-park', 'dubai-design-district'), ('festival-city', 'dubai-festival-city'),
+    ('zaabeel-second', 'za-abeel'), ('dubai-international-financial-center', 'za-abeel'),
+    ('culture-village', 'al-jadaf'), ('sama-al-jadaf', 'al-jadaf'),
+    ('dubai-health-care-city-phase-2', 'al-jadaf'), ('falcon-city', 'wadi-al-safa-2'),
+    ('meydan-racecourse-community', 'meydan'), ('nad-al-sheba-gardens', 'meydan'),
+    ('tecom-site-b', 'al-safouh-first'),
 )
-
 
 STUB_MARKER = '<!-- renamed-area-redirect -->'
 
 
-def is_own_stub(path):
-    """True if `path` is a stub this script generated (safe to overwrite),
-    False for anything else (a real page — never touch it)."""
+def _produced_slugs():
+    p = os.path.join(ROOT, 'data', 'aggregates_intermediate', 'district_slugs.json')
+    if not os.path.exists(p):
+        return None
+    with open(p) as f:
+        return {m: set(v) for m, v in json.load(f).items()}
+
+
+PRODUCED = _produced_slugs()
+
+
+def is_own_stub(path, mode=None, slug=None):
+    """True if `path` is safe to overwrite: missing, a stub this script wrote, or a
+    district page the current build no longer produces (retired slug, stale data)."""
     if not os.path.exists(path):
         return True
     with open(path, encoding='utf-8') as f:
-        return STUB_MARKER in f.read()
+        src = f.read()
+    if STUB_MARKER in src:
+        return True
+    if PRODUCED is None or mode not in PRODUCED or slug in PRODUCED[mode]:
+        return False
+    # Retired slug: its sub-pages go too, judged by the slug's root page (district page or our stub)
+    lang_mode_slug = path.split(os.sep + mode + os.sep + slug + os.sep)[0]
+    root = os.path.join(lang_mode_slug, mode, slug, 'index.html')
+    if not os.path.exists(root):
+        return False
+    with open(root, encoding='utf-8') as f:
+        rsrc = f.read()
+    return 'const DISTRICT_KEY' in rsrc or STUB_MARKER in rsrc
 
 
 def write_stub(lang, rel_dir, target_url):
@@ -106,7 +146,7 @@ def main():
                         continue  # nothing live to redirect to
                     old_rel = os.path.join(lang, mode, old_slug, sub) if sub else os.path.join(lang, mode, old_slug)
                     old_index = os.path.join(ROOT, old_rel, 'index.html')
-                    if not is_own_stub(old_index):
+                    if not is_own_stub(old_index, mode, old_slug):
                         continue  # a real page lives here — never clobber it
                     target_url = f'{BASE_URL}/{lang}/{mode}/{new_slug}/{tail}'
                     write_stub(lang, old_rel, target_url)
