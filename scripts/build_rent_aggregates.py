@@ -66,6 +66,8 @@ SELECT {_KEY_RAW} AS k_p,
        COALESCE(property_usage_en,'Unknown')        AS usage,
        contract_reg_type_en AS rt,
        COALESCE(NULLIF(project_name_en,''), '')     AS proj,
+       master_project_en                            AS master,
+       COALESCE(ejari_property_sub_type_en, '')     AS subt,
        -- Per-unit annual rent. DLD ships master contracts (no_of_prop > 1)
        -- with annual_amount = TOTAL for the whole bundle, repeated on
        -- every line_number row. A 53-unit DUSIT contract has each of its
@@ -255,7 +257,7 @@ for _, row in totals.iterrows():
         'top_projects':[],
         'recent':      [],
         'timeline':    [],
-        'trend_pct':   0,
+        'trend_pct':   None,
     }
 
 for _, row in subt.iterrows():
@@ -331,18 +333,26 @@ for _, row in tl.iterrows():
         'ppsqm': safe_int(row['ppsqm']),
     })
 
-# YoY trend per area — median(last 12mo started) vs median(prior 12mo started)
-# Filter out future months (forward-dated leases) — only contracts already in force.
+# YoY trend: like-for-like annual rent (same project + Ejari type + sub-type), last 365d vs prior 365d of
+# contracts already in force; plain monthly medians swing with the mix (+1500% in sparse areas)
 TODAY_MONTH = TODAY[:7]
-for k, e in out.items():
-    series = [p for p in e['timeline'] if p['d'] <= TODAY_MONTH]
-    if len(series) >= 24:
-        head = sorted([p['med'] for p in series[-24:-12] if p['med']])
-        tail = sorted([p['med'] for p in series[-12:]   if p['med']])
-        if head and tail:
-            mh = head[len(head)//2]; mt = tail[len(tail)//2]
-            if mh:
-                e['trend_pct'] = round((mt - mh) / mh * 100, 1)
+TREND_MIN_CELL, TREND_MIN_MATCHED = 3, 20
+con.execute(f"""
+CREATE TEMP TABLE trend_cells AS
+WITH w AS (
+  SELECT k, sec, COALESCE(NULLIF(proj, ''), master) AS cp, sub, subt, amt,
+         (d::DATE > DATE '{TODAY}' - INTERVAL 365 DAY)::INT AS win
+  FROM r
+  WHERE amt > 0 AND d::DATE <= DATE '{TODAY}' AND d::DATE > DATE '{TODAY}' - INTERVAL 730 DAY
+),
+c AS (SELECT k, sec, cp, sub, subt, win, MEDIAN(amt) AS m, COUNT(*) AS n FROM w WHERE cp IS NOT NULL GROUP BY ALL)
+SELECT a.k, a.sec, b.m / a.m - 1 AS r, LEAST(a.n, b.n) AS n
+FROM c a JOIN c b USING (k, sec, cp, sub, subt)
+WHERE a.win = 0 AND b.win = 1 AND a.n >= {TREND_MIN_CELL} AND b.n >= {TREND_MIN_CELL}
+""")
+for _, row in q(f"SELECT k, MEDIAN(r) AS r FROM trend_cells GROUP BY k HAVING SUM(n) >= {TREND_MIN_MATCHED}").iterrows():
+    if row['k'] in out:
+        out[row['k']]['trend_pct'] = round(float(row['r']) * 100, 1)
 
 # Filter low-volume areas
 out = {k: v for k, v in out.items() if v['n'] >= 5}
@@ -547,16 +557,9 @@ dubai = {
     'vintage':     dubai_vintage,
     'vintage_paths':   dubai_paths,
     'vintage_paths_m': dubai_paths_m,
-    'trend_pct':   0,
+    'trend_pct':   None,
 }
-series = [p for p in dubai['timeline'] if p['d'] <= TODAY_MONTH]
-if len(series) >= 24:
-    head = sorted([p['med'] for p in series[-24:-12] if p['med']])
-    tail = sorted([p['med'] for p in series[-12:]   if p['med']])
-    if head and tail:
-        mh = head[len(head)//2]; mt = tail[len(tail)//2]
-        if mh:
-            dubai['trend_pct'] = round((mt - mh) / mh * 100, 1)
+dubai['trend_pct'] = round(float(q("SELECT MEDIAN(r) AS r FROM trend_cells WHERE sec = 0").iloc[0]['r']) * 100, 1)
 
 for _, row in d_tl_rooms.iterrows():
     dubai['timeline_by_rooms'].setdefault(row['rooms'], []).append({
