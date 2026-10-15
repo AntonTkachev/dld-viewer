@@ -448,7 +448,7 @@
           "name": "The Meadows",
           "name_ar": "ذا ميدوز",
           "osm_polygons_pattern": "^(The )?Meadows ?\\d+$",
-          "master_project_sql": "project_name_en LIKE 'Emirates Living - Meadows%' OR master_project_en LIKE 'Meadows%' OR (master_project_en = 'Emirates Living' AND project_name_en IS NULL)"
+          "master_project_sql": "project_name_en LIKE 'Emirates Living - Meadows%' OR master_project_en LIKE 'Meadows%' OR (master_project_en = 'Emirates Living' AND project_name_en IS NULL AND {type} = 'Villa')"
         }
       ]
     },

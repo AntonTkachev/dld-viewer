@@ -44,7 +44,7 @@ print(f'period: {DATE_FROM} → {DATE_TO} (today={TODAY})', file=sys.stderr)
 
 con.execute(f"""
 CREATE TEMP TABLE r_base AS
-SELECT {hierarchy_select(ROLLUP_SQL)},
+SELECT {hierarchy_select(ROLLUP_SQL, 'ejari_property_type_en')},
        contract_start_date AS d,
        COALESCE(ejari_property_type_en,'Other')     AS sub,
        COALESCE(property_usage_en,'Unknown')        AS usage,

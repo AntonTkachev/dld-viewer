@@ -288,7 +288,7 @@ def compute_sale_growth(polys):
     """
     sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
     from _curated_sql import polygon_rows
-    TX_P, RENTS_P = polygon_rows(f"'{TX_PARQUET}'"), polygon_rows(f"'{RENTS_PARQUET}'")
+    TX_P, RENTS_P = polygon_rows(f"'{TX_PARQUET}'"), polygon_rows(f"'{RENTS_PARQUET}'", 'ejari_property_type_en')
     con = duckdb.connect()
     # Same canonical filters as scripts/build_sale_aggregates.py:
     #   trans_group_en = 'Sales' removes Mortgage Registrations (banks
@@ -397,7 +397,7 @@ def compute_rent_growth(polys):
     sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
     from _curated_sql import polygon_rows
     # Rents parquet shares the same area_name_en column, so curated SQL applies.
-    TX_P, RENTS_P = polygon_rows(f"'{TX_PARQUET}'"), polygon_rows(f"'{RENTS_PARQUET}'")
+    TX_P, RENTS_P = polygon_rows(f"'{TX_PARQUET}'"), polygon_rows(f"'{RENTS_PARQUET}'", 'ejari_property_type_en')
     # _curated_sql was written for tx.parquet's master_project_en column —
     # rents has the same column name so the CASE works as-is.
 
@@ -513,7 +513,7 @@ def compute_tx_velocity(polys):
     """
     sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
     from _curated_sql import polygon_rows
-    TX_P, RENTS_P = polygon_rows(f"'{TX_PARQUET}'"), polygon_rows(f"'{RENTS_PARQUET}'")
+    TX_P, RENTS_P = polygon_rows(f"'{TX_PARQUET}'"), polygon_rows(f"'{RENTS_PARQUET}'", 'ejari_property_type_en')
     con = duckdb.connect()
     now_from = (TODAY - timedelta(days=365)).isoformat()
     now_to = TODAY.isoformat()
@@ -555,7 +555,7 @@ def compute_n_tx_historical(polys):
     Land tx are excluded — they're plot deals, not housing stock."""
     sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
     from _curated_sql import polygon_rows
-    TX_P, RENTS_P = polygon_rows(f"'{TX_PARQUET}'"), polygon_rows(f"'{RENTS_PARQUET}'")
+    TX_P, RENTS_P = polygon_rows(f"'{TX_PARQUET}'"), polygon_rows(f"'{RENTS_PARQUET}'", 'ejari_property_type_en')
     con = duckdb.connect()
     cutoff = (TODAY - timedelta(days=365 * 5)).isoformat()
     rows = con.execute(f"""
@@ -581,7 +581,7 @@ def compute_residential_share(polys):
     """
     sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
     from _curated_sql import polygon_rows
-    TX_P, RENTS_P = polygon_rows(f"'{TX_PARQUET}'"), polygon_rows(f"'{RENTS_PARQUET}'")
+    TX_P, RENTS_P = polygon_rows(f"'{TX_PARQUET}'"), polygon_rows(f"'{RENTS_PARQUET}'", 'ejari_property_type_en')
     con = duckdb.connect()
     since = (TODAY - timedelta(days=365)).isoformat()
     RESIDENTIAL = (
@@ -618,7 +618,7 @@ def compute_offplan_share(polys):
     """
     sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
     from _curated_sql import polygon_rows
-    TX_P, RENTS_P = polygon_rows(f"'{TX_PARQUET}'"), polygon_rows(f"'{RENTS_PARQUET}'")
+    TX_P, RENTS_P = polygon_rows(f"'{TX_PARQUET}'"), polygon_rows(f"'{RENTS_PARQUET}'", 'ejari_property_type_en')
     con = duckdb.connect()
     since = (TODAY - timedelta(days=365)).isoformat()
     rows = con.execute(f"""

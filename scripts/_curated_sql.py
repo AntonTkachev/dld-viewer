@@ -42,14 +42,15 @@ def _q(s):
     return "'" + s.replace("'", "''") + "'"
 
 
-def _sub_filter_sql(sub):
-    """Build the SQL predicate that selects rows belonging to one sub-polygon."""
+def _sub_filter_sql(sub, type_col='property_type_en'):
+    """Build the SQL predicate that selects rows belonging to one sub-polygon.
+    `{type}` in master_project_sql = the source's property-type column (tx vs Ejari)."""
     parts = []
     if sub.get('master_projects'):
         quoted = ', '.join(_q(mp) for mp in sub['master_projects'])
         parts.append(f"master_project_en IN ({quoted})")
     if sub.get('master_project_sql'):
-        parts.append(f"({sub['master_project_sql']})")
+        parts.append(f"({sub['master_project_sql'].replace('{type}', type_col)})")
     if not parts:
         # Defensive — a sub-polygon with no filter would consume everything
         # under its parent, defeating the split.
@@ -157,7 +158,7 @@ if __name__ == '__main__':
         print(f'  {k!r:50} → {n!r}')
 
 
-def build_hierarchy_sql(override_path=OVERRIDE, aliases_path=ALIASES):
+def build_hierarchy_sql(override_path=OVERRIDE, aliases_path=ALIASES, type_col='property_type_en'):
     """Two-level keys: area (every deal of a DLD area, incl. its sub-communities)
     and sub-community (rows matched by a split sub-polygon filter, else NULL).
 
@@ -181,7 +182,7 @@ def build_hierarchy_sql(override_path=OVERRIDE, aliases_path=ALIASES):
             area_k.append(f"WHEN area_name_en = {parent} THEN {_q(area_name.lower())}")
             area_n.append(f"WHEN area_name_en = {parent} THEN {_q(area_name)}")
         for sub in split['sub_polygons']:
-            cond = f"area_name_en = {parent} AND ({_sub_filter_sql(sub)})"
+            cond = f"area_name_en = {parent} AND ({_sub_filter_sql(sub, type_col)})"
             sub_k.append(f"WHEN {cond} THEN {_q(sub['name'].lower())}")
             sub_n.append(f"WHEN {cond} THEN {_q(sub['name'])}")
             for mp in sub.get('master_projects') or []:
@@ -193,11 +194,11 @@ def build_hierarchy_sql(override_path=OVERRIDE, aliases_path=ALIASES):
             master_to_sub, structured)
 
 
-def hierarchy_select(rollup_sql):
+def hierarchy_select(rollup_sql, type_col='property_type_en'):
     """SELECT fragment with the three key levels for one DLD row:
     k_a/name_a  area (always), k_s/name_s  sub-community polygon (or NULL),
     k_m/name_m  master project (rolled up; mapped onto its sub-polygon when one exists)."""
-    area_k, area_n, sub_k, sub_n, m2s, structured = build_hierarchy_sql()
+    area_k, area_n, sub_k, sub_n, m2s, structured = build_hierarchy_sql(type_col=type_col)
     names = build_curated_sql()[2]
     # Master-project pages only for areas without curated structure (an alias or split already
     # names their parts — Burj Khalifa master would duplicate Downtown Dubai)
@@ -212,10 +213,10 @@ def hierarchy_select(rollup_sql):
        ELSE ({rollup_sql}) END AS name_m"""
 
 
-def polygon_rows(src):
+def polygon_rows(src, type_col='property_type_en'):
     """FROM-able subquery: each `src` row once per drawn polygon it sits in (area, plus its
     sub-community if any), with columns k / k_name — what the map masks group by."""
-    area_k, area_n, sub_k, sub_n, _, _ = build_hierarchy_sql()
+    area_k, area_n, sub_k, sub_n, _, _ = build_hierarchy_sql(type_col=type_col)
     return f"""(SELECT {area_k} AS k, {area_n} AS k_name, * FROM {src}
   UNION ALL SELECT {sub_k}, {sub_n}, * FROM {src} WHERE {sub_k} IS NOT NULL)"""
 
