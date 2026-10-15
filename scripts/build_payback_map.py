@@ -36,7 +36,7 @@ CLASSES = {
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 from _curated_sql import polygon_rows
-TX_P, RENTS_P = polygon_rows(f"'{TX}'"), polygon_rows(f"'{RENTS}'")
+TX_P, RENTS_P = polygon_rows(f"'{TX}'"), polygon_rows(f"'{RENTS}'", 'ejari_property_type_en')
 
 con = duckdb.connect()
 dfrom = (TODAY - timedelta(days=WINDOW_DAYS)).isoformat()

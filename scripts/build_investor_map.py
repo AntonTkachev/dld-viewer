@@ -172,7 +172,7 @@ CLASSES.update({k: (_ROOMS_SALE[k], _ROOMS_RENT[k]) for k in _ROOMS_SALE})
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 from _curated_sql import polygon_rows
-TX_P, RENTS_P, SRC_P = polygon_rows(f"'{TX}'"), polygon_rows(f"'{RENTS}'"), polygon_rows('src')
+TX_P, RENTS_P, SRC_P = polygon_rows(f"'{TX}'"), polygon_rows(f"'{RENTS}'", 'ejari_property_type_en'), polygon_rows('src')
 
 con = duckdb.connect()
 d_now_from  = (TODAY - timedelta(days=365)).isoformat()
@@ -340,7 +340,7 @@ if os.path.exists(PROJECTS):
     # branches simply fall through to the area remainder.
     rera = con.execute(f"""
     WITH src AS (
-      SELECT *, CAST(NULL AS VARCHAR) AS project_name_en
+      SELECT *, CAST(NULL AS VARCHAR) AS project_name_en, CAST(NULL AS VARCHAR) AS property_type_en
       FROM read_csv_auto('{PROJECTS}')
     )
     SELECT k,

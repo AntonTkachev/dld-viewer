@@ -50,7 +50,7 @@ BUCKETS = {
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 from _curated_sql import polygon_rows
-RT_P = polygon_rows(f"'{RT}'")
+RT_P = polygon_rows(f"'{RT}'", 'ejari_property_type_en')
 
 con = duckdb.connect()
 dfrom = (TODAY - timedelta(days=WINDOW_DAYS)).isoformat()
