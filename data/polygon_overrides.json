@@ -434,7 +434,8 @@
           "name": "Emirates Hills",
           "name_ar": "تلال الإمارات",
           "osm_polygon": "Emirates Hills",
-          "master_projects": ["Emirates Hills"]
+          "_comment": "DLD files Emirates Hills as master Emirates Living + project Emirates Hills…",
+          "master_project_sql": "master_project_en = 'Emirates Hills' OR project_name_en LIKE 'Emirates Hills%'"
         },
         {
           "_comment": "OSM has Springs 1..15 as separate phase polygons but no unified 'The Springs'. We union them at build time so the polygon appears at its true ~3km community scale, not as one small phase.",
@@ -447,7 +448,7 @@
           "name": "The Meadows",
           "name_ar": "ذا ميدوز",
           "osm_polygons_pattern": "^(The )?Meadows ?\\d+$",
-          "master_project_sql": "project_name_en LIKE 'Emirates Living - Meadows%' OR master_project_en LIKE 'Meadows%'"
+          "master_project_sql": "project_name_en LIKE 'Emirates Living - Meadows%' OR master_project_en LIKE 'Meadows%' OR (master_project_en = 'Emirates Living' AND project_name_en IS NULL)"
         }
       ]
     },

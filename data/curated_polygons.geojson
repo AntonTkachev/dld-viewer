@@ -196495,7 +196495,7 @@
     "parent_area_name_en": "Al Thanayah Fourth",
     "filter": {
      "area_name_en": "Al Thanayah Fourth",
-     "master_project_sql": "(master_project_en NOT IN ('Emirates Hills') OR master_project_en IS NULL) AND NOT ((project_name_en LIKE 'Emirates Living - Springs%') IS TRUE) AND NOT ((project_name_en LIKE 'Emirates Living - Meadows%' OR master_project_en LIKE 'Meadows%') IS TRUE)"
+     "master_project_sql": "NOT ((master_project_en = 'Emirates Hills' OR project_name_en LIKE 'Emirates Hills%') IS TRUE) AND NOT ((project_name_en LIKE 'Emirates Living - Springs%') IS TRUE) AND NOT ((project_name_en LIKE 'Emirates Living - Meadows%' OR master_project_en LIKE 'Meadows%' OR (master_project_en = 'Emirates Living' AND project_name_en IS NULL)) IS TRUE)"
     }
    }
   },
@@ -221117,9 +221117,7 @@
     "parent_area_name_en": "Al Thanayah Fourth",
     "filter": {
      "area_name_en": "Al Thanayah Fourth",
-     "master_projects_in": [
-      "Emirates Hills"
-     ]
+     "master_project_sql": "master_project_en = 'Emirates Hills' OR project_name_en LIKE 'Emirates Hills%'"
     }
    }
   },
@@ -225405,7 +225403,7 @@
     "parent_area_name_en": "Al Thanayah Fourth",
     "filter": {
      "area_name_en": "Al Thanayah Fourth",
-     "master_project_sql": "project_name_en LIKE 'Emirates Living - Meadows%' OR master_project_en LIKE 'Meadows%'"
+     "master_project_sql": "project_name_en LIKE 'Emirates Living - Meadows%' OR master_project_en LIKE 'Meadows%' OR (master_project_en = 'Emirates Living' AND project_name_en IS NULL)"
     }
    }
   },
