@@ -39,8 +39,8 @@ BUCKETS = {
 }
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
-from _curated_sql import build_curated_sql
-KEY, NAME, _ = build_curated_sql()
+from _curated_sql import polygon_rows
+TX_P = polygon_rows(f"'{TX}'")
 
 con = duckdb.connect()
 dfrom = (TODAY - timedelta(days=WINDOW_DAYS)).isoformat()
@@ -49,14 +49,14 @@ print(f'window {dfrom} … {dto}', file=sys.stderr)
 
 for code, (rooms_clause, villa_clause) in BUCKETS.items():
     df = con.execute(f"""
-    SELECT {KEY} AS k,
-           ANY_VALUE({NAME}) AS name,
+    SELECT k,
+           ANY_VALUE(k_name) AS name,
            COUNT(*) AS n,
            ROUND(MEDIAN(TRY_CAST(actual_worth AS DOUBLE))
                  FILTER (WHERE TRY_CAST(actual_worth AS DOUBLE) > 0)) AS med,
            ROUND(MEDIAN(TRY_CAST(meter_sale_price AS DOUBLE))
                  FILTER (WHERE TRY_CAST(meter_sale_price AS DOUBLE) > 0)) AS med_ppsqm
-    FROM '{TX}'
+    FROM {TX_P}
     WHERE area_name_en IS NOT NULL
       AND trans_group_en = 'Sales'
       AND {rooms_clause}

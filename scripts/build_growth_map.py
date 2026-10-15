@@ -27,8 +27,8 @@ MIN_OBS = 10
 PERIODS = [('1y', 365), ('3y', 365*3), ('5y', 365*5), ('10y', 365*10), ('15y', 365*15)]
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
-from _curated_sql import build_curated_sql
-KEY_EXPR, NAME_EXPR, _ = build_curated_sql()
+from _curated_sql import polygon_rows
+TX_P = polygon_rows(f"'{TX}'")
 
 con = duckdb.connect()
 
@@ -58,12 +58,12 @@ now_to   = TODAY.isoformat()
 # score, recomputes sale growth itself with a tighter Unit+Building filter.
 PROPERTY_TYPE_FILTER = "(property_type_en IS NULL OR property_type_en != 'Land')"
 now_rows = con.execute(f"""
-SELECT {KEY_EXPR} AS k,
-       ANY_VALUE({NAME_EXPR}) AS name,
+SELECT k,
+       ANY_VALUE(k_name) AS name,
        COUNT(*) AS n,
        ROUND(MEDIAN(TRY_CAST(meter_sale_price AS DOUBLE))
              FILTER (WHERE TRY_CAST(meter_sale_price AS DOUBLE) > 0)) AS med_ppsqm
-FROM '{TX}'
+FROM {TX_P}
 WHERE area_name_en IS NOT NULL
   AND trans_group_en = 'Sales'
   AND {PROPERTY_TYPE_FILTER}
@@ -85,8 +85,8 @@ print(f'now window {now_from}…{now_to}: {len(now_map)} polygons', file=sys.std
 # in that polygon (e.g. a community that didn't exist N years ago).
 fallback_rows = con.execute(f"""
 WITH first_dt AS (
-  SELECT {KEY_EXPR} AS k, MIN(CAST(instance_date AS DATE)) AS first_dt
-  FROM '{TX}'
+  SELECT k, MIN(CAST(instance_date AS DATE)) AS first_dt
+  FROM {TX_P}
   WHERE area_name_en IS NOT NULL
     AND trans_group_en = 'Sales'
     AND {PROPERTY_TYPE_FILTER}
@@ -100,9 +100,9 @@ SELECT t.k,
        ROUND(MEDIAN(TRY_CAST(t.meter_sale_price AS DOUBLE))
              FILTER (WHERE TRY_CAST(t.meter_sale_price AS DOUBLE) > 0)) AS med_ppsqm
 FROM (
-  SELECT {KEY_EXPR} AS k, t1.*, fd.first_dt
-  FROM '{TX}' t1
-  JOIN first_dt fd ON {KEY_EXPR} = fd.k
+  SELECT t1.*, fd.first_dt
+  FROM {TX_P} t1
+  JOIN first_dt fd ON t1.k = fd.k
   WHERE t1.area_name_en IS NOT NULL
     AND t1.trans_group_en = 'Sales'
     AND (t1.property_type_en IS NULL OR t1.property_type_en != 'Land')
@@ -130,11 +130,11 @@ print(f'fallback baselines: {len(fallback_map)} polygons', file=sys.stderr)
 wide_15y_from = (TODAY - timedelta(days=365*15)).isoformat()
 wide_15y_to   = (TODAY - timedelta(days=365*10)).isoformat()
 wide_15y_rows = con.execute(f"""
-SELECT {KEY_EXPR} AS k,
+SELECT k,
        COUNT(*) AS n,
        ROUND(MEDIAN(TRY_CAST(meter_sale_price AS DOUBLE))
              FILTER (WHERE TRY_CAST(meter_sale_price AS DOUBLE) > 0)) AS med_ppsqm
-FROM '{TX}'
+FROM {TX_P}
 WHERE area_name_en IS NOT NULL
     AND trans_group_en = 'Sales'
     AND {PROPERTY_TYPE_FILTER}
@@ -157,11 +157,11 @@ for code, days in PERIODS:
     base_to   = (base_center + timedelta(days=WIN_DAYS)).isoformat()
 
     base_rows = con.execute(f"""
-    SELECT {KEY_EXPR} AS k,
+    SELECT k,
            COUNT(*) AS n,
            ROUND(MEDIAN(TRY_CAST(meter_sale_price AS DOUBLE))
                  FILTER (WHERE TRY_CAST(meter_sale_price AS DOUBLE) > 0)) AS med_ppsqm
-    FROM '{TX}'
+    FROM {TX_P}
     WHERE area_name_en IS NOT NULL
         AND trans_group_en = 'Sales'
         AND {PROPERTY_TYPE_FILTER}
@@ -280,8 +280,8 @@ for code, days in PERIODS:
 def _all_hist_query(interval_years):
     return con.execute(f"""
     WITH first_dt AS (
-      SELECT {KEY_EXPR} AS k, MIN(CAST(instance_date AS DATE)) AS first_dt
-      FROM '{TX}'
+      SELECT k, MIN(CAST(instance_date AS DATE)) AS first_dt
+      FROM {TX_P}
       WHERE area_name_en IS NOT NULL
         AND trans_group_en = 'Sales'
         AND {PROPERTY_TYPE_FILTER}
@@ -295,9 +295,9 @@ def _all_hist_query(interval_years):
            ROUND(MEDIAN(TRY_CAST(t.meter_sale_price AS DOUBLE))
                  FILTER (WHERE TRY_CAST(t.meter_sale_price AS DOUBLE) > 0)) AS med_ppsqm
     FROM (
-      SELECT {KEY_EXPR} AS k, t1.meter_sale_price, fd.first_dt
-      FROM '{TX}' t1
-      JOIN first_dt fd ON {KEY_EXPR} = fd.k
+      SELECT t1.k, t1.meter_sale_price, fd.first_dt
+      FROM {TX_P} t1
+      JOIN first_dt fd ON t1.k = fd.k
       WHERE t1.area_name_en IS NOT NULL
         AND t1.trans_group_en = 'Sales'
         AND (t1.property_type_en IS NULL OR t1.property_type_en != 'Land')
