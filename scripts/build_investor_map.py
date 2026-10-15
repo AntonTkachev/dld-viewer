@@ -168,30 +168,10 @@ _ALL_RENT = "(" + ",".join(v.strip('()') for v in _ROOMS_RENT.values()) + ")"
 CLASSES = {'all': (_ALL_SALE, _ALL_RENT)}
 CLASSES.update({k: (_ROOMS_SALE[k], _ROOMS_RENT[k]) for k in _ROOMS_SALE})
 
-# Yield is like-for-like: rent/sale AED/m² inside one cell (DLD project, or its master when
-# unnamed, × room class), then the sales-weighted median over cells. A district-wide ratio
-# of two medians compares different stock (Jumeirah First: La Mer sales vs old Jumeira 1
-# rents gave 2.9%; matched 5.2%).
-CELL_MIN_SALE = 3
-CELL_MIN_RENT = 5
-MIN_MATCHED_SHARE = 1 / 3   # of a district's ready sales that must sit in a cell with rents
-_CELL = ("COALESCE('p' || CAST(TRY_CAST(TRY_CAST(project_number AS DOUBLE) AS BIGINT) AS VARCHAR), "
-         "'m:' || lower(master_project_en))")
-_RM_SALE = 'CASE ' + ' '.join(f"WHEN rooms_en IN {v} THEN '{c}'" for c, v in _ROOMS_SALE.items()) + ' END'
-_RM_RENT = 'CASE ' + ' '.join(f"WHEN ejari_property_sub_type_en IN {v} THEN '{c}'"
-                              for c, v in _ROOMS_RENT.items()) + ' END'
-
-
-def weighted_median(values, weights):
-    pairs = sorted(zip(values, weights))
-    half, acc = sum(weights) / 2, 0
-    for v, w in pairs:
-        acc += w
-        if acc >= half:
-            return v
-
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 from _curated_sql import polygon_rows
+from _yield_cells import MIN_MATCHED_SHARE, cell_yields, room_case
+_RM_SALE, _RM_RENT = room_case('rooms_en', _ROOMS_SALE), room_case('ejari_property_sub_type_en', _ROOMS_RENT)
 TX_P, RENTS_P, SRC_P = polygon_rows(f"'{TX}'"), polygon_rows(f"'{RENTS}'", 'ejari_property_type_en'), polygon_rows('src')
 
 con = duckdb.connect()
@@ -234,7 +214,7 @@ mom = con.execute(f"""
 WITH px AS (
   SELECT k,
          instance_date >= '{d_now_from}' AS is_now,
-         COALESCE(building_name_en, '?') AS b,
+         building_name_en AS b,   -- NULL = no building name (villas), never 'dominant'
          TRY_CAST(meter_sale_price AS DOUBLE) AS ppsqm
   FROM {TX_P}
   WHERE area_name_en IS NOT NULL
@@ -249,9 +229,9 @@ bld AS (
 ),
 conc AS (
   SELECT k,
-         MAX(cnt) FILTER (WHERE is_now)::DOUBLE
+         COALESCE(MAX(cnt) FILTER (WHERE is_now AND b IS NOT NULL), 0)::DOUBLE
            / NULLIF(SUM(cnt) FILTER (WHERE is_now), 0)     AS top_share_now,
-         MAX(cnt) FILTER (WHERE NOT is_now)::DOUBLE
+         COALESCE(MAX(cnt) FILTER (WHERE NOT is_now AND b IS NOT NULL), 0)::DOUBLE
            / NULLIF(SUM(cnt) FILTER (WHERE NOT is_now), 0) AS top_share_prev
   FROM bld GROUP BY k
 )
@@ -394,7 +374,7 @@ for code, (tx_rooms, rent_subtype) in CLASSES.items():
         WITH s AS (
           SELECT k,
                  k_name AS name,
-                 COALESCE(building_name_en, '?') AS b,
+                 building_name_en AS b,   -- NULL = no building name (villas), never 'dominant'
                  TRY_CAST(meter_sale_price AS DOUBLE) AS ppsqm
           FROM {TX_P}
           WHERE area_name_en IS NOT NULL
@@ -406,7 +386,8 @@ for code, (tx_rooms, rent_subtype) in CLASSES.items():
             AND TRY_CAST(meter_sale_price AS DOUBLE) BETWEEN 2000 AND 100000
         ),
         top AS (
-          SELECT k, ARG_MAX(b, cnt) AS top_b, MAX(cnt)::DOUBLE / SUM(cnt) AS top_share
+          SELECT k, ARG_MAX(b, cnt) FILTER (WHERE b IS NOT NULL) AS top_b,
+                 COALESCE(MAX(cnt) FILTER (WHERE b IS NOT NULL), 0)::DOUBLE / SUM(cnt) AS top_share
           FROM (SELECT k, b, COUNT(*) AS cnt FROM s GROUP BY 1, 2)
           GROUP BY k
         )
@@ -415,8 +396,8 @@ for code, (tx_rooms, rent_subtype) in CLASSES.items():
                ANY_VALUE(top.top_share) AS top_share,
                COUNT(*) AS n_all,
                MEDIAN(s.ppsqm) AS med_all,
-               COUNT(*) FILTER (WHERE s.b != top.top_b) AS n_excl,
-               MEDIAN(s.ppsqm) FILTER (WHERE s.b != top.top_b) AS med_excl
+               COUNT(*) FILTER (WHERE s.b IS DISTINCT FROM top.top_b) AS n_excl,
+               MEDIAN(s.ppsqm) FILTER (WHERE s.b IS DISTINCT FROM top.top_b) AS med_excl
         FROM s JOIN top USING (k)
         GROUP BY s.k
         """).fetchdf()
@@ -444,52 +425,18 @@ for code, (tx_rooms, rent_subtype) in CLASSES.items():
           f'+ {n_fb} via 2y fallback', file=sys.stderr)
     tx_windows = {k: ('1y' if k in ready_1y else '2y') for k in ready}
 
-    def cell_yields(tx_src, rent_src, dfrom):
-        """{k: (like-for-like yield %, ready sales in matched cells)}; same filters and
-        dominant-building exclusion as ready_sales(), rents over the same window."""
-        df = con.execute(f"""
-        WITH s0 AS (
-          SELECT k, COALESCE(building_name_en, '?') AS b, {_CELL} AS cell, {_RM_SALE} AS rm,
-                 TRY_CAST(meter_sale_price AS DOUBLE) AS ppsqm
-          FROM {tx_src}
-          WHERE area_name_en IS NOT NULL
-            AND trans_group_en = 'Sales'
-            AND property_type_en = 'Unit'
-            AND reg_type_en = 'Existing Properties'
-            AND rooms_en IN {tx_rooms}
-            AND instance_date BETWEEN '{dfrom}' AND '{d_to}'
-            AND TRY_CAST(meter_sale_price AS DOUBLE) BETWEEN 2000 AND 100000
-        ),
-        top AS (
-          SELECT k, ARG_MAX(b, cnt) AS top_b, MAX(cnt)::DOUBLE / SUM(cnt) AS top_share
-          FROM (SELECT k, b, COUNT(*) AS cnt FROM s0 GROUP BY 1, 2) GROUP BY k
-        ),
-        s AS (
-          SELECT k, cell, rm, COUNT(*) AS n, MEDIAN(ppsqm) AS pp
-          FROM s0 JOIN top USING (k)
-          WHERE top_share <= {MAX_BUILDING_SHARE} OR b != top_b
-          GROUP BY ALL
-        ),
-        r AS (
-          SELECT k, {_CELL} AS cell, {_RM_RENT} AS rm, COUNT(*) AS n,
-                 MEDIAN(TRY_CAST(annual_amount AS DOUBLE) / NULLIF(TRY_CAST(actual_area AS DOUBLE), 0))
-                   FILTER (WHERE TRY_CAST(actual_area AS DOUBLE) > 10
-                           AND TRY_CAST(annual_amount AS DOUBLE) / TRY_CAST(actual_area AS DOUBLE)
-                               BETWEEN 100 AND 25000) AS rp
-          FROM {rent_src}
-          WHERE area_name_en IS NOT NULL
-            AND ejari_property_sub_type_en IN {rent_subtype}
-            AND contract_start_date BETWEEN '{dfrom}' AND '{d_to}'
-          GROUP BY ALL
-        )
-        SELECT s.k, s.n, r.rp / s.pp * 100 AS y
-        FROM s JOIN r USING (k, cell, rm)
-        WHERE s.n >= {CELL_MIN_SALE} AND r.n >= {CELL_MIN_RENT} AND s.pp > 0 AND r.rp > 0
-        """).fetchdf()
-        return {k: (weighted_median(g['y'].tolist(), g['n'].tolist()), int(g['n'].sum()))
-                for k, g in df.groupby('k')}
+    def matched_yields(tx_src, rent_src, dfrom):
+        """Same filters and dominant-building exclusion as ready_sales(), rents over the same window."""
+        return cell_yields(
+            con, tx_src, f"""area_name_en IS NOT NULL AND trans_group_en = 'Sales'
+              AND property_type_en = 'Unit' AND reg_type_en = 'Existing Properties'
+              AND rooms_en IN {tx_rooms} AND instance_date BETWEEN '{dfrom}' AND '{d_to}'
+              AND TRY_CAST(meter_sale_price AS DOUBLE) BETWEEN 2000 AND 100000""", _RM_SALE,
+            rent_src, f"""area_name_en IS NOT NULL AND ejari_property_sub_type_en IN {rent_subtype}
+              AND contract_start_date BETWEEN '{dfrom}' AND '{d_to}'""", _RM_RENT,
+            max_building_share=MAX_BUILDING_SHARE)
 
-    cells = {'1y': cell_yields(TX_P, RENTS_P, d_now_from), '2y': cell_yields(TX_P, RENTS_P, d_prev_from)}
+    cells = {'1y': matched_yields(TX_P, RENTS_P, d_now_from), '2y': matched_yields(TX_P, RENTS_P, d_prev_from)}
 
     rt = con.execute(f"""
     SELECT k,
@@ -729,9 +676,9 @@ for code, (tx_rooms, rent_subtype) in CLASSES.items():
             'name': 'DUBAI',
             'n_sale': int(d_tx['n']), 'n_rent': int(d_rt['n']),
             'sale_ppsqm': int(d_tx['p']), 'rent_ppsqm': int(d_rt['p']),
-            'yield_pct': round(cell_yields(f"(SELECT '__dubai__' AS k, * FROM '{TX}')",
-                                           f"(SELECT '__dubai__' AS k, * FROM '{RENTS}')",
-                                           d_now_from)['__dubai__'][0], 2),
+            'yield_pct': round(matched_yields(f"(SELECT '__dubai__' AS k, * FROM '{TX}')",
+                                              f"(SELECT '__dubai__' AS k, * FROM '{RENTS}')",
+                                              d_now_from)['__dubai__'][0], 2),
         }
 
     path = os.path.join(OUT, f'{code}.json')

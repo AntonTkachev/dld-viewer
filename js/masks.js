@@ -243,9 +243,7 @@ const MASKS = {
     periodLabelKey: 'mask_room_label',
     popupRows: (p, t) => {
       if (p.real_metric === null || p.real_metric === undefined) return '';
-      const yld = (p.real_med_price && p.real_med_ppsqm)
-        ? (p.real_med_ppsqm / p.real_med_price * 100).toFixed(1) + '%'
-        : '—';
+      const yld = p.real_metric ? (100 / p.real_metric).toFixed(1) + '%' : '—';
       return `
       <div class="stat"><span class="k">${t('pp_payback_years')}</span><span class="v" style="font-weight:700">${p.real_metric.toFixed(1)} ${t('unit_years')}</span></div>
       <div class="stat"><span class="k">${t('tv_col_yield')}</span><span class="v" style="font-weight:700">${yld}</span></div>
@@ -257,7 +255,7 @@ const MASKS = {
     tableColumns: [
       { key: 'name',       labelKey: 'tv_col_district',    type: 'str',     width: '26%' },
       { key: 'years',      labelKey: 'tv_col_payback_yrs', type: 'yrs',     width: '13%', defaultSort: true, defaultSortDir: 'asc' },
-      { key: r => (r.sale_ppsqm && r.rent_ppsqm) ? Math.round(r.rent_ppsqm / r.sale_ppsqm * 1000) / 10 : null,
+      { key: r => r.years ? Math.round(1000 / r.years) / 10 : null,
         labelKey: 'tv_col_yield',                          type: 'pct_abs', width: '11%' },
       { key: 'sale_ppsqm', labelKey: 'tv_col_sale_ppsqm',  type: 'int',     width: '14%' },
       { key: 'rent_ppsqm', labelKey: 'tv_col_rent_ppsqm',  type: 'int',     width: '14%' },
