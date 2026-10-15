@@ -51,8 +51,32 @@
       for (const room of Object.keys(a.timeline_by_rooms)) _stripKnownBadPoints(a.timeline_by_rooms[room]);
     }
   }
+  // Monthly median: one plot/tower sale can't swing it the way vol/n does; empty month = gap
   function avgPrice(p) {
-    return p.n ? Math.round(p.vol / p.n) : 0;
+    return p.n ? (p.med || Math.round(p.vol / p.n)) : null;
+  }
+  function _priceCap(vals) {
+    const s = vals.filter(Number.isFinite).sort((a, b) => a - b);
+    if (s.length < 12) return undefined;
+    const q = f => s[Math.floor(f * (s.length - 1))];
+    const cap = q(.75) + 3 * (q(.75) - q(.25));
+    return s[s.length - 1] > cap ? cap : undefined;
+  }
+  // Pre-2009 land-plot era: drop leading months up to the last outlier if it sits in the first half
+  // (on the full history, so MA50/MA200 and the modal badges don't inherit it either)
+  function _trimLeadOutliers(series) {
+    const vals = series.map(avgPrice), cap = _priceCap(vals);
+    if (!cap) return series;
+    let last = -1;
+    vals.forEach((v, i) => { if (v > cap) last = i; });
+    return last >= 0 && last < series.length / 2 ? series.slice(last + 1) : series;
+  }
+  // Axis cap for outliers left mid-series (they clip off the top)
+  function _robustMax(vals) {
+    const cap = _priceCap(vals);
+    if (!cap) return undefined;
+    const e = 10 ** Math.floor(Math.log10(cap));
+    return Math.ceil(cap / e * 2) / 2 * e;
   }
   function medPrice(p, monthly) {
     return monthly ? Math.round((p.med || 0) / 12) : (p.med || 0);
@@ -1224,7 +1248,7 @@
     return ((last - prev) / prev) * 100;
   }
   function renderTimelineCharts(a) {
-    const raw = roomTimelineFor(a);
+    const raw = _trimLeadOutliers(roomTimelineFor(a));
     const pt = _projectedPoint(raw, a.as_of);
     const withPt = arr => pt ? arr.filter(p => p.d < pt.d).concat(pt) : arr;
     const fullSeries = withPt(raw);
@@ -1268,9 +1292,10 @@
         pointRadius: c => c.dataIndex === estIdx ? 3 : 0,
         pointHoverRadius: 4, pointHoverBorderColor: '#fff', pointHoverBorderWidth: 2, pointHoverBackgroundColor: color,
         pointBackgroundColor: '#fff', pointBorderColor: color,
+        spanGaps: true,
         segment: { borderDash: c => c.p1DataIndex === estIdx ? [4, 3] : undefined } });
       const scales = {
-        y: _yAxis(fmtY, { beginAtZero: !secondary, grace: '12%' }),
+        y: _yAxis(fmtY, { beginAtZero: true, grace: '12%', max: secondary ? _robustMax(data) : undefined }),
         x: _xAxis(),
       };
       if (secondary) scales.y1 = { display: false, min: 0, max: datasets[0]._secMax };
@@ -1282,7 +1307,7 @@
           responsive:true, maintainAspectRatio:false,
           interaction:{intersect:false, mode:'index'},
           plugins:{
-            legend:{ display: !!secondary, position: 'bottom', align: 'start', labels:{ font:{size:9.5}, padding:8 } },
+            legend:{ display: false },
             tooltip:{callbacks:{
               afterTitle: items => items.length && items[0].dataIndex === estIdx ? est.note : '',
               label: c => c.dataset.type === 'bar' ? ' ' + secondary.fmtTip(c.parsed.y) : ' ' + tooltipFmt(c.parsed.y),
@@ -1579,8 +1604,9 @@
       const still = document.getElementById('dp-chart-modal');
       if (!still || !still.classList.contains('open') || S.modalEngine !== engine || still.dataset.metric !== metric || (still.dataset.source || 'sale') !== source) return;
       target.innerHTML = '';
-      if (useEc) _renderModalECharts({ el: echartsEl, labels, data, ma, ma50, ma200, median, color, m, secondary, est: cd.est });
-      else _renderModalLwc({ el: lwcEl, dates: cd.fullLabels, data, ma50, ma200, median, color, m, secondary, cross, est: cd.est });
+      const yCap = metric === 'avg' && source === 'sale' ? _robustMax(data) : undefined;
+      if (useEc) _renderModalECharts({ el: echartsEl, labels, data, ma, ma50, ma200, median, color, m, secondary, est: cd.est, yCap });
+      else _renderModalLwc({ el: lwcEl, dates: cd.fullLabels, data, ma50, ma200, median, color, m, secondary, cross, est: cd.est, yCap });
     }).catch(err => {
       target.innerHTML = `<div style="padding:20px;color:#dc2626;font-size:12px">${useEc ? 'ECharts' : 'Lightweight Charts'} failed to load.</div>`;
       console.error('Chart library load failed:', err);
@@ -1612,7 +1638,7 @@
     if (S.lwcInstance) { S.lwcInstance.remove(); S.lwcInstance = null; }
   }
 
-  function _renderModalLwc({ el, dates, data, ma50, ma200, median, color, m, secondary, cross, est }) {
+  function _renderModalLwc({ el, dates, data, ma50, ma200, median, color, m, secondary, cross, est, yCap }) {
     const L = LightweightCharts;
     const lang = document.documentElement.lang || 'en';
     const daily = dates.some(d => d.length === 10);
@@ -1629,8 +1655,13 @@
     const hasFinite = arr => arr.some(v => Number.isFinite(v));
     const estTime = est ? toTime(est.label) : null;
     const estStyle = (arr, style) => arr.map(p => p.time === estTime ? { ...p, ...style } : p);
-    const fmtAxis = v => { const r = m.fmtY(Math.round(v)); return typeof r === 'number' ? fmtInt(r) : r; };
+    const fmtAxis = v => { if (v < 0) return ''; const r = m.fmtY(Math.round(v)); return typeof r === 'number' ? fmtInt(r) : r; };
     const pf = { type: 'custom', minMove: 1, formatter: fmtAxis };
+    const autoscaleInfoProvider = orig => {
+      const r = orig();
+      if (r && r.priceRange && yCap) r.priceRange.maxValue = Math.min(r.priceRange.maxValue, yCap);
+      return r;
+    };
     const crossLine = { color: '#94a3b8', width: 1, style: L.LineStyle.Dashed, labelBackgroundColor: '#0f172a' };
 
     const chart = L.createChart(el, {
@@ -1660,7 +1691,7 @@
       chart.priceScale('vol').applyOptions({ scaleMargins: { top: 0.58, bottom: 0 }, visible: false });
       legendRows.push({ s: vol, label: secondary.label, swatch: 'rgba(148,163,184,0.6)', fmt: secondary.fmtTip });
     }
-    const maOpts = { lineWidth: 1, priceLineVisible: false, lastValueVisible: false, crosshairMarkerVisible: false, priceFormat: pf };
+    const maOpts = { lineWidth: 1, priceLineVisible: false, lastValueVisible: false, crosshairMarkerVisible: false, priceFormat: pf, autoscaleInfoProvider };
     if (hasFinite(ma200)) {
       const s200 = chart.addSeries(L.LineSeries, { ...maOpts, color: '#94a3b8', lineStyle: L.LineStyle.Dashed });
       s200.setData(pts(ma200));
@@ -1674,7 +1705,7 @@
     const main = chart.addSeries(L.AreaSeries, {
       lineColor: color, lineWidth: 2,
       topColor: rgba(color, 0.22), bottomColor: rgba(color, 0),
-      priceFormat: pf, priceLineVisible: false,
+      priceFormat: pf, priceLineVisible: false, autoscaleInfoProvider,
       crosshairMarkerRadius: 4, crosshairMarkerBorderColor: '#ffffff', crosshairMarkerBorderWidth: 2,
     });
     const mainPts = pts(data);
@@ -1801,7 +1832,7 @@
     ts.subscribeSizeChange(paint);
   }
 
-  function _renderModalECharts({ el, labels, data, ma, ma50, ma200, median, color, m, secondary, est }) {
+  function _renderModalECharts({ el, labels, data, ma, ma50, ma200, median, color, m, secondary, est, yCap }) {
     const clean = arr => arr.map(v => Number.isFinite(v) ? v : null);
     const hasFinite = arr => arr.some(v => Number.isFinite(v));
     const inst = echarts.init(el, null, { renderer: 'canvas' });
@@ -1851,7 +1882,7 @@
         axisTick: { show: false },
       },
       yAxis: [{
-        type: 'value',
+        type: 'value', min: 0, max: yCap,
         axisLabel: { fontSize: 10, color: '#64748b', formatter: m.fmtY },
         splitLine: { lineStyle: { color: '#f1f5f9' } },
         axisLine: { show: false }, axisTick: { show: false },
