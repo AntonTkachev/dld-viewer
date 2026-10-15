@@ -219247,7 +219247,8 @@
      "area_name_en": "Madinat Al Mataar",
      "master_projects_in": [
       "Dubai World Central"
-     ]
+     ],
+     "master_project_sql": "COALESCE(project_name_en, '') NOT LIKE 'Expo City%' AND COALESCE(project_name_en, '') NOT LIKE 'Expo Valley%'"
     }
    }
   },
@@ -219712,9 +219713,7 @@
     "parent_area_name_en": "Madinat Al Mataar",
     "filter": {
      "area_name_en": "Madinat Al Mataar",
-     "master_projects_in": [
-      "EXPO CITY"
-     ]
+     "master_project_sql": "master_project_en = 'EXPO CITY' OR project_name_en LIKE 'Expo City%' OR project_name_en LIKE 'Expo Valley%'"
     }
    }
   },

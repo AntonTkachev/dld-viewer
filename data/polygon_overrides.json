@@ -362,13 +362,15 @@
           "name": "Dubai South",
           "name_ar": "دبي ساوث",
           "osm_polygon": "Madinat Al Mataar",
-          "master_projects": ["Dubai World Central"]
+          "master_projects": ["Dubai World Central"],
+          "master_project_sql": "COALESCE(project_name_en, '') NOT LIKE 'Expo City%' AND COALESCE(project_name_en, '') NOT LIKE 'Expo Valley%'"
         },
         {
+          "_comment": "Expo City Valley / Expo Valley Views are filed under master Dubai World Central but sit inside Expo City (OSM buildings, same developer).",
           "name": "Expo City Dubai",
           "name_ar": "إكسبو سيتي دبي",
           "osm_polygon": "Expo 2020 District",
-          "master_projects": ["EXPO CITY"]
+          "master_project_sql": "master_project_en = 'EXPO CITY' OR project_name_en LIKE 'Expo City%' OR project_name_en LIKE 'Expo Valley%'"
         }
       ]
     },
