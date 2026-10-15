@@ -212,6 +212,14 @@ def hierarchy_select(rollup_sql):
        ELSE ({rollup_sql}) END AS name_m"""
 
 
+def polygon_rows(src):
+    """FROM-able subquery: each `src` row once per drawn polygon it sits in (area, plus its
+    sub-community if any), with columns k / k_name — what the map masks group by."""
+    area_k, area_n, sub_k, sub_n, _, _ = build_hierarchy_sql()
+    return f"""(SELECT {area_k} AS k, {area_n} AS k_name, * FROM {src}
+  UNION ALL SELECT {sub_k}, {sub_n}, * FROM {src} WHERE {sub_k} IS NOT NULL)"""
+
+
 def hierarchy_views(con, base, view, view_p, key_table='key_lvl'):
     """From `base` (rows with k_a/k_s/k_m) build `view` with one row per (deal, level):
     lvl 0 = area, 1 = sub-community polygon, 2 = master project with no polygon of its own.

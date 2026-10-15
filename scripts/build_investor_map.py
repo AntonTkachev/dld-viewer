@@ -171,8 +171,8 @@ CLASSES = {'all': (_ALL_SALE, _ALL_RENT)}
 CLASSES.update({k: (_ROOMS_SALE[k], _ROOMS_RENT[k]) for k in _ROOMS_SALE})
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
-from _curated_sql import build_curated_sql
-KEY, NAME, _ = build_curated_sql()
+from _curated_sql import polygon_rows
+TX_P, RENTS_P, SRC_P = polygon_rows(f"'{TX}'"), polygon_rows(f"'{RENTS}'"), polygon_rows('src')
 
 con = duckdb.connect()
 d_now_from  = (TODAY - timedelta(days=365)).isoformat()
@@ -212,11 +212,11 @@ def pct_ranks(values):
 # and each window must pass the building-concentration guard.
 mom = con.execute(f"""
 WITH px AS (
-  SELECT {KEY} AS k,
+  SELECT k,
          instance_date >= '{d_now_from}' AS is_now,
          COALESCE(building_name_en, '?') AS b,
          TRY_CAST(meter_sale_price AS DOUBLE) AS ppsqm
-  FROM '{TX}'
+  FROM {TX_P}
   WHERE area_name_en IS NOT NULL
     AND trans_group_en = 'Sales'
     AND property_type_en = 'Unit'
@@ -259,11 +259,11 @@ print(f'momentum: {len(past1y)} districts', file=sys.stderr)
 # 1-year-old district is "at its peak" by construction, not by exhaustion.
 peak_hist = con.execute(f"""
 WITH s AS (
-  SELECT {KEY} AS k,
+  SELECT k,
          YEAR(CAST(instance_date AS DATE)) AS y,
          instance_date >= '{d_now_from}' AS is_cur,
          TRY_CAST(meter_sale_price AS DOUBLE) AS ppsqm
-  FROM '{TX}'
+  FROM {TX_P}
   WHERE area_name_en IS NOT NULL
     AND trans_group_en = 'Sales'
     AND property_type_en = 'Unit'
@@ -293,12 +293,12 @@ print(f'vs-peak: {len(vs_peak)} districts with ≥{MIN_PEAK_YEARS}y history', fi
 # --- Rent trend + renewal share (residential, district level) ------------
 rq = con.execute(f"""
 WITH r AS (
-  SELECT {KEY} AS k,
+  SELECT k,
          contract_start_date >= '{d_now_from}' AS is_now,
          TRIM(contract_reg_type_en) = 'Renew' AS is_renew,
          TRY_CAST(annual_amount AS DOUBLE)
            / NULLIF(TRY_CAST(actual_area AS DOUBLE), 0) AS rp
-  FROM '{RENTS}'
+  FROM {RENTS_P}
   WHERE area_name_en IS NOT NULL
     AND TRIM(ejari_property_type_en) IN ('Flat', 'Studio', 'Hotel apartments')
     AND contract_start_date BETWEEN '{d_prev_from}' AND '{d_to}'
@@ -343,10 +343,10 @@ if os.path.exists(PROJECTS):
       SELECT *, CAST(NULL AS VARCHAR) AS project_name_en
       FROM read_csv_auto('{PROJECTS}')
     )
-    SELECT {KEY} AS k,
+    SELECT k,
            COUNT(*) AS n_inflight,
            COUNT(*) FILTER (WHERE project_end_date < '{d_chronic}') AS n_chronic
-    FROM src
+    FROM {SRC_P}
     WHERE area_name_en IS NOT NULL
       -- units + villas + lands, matching build_lifecycle.py's volume rule:
       -- townhouse masters (DAMAC Lagoons) register as LANDS (units=villas=0).
@@ -372,12 +372,12 @@ for code, (tx_rooms, rent_subtype) in CLASSES.items():
     def ready_sales(dfrom):
         return con.execute(f"""
         WITH s AS (
-          SELECT {KEY} AS k,
-                 {NAME} AS name,
+          SELECT k,
+                 k_name AS name,
                  COALESCE(building_name_en, '?') AS b,
                  TRY_CAST(meter_sale_price AS DOUBLE) AS ppsqm,
                  TRY_CAST(procedure_area AS DOUBLE) AS sqm
-          FROM '{TX}'
+          FROM {TX_P}
           WHERE area_name_en IS NOT NULL
             AND trans_group_en = 'Sales'
             AND property_type_en = 'Unit'
@@ -429,7 +429,7 @@ for code, (tx_rooms, rent_subtype) in CLASSES.items():
     tx_windows = {k: ('1y' if k in ready_1y else '2y') for k in ready}
 
     rt = con.execute(f"""
-    SELECT {KEY} AS k,
+    SELECT k,
            COUNT(*) AS n_rent,
            MEDIAN(TRY_CAST(annual_amount AS DOUBLE) / NULLIF(TRY_CAST(actual_area AS DOUBLE), 0))
              FILTER (WHERE TRY_CAST(actual_area AS DOUBLE) > 10
@@ -437,7 +437,7 @@ for code, (tx_rooms, rent_subtype) in CLASSES.items():
                          BETWEEN 100 AND 25000) AS rent_ppsqm,
            MEDIAN(TRY_CAST(actual_area AS DOUBLE))
              FILTER (WHERE TRY_CAST(actual_area AS DOUBLE) BETWEEN 10 AND 1000) AS rent_sqm
-    FROM '{RENTS}'
+    FROM {RENTS_P}
     WHERE area_name_en IS NOT NULL
       AND ejari_property_sub_type_en IN {rent_subtype}
       AND contract_start_date BETWEEN '{d_now_from}' AND '{d_to}'
@@ -461,12 +461,12 @@ for code, (tx_rooms, rent_subtype) in CLASSES.items():
       GROUP BY 1
     ),
     op AS (
-      SELECT {KEY} AS k,
-             ANY_VALUE({NAME}) OVER (PARTITION BY {KEY}) AS name,
+      SELECT k,
+             ANY_VALUE(k_name) OVER (PARTITION BY k) AS name,
              CAST(instance_date AS DATE) AS d,
              TRY_CAST(meter_sale_price AS DOUBLE) AS ppsqm,
              CAST(TRY_CAST(project_number AS DOUBLE) AS BIGINT) AS pn
-      FROM '{TX}'
+      FROM {TX_P}
       WHERE area_name_en IS NOT NULL
         AND trans_group_en = 'Sales'
         AND reg_type_en = 'Off-Plan Properties'

@@ -287,8 +287,8 @@ def compute_sale_growth(polys):
                            '_growth_window': '3y'|'1y'}}.
     """
     sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
-    from _curated_sql import build_curated_sql
-    KEY_EXPR, NAME_EXPR, _ = build_curated_sql()
+    from _curated_sql import polygon_rows
+    TX_P, RENTS_P = polygon_rows(f"'{TX_PARQUET}'"), polygon_rows(f"'{RENTS_PARQUET}'")
     con = duckdb.connect()
     # Same canonical filters as scripts/build_sale_aggregates.py:
     #   trans_group_en = 'Sales' removes Mortgage Registrations (banks
@@ -308,12 +308,12 @@ def compute_sale_growth(polys):
 
     def window(date_from, date_to):
         return con.execute(f"""
-            SELECT {KEY_EXPR} AS k,
-                   ANY_VALUE({NAME_EXPR}) AS name,
+            SELECT k,
+                   ANY_VALUE(k_name) AS name,
                    COUNT(*) AS n,
                    ROUND(MEDIAN({PPSQM_EXPR})
                          FILTER (WHERE {PPSQM_EXPR} > 0)) AS med
-            FROM '{TX_PARQUET}'
+            FROM {TX_P}
             WHERE area_name_en IS NOT NULL
               AND {SALE_FILTER}
               AND CAST(instance_date AS DATE)
@@ -395,9 +395,9 @@ def compute_rent_growth(polys):
        Returns {polygon_key: {'med_now': , 'med_then': , 'growth_pct': , 'n': }}.
     """
     sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
-    from _curated_sql import build_curated_sql
+    from _curated_sql import polygon_rows
     # Rents parquet shares the same area_name_en column, so curated SQL applies.
-    KEY_EXPR, NAME_EXPR, _ = build_curated_sql()
+    TX_P, RENTS_P = polygon_rows(f"'{TX_PARQUET}'"), polygon_rows(f"'{RENTS_PARQUET}'")
     # _curated_sql was written for tx.parquet's master_project_en column —
     # rents has the same column name so the CASE works as-is.
 
@@ -434,12 +434,12 @@ def compute_rent_growth(polys):
 
     def window(date_from, date_to):
         return con.execute(f"""
-            SELECT {KEY_EXPR} AS k,
-                   ANY_VALUE({NAME_EXPR}) AS name,
+            SELECT k,
+                   ANY_VALUE(k_name) AS name,
                    COUNT(*) AS n,
                    ROUND(MEDIAN({PPSQM_EXPR})
                          FILTER (WHERE {PPSQM_EXPR} > 0)) AS med_ppsqm
-            FROM '{RENTS_PARQUET}'
+            FROM {RENTS_P}
             WHERE area_name_en IS NOT NULL
               AND {RENT_RESIDENTIAL_FILTER}
               AND contract_start_date BETWEEN '{date_from}' AND '{date_to}'
@@ -512,8 +512,8 @@ def compute_tx_velocity(polys):
     Returns {key: {'n_tx_1y': int, 'n_tx_baseline': int}}.
     """
     sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
-    from _curated_sql import build_curated_sql
-    KEY_EXPR, _, _ = build_curated_sql()
+    from _curated_sql import polygon_rows
+    TX_P, RENTS_P = polygon_rows(f"'{TX_PARQUET}'"), polygon_rows(f"'{RENTS_PARQUET}'")
     con = duckdb.connect()
     now_from = (TODAY - timedelta(days=365)).isoformat()
     now_to = TODAY.isoformat()
@@ -526,8 +526,8 @@ def compute_tx_velocity(polys):
     for label, frm, to in (('n_tx_1y', now_from, now_to),
                            ('n_tx_baseline', base_from, base_to)):
         rows = con.execute(f"""
-            SELECT {KEY_EXPR} AS k, COUNT(*) AS n
-            FROM '{TX_PARQUET}'
+            SELECT k, COUNT(*) AS n
+            FROM {TX_P}
             WHERE area_name_en IS NOT NULL
               AND {SALE_FILTER}
               AND CAST(instance_date AS DATE) BETWEEN DATE '{frm}' AND DATE '{to}'
@@ -554,13 +554,13 @@ def compute_n_tx_historical(polys):
     ago) cleanly separates them: Discovery Gardens has thousands, Bukadra ≈ 0.
     Land tx are excluded — they're plot deals, not housing stock."""
     sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
-    from _curated_sql import build_curated_sql
-    KEY_EXPR, _, _ = build_curated_sql()
+    from _curated_sql import polygon_rows
+    TX_P, RENTS_P = polygon_rows(f"'{TX_PARQUET}'"), polygon_rows(f"'{RENTS_PARQUET}'")
     con = duckdb.connect()
     cutoff = (TODAY - timedelta(days=365 * 5)).isoformat()
     rows = con.execute(f"""
-        SELECT {KEY_EXPR} AS k, COUNT(*) AS n
-        FROM '{TX_PARQUET}'
+        SELECT k, COUNT(*) AS n
+        FROM {TX_P}
         WHERE area_name_en IS NOT NULL
           AND trans_group_en = 'Sales'
           AND (property_type_en IS NULL OR property_type_en != 'Land')
@@ -580,8 +580,8 @@ def compute_residential_share(polys):
     Returns {canonical_key: {'res': int, 'total': int, 'ratio': float}}.
     """
     sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
-    from _curated_sql import build_curated_sql
-    KEY_EXPR, _, _ = build_curated_sql()
+    from _curated_sql import polygon_rows
+    TX_P, RENTS_P = polygon_rows(f"'{TX_PARQUET}'"), polygon_rows(f"'{RENTS_PARQUET}'")
     con = duckdb.connect()
     since = (TODAY - timedelta(days=365)).isoformat()
     RESIDENTIAL = (
@@ -589,10 +589,10 @@ def compute_residential_share(polys):
         "('Flat','Villa','Studio','Hotel apartments','Complex Villas')"
     )
     rows = con.execute(f"""
-        SELECT {KEY_EXPR} AS k,
+        SELECT k,
                COUNT(*) AS total,
                COUNT(*) FILTER (WHERE {RESIDENTIAL}) AS res
-        FROM '{RENTS_PARQUET}'
+        FROM {RENTS_P}
         WHERE area_name_en IS NOT NULL
           AND ejari_property_type_en IS NOT NULL
           AND CAST(contract_start_date AS DATE) >= '{since}'
@@ -617,15 +617,15 @@ def compute_offplan_share(polys):
     only for polygons that cleared EMERGING_OFFPLAN_OBS_MIN off-plan sales.
     """
     sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
-    from _curated_sql import build_curated_sql
-    KEY_EXPR, _, _ = build_curated_sql()
+    from _curated_sql import polygon_rows
+    TX_P, RENTS_P = polygon_rows(f"'{TX_PARQUET}'"), polygon_rows(f"'{RENTS_PARQUET}'")
     con = duckdb.connect()
     since = (TODAY - timedelta(days=365)).isoformat()
     rows = con.execute(f"""
-        SELECT {KEY_EXPR} AS k,
+        SELECT k,
                COUNT(*) FILTER (WHERE reg_type_en = 'Off-Plan Properties') AS op,
                COUNT(*) AS total
-        FROM '{TX_PARQUET}'
+        FROM {TX_P}
         WHERE area_name_en IS NOT NULL
           AND trans_group_en = 'Sales'
           AND property_type_en IN ('Unit', 'Building', 'Villa')

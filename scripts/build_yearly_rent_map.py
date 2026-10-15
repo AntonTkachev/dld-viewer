@@ -49,8 +49,8 @@ BUCKETS = {
 }
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
-from _curated_sql import build_curated_sql
-KEY, NAME, _ = build_curated_sql()
+from _curated_sql import polygon_rows
+RT_P = polygon_rows(f"'{RT}'")
 
 con = duckdb.connect()
 dfrom = (TODAY - timedelta(days=WINDOW_DAYS)).isoformat()
@@ -64,14 +64,14 @@ SQM_EXPR = "TRY_CAST(actual_area AS DOUBLE)"
 
 for code, (rooms_clause, residential_clause) in BUCKETS.items():
     df = con.execute(f"""
-    SELECT {KEY} AS k,
-           ANY_VALUE({NAME}) AS name,
+    SELECT k,
+           ANY_VALUE(k_name) AS name,
            COUNT(*) AS n,
            ROUND(MEDIAN({AMT_EXPR})
                  FILTER (WHERE {AMT_EXPR} > 0)) AS med,
            ROUND(MEDIAN({AMT_EXPR} / NULLIF({SQM_EXPR}, 0))
                  FILTER (WHERE {AMT_EXPR} > 0 AND {SQM_EXPR} > 0)) AS med_ppsqm
-    FROM '{RT}'
+    FROM {RT_P}
     WHERE area_name_en IS NOT NULL
       AND {rooms_clause}
       AND {residential_clause}

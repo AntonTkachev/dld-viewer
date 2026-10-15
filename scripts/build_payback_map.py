@@ -35,8 +35,8 @@ CLASSES = {
 }
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
-from _curated_sql import build_curated_sql
-KEY, NAME, _ = build_curated_sql()
+from _curated_sql import polygon_rows
+TX_P, RENTS_P = polygon_rows(f"'{TX}'"), polygon_rows(f"'{RENTS}'")
 
 con = duckdb.connect()
 dfrom = (TODAY - timedelta(days=WINDOW_DAYS)).isoformat()
@@ -45,12 +45,12 @@ print(f'window {dfrom} … {dto}', file=sys.stderr)
 
 for code, (tx_rooms, rent_subtype) in CLASSES.items():
     tx = con.execute(f"""
-    SELECT {KEY} AS k,
-           ANY_VALUE({NAME}) AS name,
+    SELECT k,
+           ANY_VALUE(k_name) AS name,
            COUNT(*) AS n_sale,
            ROUND(MEDIAN(TRY_CAST(meter_sale_price AS DOUBLE))
                  FILTER (WHERE TRY_CAST(meter_sale_price AS DOUBLE) > 0)) AS sale_ppsqm
-    FROM '{TX}'
+    FROM {TX_P}
     WHERE area_name_en IS NOT NULL
       AND rooms_en IN {tx_rooms}
       AND trans_group_en = 'Sales'
@@ -60,13 +60,13 @@ for code, (tx_rooms, rent_subtype) in CLASSES.items():
     """).fetchdf()
 
     rt = con.execute(f"""
-    SELECT {KEY} AS k,
+    SELECT k,
            COUNT(*) AS n_rent,
            ROUND(MEDIAN(TRY_CAST(annual_amount AS DOUBLE) / NULLIF(TRY_CAST(actual_area AS DOUBLE), 0))
                  FILTER (WHERE TRY_CAST(actual_area AS DOUBLE) > 10
                          AND TRY_CAST(annual_amount AS DOUBLE) / TRY_CAST(actual_area AS DOUBLE)
                              BETWEEN 100 AND 25000)) AS rent_ppsqm
-    FROM '{RENTS}'
+    FROM {RENTS_P}
     WHERE area_name_en IS NOT NULL
       AND ejari_property_sub_type_en IN {rent_subtype}
       AND contract_start_date BETWEEN '{dfrom}' AND '{dto}'
