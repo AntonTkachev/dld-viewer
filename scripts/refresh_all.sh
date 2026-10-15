@@ -30,13 +30,11 @@ phase() { echo; echo "[$(ts)] === $* ==="; }
 phase "1. Curated polygons (DM + OSM splits + alias overrides)"
 $PY scripts/build_curated_polygons.py
 
-phase "2. Sales + rents 'all' choropleth shards"
+phase "2. Sales + rents aggregates (all-time + 1y/3y/5y/10y; also write the map period shards)"
 $PY scripts/build_sale_aggregates.py
 $PY scripts/build_rent_aggregates.py
 
-phase "3. Period shards (sales, rents, growth, payback, yearly_sell, yearly_rent)"
-$PY scripts/build_transactions_map.py
-$PY scripts/build_rents_map.py
+phase "3. Period shards (growth, payback, yearly_sell, yearly_rent)"
 $PY scripts/build_growth_map.py
 $PY scripts/build_payback_map.py
 $PY scripts/build_room_prices_map.py

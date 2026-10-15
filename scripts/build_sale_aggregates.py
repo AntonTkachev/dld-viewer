@@ -14,7 +14,7 @@ DATE_FROM = '1995-01-01'   # full parquet history (ignore Hijri-converted noise)
 DATE_TO   = '2026-12-31'
 
 # Key + display name come from _curated_sql.build_curated_sql() — the SAME
-# CASE expression used by build_transactions_map.py / build_rents_map.py.
+# CASE expression used by build_rent_aggregates.py / build_growth_map.py.
 # That means AGGREGATES is keyed identically to the per-period choropleth
 # data, so the polygon click resolves to a real bucket every time.
 #
@@ -791,6 +791,100 @@ dubai['recent'] = all_recent[:20]
 dubai['trend_pct'] = round(float(q("SELECT MEDIAN(r) AS r FROM trend_cells WHERE k NOT IN (SELECT k FROM sec_keys)").iloc[0]['r']) * 100, 1)
 
 out['__dubai__'] = dubai
+
+# ─── Per-period summaries: the single source for map periods, period pages and the app ─
+# Windows match the old build_transactions_map.py (today − N×365 days → DATE_TO).
+print('period summaries (1y/3y/5y/10y)...', file=sys.stderr)
+from datetime import date, timedelta
+PERIOD_YEARS = [('1y', 1), ('3y', 3), ('5y', 5), ('10y', 10)]
+BUCKET_SQL = """CASE WHEN sbt = 'Villa' THEN 'villa' WHEN sbt = 'Flat' THEN 'flat'
+  WHEN sbt IN ('Office','Shop','Hotel Apartment','Hotel Rooms','Show Rooms') THEN 'commercial'
+  WHEN pt = 'Land' THEN 'land' ELSE 'commercial' END"""
+ROOM_SQL = """CASE WHEN sbt = 'Villa' THEN 'villa' WHEN TRIM(rooms) = 'Studio' THEN 'studio'
+  WHEN TRIM(rooms) = '1 B/R' THEN '1br' WHEN TRIM(rooms) = '2 B/R' THEN '2br' WHEN TRIM(rooms) = '3 B/R' THEN '3br'
+  WHEN TRIM(rooms) IN ('4 B/R','5 B/R','6 B/R','7 B/R') THEN '4br+' ELSE 'other' END"""
+_EMPTY_B = {'n': 0, 'total': 0, 'med': 0, 'mean': 0, 'p25': 0, 'p75': 0, 'med_sqm': 0, 'med_ppsqm': 0}
+
+def period_summaries(dfrom, src, kx):
+    """{key: summary} for deals with d >= dfrom. src = tx (area + project copies) or tx_p; kx = key column/expr."""
+    w = f"FROM {src} WHERE d >= '{dfrom}'"
+    res = {}
+    for _, r in q(f"""SELECT {kx} AS k, ANY_VALUE(area_orig) AS name, COUNT(*) AS n, ROUND(SUM(val)) AS total,
+          ROUND(MEDIAN(val) FILTER (WHERE val > 0)) AS med, ROUND(AVG(val) FILTER (WHERE val > 0)) AS mean,
+          ROUND(QUANTILE_CONT(val,0.25) FILTER (WHERE val > 0)) AS p25, ROUND(QUANTILE_CONT(val,0.75) FILTER (WHERE val > 0)) AS p75,
+          ROUND(QUANTILE_CONT(val,0.90) FILTER (WHERE val > 0)) AS p90,
+          ROUND(MEDIAN(sqm) FILTER (WHERE sqm > 0), 1) AS med_sqm,
+          ROUND(MEDIAN(val/sqm) FILTER (WHERE val > 0 AND sqm > 0)) AS med_ppsqm
+          {w} GROUP BY 1""").iterrows():
+        res[r['k']] = {'name': r['name'], 'n': int(r['n']), 'total': safe_int(r['total']), 'med': safe_int(r['med']),
+                       'mean': safe_int(r['mean']), 'p25': safe_int(r['p25']), 'p75': safe_int(r['p75']),
+                       'p90': safe_int(r['p90']), 'med_sqm': safe_float(r['med_sqm']), 'med_ppsqm': safe_int(r['med_ppsqm']),
+                       **{b: dict(_EMPTY_B) for b in ('flat', 'villa', 'commercial', 'land')},
+                       'offplan': {}, 'payment': {'financed': 0, 'cash': 0}, 'by_rooms_unit': {}, 'top_projects': []}
+    for _, r in q(f"""SELECT {kx} AS k, {BUCKET_SQL} AS b, COUNT(*) AS n, ROUND(SUM(val)) AS total,
+          ROUND(MEDIAN(val)) AS med, ROUND(AVG(val)) AS mean,
+          ROUND(QUANTILE_CONT(val,0.25)) AS p25, ROUND(QUANTILE_CONT(val,0.75)) AS p75,
+          ROUND(MEDIAN(sqm) FILTER (WHERE sqm > 0), 1) AS med_sqm, ROUND(MEDIAN(val/sqm) FILTER (WHERE sqm > 0)) AS med_ppsqm
+          {w} AND val > 0 GROUP BY 1, 2""").iterrows():
+        res[r['k']][r['b']] = {'n': int(r['n']), 'total': safe_int(r['total']), 'med': safe_int(r['med']), 'mean': safe_int(r['mean']),
+                               'p25': safe_int(r['p25']), 'p75': safe_int(r['p75']),
+                               'med_sqm': safe_float(r['med_sqm']), 'med_ppsqm': safe_int(r['med_ppsqm'])}
+    for _, r in q(f"""SELECT {kx} AS k, CASE WHEN reg LIKE '%Existing%' THEN 'Ready'
+          WHEN reg LIKE '%Off-Plan%' OR reg LIKE '%Off Plan%' THEN 'Off-Plan' ELSE reg END AS op, COUNT(*) AS n
+          {w} AND reg IS NOT NULL GROUP BY 1, 2""").iterrows():
+        res[r['k']]['offplan'][r['op']] = int(r['n'])
+    for _, r in q(f"""SELECT {kx} AS k, {ROOM_SQL} AS ru, COUNT(*) AS n, ROUND(SUM(val)) AS vol,
+          ROUND(MEDIAN(val)) AS med, ROUND(MEDIAN(val/sqm) FILTER (WHERE sqm > 0)) AS ppsqm
+          {w} AND val > 0 GROUP BY 1, 2""").iterrows():
+        res[r['k']]['by_rooms_unit'][r['ru']] = {'n': int(r['n']), 'vol': safe_int(r['vol']),
+                                                 'med': safe_int(r['med']), 'ppsqm': safe_int(r['ppsqm'])}
+    for _, r in q(f"""WITH g AS (SELECT {kx} AS k, COALESCE(NULLIF(proj,''), '') AS proj, COUNT(*) AS n, ROUND(SUM(val)) AS total,
+          ROUND(MEDIAN(val) FILTER (WHERE val > 0)) AS med {w} GROUP BY 1, 2),
+          ranked AS (SELECT *, ROW_NUMBER() OVER (PARTITION BY k ORDER BY total DESC NULLS LAST) AS rn FROM g)
+          SELECT * FROM ranked WHERE rn <= 10 ORDER BY k, rn""").iterrows():
+        res[r['k']]['top_projects'].append({'proj': r['proj'], 'n': int(r['n']), 'total': safe_int(r['total']), 'med': safe_int(r['med'])})
+    # Financed ≈ mortgage registrations in the same window, capped at sales (same rule as all-time)
+    for _, r in q(f"""WITH m AS (
+          SELECT {_KEY_RAW} AS k_p, {KEY_EXPR} AS k_m FROM '{TX}'
+          WHERE trans_group_en = 'Mortgages' AND procedure_name_en = 'Mortgage Registration'
+            AND area_name_en IS NOT NULL AND instance_date BETWEEN '{dfrom}' AND '{DATE_TO}'),
+          mm AS (SELECT k_p AS k, 0 AS sec FROM m UNION ALL SELECT k_m, 1 FROM m WHERE k_m IN (SELECT k FROM sec_keys))
+          SELECT {kx} AS k, COUNT(*) AS n FROM mm {'WHERE sec = 0' if src == 'tx_p' else ''} GROUP BY 1""").iterrows():
+        if r['k'] in res:
+            e = res[r['k']]; fin = min(int(r['n']), e['n'])
+            e['payment'] = {'financed': fin, 'cash': e['n'] - fin}
+    for e in res.values():
+        if not e['payment']['financed']:
+            e['payment']['cash'] = e['n']
+    return res
+
+TODAY_D = date.today()
+PERIOD_FROM = {code: (TODAY_D - timedelta(days=365 * yrs)).isoformat() for code, yrs in PERIOD_YEARS}
+for code, dfrom in PERIOD_FROM.items():
+    per = period_summaries(dfrom, 'tx', 'k')
+    per['__dubai__'] = period_summaries(dfrom, 'tx_p', "'__dubai__'").get('__dubai__') or {}
+    for k, e in out.items():
+        if k in per:
+            e.setdefault('periods', {})[code] = per[k]
+
+# Map period shards (transactions/data/{1y..all}.json) — polygon keys only, headline fields
+MAP_OUT = os.path.join(ROOT, 'transactions', 'data')
+def _headline(e, name):
+    return {'name': name, 'n': e.get('n', 0), 'total': e.get('total', 0), 'med': e.get('med', 0),
+            'med_sqm': e.get('med_sqm', 0), 'med_ppsqm': e.get('med_ppsqm', 0)}
+for code in [c for c, _ in PERIOD_YEARS] + ['all']:
+    shard = {}
+    for k, e in out.items():
+        if k in SEC_KEYS:
+            continue
+        rec = e if code == 'all' else (e.get('periods') or {}).get(code)
+        if rec and rec.get('n'):
+            shard[k] = _headline(rec, e.get('name'))
+    if '__dubai__' in shard:
+        shard['__dubai__']['name'] = 'DUBAI'
+    with open(os.path.join(MAP_OUT, f'{code}.json'), 'w', encoding='utf-8') as f:
+        json.dump(shard, f, ensure_ascii=False, separators=(',', ':'))
+    print(f'  wrote transactions/data/{code}.json  areas={len(shard) - 1}', file=sys.stderr)
 
 # Last data day — lets the client project the partial current month
 AS_OF = q("SELECT MAX(d) AS m FROM tx").iloc[0]['m']

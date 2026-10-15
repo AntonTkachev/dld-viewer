@@ -1,7 +1,7 @@
 """Shared helper: generate SQL CASE expressions that map raw DLD rows to
 curated polygon keys + display names.
 
-Used by build_transactions_map.py / build_rents_map.py / build_growth_map.py /
+Used by build_sale_aggregates.py / build_rent_aggregates.py / build_growth_map.py /
 build_payback_map.py to ensure all 4 masks aggregate against the SAME set of
 polygon keys that the viewer's curated GEOJSON renders.
 

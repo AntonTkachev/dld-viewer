@@ -60,7 +60,6 @@
   .about p { margin:4px 20px 12px; color:#374151; line-height:1.6; font-size:14px; }
   .about .lede { font-size:15px; color:#1f2937; }
   .about-grid { display:grid; grid-template-columns:repeat(auto-fit,minmax(150px,1fr)); gap:10px; margin-top:8px; }
-  .about-note { font-size:12px; color:#6b7280; margin:10px 0 6px; }
   .about-stat { padding:10px 12px; background:#f8fafc; border:1px solid #e2e8f0; border-radius:8px; }
   .about-stat .k { font-size:11px; color:#6b7280; text-transform:uppercase; letter-spacing:0.04em; margin-bottom:4px; }
   .about-stat .v { font-size:16px; font-weight:600; color:#0f172a; }
@@ -218,6 +217,16 @@ function periodHref(p) {
 function applyPeriodCopy(period) {
   if (!PERIOD_COPY || !PERIOD_COPY[period]) return;
   const c = PERIOD_COPY[period];
+  // About + top-projects preview are server-rendered per period; swap them with the chip
+  const about = document.querySelector('details.about');
+  if (about && c.about) {
+    const open = about.open;
+    about.outerHTML = c.about;
+    const fresh = document.querySelector('details.about');
+    if (fresh) fresh.open = open;
+  }
+  const top = document.getElementById('d-top-projects');
+  if (top && c.top !== undefined) top.innerHTML = c.top;
   document.getElementById('d-name').textContent = c.h1;
   const ledeEl = document.getElementById('d-lede');
   if (ledeEl) ledeEl.textContent = c.lede;
