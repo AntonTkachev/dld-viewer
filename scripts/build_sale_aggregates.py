@@ -13,26 +13,11 @@ TX  = os.path.join(ROOT, 'data/tx.parquet')
 DATE_FROM = '1995-01-01'   # full parquet history (ignore Hijri-converted noise)
 DATE_TO   = '2026-12-31'
 
-# Key + display name come from _curated_sql.build_curated_sql() — the SAME
-# CASE expression used by build_rent_aggregates.py / build_growth_map.py.
-# That means AGGREGATES is keyed identically to the per-period choropleth
-# data, so the polygon click resolves to a real bucket every time.
-#
-# Without this, splits driven by project_name_en patterns (Springs/Meadows
-# inside Emirates Living, City Walk/Dubai Water Canal inside Al Wasl, etc.)
-# wouldn't get their own AGGREGATES entry — all rows would land in the
-# admin parent (which has ~zero, since most rows have a master_project_en
-# value). Clicking "The Springs" (11K sales by reality) used to land on
-# /sales/al-thanayah-fourth/ showing n=2.
-#
-# ROLLUP fallback: for rows no split catches, fold sub-master_projects
-# (e.g. "DUBAI HILLS - MAPLE 1/2/3, SIDRA 1/2/3...") into the parent
-# community. We splice this into the ELSE branch of the curated CASE,
-# replacing the default `lower(area_name_en)` fallback so non-split
-# rollups still work (Dubai Hills Estate, ICP3, Liwan, …).
+# Keys come from _curated_sql.hierarchy_select(): area (DLD area / DM polygon) →
+# sub-community polygon (polygon_overrides.json splits) → master project page.
+# ROLLUP folds sub-master names (DUBAI HILLS - MAPLE …) into one project.
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
-from _curated_sql import build_curated_sql
-_KEY_RAW, _NAME_RAW, _ = build_curated_sql()
+from _curated_sql import hierarchy_select, hierarchy_views
 ROLLUP_SQL = """
 CASE
   WHEN master_project_en LIKE 'DUBAI HILLS - %'              THEN 'Dubai Hills Estate'
@@ -44,26 +29,16 @@ CASE
   ELSE master_project_en
 END
 """
-NAME_EXPR = _NAME_RAW.replace(
-    'ELSE area_name_en',
-    f"ELSE COALESCE(NULLIF(({ROLLUP_SQL}), ''), area_name_en)"
-)
-KEY_EXPR = _KEY_RAW.replace(
-    'ELSE lower(area_name_en)',
-    f"ELSE lower(COALESCE(NULLIF(({ROLLUP_SQL}), ''), area_name_en))"
-)
 
 con = duckdb.connect()
+HSEL = hierarchy_select(ROLLUP_SQL)
 
 # We register the view once so every query uses the same window+remapping
 print(f'period: {DATE_FROM} → {DATE_TO}', file=sys.stderr)
 con.execute(f"""
 CREATE TEMP TABLE tx_base AS
 SELECT
-  {_KEY_RAW} AS k_p,
-  {_NAME_RAW} AS name_p,
-  {KEY_EXPR} AS k_m,
-  {NAME_EXPR} AS name_m,
+  {HSEL},
   transaction_id AS tid,
   instance_date AS d,
   property_type_en AS pt,
@@ -91,23 +66,11 @@ WHERE area_name_en IS NOT NULL
   -- this filter removes. See docs/sales_filter_rationale.md.
   AND trans_group_en = 'Sales'
 """)
-# Area pages count everything inside the polygon (same key as the map); deals of a
-# master project without its own polygon are also copied to that project's page (sec=1)
-con.execute("""
-CREATE TEMP TABLE sec_keys AS
-SELECT DISTINCT k_m AS k FROM tx_base
-WHERE k_m <> k_p AND k_m NOT IN (SELECT DISTINCT k_p FROM tx_base WHERE k_p IS NOT NULL)
-""")
-con.execute("""
-CREATE TEMP VIEW tx AS
-SELECT k_p AS k, CASE WHEN k_m = k_p THEN name_m ELSE name_p END AS area_orig, 0 AS sec,
-       * EXCLUDE (k_p, name_p, k_m, name_m) FROM tx_base
-UNION ALL
-SELECT k_m AS k, name_m AS area_orig, 1 AS sec,
-       * EXCLUDE (k_p, name_p, k_m, name_m) FROM tx_base WHERE k_m IN (SELECT k FROM sec_keys)
-""")
-con.execute("CREATE TEMP VIEW tx_p AS SELECT * FROM tx WHERE sec = 0")
-SEC_KEYS = {r[0] for r in con.execute("SELECT k FROM sec_keys").fetchall()}
+# Hierarchy: a deal counts in its area (lvl 0), its sub-community polygon (lvl 1) and
+# its master project's own page when that project has no polygon (lvl 2)
+KEY_LVL = hierarchy_views(con, 'tx_base', 'tx', 'tx_p')
+SEC_KEYS = {k for k, l in KEY_LVL.items() if l == 2}
+AREA_KEYS = {k for k, l in KEY_LVL.items() if l == 0}
 
 # ─── Mortgage Registrations (separate view, for cash-vs-financed split)
 # We DON'T merge these into `tx`. We keep them in `mort` and LEFT JOIN
@@ -248,7 +211,7 @@ for _, r in op_df.iterrows():
 print('payment split (cash vs financed)...', file=sys.stderr)
 mort_df = q(f"""
 WITH m AS (
-  SELECT {_KEY_RAW} AS k_p, {KEY_EXPR} AS k_m
+  SELECT {HSEL}
   FROM '{TX}'
   WHERE trans_group_en   = 'Mortgages'
     AND procedure_name_en = 'Mortgage Registration'
@@ -256,8 +219,9 @@ WITH m AS (
     AND instance_date BETWEEN '{DATE_FROM}' AND '{DATE_TO}'
 )
 SELECT k, COUNT(*) AS mort_n FROM (
-  SELECT k_p AS k FROM m
-  UNION ALL SELECT k_m FROM m WHERE k_m IN (SELECT k FROM sec_keys)
+  SELECT k_a AS k FROM m
+  UNION ALL SELECT k_s FROM m WHERE k_s IS NOT NULL
+  UNION ALL SELECT k_m FROM m WHERE k_s IS NULL AND k_m IN (SELECT k FROM tx_base_proj)
 ) GROUP BY k
 """)
 mort_n_by_k = {r['k']: int(r['mort_n']) for _, r in mort_df.iterrows()}
@@ -466,10 +430,12 @@ for _, r in totals.iterrows():
     out[k] = entry
 
 # Projects with their own page inside this polygon — linked from the area page
-for _, r in q("""SELECT k_p, k_m, COUNT(*) AS n FROM tx_base WHERE k_m IN (SELECT k FROM sec_keys)
+for _, r in q("""SELECT k_a, c, COUNT(*) AS n FROM (
+                   SELECT k_a, k_s AS c FROM tx_base WHERE k_s IS NOT NULL
+                   UNION ALL SELECT k_a, k_m FROM tx_base WHERE k_s IS NULL AND k_m IN (SELECT k FROM tx_base_proj))
                  GROUP BY ALL ORDER BY n DESC""").iterrows():
-    if r['k_p'] in out and r['k_m'] in out:
-        out[r['k_p']].setdefault('sub_masters', []).append({'k': r['k_m'], 'n': int(r['n'])})
+    if r['k_a'] in out and r['c'] in out:
+        out[r['k_a']].setdefault('sub_masters', []).append({'k': r['c'], 'n': int(r['n'])})
 
 # ─── Trend per area: like-for-like AED/m², last 365d vs prior 365d
 # Same project + type + rooms in both windows; plain medians swing with the sales mix
@@ -709,8 +675,8 @@ dubai = {
     'trend_pct': None,
 }
 
-# Project copies (sec_keys) duplicate area deals — Dubai rollups use polygon keys only
-prim = {k: e for k, e in out.items() if k not in SEC_KEYS}
+# Sub-community and project keys repeat area deals — Dubai rollups use area keys only
+prim = {k: e for k, e in out.items() if k in AREA_KEYS}
 # Aggregate __dubai__ from per-area data (cheap and avoids re-querying)
 for k, e in prim.items():
     dubai['flat']['n']   += e['flat']['n'];   dubai['flat']['total']   += e['flat']['total']
@@ -788,7 +754,7 @@ all_recent.sort(key=lambda x: x['d'], reverse=True)
 dubai['recent'] = all_recent[:20]
 
 # __dubai__ trend_pct (YoY, like-for-like across all areas)
-dubai['trend_pct'] = round(float(q("SELECT MEDIAN(r) AS r FROM trend_cells WHERE k NOT IN (SELECT k FROM sec_keys)").iloc[0]['r']) * 100, 1)
+dubai['trend_pct'] = round(float(q("SELECT MEDIAN(r) AS r FROM trend_cells WHERE k IN (SELECT k FROM key_lvl WHERE lvl = 0)").iloc[0]['r']) * 100, 1)
 
 out['__dubai__'] = dubai
 
@@ -845,11 +811,12 @@ def period_summaries(dfrom, src, kx):
         res[r['k']]['top_projects'].append({'proj': r['proj'], 'n': int(r['n']), 'total': safe_int(r['total']), 'med': safe_int(r['med'])})
     # Financed ≈ mortgage registrations in the same window, capped at sales (same rule as all-time)
     for _, r in q(f"""WITH m AS (
-          SELECT {_KEY_RAW} AS k_p, {KEY_EXPR} AS k_m FROM '{TX}'
+          SELECT {HSEL} FROM '{TX}'
           WHERE trans_group_en = 'Mortgages' AND procedure_name_en = 'Mortgage Registration'
             AND area_name_en IS NOT NULL AND instance_date BETWEEN '{dfrom}' AND '{DATE_TO}'),
-          mm AS (SELECT k_p AS k, 0 AS sec FROM m UNION ALL SELECT k_m, 1 FROM m WHERE k_m IN (SELECT k FROM sec_keys))
-          SELECT {kx} AS k, COUNT(*) AS n FROM mm {'WHERE sec = 0' if src == 'tx_p' else ''} GROUP BY 1""").iterrows():
+          mm AS (SELECT k_a AS k, 0 AS lvl FROM m UNION ALL SELECT k_s, 1 FROM m WHERE k_s IS NOT NULL
+                 UNION ALL SELECT k_m, 2 FROM m WHERE k_s IS NULL AND k_m IN (SELECT k FROM tx_base_proj))
+          SELECT {kx} AS k, COUNT(*) AS n FROM mm {'WHERE lvl = 0' if src == 'tx_p' else ''} GROUP BY 1""").iterrows():
         if r['k'] in res:
             e = res[r['k']]; fin = min(int(r['n']), e['n'])
             e['payment'] = {'financed': fin, 'cash': e['n'] - fin}

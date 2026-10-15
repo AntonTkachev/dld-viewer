@@ -189295,9 +189295,9 @@
     ]
    },
    "properties": {
-    "name": "Marsa Dubai (other)",
+    "name": "Marsa Dubai",
     "name_ar": "مرسى دبي",
-    "key": "marsa dubai (other)",
+    "key": "marsa dubai",
     "source": "split-remainder",
     "parent_area_name_en": "Marsa Dubai",
     "filter": {
@@ -190372,9 +190372,9 @@
     ]
    },
    "properties": {
-    "name": "Hadaeq SMBR (other)",
+    "name": "Hadaeq SMBR",
     "name_ar": "حدائق الشيخ محمد بن راشد",
-    "key": "hadaeq smbr (other)",
+    "key": "hadaeq smbr",
     "source": "split-remainder",
     "parent_area_name_en": "Hadaeq Sheikh Mohammed Bin Rashid",
     "filter": {
@@ -190653,9 +190653,9 @@
     ]
    },
    "properties": {
-    "name": "Al Hebiah Fifth (other)",
+    "name": "Al Hebiah Fifth",
     "name_ar": "الحبيه الخامسة",
-    "key": "al hebiah fifth (other)",
+    "key": "al hebiah fifth",
     "source": "split-remainder",
     "parent_area_name_en": "Al Hebiah Fifth",
     "filter": {
@@ -191714,9 +191714,9 @@
     ]
    },
    "properties": {
-    "name": "Al Thanyah Fifth (other)",
+    "name": "Al Thanyah Fifth",
     "name_ar": "الثنيه الخامسة",
-    "key": "al thanyah fifth (other)",
+    "key": "al thanyah fifth",
     "source": "split-remainder",
     "parent_area_name_en": "Al Thanyah Fifth",
     "filter": {
@@ -192639,9 +192639,9 @@
     ]
    },
    "properties": {
-    "name": "Al Merkadh (other)",
+    "name": "Al Merkadh",
     "name_ar": "المركاض",
-    "key": "al merkadh (other)",
+    "key": "al merkadh",
     "source": "split-remainder",
     "parent_area_name_en": "Al Merkadh",
     "filter": {
@@ -192864,9 +192864,9 @@
     ]
    },
    "properties": {
-    "name": "Wadi Al Safa 5 (other)",
+    "name": "Wadi Al Safa 5",
     "name_ar": "وادي الصفا 5",
-    "key": "wadi al safa 5 (other)",
+    "key": "wadi al safa 5",
     "source": "split-remainder",
     "parent_area_name_en": "Wadi Al Safa 5",
     "filter": {
@@ -192953,9 +192953,9 @@
     ]
    },
    "properties": {
-    "name": "Wadi Al Safa 7 (other)",
+    "name": "Wadi Al Safa 7",
     "name_ar": "وادي الصفا 7",
-    "key": "wadi al safa 7 (other)",
+    "key": "wadi al safa 7",
     "source": "split-remainder",
     "parent_area_name_en": "Wadi Al Safa 7",
     "filter": {
@@ -193358,9 +193358,9 @@
     ]
    },
    "properties": {
-    "name": "Wadi Al Safa 3 (other)",
+    "name": "Wadi Al Safa 3",
     "name_ar": "وادي الصفا 3",
-    "key": "wadi al safa 3 (other)",
+    "key": "wadi al safa 3",
     "source": "split-remainder",
     "parent_area_name_en": "Wadi Al Safa 3",
     "filter": {
@@ -193675,9 +193675,9 @@
     ]
    },
    "properties": {
-    "name": "Al Wasl (other)",
+    "name": "Al Wasl",
     "name_ar": "الوصل",
-    "key": "al wasl (other)",
+    "key": "al wasl",
     "source": "split-remainder",
     "parent_area_name_en": "Al Wasl",
     "filter": {
@@ -194120,9 +194120,9 @@
     ]
    },
    "properties": {
-    "name": "Al Thanyah Third (other)",
+    "name": "Al Thanyah Third",
     "name_ar": "الثنيه الثالثة",
-    "key": "al thanyah third (other)",
+    "key": "al thanyah third",
     "source": "split-remainder",
     "parent_area_name_en": "Al Thanyah Third",
     "filter": {
@@ -194881,9 +194881,9 @@
     ]
    },
    "properties": {
-    "name": "Jabal Ali First (other)",
+    "name": "Jabal Ali First",
     "name_ar": "جبل علي الأولى",
-    "key": "jabal ali first (other)",
+    "key": "jabal ali first",
     "source": "split-remainder",
     "parent_area_name_en": "Jabal Ali First",
     "filter": {
@@ -194994,9 +194994,9 @@
     ]
    },
    "properties": {
-    "name": "Al Yelayiss 1 (other)",
+    "name": "Al Yelayiss 1",
     "name_ar": "اليلايس 1",
-    "key": "al yelayiss 1 (other)",
+    "key": "al yelayiss 1",
     "source": "split-remainder",
     "parent_area_name_en": "Al Yelayiss 1",
     "filter": {
@@ -195827,9 +195827,9 @@
     ]
    },
    "properties": {
-    "name": "Jumeirah First (other)",
+    "name": "Jumeirah First",
     "name_ar": "جميرا الأولى",
-    "key": "jumeirah first (other)",
+    "key": "jumeirah first",
     "source": "split-remainder",
     "parent_area_name_en": "Jumeirah First",
     "filter": {
@@ -196488,9 +196488,9 @@
     ]
    },
    "properties": {
-    "name": "Emirates Living (other)",
+    "name": "Emirates Living",
     "name_ar": "الثنيه الرابعة",
-    "key": "emirates living (other)",
+    "key": "emirates living",
     "source": "split-remainder",
     "parent_area_name_en": "Al Thanayah Fourth",
     "filter": {
@@ -197505,9 +197505,9 @@
     ]
    },
    "properties": {
-    "name": "Al Jadaf (other)",
+    "name": "Al Jadaf",
     "name_ar": "الجداف",
-    "key": "al jadaf (other)",
+    "key": "al jadaf",
     "source": "split-remainder",
     "parent_area_name_en": "Al Jadaf",
     "filter": {
@@ -198286,14 +198286,14 @@
     ]
    },
    "properties": {
-    "name": "Me'Aisem First (other)",
+    "name": "Me'Aisem First",
     "name_ar": "معيصم الأولى",
-    "key": "me'aisem first (other)",
+    "key": "me'aisem first",
     "source": "split-remainder",
     "parent_area_name_en": "Me'Aisem First",
     "filter": {
      "area_name_en": "Me'Aisem First",
-     "master_project_sql": "(master_project_en NOT IN ('IMPZ') OR master_project_en IS NULL) AND NOT ((master_project_en IN ('Jumeirah Golf Estates', 'Jumeirah Golf Estates - Phase B')) IS TRUE)"
+     "master_project_sql": "(master_project_en NOT IN ('IMPZ', 'International Media Production Zone') OR master_project_en IS NULL) AND NOT ((master_project_en IN ('Jumeirah Golf Estates', 'Jumeirah Golf Estates - Phase B')) IS TRUE)"
     }
    }
   },
@@ -199103,9 +199103,9 @@
     ]
    },
    "properties": {
-    "name": "Al Safouh First (other)",
+    "name": "Al Safouh First",
     "name_ar": "الصفوح الأولى",
-    "key": "al safouh first (other)",
+    "key": "al safouh first",
     "source": "split-remainder",
     "parent_area_name_en": "Al Safouh First",
     "filter": {
@@ -199284,9 +199284,9 @@
     ]
    },
    "properties": {
-    "name": "Wadi Al Safa 2 (other)",
+    "name": "Wadi Al Safa 2",
     "name_ar": "وادي الصفا 2",
-    "key": "wadi al safa 2 (other)",
+    "key": "wadi al safa 2",
     "source": "split-remainder",
     "parent_area_name_en": "Wadi Al Safa 2",
     "filter": {
@@ -226221,7 +226221,8 @@
     "filter": {
      "area_name_en": "Me'Aisem First",
      "master_projects_in": [
-      "IMPZ"
+      "IMPZ",
+      "International Media Production Zone"
      ]
     }
    }
