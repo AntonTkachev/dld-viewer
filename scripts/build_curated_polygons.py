@@ -335,9 +335,13 @@ def main():
                     geom = osm_feat['geometry']
                     geom_source = 'split-osm'
 
-            # Option C: fall back to DM parent geometry — children visually identical to parent
+            # Option C: parent area minus the other sub-polygons (filled in below, once siblings exist)
+            if geom is None and sub.get('geometry') == 'parent_minus_siblings':
+                geom_source = 'split-dm-minus-siblings'
+
+            # Option D: fall back to DM parent geometry — children visually identical to parent
             # but their filters disambiguate clicks.
-            if geom is None:
+            if geom is None and geom_source is None:
                 geom = parent_dm['geometry']
                 geom_source = 'split-dm-fallback'
                 osm_misses.append((parent, sub.get('osm_polygon') or sub.get('osm_polygons_pattern')))
@@ -358,6 +362,12 @@ def main():
             })
             sub_count += 1
 
+        subs_out = out_features[len(out_features) - sub_count:]
+        for f in subs_out:
+            if f['properties']['source'] == 'split-dm-minus-siblings':
+                others = [shape(o['geometry']).buffer(0) for o in subs_out if o is not f]
+                f['geometry'] = mapping(shape(parent_dm['geometry']).buffer(0).difference(unary_union(others)))
+
         if split.get('keep_remainder'):
             rem_name = split.get('remainder_name', parent + ' (other)')
             filt = {'area_name_en': parent, **build_remainder_filter(split)}
@@ -366,7 +376,7 @@ def main():
                 'geometry': parent_dm['geometry'],
                 'properties': {
                     'name':       rem_name,
-                    'name_ar':    parent_dm['properties'].get('cname_a'),
+                    'name_ar':    split.get('remainder_name_ar') or parent_dm['properties'].get('cname_a'),
                     'key':        normalize(rem_name),
                     'source':     'split-remainder',
                     'parent_area_name_en': parent,
@@ -385,7 +395,7 @@ def main():
     # first ensures Dubai Marina / JBR / Harbour appear on top and capture
     # interaction.
     _Z = {'dm-community': 0, 'split-remainder': 1,
-          'split-dm-fallback': 2, 'split-osm': 3, 'split-osm-union': 3}
+          'split-dm-fallback': 2, 'split-dm-minus-siblings': 3, 'split-osm': 3, 'split-osm-union': 3}
     out_features.sort(key=lambda f: _Z.get(f['properties']['source'], 0))
 
     # 5. Write output.

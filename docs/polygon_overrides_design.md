@@ -47,8 +47,8 @@ duplicates and nominatim-fallbacks) with a clean curated set keyed to DLD data.
       //         from the map (typically <5%).
       "keep_remainder": true,
 
-      // Display name when keep_remainder=true.
-      "remainder_name": "Marsa Dubai (other)",
+      // Display name when keep_remainder=true (+ optional remainder_name_ar).
+      "remainder_name": "Marsa Dubai",
 
       "sub_polygons": [
         {
@@ -61,10 +61,14 @@ duplicates and nominatim-fallbacks) with a clean curated set keyed to DLD data.
           // Geometry source: name of a feature in `data/dld_communities_osm.geojson`
           // whose polygon we copy. We don't use its data — only its shape.
           "osm_polygon": "Dubai Marina",
+          // Alternatives: "osm_polygons_pattern" (regex, union of matches) or
+          // "geometry": "parent_minus_siblings" (DM parent minus the other subs).
 
           // DLD filter: which master_project_en values fall into this polygon.
           // Aggregation will WHERE area_name_en = <parent> AND master_project_en IN (...)
           "master_projects": ["Dubai Marina"]
+          // Or "master_project_sql": free SQL; {type} = the source's property-type
+          // column (tx property_type_en / Ejari ejari_property_type_en).
         },
         // ... more sub-polygons
       ]
