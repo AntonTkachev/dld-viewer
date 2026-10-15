@@ -169,6 +169,16 @@ COPY = {
         'load_err': 'Не удалось загрузить данные',
         'about_title': 'О районе {name}',
         'nearby_title': 'Похожие районы рядом с {name}',
+        'within_title': 'Внутри {name}',
+        'within_n_sale': '{n} сделок',
+        'within_n_rent': '{n} договоров',
+        'lede_no_period_sale': 'В {name} {period_h1} сделок не зарегистрировано. Данные за всё время:',
+        'lede_no_period_rent': 'В {name} {period_h1} договоров аренды не зарегистрировано. Данные за всё время:',
+        'about_alltime': 'Данные за всё время наблюдений DLD.',
+        'about_room_land': 'земельные участки',
+        'about_room_commercial': 'коммерческая недвижимость',
+        'about_rent_hint_plain': 'Также зарегистрировано {n} договоров аренды.',
+        'no_project': 'Без проекта (отдельные участки и здания)',
         'about_intro': '{name} — один из районов Дубая. ',
         'about_unknown': '{name} — один из районов Дубая по данным Dubai Land Department.',
         'about_all_flat':  'Все сделки — квартиры; виллы и таунхаусы в этом районе не строятся.',
@@ -267,6 +277,16 @@ COPY = {
         'load_err': 'Could not load data',
         'about_title': 'About {name}',
         'nearby_title': 'Similar districts near {name}',
+        'within_title': 'Inside {name}',
+        'within_n_sale': '{n} deals',
+        'within_n_rent': '{n} contracts',
+        'lede_no_period_sale': 'No sale transactions were registered in {name} {period_h1}. All-time figures:',
+        'lede_no_period_rent': 'No rental contracts were registered in {name} {period_h1}. All-time figures:',
+        'about_alltime': 'All-time figures across DLD records.',
+        'about_room_land': 'land plots',
+        'about_room_commercial': 'commercial property',
+        'about_rent_hint_plain': '{n} rental contracts have also been recorded.',
+        'no_project': 'No project (standalone plots and buildings)',
         'about_intro': '{name} is a Dubai district. ',
         'about_unknown': '{name} is one of the Dubai districts in Dubai Land Department records.',
         'about_all_flat':  'All transactions are apartments; villas and townhouses are not built here.',
@@ -365,6 +385,16 @@ COPY = {
         'load_err': 'تعذر تحميل البيانات',
         'about_title': 'عن منطقة {name}',
         'nearby_title': 'مناطق مشابهة قريبة من {name}',
+        'within_title': 'داخل {name}',
+        'within_n_sale': '{n} صفقة',
+        'within_n_rent': '{n} عقد',
+        'lede_no_period_sale': 'لم تُسجَّل أي صفقات بيع في {name} {period_h1}. بيانات كل الفترات:',
+        'lede_no_period_rent': 'لم تُسجَّل أي عقود إيجار في {name} {period_h1}. بيانات كل الفترات:',
+        'about_alltime': 'بيانات كل الفترات في سجلات دائرة الأراضي.',
+        'about_room_land': 'قطع أراضٍ',
+        'about_room_commercial': 'عقارات تجارية',
+        'about_rent_hint_plain': 'كما سُجّل {n} عقد إيجار.',
+        'no_project': 'بدون مشروع (قطع وأبنية منفردة)',
         'about_intro': '{name} — حي من أحياء دبي. ',
         'about_unknown': '{name} — أحد أحياء دبي وفقًا لبيانات دائرة الأراضي والأملاك.',
         'about_all_flat':  'جميع الصفقات شقق سكنية؛ لا يوجد فلل ولا تاون هاوس في هذه المنطقة.',
@@ -463,6 +493,16 @@ COPY = {
         'load_err': 'डेटा लोड नहीं हो सका',
         'about_title': '{name} के बारे में',
         'nearby_title': '{name} के पास समान जिले',
+        'within_title': '{name} के अंदर',
+        'within_n_sale': '{n} सौदे',
+        'within_n_rent': '{n} अनुबंध',
+        'lede_no_period_sale': '{name} में {period_h1} कोई बिक्री लेनदेन दर्ज नहीं हुआ। सर्व समय के आंकड़े:',
+        'lede_no_period_rent': '{name} में {period_h1} कोई किराया अनुबंध दर्ज नहीं हुआ। सर्व समय के आंकड़े:',
+        'about_alltime': 'DLD रिकॉर्ड के सर्व समय के आंकड़े।',
+        'about_room_land': 'भूमि प्लॉट',
+        'about_room_commercial': 'वाणिज्यिक संपत्ति',
+        'about_rent_hint_plain': '{n} किराया अनुबंध भी दर्ज हैं।',
+        'no_project': 'बिना प्रोजेक्ट (अलग प्लॉट और इमारतें)',
         'about_intro': '{name} — दुबई का एक क्षेत्र है। ',
         'about_unknown': 'Dubai Land Department के अनुसार {name} दुबई के क्षेत्रों में से एक है।',
         'about_all_flat':  'सभी सौदे अपार्टमेंट हैं; इस क्षेत्र में विला और टाउनहाउस नहीं हैं।',
@@ -561,6 +601,16 @@ COPY = {
         'load_err': '无法加载数据',
         'about_title': '关于 {name}',
         'nearby_title': '{name}附近的相似区域',
+        'within_title': '{name}内',
+        'within_n_sale': '{n} 笔交易',
+        'within_n_rent': '{n} 份合同',
+        'lede_no_period_sale': '{name}{period_h1}没有登记的销售交易。以下为全部时间数据：',
+        'lede_no_period_rent': '{name}{period_h1}没有登记的租赁合同。以下为全部时间数据：',
+        'about_alltime': 'DLD 全部记录期间的数据。',
+        'about_room_land': '土地',
+        'about_room_commercial': '商业物业',
+        'about_rent_hint_plain': '另有 {n} 份租赁合同登记。',
+        'no_project': '无项目（独立地块和建筑）',
         'about_intro': '{name} 是迪拜的一个社区。',
         'about_unknown': '根据迪拜土地局的数据,{name} 是迪拜的社区之一。',
         'about_all_flat':  '所有交易均为公寓;该社区没有别墅或联排别墅。',
@@ -826,7 +876,7 @@ LIST_TYPES = (
      'list_breadcrumb_top_projects',
      'list_h1_top_projects_sale',
      'list_lede_top_projects_sale',
-     [('col_proj',  'proj',  'proj'),
+     [('col_proj',  'proj',  'projname'),
       ('col_n',     'n',     'int'),
       ('col_med',   'med',   'aed'),
       ('col_total', 'total', 'aed')]),
@@ -856,7 +906,7 @@ LIST_TYPES = (
      'list_breadcrumb_top_projects',
      'list_h1_top_projects_rent',
      'list_lede_top_projects_rent',
-     [('col_proj',     'proj', 'proj'),
+     [('col_proj',     'proj', 'projname'),
       ('col_n_rent',   'n',    'int'),
       ('col_med_rent', 'med',  'aed')]),
 
@@ -935,7 +985,7 @@ def html_escape(s):
 def format_cell(v, kind, lang='ru'):
     """Format one table cell value by its declared column kind."""
     if v is None or v == '':
-        return COPY[lang]['no_data_dash']
+        return COPY[lang]['no_project' if kind == 'projname' else 'no_data_dash']
     if kind == 'int':
         try: return fmt_int(v, lang)
         except: return COPY[lang]['no_data_dash']
@@ -944,6 +994,8 @@ def format_cell(v, kind, lang='ru'):
         except: return COPY[lang]['no_data_dash']
     if kind == 'proj':
         return html_escape(str(v)) if v else COPY[lang]['no_data_dash']
+    if kind == 'projname':
+        return html_escape(str(v)) if v else COPY[lang]['no_project']
     if kind == 'date':
         return html_escape(str(v))
     if kind == 'rentver':
@@ -1177,7 +1229,8 @@ def build_about(name, sale_rec, rent_rec, lang, is_dubai=False):
     op    = offplan.get('Off-Plan', 0)
     if ready + op > 0:
         op_share = round(op / (op + ready) * 100)
-        facts.append(c['about_offplan'].format(pct=op_share))
+        if op_share:
+            facts.append(c['about_offplan'].format(pct=op_share))
 
     if bru:
         room_order = ['1br','2br','3br','studio','4br+','villa','other']
@@ -1187,7 +1240,14 @@ def build_about(name, sale_rec, rent_rec, lang, is_dubai=False):
         sorted_rooms = sorted([(k, bru.get(k, {}).get('n', 0)) for k in room_order if bru.get(k)], key=lambda x: -x[1])
         if sorted_rooms and sorted_rooms[0][1]:
             top_k, top_n = sorted_rooms[0]
-            facts.append(c['about_top_room'].format(label=c[room_label_key[top_k]], n=fmt_int(top_n, lang)))
+            label = c[room_label_key[top_k]]
+            if top_k == 'other':  # industrial / plot areas: name the dominant non-residential type
+                land_n = (sale_rec.get('land') or {}).get('n', 0)
+                comm_n = (sale_rec.get('commercial') or {}).get('n', 0)
+                if land_n or comm_n:
+                    label = c['about_room_land'] if land_n >= comm_n else c['about_room_commercial']
+                    top_n = max(land_n, comm_n)
+            facts.append(c['about_top_room'].format(label=label, n=fmt_int(top_n, lang)))
 
     tp = (sale_rec.get('top_projects') or [])
     named = [p for p in tp if p.get('proj')]
@@ -1195,12 +1255,15 @@ def build_about(name, sale_rec, rent_rec, lang, is_dubai=False):
         facts.append(c['about_top_project'].format(proj=named[0]['proj'].title()))
 
     if rent_rec.get('n'):
-        facts.append(c['about_rent_hint'].format(n=fmt_int(rent_rec['n'], lang)))
+        residential = n_total and (flat.get('n', 0) + villa.get('n', 0)) / n_total >= 0.5
+        hint = c['about_rent_hint'] if residential or not n_total else c['about_rent_hint_plain']
+        facts.append(hint.format(n=fmt_int(rent_rec['n'], lang)))
 
     if not facts:
         facts.append(c['about_unknown'].format(name=name))
 
-    intro = f'<p>{c["about_intro"].format(name=name)}' + ' '.join(facts) + '</p>'
+    intro = (f'<p class="about-note">{html_escape(c["about_alltime"])}</p>'
+             f'<p>{c["about_intro"].format(name=name)}' + ' '.join(facts) + '</p>')
 
     grid_items = []
     if n_total:
@@ -1277,6 +1340,36 @@ def build_nearby_index(sale_agg, rent_agg):
         )
         index[k] = others[:NEARBY_N]
     return index
+
+
+def load_split_children():
+    """Remainder key of a split admin area → its sub-polygon keys (Jabal Ali Industrial Second → Downtown Jebel Ali)."""
+    with open(os.path.join(ROOT, 'data', 'polygon_overrides.json'), encoding='utf-8') as f:
+        splits = json.load(f).get('splits', [])
+    return {s.get('remainder_name', s['area_name_en'] + ' (other)').lower(): [sp['name'].lower() for sp in s['sub_polygons']]
+            for s in splits if s.get('keep_remainder')}
+
+
+def build_within_html(name, mode, lang, key, split_children, sale_agg, rent_agg):
+    """Links to pages covering part of this district: master projects with their own page + split sub-polygons."""
+    c = COPY[lang]
+    agg = sale_agg if mode == 'sale' else rent_agg
+    rec = agg.get(key) or {}
+    kids = [(m['k'], m['n']) for m in rec.get('sub_masters') or []]
+    kids += [(sk, (agg.get(sk) or {}).get('n', 0)) for sk in split_children.get(key, [])]
+    items = []
+    for ck, n in sorted(kids, key=lambda x: -x[1])[:10]:
+        crec = agg.get(ck) or {}
+        if not n or not crec.get('n'):
+            continue
+        c_name = crec.get('name') or ck.title()
+        label = (ar_name_for(ck, c_name) if lang == 'ar' else None) or (c_name.title() if c_name.isupper() else c_name)
+        n_txt = c['within_n_sale' if mode == 'sale' else 'within_n_rent'].format(n=fmt_int(n, lang))
+        items.append(f'<li><a href="{base_url(mode, slugify(c_name), lang)}">{html_escape(label)}</a> — {n_txt}</li>')
+    if not items:
+        return ''
+    title_text = c['within_title'].format(name=name)
+    return f'<nav class="nearby-districts"><h2>{html_escape(title_text)}</h2><ul>{"".join(items)}</ul></nav>'
 
 
 def build_nearby_html(name, mode, lang, key, nearby_index, sale_agg, rent_agg):
@@ -1657,6 +1750,7 @@ def main():
     with open(os.path.join(ROOT, 'data', 'aggregates_intermediate', 'rent.json'), encoding='utf-8') as f:
         rent = json.load(f)
     nearby_index = build_nearby_index(agg, rent)
+    split_children = load_split_children()
     poi_index = build_poi_index()
     tx_periods, rents_periods = load_period_aggregates()
     with open(TPL, encoding='utf-8') as f:
@@ -1720,7 +1814,8 @@ def main():
                 if not base_rec:
                     continue
                 period_aggs = tx_periods if mode == 'sale' else rents_periods
-                nearby_html = build_nearby_html(display_name, mode, lang, key, nearby_index, agg, rent)
+                nearby_html = (build_within_html(display_name, mode, lang, key, split_children, agg, rent)
+                               + build_nearby_html(display_name, mode, lang, key, nearby_index, agg, rent))
                 top_projects_html = build_top_projects_html(display_name, mode, slug, base_rec, lang)
 
                 # Build data.json bundle once per (key, mode) — shared across
@@ -1753,13 +1848,21 @@ def main():
                 for period_code in PERIOD_CODES:
                     period_h1 = PERIOD_SUFFIX[lang][period_code]['h1']
                     rec_for_period = period_record_for(period_aggs, key, period_code) if period_code != 'all' else base_rec
-                    if not rec_for_period.get('n') and period_code != 'all':
+                    # No deals in the window: say so, then show all-time figures (never label them "12 months")
+                    empty_period = period_code != 'all' and not rec_for_period.get('n')
+                    if empty_period:
                         rec_for_period = base_rec
-                    n_p = rec_for_period.get('n', 0)
+                    n_p = 0 if empty_period else rec_for_period.get('n', 0)
                     headline, _ = build_headline(mode, heading_name, period_h1, n_p, lang, is_dubai=is_dubai)
-                    lede = build_lede(mode, display_name, period_h1, rec_for_period, lang, is_dubai=is_dubai)
-                    title, _ = seo_title_desc(mode, heading_name, rec_for_period, period_code, lang)
-                    period_copy[period_code] = {'h1': headline, 'title': title, 'lede': lede, 'n': n_p, 'rec': rec_for_period}
+                    if empty_period:
+                        cc = _copy_for(lang, is_dubai)
+                        lede = (cc['lede_no_period_sale' if mode == 'sale' else 'lede_no_period_rent']
+                                .format(name=display_name, period_h1=period_h1) + ' '
+                                + build_lede(mode, display_name, PERIOD_SUFFIX[lang]['all']['h1'], base_rec, lang, is_dubai=is_dubai))
+                    else:
+                        lede = build_lede(mode, display_name, period_h1, rec_for_period, lang, is_dubai=is_dubai)
+                    title, _ = seo_title_desc(mode, heading_name, {'n': 0} if empty_period else rec_for_period, period_code, lang)
+                    period_copy[period_code] = {'h1': headline, 'title': title, 'lede': lede, 'n': n_p, 'rec': {'n': 0} if empty_period else rec_for_period}
 
                 bread_mode = c['mode_sales'] if mode == 'sale' else c['mode_rents']
 

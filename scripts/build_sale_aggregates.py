@@ -58,10 +58,12 @@ con = duckdb.connect()
 # We register the view once so every query uses the same window+remapping
 print(f'period: {DATE_FROM} → {DATE_TO}', file=sys.stderr)
 con.execute(f"""
-CREATE TEMP VIEW tx AS
+CREATE TEMP TABLE tx_base AS
 SELECT
-  {KEY_EXPR} AS k,
-  {NAME_EXPR} AS area_orig,
+  {_KEY_RAW} AS k_p,
+  {_NAME_RAW} AS name_p,
+  {KEY_EXPR} AS k_m,
+  {NAME_EXPR} AS name_m,
   transaction_id AS tid,
   instance_date AS d,
   property_type_en AS pt,
@@ -89,6 +91,23 @@ WHERE area_name_en IS NOT NULL
   -- this filter removes. See docs/sales_filter_rationale.md.
   AND trans_group_en = 'Sales'
 """)
+# Area pages count everything inside the polygon (same key as the map); deals of a
+# master project without its own polygon are also copied to that project's page (sec=1)
+con.execute("""
+CREATE TEMP TABLE sec_keys AS
+SELECT DISTINCT k_m AS k FROM tx_base
+WHERE k_m <> k_p AND k_m NOT IN (SELECT DISTINCT k_p FROM tx_base WHERE k_p IS NOT NULL)
+""")
+con.execute("""
+CREATE TEMP VIEW tx AS
+SELECT k_p AS k, CASE WHEN k_m = k_p THEN name_m ELSE name_p END AS area_orig, 0 AS sec,
+       * EXCLUDE (k_p, name_p, k_m, name_m) FROM tx_base
+UNION ALL
+SELECT k_m AS k, name_m AS area_orig, 1 AS sec,
+       * EXCLUDE (k_p, name_p, k_m, name_m) FROM tx_base WHERE k_m IN (SELECT k FROM sec_keys)
+""")
+con.execute("CREATE TEMP VIEW tx_p AS SELECT * FROM tx WHERE sec = 0")
+SEC_KEYS = {r[0] for r in con.execute("SELECT k FROM sec_keys").fetchall()}
 
 # ─── Mortgage Registrations (separate view, for cash-vs-financed split)
 # We DON'T merge these into `tx`. We keep them in `mort` and LEFT JOIN
@@ -228,13 +247,18 @@ for _, r in op_df.iterrows():
 # mortgages above sales in a quiet area.
 print('payment split (cash vs financed)...', file=sys.stderr)
 mort_df = q(f"""
-SELECT {KEY_EXPR} AS k, COUNT(*) AS mort_n
-FROM '{TX}'
-WHERE trans_group_en   = 'Mortgages'
-  AND procedure_name_en = 'Mortgage Registration'
-  AND area_name_en IS NOT NULL
-  AND instance_date BETWEEN '{DATE_FROM}' AND '{DATE_TO}'
-GROUP BY k
+WITH m AS (
+  SELECT {_KEY_RAW} AS k_p, {KEY_EXPR} AS k_m
+  FROM '{TX}'
+  WHERE trans_group_en   = 'Mortgages'
+    AND procedure_name_en = 'Mortgage Registration'
+    AND area_name_en IS NOT NULL
+    AND instance_date BETWEEN '{DATE_FROM}' AND '{DATE_TO}'
+)
+SELECT k, COUNT(*) AS mort_n FROM (
+  SELECT k_p AS k FROM m
+  UNION ALL SELECT k_m FROM m WHERE k_m IN (SELECT k FROM sec_keys)
+) GROUP BY k
 """)
 mort_n_by_k = {r['k']: int(r['mort_n']) for _, r in mort_df.iterrows()}
 payment = {}
@@ -441,6 +465,12 @@ for _, r in totals.iterrows():
         entry[b].setdefault('med_ppsqm', 0)
     out[k] = entry
 
+# Projects with their own page inside this polygon — linked from the area page
+for _, r in q("""SELECT k_p, k_m, COUNT(*) AS n FROM tx_base WHERE k_m IN (SELECT k FROM sec_keys)
+                 GROUP BY ALL ORDER BY n DESC""").iterrows():
+    if r['k_p'] in out and r['k_m'] in out:
+        out[r['k_p']].setdefault('sub_masters', []).append({'k': r['k_m'], 'n': int(r['n'])})
+
 # ─── Trend per area: like-for-like AED/m², last 365d vs prior 365d
 # Same project + type + rooms in both windows; plain medians swing with the sales mix
 print('trend_pct (YoY, like-for-like)...', file=sys.stderr)
@@ -472,7 +502,7 @@ print('vintage cohorts...', file=sys.stderr)
 _VIN_SQL = """
 WITH s AS (
   SELECT {sel_k} bn, YEAR(d::DATE) AS y, d::DATE AS dd, val/sqm AS ppsqm
-  FROM tx
+  FROM {src}
   WHERE pt = 'Unit' AND reg = 'Existing Properties' AND bn IS NOT NULL
     AND rooms IN ('Studio','1 B/R','2 B/R','3 B/R','4 B/R','PENTHOUSE')
     AND sqm BETWEEN 10 AND 1000
@@ -491,14 +521,14 @@ cur AS (
 SELECT {sel_ck} b, COUNT(*) AS n, ROUND(MEDIAN(ppsqm)) AS med
 FROM cur GROUP BY {grp_cur} HAVING COUNT(*) >= 8
 """
-vin = q(_VIN_SQL.format(sel_k='k,', grp_k='k,', grp_all='1, 2', sel_sk='s.k,',
+vin = q(_VIN_SQL.format(sel_k='k,', src='tx', grp_k='k,', grp_all='1, 2', sel_sk='s.k,',
                         join_k='k,', sel_ck='k,', grp_cur='1, 2'))
 for _, r in vin.iterrows():
     e = out.get(r['k'])
     if e is not None:
         e.setdefault('vintage', {})[r['b']] = {'n': safe_int(r['n']), 'ppsqm': safe_int(r['med'])}
 dubai_vintage = {}
-for _, r in q(_VIN_SQL.format(sel_k='', grp_k='', grp_all='1', sel_sk='',
+for _, r in q(_VIN_SQL.format(sel_k='', src='tx_p', grp_k='', grp_all='1', sel_sk='',
                               join_k='', sel_ck='', grp_cur='1')).iterrows():
     dubai_vintage[r['b']] = {'n': safe_int(r['n']), 'ppsqm': safe_int(r['med'])}
 print(f'  vintage: {sum(1 for e in out.values() if e.get("vintage"))} districts',
@@ -562,7 +592,7 @@ print('vintage paths...', file=sys.stderr)
 _PATH_SQL = """
 WITH s AS (
   SELECT {sel_k} bn, YEAR(d::DATE) AS y, val/sqm AS ppsqm
-  FROM tx
+  FROM {src}
   WHERE pt = 'Unit' AND reg = 'Existing Properties' AND bn IS NOT NULL
     AND rooms IN ('Studio','1 B/R','2 B/R','3 B/R','4 B/R','PENTHOUSE')
     AND sqm BETWEEN 10 AND 1000
@@ -577,7 +607,7 @@ FROM s JOIN seed ON {join_cond} seed.bn = s.bn AND s.y >= seed.cy
 GROUP BY {grp} HAVING COUNT(*) >= 5
 ORDER BY seed.cy, s.y
 """
-paths = q(_PATH_SQL.format(sel_k='k,', sel_pk='s.k,',
+paths = q(_PATH_SQL.format(sel_k='k,', src='tx', sel_pk='s.k,',
                            join_cond='seed.k = s.k AND', grp='1, 2, 3'))
 n_vp = 0
 for _, r in paths.iterrows():
@@ -589,7 +619,7 @@ for _, r in paths.iterrows():
         {'d': str(int(r['y'])), 'n': safe_int(r['n']), 'med': safe_int(r['med'])})
     n_vp += 1
 dubai_paths = {}
-for _, r in q(_PATH_SQL.format(sel_k='', sel_pk='',
+for _, r in q(_PATH_SQL.format(sel_k='', src='tx_p', sel_pk='',
                                join_cond='', grp='1, 2')).iterrows():
     dubai_paths.setdefault(str(int(r['cy'])), []).append(
         {'d': str(int(r['y'])), 'n': safe_int(r['n']), 'med': safe_int(r['med'])})
@@ -604,7 +634,7 @@ _PATH_M_SQL = """
 WITH s AS (
   SELECT {sel_k} bn, YEAR(d::DATE) AS y, strftime(d::DATE, '%Y-%m') AS m,
          val/sqm AS ppsqm
-  FROM tx
+  FROM {src}
   WHERE pt = 'Unit' AND reg = 'Existing Properties' AND bn IS NOT NULL
     AND rooms IN ('Studio','1 B/R','2 B/R','3 B/R','4 B/R','PENTHOUSE')
     AND sqm BETWEEN 10 AND 1000
@@ -619,7 +649,7 @@ FROM s JOIN seed ON {join_cond} seed.bn = s.bn AND s.y >= seed.cy
 GROUP BY {grp} HAVING COUNT(*) >= 5
 ORDER BY seed.cy, s.m
 """
-paths_m = q(_PATH_M_SQL.format(sel_k='k,', sel_pk='s.k,',
+paths_m = q(_PATH_M_SQL.format(sel_k='k,', src='tx', sel_pk='s.k,',
                                join_cond='seed.k = s.k AND', grp='1, 2, 3'))
 n_vpm = 0
 for _, r in paths_m.iterrows():
@@ -631,7 +661,7 @@ for _, r in paths_m.iterrows():
         {'d': r['m'], 'n': safe_int(r['n']), 'med': safe_int(r['med'])})
     n_vpm += 1
 dubai_paths_m = {}
-for _, r in q(_PATH_M_SQL.format(sel_k='', sel_pk='',
+for _, r in q(_PATH_M_SQL.format(sel_k='', src='tx_p', sel_pk='',
                                  join_cond='', grp='1, 2')).iterrows():
     dubai_paths_m.setdefault(str(int(r['cy'])), []).append(
         {'d': r['m'], 'n': safe_int(r['n']), 'med': safe_int(r['med'])})
@@ -649,7 +679,7 @@ SELECT COUNT(*) AS n,
        ROUND(QUANTILE_CONT(val,0.90) FILTER (WHERE val > 0)) AS p90,
        ROUND(MEDIAN(sqm) FILTER (WHERE sqm > 0), 1) AS med_sqm,
        ROUND(MEDIAN(val/sqm) FILTER (WHERE val > 0 AND sqm > 0)) AS med_ppsqm
-FROM tx
+FROM tx_p
 """).fetchdf().iloc[0]
 
 dubai = {
@@ -679,8 +709,10 @@ dubai = {
     'trend_pct': None,
 }
 
+# Project copies (sec_keys) duplicate area deals — Dubai rollups use polygon keys only
+prim = {k: e for k, e in out.items() if k not in SEC_KEYS}
 # Aggregate __dubai__ from per-area data (cheap and avoids re-querying)
-for k, e in out.items():
+for k, e in prim.items():
     dubai['flat']['n']   += e['flat']['n'];   dubai['flat']['total']   += e['flat']['total']
     dubai['villa']['n']  += e['villa']['n'];  dubai['villa']['total']  += e['villa']['total']
     dubai['commercial']['n'] += e['commercial']['n']; dubai['commercial']['total'] += e['commercial']['total']
@@ -697,7 +729,7 @@ for k, e in out.items():
 # __dubai__ timeline (re-aggregate from per-area)
 day_n = defaultdict(int); day_vol = defaultdict(int)
 day_meds = defaultdict(list); day_pps = defaultdict(list)
-for k, e in out.items():
+for k, e in prim.items():
     for p in e['timeline']:
         day_n[p['d']]   += p['n']
         day_vol[p['d']] += p['vol']
@@ -713,7 +745,7 @@ dubai['timeline'] = [{
 # __dubai__ timeline_by_rooms — also carry med + ppsqm forward
 for ru in ROOM_ORDER:
     day_buckets = defaultdict(lambda: {'n':0,'vol':0,'meds':[],'pps':[]})
-    for k, e in out.items():
+    for k, e in prim.items():
         for p in e['timeline_by_rooms'].get(ru, []):
             day_buckets[p['d']]['n']   += p['n']
             day_buckets[p['d']]['vol'] += p['vol']
@@ -729,7 +761,7 @@ for ru in ROOM_ORDER:
 
 # __dubai__ top_projects: roll up all per-area top projects + track dominant area
 proj_acc = defaultdict(lambda: {'n':0,'total':0,'vals':[],'by_area':defaultdict(int)})
-for k, e in out.items():
+for k, e in prim.items():
     area_name = e.get('name', '')
     for p in e['top_projects']:
         proj_acc[p['proj']]['n']     += p['n']
@@ -746,17 +778,17 @@ dubai['top_projects'] = [{
 } for p, v in top_proj_dubai]
 
 # __dubai__ top_deals: top 10 across all areas
-all_deals = [d for k, e in out.items() for d in e['top_deals']]
+all_deals = [d for k, e in prim.items() for d in e['top_deals']]
 all_deals.sort(key=lambda x: -x['val'])
 dubai['top_deals'] = all_deals[:10]
 
 # __dubai__ recent: top 20 by date across all areas
-all_recent = [d for k, e in out.items() for d in e['recent']]
+all_recent = [d for k, e in prim.items() for d in e['recent']]
 all_recent.sort(key=lambda x: x['d'], reverse=True)
 dubai['recent'] = all_recent[:20]
 
 # __dubai__ trend_pct (YoY, like-for-like across all areas)
-dubai['trend_pct'] = round(float(q("SELECT MEDIAN(r) AS r FROM trend_cells").iloc[0]['r']) * 100, 1)
+dubai['trend_pct'] = round(float(q("SELECT MEDIAN(r) AS r FROM trend_cells WHERE k NOT IN (SELECT k FROM sec_keys)").iloc[0]['r']) * 100, 1)
 
 out['__dubai__'] = dubai
 

@@ -56,9 +56,11 @@ con = duckdb.connect()
 print(f'period: {DATE_FROM} → {DATE_TO} (today={TODAY})', file=sys.stderr)
 
 con.execute(f"""
-CREATE TEMP VIEW r AS
-SELECT {KEY_EXPR} AS k,
-       {NAME_EXPR} AS area_orig,
+CREATE TEMP TABLE r_base AS
+SELECT {_KEY_RAW} AS k_p,
+       {_NAME_RAW} AS name_p,
+       {KEY_EXPR} AS k_m,
+       {NAME_EXPR} AS name_m,
        contract_start_date AS d,
        COALESCE(ejari_property_type_en,'Other')     AS sub,
        COALESCE(property_usage_en,'Unknown')        AS usage,
@@ -108,6 +110,22 @@ FROM '{RENTS}'
 WHERE area_name_en IS NOT NULL
   AND contract_start_date BETWEEN '{DATE_FROM}' AND '{DATE_TO}'
 """)
+# Area pages count everything inside the polygon (same key as the map); contracts of a
+# master project without its own polygon are also copied to that project's page (sec=1)
+con.execute("""
+CREATE TEMP TABLE sec_keys AS
+SELECT DISTINCT k_m AS k FROM r_base
+WHERE k_m <> k_p AND k_m NOT IN (SELECT DISTINCT k_p FROM r_base WHERE k_p IS NOT NULL)
+""")
+con.execute("""
+CREATE TEMP VIEW r AS
+SELECT k_p AS k, CASE WHEN k_m = k_p THEN name_m ELSE name_p END AS area_orig, 0 AS sec,
+       * EXCLUDE (k_p, name_p, k_m, name_m) FROM r_base
+UNION ALL
+SELECT k_m AS k, name_m AS area_orig, 1 AS sec,
+       * EXCLUDE (k_p, name_p, k_m, name_m) FROM r_base WHERE k_m IN (SELECT k FROM sec_keys)
+""")
+con.execute("CREATE TEMP VIEW r_p AS SELECT * FROM r WHERE sec = 0")
 
 def q(sql, **params):
     return con.execute(sql, params).fetchdf()
@@ -328,6 +346,11 @@ for k, e in out.items():
 
 # Filter low-volume areas
 out = {k: v for k, v in out.items() if v['n'] >= 5}
+# Projects with their own page inside this polygon — linked from the area page
+for _, row in q("""SELECT k_p, k_m, COUNT(*) AS n FROM r_base WHERE k_m IN (SELECT k FROM sec_keys)
+                   GROUP BY ALL ORDER BY n DESC""").iterrows():
+    if row['k_p'] in out and row['k_m'] in out:
+        out[row['k_p']].setdefault('sub_masters', []).append({'k': row['k_m'], 'n': int(row['n'])})
 
 # ─── Vintage: rent by project-age cohort (last 365d) ────────────────────
 # Rent premium of new stock decays like the price premium (112% → 90% of
@@ -336,7 +359,7 @@ print('vintage cohorts...', file=sys.stderr)
 _VIN_SQL = """
 WITH s AS (
   SELECT {sel_k} proj, YEAR(d::DATE) AS y, d::DATE AS dd, amt/sqm AS rp
-  FROM r
+  FROM {src}
   WHERE TRIM(sub) IN ('Flat','Studio') AND proj != ''
     AND sqm BETWEEN 10 AND 1000 AND amt > 0
     AND d::DATE <= current_date
@@ -354,7 +377,7 @@ cur AS (
 SELECT {sel_ck} b, COUNT(*) AS n, ROUND(MEDIAN(rp)) AS med
 FROM cur GROUP BY {grp_cur} HAVING COUNT(*) >= 20
 """
-vin = con.execute(_VIN_SQL.format(sel_k='k,', grp_k='k,', grp_all='1, 2',
+vin = con.execute(_VIN_SQL.format(sel_k='k,', src='r', grp_k='k,', grp_all='1, 2',
                                   sel_sk='s.k,', join_k='k,', sel_ck='k,',
                                   grp_cur='1, 2')).fetchdf()
 for _, row in vin.iterrows():
@@ -363,7 +386,7 @@ for _, row in vin.iterrows():
         e.setdefault('vintage', {})[row['b']] = {'n': safe_int(row['n']),
                                                  'ppsqm': safe_int(row['med'])}
 dubai_vintage = {}
-for _, row in con.execute(_VIN_SQL.format(sel_k='', grp_k='', grp_all='1',
+for _, row in con.execute(_VIN_SQL.format(sel_k='', src='r_p', grp_k='', grp_all='1',
                                           sel_sk='', join_k='', sel_ck='',
                                           grp_cur='1')).fetchdf().iterrows():
     dubai_vintage[row['b']] = {'n': safe_int(row['n']), 'ppsqm': safe_int(row['med'])}
@@ -378,7 +401,7 @@ print('vintage paths...', file=sys.stderr)
 _PATH_SQL = """
 WITH s AS (
   SELECT {sel_k} proj, YEAR(d::DATE) AS y, {period_col} AS pd, amt/sqm AS rp
-  FROM r
+  FROM {src}
   WHERE TRIM(sub) IN ('Flat','Studio') AND proj != ''
     AND sqm BETWEEN 10 AND 1000 AND amt > 0
     AND d::DATE <= current_date
@@ -394,7 +417,7 @@ ORDER BY seed.cy, s.pd
 """
 def _bake_paths(field, period_col, cohort_filter, min_n):
     rows = con.execute(_PATH_SQL.format(
-        sel_k='k,', sel_pk='s.k,', join_cond='seed.k = s.k AND',
+        sel_k='k,', src='r', sel_pk='s.k,', join_cond='seed.k = s.k AND',
         grp='1, 2, 3', period_col=period_col, cohort_filter=cohort_filter,
         min_n=min_n)).fetchdf()
     n_pts = 0
@@ -407,7 +430,7 @@ def _bake_paths(field, period_col, cohort_filter, min_n):
         n_pts += 1
     dub = {}
     for _, row in con.execute(_PATH_SQL.format(
-            sel_k='', sel_pk='', join_cond='', grp='1, 2',
+            sel_k='', src='r_p', sel_pk='', join_cond='', grp='1, 2',
             period_col=period_col, cohort_filter=cohort_filter,
             min_n=min_n)).fetchdf().iterrows():
         dub.setdefault(str(int(row['cy'])), []).append(
@@ -432,7 +455,7 @@ SELECT COUNT(*) AS n,
        ROUND(QUANTILE_CONT(amt,0.90) FILTER (WHERE amt > 0)) AS p90,
        ROUND(MEDIAN(sqm)             FILTER (WHERE sqm > 0), 1) AS med_sqm,
        ROUND(MEDIAN(amt/sqm)         FILTER (WHERE amt > 0 AND sqm > 0)) AS med_ppsqm
-FROM r
+FROM r_p
 """).fetchdf().iloc[0]
 
 d_subt = q("""
@@ -441,10 +464,10 @@ SELECT sub,
        ROUND(MEDIAN(amt)     FILTER (WHERE amt > 0)) AS med,
        ROUND(MEDIAN(sqm)     FILTER (WHERE sqm > 0), 1) AS med_sqm,
        ROUND(MEDIAN(amt/sqm) FILTER (WHERE amt > 0 AND sqm > 0)) AS med_ppsqm
-FROM r GROUP BY sub
+FROM r_p GROUP BY sub
 """)
 
-d_usage = q("SELECT usage AS u, COUNT(*) AS n FROM r GROUP BY usage")
+d_usage = q("SELECT usage AS u, COUNT(*) AS n FROM r_p GROUP BY usage")
 
 d_rooms = q("""
 SELECT rooms,
@@ -452,7 +475,7 @@ SELECT rooms,
        ROUND(MEDIAN(amt)     FILTER (WHERE amt > 0)) AS med,
        ROUND(MEDIAN(sqm)     FILTER (WHERE sqm > 0), 1) AS med_sqm,
        ROUND(MEDIAN(amt/sqm) FILTER (WHERE amt > 0 AND sqm > 0)) AS med_ppsqm
-FROM r GROUP BY rooms
+FROM r_p GROUP BY rooms
 """)
 
 d_tl_rooms = q("""
@@ -461,19 +484,19 @@ SELECT rooms, substr(d, 1, 7) AS d,
        ROUND(MEDIAN(amt)     FILTER (WHERE amt > 0))             AS med,
        ROUND(SUM(amt))                                           AS vol,
        ROUND(MEDIAN(amt/sqm) FILTER (WHERE amt > 0 AND sqm > 0)) AS ppsqm
-FROM r GROUP BY rooms, substr(d, 1, 7) ORDER BY rooms, d
+FROM r_p GROUP BY rooms, substr(d, 1, 7) ORDER BY rooms, d
 """)
 
 d_proj = q("""
 SELECT proj, COUNT(*) AS n,
        ROUND(MEDIAN(amt) FILTER (WHERE amt > 0)) AS med
-FROM r GROUP BY proj ORDER BY n DESC LIMIT 10
+FROM r_p GROUP BY proj ORDER BY n DESC LIMIT 10
 """)
 
 d_recent = con.execute(f"""
 SELECT d, proj, sub, sqm, amt AS val,
        CASE WHEN rt='New' THEN 'N' ELSE 'R' END AS v
-FROM r WHERE d <= '{TODAY}' ORDER BY d DESC LIMIT 6
+FROM r_p WHERE d <= '{TODAY}' ORDER BY d DESC LIMIT 6
 """).fetchdf()
 
 d_tl = q("""
@@ -482,7 +505,7 @@ SELECT substr(d,1,7) AS d,
        ROUND(MEDIAN(amt)     FILTER (WHERE amt > 0)) AS med,
        ROUND(SUM(amt))                              AS vol,
        ROUND(MEDIAN(amt/sqm) FILTER (WHERE amt > 0 AND sqm > 0)) AS ppsqm
-FROM r GROUP BY substr(d,1,7) ORDER BY d
+FROM r_p GROUP BY substr(d,1,7) ORDER BY d
 """)
 
 dubai = {
