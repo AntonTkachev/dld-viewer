@@ -141,8 +141,6 @@ F_PEAK       = 92    # price ≤92% of own peak = recovery headroom left
 F_STICKY     = 55    # renewal share ≥55% = sticky tenants
 F_GATE_SALES = 30    # HARD gate: the formula is an executable trade — below
                      # this many ready deals/yr there is no market to enter
-                     # (kills thin remainder polygons like Marsa Dubai (other)
-                     # where FIVE LUXE rentals met Al Fattan sales in one ratio)
 F_LIQUID     = 50    # checklist ✓: comfortable two-way liquidity
 
 FRESH_MONTHS   = 12   # project age at sale ≤ this ⇒ "fresh launch"
@@ -169,6 +167,28 @@ _ALL_RENT = "(" + ",".join(v.strip('()') for v in _ROOMS_RENT.values()) + ")"
 
 CLASSES = {'all': (_ALL_SALE, _ALL_RENT)}
 CLASSES.update({k: (_ROOMS_SALE[k], _ROOMS_RENT[k]) for k in _ROOMS_SALE})
+
+# Yield is like-for-like: rent/sale AED/m² inside one cell (DLD project, or its master when
+# unnamed, × room class), then the sales-weighted median over cells. A district-wide ratio
+# of two medians compares different stock (Jumeirah First: La Mer sales vs old Jumeira 1
+# rents gave 2.9%; matched 5.2%).
+CELL_MIN_SALE = 3
+CELL_MIN_RENT = 5
+MIN_MATCHED_SHARE = 1 / 3   # of a district's ready sales that must sit in a cell with rents
+_CELL = ("COALESCE('p' || CAST(TRY_CAST(TRY_CAST(project_number AS DOUBLE) AS BIGINT) AS VARCHAR), "
+         "'m:' || lower(master_project_en))")
+_RM_SALE = 'CASE ' + ' '.join(f"WHEN rooms_en IN {v} THEN '{c}'" for c, v in _ROOMS_SALE.items()) + ' END'
+_RM_RENT = 'CASE ' + ' '.join(f"WHEN ejari_property_sub_type_en IN {v} THEN '{c}'"
+                              for c, v in _ROOMS_RENT.items()) + ' END'
+
+
+def weighted_median(values, weights):
+    pairs = sorted(zip(values, weights))
+    half, acc = sum(weights) / 2, 0
+    for v, w in pairs:
+        acc += w
+        if acc >= half:
+            return v
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 from _curated_sql import polygon_rows
@@ -375,8 +395,7 @@ for code, (tx_rooms, rent_subtype) in CLASSES.items():
           SELECT k,
                  k_name AS name,
                  COALESCE(building_name_en, '?') AS b,
-                 TRY_CAST(meter_sale_price AS DOUBLE) AS ppsqm,
-                 TRY_CAST(procedure_area AS DOUBLE) AS sqm
+                 TRY_CAST(meter_sale_price AS DOUBLE) AS ppsqm
           FROM {TX_P}
           WHERE area_name_en IS NOT NULL
             AND trans_group_en = 'Sales'
@@ -396,27 +415,24 @@ for code, (tx_rooms, rent_subtype) in CLASSES.items():
                ANY_VALUE(top.top_share) AS top_share,
                COUNT(*) AS n_all,
                MEDIAN(s.ppsqm) AS med_all,
-               MEDIAN(s.sqm) AS sqm_all,
                COUNT(*) FILTER (WHERE s.b != top.top_b) AS n_excl,
-               MEDIAN(s.ppsqm) FILTER (WHERE s.b != top.top_b) AS med_excl,
-               MEDIAN(s.sqm) FILTER (WHERE s.b != top.top_b) AS sqm_excl
+               MEDIAN(s.ppsqm) FILTER (WHERE s.b != top.top_b) AS med_excl
         FROM s JOIN top USING (k)
         GROUP BY s.k
         """).fetchdf()
 
     def pick_ready(df):
-        """{k: (name, n_sale, sale_ppsqm, sale_sqm)} applying the concentration rule."""
+        """{k: (name, n_sale, sale_ppsqm)} applying the concentration rule."""
         out = {}
         for _, r in df.iterrows():
             if r['top_share'] <= MAX_BUILDING_SHARE:
-                n, med, sqm = r['n_all'], r['med_all'], r['sqm_all']
+                n, med = r['n_all'], r['med_all']
             elif r['n_excl'] >= MIN_SALE:
-                n, med, sqm = r['n_excl'], r['med_excl'], r['sqm_excl']   # dominant excluded
+                n, med = r['n_excl'], r['med_excl']   # dominant excluded
             else:
                 continue
             if n >= MIN_SALE and med == med and med:
-                out[r['k']] = (r['name'], int(n), float(med),
-                               float(sqm) if sqm == sqm else None)
+                out[r['k']] = (r['name'], int(n), float(med))
         return out
 
     ready_1y = pick_ready(ready_sales(d_now_from))
@@ -428,15 +444,60 @@ for code, (tx_rooms, rent_subtype) in CLASSES.items():
           f'+ {n_fb} via 2y fallback', file=sys.stderr)
     tx_windows = {k: ('1y' if k in ready_1y else '2y') for k in ready}
 
+    def cell_yields(tx_src, rent_src, dfrom):
+        """{k: (like-for-like yield %, ready sales in matched cells)}; same filters and
+        dominant-building exclusion as ready_sales(), rents over the same window."""
+        df = con.execute(f"""
+        WITH s0 AS (
+          SELECT k, COALESCE(building_name_en, '?') AS b, {_CELL} AS cell, {_RM_SALE} AS rm,
+                 TRY_CAST(meter_sale_price AS DOUBLE) AS ppsqm
+          FROM {tx_src}
+          WHERE area_name_en IS NOT NULL
+            AND trans_group_en = 'Sales'
+            AND property_type_en = 'Unit'
+            AND reg_type_en = 'Existing Properties'
+            AND rooms_en IN {tx_rooms}
+            AND instance_date BETWEEN '{dfrom}' AND '{d_to}'
+            AND TRY_CAST(meter_sale_price AS DOUBLE) BETWEEN 2000 AND 100000
+        ),
+        top AS (
+          SELECT k, ARG_MAX(b, cnt) AS top_b, MAX(cnt)::DOUBLE / SUM(cnt) AS top_share
+          FROM (SELECT k, b, COUNT(*) AS cnt FROM s0 GROUP BY 1, 2) GROUP BY k
+        ),
+        s AS (
+          SELECT k, cell, rm, COUNT(*) AS n, MEDIAN(ppsqm) AS pp
+          FROM s0 JOIN top USING (k)
+          WHERE top_share <= {MAX_BUILDING_SHARE} OR b != top_b
+          GROUP BY ALL
+        ),
+        r AS (
+          SELECT k, {_CELL} AS cell, {_RM_RENT} AS rm, COUNT(*) AS n,
+                 MEDIAN(TRY_CAST(annual_amount AS DOUBLE) / NULLIF(TRY_CAST(actual_area AS DOUBLE), 0))
+                   FILTER (WHERE TRY_CAST(actual_area AS DOUBLE) > 10
+                           AND TRY_CAST(annual_amount AS DOUBLE) / TRY_CAST(actual_area AS DOUBLE)
+                               BETWEEN 100 AND 25000) AS rp
+          FROM {rent_src}
+          WHERE area_name_en IS NOT NULL
+            AND ejari_property_sub_type_en IN {rent_subtype}
+            AND contract_start_date BETWEEN '{dfrom}' AND '{d_to}'
+          GROUP BY ALL
+        )
+        SELECT s.k, s.n, r.rp / s.pp * 100 AS y
+        FROM s JOIN r USING (k, cell, rm)
+        WHERE s.n >= {CELL_MIN_SALE} AND r.n >= {CELL_MIN_RENT} AND s.pp > 0 AND r.rp > 0
+        """).fetchdf()
+        return {k: (weighted_median(g['y'].tolist(), g['n'].tolist()), int(g['n'].sum()))
+                for k, g in df.groupby('k')}
+
+    cells = {'1y': cell_yields(TX_P, RENTS_P, d_now_from), '2y': cell_yields(TX_P, RENTS_P, d_prev_from)}
+
     rt = con.execute(f"""
     SELECT k,
            COUNT(*) AS n_rent,
            MEDIAN(TRY_CAST(annual_amount AS DOUBLE) / NULLIF(TRY_CAST(actual_area AS DOUBLE), 0))
              FILTER (WHERE TRY_CAST(actual_area AS DOUBLE) > 10
                      AND TRY_CAST(annual_amount AS DOUBLE) / TRY_CAST(actual_area AS DOUBLE)
-                         BETWEEN 100 AND 25000) AS rent_ppsqm,
-           MEDIAN(TRY_CAST(actual_area AS DOUBLE))
-             FILTER (WHERE TRY_CAST(actual_area AS DOUBLE) BETWEEN 10 AND 1000) AS rent_sqm
+                         BETWEEN 100 AND 25000) AS rent_ppsqm
     FROM {RENTS_P}
     WHERE area_name_en IS NOT NULL
       AND ejari_property_sub_type_en IN {rent_subtype}
@@ -490,24 +551,19 @@ for code, (tx_rooms, rent_subtype) in CLASSES.items():
 
     # ---- assemble per-district records ----------------------------------
     rent_rows = {}
-    n_mismatch = 0
-    for k, (name, n_sale, sale_p, sale_sqm) in ready.items():
+    n_unmatched = 0
+    for k, (name, n_sale, sale_p) in ready.items():
         rtr = rt_map.get(k)
         if rtr is None:
             continue
         rent_p = rtr['rent_ppsqm']
         if rent_p != rent_p or not rent_p:
             continue
-        # Population-match guard: the rented stock must physically resemble
-        # the sold stock, else the yield is a fiction. Marsa Dubai (other):
-        # rentals were FIVE LUXE serviced ~35m² units, the (post-guard) sale
-        # benchmark was Al Fattan ~120m² flats → fake 11.5% yield.
-        rent_sqm = rtr['rent_sqm']
-        if (sale_sqm and rent_sqm == rent_sqm and rent_sqm
-                and not (1 / 1.8 <= sale_sqm / float(rent_sqm) <= 1.8)):
-            n_mismatch += 1
+        cy = cells[tx_windows[k]].get(k)
+        if not cy or cy[1] < max(MIN_SALE, MIN_MATCHED_SHARE * n_sale):
+            n_unmatched += 1
             continue
-        y = float(rent_p) / sale_p * 100
+        y = cy[0]
         if not (1.0 <= y <= 20.0):   # data-glitch guard, same bounds as backtest
             continue
         rent_rows[k] = {
@@ -518,9 +574,9 @@ for code, (tx_rooms, rent_subtype) in CLASSES.items():
         }
         if tx_windows[k] == '2y':
             rent_rows[k]['window_2y'] = True
-    if n_mismatch:
-        print(f'  {code}: dropped {n_mismatch} districts (rented vs sold stock '
-              f'area mismatch >1.8x)', file=sys.stderr)
+    if n_unmatched:
+        print(f'  {code}: dropped {n_unmatched} districts (too few ready sales in '
+              f'cells with rents)', file=sys.stderr)
     # sale_ppsqm also serves as the off-plan premium benchmark below, so
     # keep a ready-price lookup even for districts that missed the rent leg.
     ready_price = {k: v[2] for k, v in ready.items()}
@@ -673,7 +729,9 @@ for code, (tx_rooms, rent_subtype) in CLASSES.items():
             'name': 'DUBAI',
             'n_sale': int(d_tx['n']), 'n_rent': int(d_rt['n']),
             'sale_ppsqm': int(d_tx['p']), 'rent_ppsqm': int(d_rt['p']),
-            'yield_pct': round(float(d_rt['p']) / float(d_tx['p']) * 100, 2),
+            'yield_pct': round(cell_yields(f"(SELECT '__dubai__' AS k, * FROM '{TX}')",
+                                           f"(SELECT '__dubai__' AS k, * FROM '{RENTS}')",
+                                           d_now_from)['__dubai__'][0], 2),
         }
 
     path = os.path.join(OUT, f'{code}.json')
