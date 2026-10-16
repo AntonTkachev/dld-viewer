@@ -516,7 +516,7 @@ for code, (tx_rooms, rent_subtype) in CLASSES.items():
         rent_rows[k] = {
             'name': name,
             'n_sale': n_sale, 'n_rent': int(rtr['n_rent']),
-            'sale_ppsqm': int(sale_p), 'rent_ppsqm': int(rent_p),
+            'sale_ppsqm': round(cy[3]), 'rent_ppsqm': round(cy[4]),
             'yield_pct': round(y, 2),
         }
         if tx_windows[k] == '2y':
@@ -672,13 +672,13 @@ for code, (tx_rooms, rent_subtype) in CLASSES.items():
       AND contract_start_date BETWEEN '{d_now_from}' AND '{d_to}'
     """).fetchdf().iloc[0]
     if d_tx['n'] >= MIN_SALE and d_rt['n'] >= MIN_RENT and d_tx['p'] and d_rt['p']:
+        dy = matched_yields(f"(SELECT '__dubai__' AS k, * FROM '{TX}')",
+                            f"(SELECT '__dubai__' AS k, * FROM '{RENTS}')", d_now_from)['__dubai__']
         out['__dubai__'] = {
             'name': 'DUBAI',
             'n_sale': int(d_tx['n']), 'n_rent': int(d_rt['n']),
-            'sale_ppsqm': int(d_tx['p']), 'rent_ppsqm': int(d_rt['p']),
-            'yield_pct': round(matched_yields(f"(SELECT '__dubai__' AS k, * FROM '{TX}')",
-                                              f"(SELECT '__dubai__' AS k, * FROM '{RENTS}')",
-                                              d_now_from)['__dubai__'][0], 2),
+            'sale_ppsqm': round(dy[3]), 'rent_ppsqm': round(dy[4]),
+            'yield_pct': round(dy[0], 2),
         }
 
     path = os.path.join(OUT, f'{code}.json')

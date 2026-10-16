@@ -1,9 +1,11 @@
 """Like-for-like rental yield, shared by the investor/income/formula and payback masks.
 
-Yield = rent/sale AED/m² inside one cell (DLD project_number, or its master when the
-project is unnamed, × room class), then the sales-weighted median over cells. A
-district-wide ratio of two medians compares different stock (Jumeirah First: La Mer
-sales vs old Jumeira 1 rents gave 2.9%; matched 5.2%).
+Cells are DLD project_number (or its master when the project is unnamed) × room class
+that have both sales and rents. Yield = rent ÷ price of that basket: cell medians averaged
+with sales as weights, so the two shown prices divide into it and no cell boundary flips
+it (JVT 2BR: a 3.8% master cell vs ~7% projects). A district-wide ratio
+of two medians compares different stock (Jumeirah First: La Mer sales vs old Jumeira 1
+rents gave 2.9%; matched 5.2%).
 """
 
 CELL_MIN_SALE = 3
@@ -23,18 +25,9 @@ def room_case(col, classes):
     return 'CASE ' + ' '.join(f"WHEN {col} IN {v} THEN '{c}'" for c, v in classes.items()) + ' END'
 
 
-def weighted_median(values, weights):
-    pairs = sorted(zip(values, weights))
-    half, acc = sum(weights) / 2, 0
-    for v, w in pairs:
-        acc += w
-        if acc >= half:
-            return v
-
-
 def cell_yields(con, sale_src, sale_where, sale_rm, rent_src, rent_where, rent_rm,
                 max_building_share=None):
-    """{k: (yield %, ready sales in matched cells, all ready sales)}.
+    """{k: (yield %, ready sales in matched cells, all ready sales, sale AED/m², rent AED/m²)}.
     `*_src` rows carry k; with max_building_share, a named building holding more than
     that share of a district's sales is left out (one dumped tower must not set the yield).
     Rows without a building name (villas) are never treated as one building."""
@@ -61,9 +54,13 @@ def cell_yields(con, sale_src, sale_where, sale_rm, rent_src, rent_where, rent_r
       GROUP BY ALL
     ),
     tot AS (SELECT k, SUM(n) AS n_all FROM s GROUP BY k)
-    SELECT s.k, s.n, r.rp / s.pp * 100 AS y, tot.n_all
+    SELECT s.k, s.n, s.pp, r.rp, tot.n_all
     FROM s JOIN r USING (k, cell, rm) JOIN tot USING (k)
     WHERE s.n >= {CELL_MIN_SALE} AND r.n >= {CELL_MIN_RENT} AND s.pp > 0 AND r.rp > 0
     """).fetchdf()
-    return {k: (weighted_median(g['y'].tolist(), g['n'].tolist()), int(g['n'].sum()), int(g['n_all'].iloc[0]))
-            for k, g in df.groupby('k')}
+    out = {}
+    for k, g in df.groupby('k'):
+        n = g['n'].sum()
+        sp, rp = float((g['pp'] * g['n']).sum() / n), float((g['rp'] * g['n']).sum() / n)
+        out[k] = (rp / sp * 100, int(n), int(g['n_all'].iloc[0]), sp, rp)
+    return out
