@@ -4,8 +4,8 @@
 For each room class (studio, 1br, 2br, 3br, 4br_plus) we emit years = 100 / yield,
 where yield is like-for-like (_yield_cells.py): ready sales vs rents of the same project
 and room class, over the last 2 years. A district with <1/3 of its ready sales in such
-cells gets no years. sale_ppsqm / rent_ppsqm stay plain district medians (all sales,
-incl. off-plan and villas) for display.
+cells gets no years. sale_ppsqm / rent_ppsqm are those matched prices, so
+sale_ppsqm / rent_ppsqm = years.
 
 Output: payback/data/{studio,1br,2br,3br,4br_plus}.json — per area key:
   { name, n_sale, n_rent, sale_ppsqm, rent_ppsqm, years }
@@ -105,8 +105,8 @@ for code, (tx_rooms, rent_subtype) in CLASSES.items():
             'name':       txr['name'],
             'n_sale':     int(txr['n_sale']),
             'n_rent':     int(rtr['n_rent']),
-            'sale_ppsqm': int(sale_p),
-            'rent_ppsqm': int(rent_p),
+            'sale_ppsqm': round(cy[3]),
+            'rent_ppsqm': round(cy[4]),
             'years':      round(100 / cy[0], 1),
         }
 
@@ -132,14 +132,15 @@ for code, (tx_rooms, rent_subtype) in CLASSES.items():
       AND contract_start_date BETWEEN '{dfrom}' AND '{dto}'
     """).fetchdf().iloc[0]
     if d_tx['n'] >= MIN_OBS and d_rt['n'] >= MIN_OBS and d_tx['p'] and d_rt['p']:
+        dy = matched_yields(f"(SELECT '__dubai__' AS k, * FROM '{TX}')",
+                            f"(SELECT '__dubai__' AS k, * FROM '{RENTS}')")['__dubai__']
         out['__dubai__'] = {
             'name': 'DUBAI',
             'n_sale': int(d_tx['n']),
             'n_rent': int(d_rt['n']),
-            'sale_ppsqm': int(d_tx['p']),
-            'rent_ppsqm': int(d_rt['p']),
-            'years': round(100 / matched_yields(f"(SELECT '__dubai__' AS k, * FROM '{TX}')",
-                                                f"(SELECT '__dubai__' AS k, * FROM '{RENTS}')")['__dubai__'][0], 1),
+            'sale_ppsqm': round(dy[3]),
+            'rent_ppsqm': round(dy[4]),
+            'years': round(100 / dy[0], 1),
         }
 
     path = os.path.join(OUT, f'{code}.json')

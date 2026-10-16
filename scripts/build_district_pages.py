@@ -1718,6 +1718,7 @@ def main():
         rent = json.load(f)
     nearby_index = build_nearby_index(agg, rent)
     poi_index = build_poi_index()
+    written_json = set()
     with open(TPL, encoding='utf-8') as f:
         template = f.read()
     with open(TPL_LIST, encoding='utf-8') as f:
@@ -1800,6 +1801,7 @@ def main():
                     json_path = os.path.join(mode_dir_ru, 'data.json')
                     with open(json_path, 'wb') as f:
                         f.write(bundle_bytes)
+                    written_json.add(json_path)
 
                 bu = base_path(mode, slug, lang)
                 data_u = data_url(mode, slug) + '?v=' + data_hash
@@ -1913,6 +1915,24 @@ def main():
                       file=sys.stderr)
 
     print(f'done — {built} page(s) across {len(LANGUAGES)} language(s)', file=sys.stderr)
+
+    # data.json of retired slugs (renamed/split areas) is never rewritten — drop it
+    pruned = 0
+    for _, prefix in MODES:
+        for slug in os.listdir(os.path.join(ROOT, prefix)):
+            d = os.path.join(ROOT, prefix, slug)
+            jp = os.path.join(d, 'data.json')
+            if os.path.isfile(jp) and jp not in written_json:
+                os.remove(jp)
+                for sub in os.listdir(d):
+                    if os.path.isdir(os.path.join(d, sub)) and not os.listdir(os.path.join(d, sub)):
+                        os.rmdir(os.path.join(d, sub))
+                if not [x for x in os.listdir(d) if x != '.DS_Store']:
+                    for x in os.listdir(d): os.remove(os.path.join(d, x))
+                    os.rmdir(d)
+                pruned += 1
+    if pruned:
+        print(f'pruned {pruned} stale data.json', file=sys.stderr)
 
     if DISTRICTS is None:
         # Slugs this run produced — build_renamed_area_redirects.py replaces retired district pages
