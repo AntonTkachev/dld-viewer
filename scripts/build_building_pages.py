@@ -13,14 +13,28 @@ when two projects each have MIN_SALES+ sales under the same name.
 Run after any refresh of data/tx.parquet or data/rents.parquet.
 """
 import json, os, re, shutil, sys
-from datetime import date
+from datetime import date, timedelta
 import duckdb
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 from _curated_sql import hierarchy_select  # noqa: E402
+from _yield_cells import MIN_MATCHED_SHARE, CELL, cell_yields, room_case  # noqa: E402
 
 OUT_DIR = 'buildings'
 MIN_SALES = 5   # min sales transactions to include a building
+PAGE_MIN_SALES = 20     # /{lang}/buildings/<slug>/ page generated
+INDEX_MIN_SALES = 30    # …and indexable when also INDEX_MIN_RECENT sales in the last 2 years
+INDEX_MIN_RECENT = 5
+YIELD_DAYS = 365 * 2
+# Same room classes as build_payback_map.py
+YIELD_CLASSES = {
+    'studio': ("('Studio')", "('Studio')"),
+    '1br':    ("('1 B/R')", "('1bed room+Hall')"),
+    '2br':    ("('2 B/R')", "('2 bed rooms+hall')"),
+    '3br':    ("('3 B/R')", "('3 bed rooms+hall')"),
+    '4br+':   ("('4 B/R','5 B/R','6 B/R','7 B/R','8 B/R','9 B/R','PENTHOUSE')",
+               "('4 bed rooms+hall','5 bed rooms+hall','6 bed rooms+hall','7 bed rooms+hall','8 bed rooms+hall','9 bed rooms+hall','10 bed rooms+hall')"),
+}
 
 # ── RERA developer name → (English display name, is_zone) ───────────────────
 # (defined immediately below; lookup tables built after)
@@ -334,6 +348,53 @@ q7 = con.execute(f"""
     FROM t WHERE {SALES_WIN} GROUP BY eid, ym, room, reg ORDER BY eid, ym, room, reg
 """).fetchall()
 
+# ── Like-for-like gross yield (_yield_cells, as on the payback/investor masks):
+#    this building's ready sales vs Ejari rents of its project × room class ──
+print("Query Y: like-for-like yield…", flush=True)
+as_of = con.execute("SELECT MAX(dt) FROM s").fetchone()[0]
+y_from, y_to = (as_of - timedelta(days=YIELD_DAYS)).isoformat(), as_of.isoformat()
+con.execute(f"""
+    CREATE TEMP TABLE txk AS
+    SELECT e.eid AS k, x.* FROM read_parquet('data/tx.parquet') x
+    JOIN ent e ON e.bname = TRIM(x.building_name_en) AND e.area = COALESCE(x.area_name_en, '')
+              AND e.pno = COALESCE(TRY_CAST(TRY_CAST(x.project_number AS DOUBLE) AS INTEGER), -1)
+    WHERE x.trans_group_en = 'Sales' AND x.instance_date BETWEEN '{y_from}' AND '{y_to}'
+""")
+con.execute(f"CREATE TEMP TABLE kc AS SELECT DISTINCT k, {CELL} AS cell FROM txk")
+con.execute(f"""
+    CREATE TEMP TABLE rk AS
+    SELECT kc.k, r.* FROM read_parquet('data/rents.parquet') r JOIN kc ON kc.cell = {CELL}
+    WHERE r.contract_start_date BETWEEN '{y_from}' AND '{y_to}'
+""")
+
+
+def _yields(classes):
+    tx_in = '(' + ','.join(v[0][1:-1] for v in classes.values()) + ')'
+    rent_in = '(' + ','.join(v[1][1:-1] for v in classes.values()) + ')'
+    return cell_yields(
+        con, 'txk', f"""rooms_en IN {tx_in} AND reg_type_en = 'Existing Properties'
+          AND TRY_CAST(meter_sale_price AS DOUBLE) BETWEEN 2000 AND 100000""",
+        room_case('rooms_en', {c: v[0] for c, v in classes.items()}),
+        'rk', f"ejari_property_sub_type_en IN {rent_in}",
+        room_case('ejari_property_sub_type_en', {c: v[1] for c, v in classes.items()}))
+
+
+def _ycell(v):
+    y, n, n_all, sp, rp = v
+    return {'y': round(y, 1), 'n': n, 'sp': round(sp), 'rp': round(rp)}
+
+
+YIELD_SANE = (1.5, 15)  # outside: Ejari area/amount errors (GOLDEN HOMES JVC came out at 85%)
+gross_yield = {}  # eid → {'all': cell, room: cell}
+for eid, v in _yields(YIELD_CLASSES).items():
+    if v[1] >= 3 and v[1] / v[2] >= MIN_MATCHED_SHARE and YIELD_SANE[0] <= v[0] <= YIELD_SANE[1]:
+        gross_yield[eid] = {'all': _ycell(v)}
+for code in YIELD_CLASSES:
+    for eid, v in _yields({code: YIELD_CLASSES[code]}).items():
+        if eid in gross_yield and YIELD_SANE[0] <= v[0] <= YIELD_SANE[1]:
+            gross_yield[eid][code] = _ycell(v)
+print(f"  yield for {len(gross_yield):,} buildings ({y_from} … {y_to})", flush=True)
+
 # ── Rents: Ejari tags project_number + project_name on ~16% of contracts and
 #    nothing building-level, so rents are per project (joined on project_number)
 print("Query 3/5/8: rents by project…", flush=True)
@@ -586,6 +647,11 @@ for eid in kept:
         out['ad'] = e['area_d']
     if rent_share.get(rk, 0) > 1:
         out['rs'] = rent_share[rk]
+    if eid in gross_yield:
+        # 'p': rents of this building's own project; 'm': master-community rents (sales lack project_number)
+        gross_yield[eid]['all']['lvl'] = 'p' if rk is not None and rk == pno else 'm'
+        out['gy'] = gross_yield[eid]
+        out['gyw'] = [y_from, y_to]
     if meta.get('pct') is not None:
         out['rera_pct'] = meta['pct']
     if meta.get('u') is not None:
@@ -617,6 +683,13 @@ for eid in kept:
         idx_entry['st'] = meta['st']
     if (e['bname'], e['area']) in on_map and map_owner[(e['bname'], e['area'])] == eid:
         idx_entry['m'] = 1
+    if eid in gross_yield:
+        idx_entry['gy'] = gross_yield[eid]['all']['y']
+    if n_sales[eid] >= PAGE_MIN_SALES:
+        idx_entry['pg'] = 1
+        recent = sum(1 for x in tx_data.get(eid, []) if x['d'] >= y_from)
+        if n_sales[eid] < INDEX_MIN_SALES or recent < INDEX_MIN_RECENT:
+            idx_entry['ni'] = 1
     search_index.append(idx_entry)
 
 # Drop directories of buildings that fell out of the index

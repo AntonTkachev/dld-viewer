@@ -1883,7 +1883,7 @@ function _initBuildingShapes() {
         ${salesCell}${rentCell}
       </div>
       ${(yrCell||devCell||pctCell) ? `<div style="display:flex;gap:16px;flex-wrap:wrap;border-top:1px solid #f3f4f6;padding-top:8px">${yrCell}${devCell}${pctCell}</div>` : ''}
-      ${b.s ? `<div style="margin-top:10px"><a href="/search/#${b.s}" style="background:#1d4ed8;color:#fff;text-decoration:none;padding:5px 12px;border-radius:5px;font-size:12px;font-weight:600;display:inline-block">${t('bld_details')}</a></div>` : ''}
+      ${b.s ? `<div style="margin-top:10px"><a href="${b.pg ? `/${currentLang}/buildings/${b.s}/` : `/search/#${b.s}`}" style="background:#1d4ed8;color:#fff;text-decoration:none;padding:5px 12px;border-radius:5px;font-size:12px;font-weight:600;display:inline-block">${t('bld_details')}</a></div>` : ''}
     `;
   };
   for (const b of BUILDINGS) {

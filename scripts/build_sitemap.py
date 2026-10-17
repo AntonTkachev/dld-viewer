@@ -55,6 +55,10 @@ SALES_WHITELIST = set(_wl['sales'])
 RENTS_WHITELIST = set(_wl['rents'])
 PERIOD_EXCEPTIONS = set(_wl.get('period_subpage_exceptions', []))
 
+# Building pages: only those build_building_pages.py marks indexable (pg and not ni)
+with open(os.path.join(ROOT, 'buildings', 'search-index.json'), encoding='utf-8') as _f:
+    BUILDING_INDEXABLE = {b['s'] for b in json.load(_f) if b.get('pg') and not b.get('ni')}
+
 
 def is_noindex_stub(rel_path):
     """`/<lang>/index.html` are 0-second redirects with noindex — skip."""
@@ -78,6 +82,8 @@ def is_whitelisted(rel_path):
     if len(parts) < 2:
         return True  # /<lang>/  — but is_noindex_stub already filtered these
     lang, top = parts[0], parts[1]
+    if top == 'buildings' and len(parts) > 2:
+        return len(parts) == 3 and parts[2] in BUILDING_INDEXABLE
     if top not in ('sales', 'rents'):
         return True  # mask landings, content pages, FAQ, blog, table variants
     if len(parts) == 2:

@@ -80,11 +80,11 @@ def _district_url(lang, slug):
     return BASE_URL + _lang_path_prefix(lang) + '/sales/' + slug + '/'
 
 
-def _building_url(slug):
-    """Building pages have no per-language mirror — /search/#slug deep-links
-    into the (single, language-switchable) search page. Same pattern the
-    map's building popups already use."""
-    return BASE_URL + '/search/#' + slug
+def _building_url(b, lang):
+    """Per-language building page when one is generated (pg), else /search/#slug."""
+    if b.get('pg'):
+        return f"{BASE_URL}{_lang_path_prefix(lang)}/buildings/{b['s']}/"
+    return BASE_URL + '/search/#' + b['s']
 
 
 def _display_name(n):
@@ -473,7 +473,7 @@ def render_post4_body(lang):
     dash = '—'
     body = []
     for b in rows:
-        name_link = f'<a href="{_building_url(b["s"])}">{escape(_display_name(b["n"]))}</a>'
+        name_link = f'<a href="{_building_url(b, lang)}">{escape(_display_name(b["n"]))}</a>'
         body.append(
             '<tr>'
             f'<td>{name_link}</td>'
