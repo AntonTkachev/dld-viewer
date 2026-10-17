@@ -8,7 +8,9 @@ noindex redirect stub → /en/buildings/ (query string preserved).
 """
 import json
 import os
+import re
 import sys
+import unicodedata
 from html import escape
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
@@ -17,6 +19,7 @@ from build_construction_page import COPY as CONSTR_COPY  # noqa: E402
 
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 INDEX = os.path.join(ROOT, 'buildings', 'search-index.json')
+GEOJSON = os.path.join(ROOT, 'data', 'curated_polygons.geojson')
 LANGUAGES = ('ru', 'en', 'ar', 'hi', 'zh')
 DIR_FOR_LANG = {'ru': 'ltr', 'en': 'ltr', 'ar': 'rtl', 'hi': 'ltr', 'zh': 'ltr'}
 OG_LOCALE = {'ru': 'ru_RU', 'en': 'en_US', 'ar': 'ar_AE', 'hi': 'hi_IN', 'zh': 'zh_CN'}
@@ -46,6 +49,13 @@ COPY = {
         map_title='Показать на карте',
         load_error='Не удалось загрузить каталог зданий. Обновите страницу.',
         nav_construction='Стройки Дубая →', nav_search='Поиск по зданию →',
+        yr_plan='план',
+        yr_plan_title='Плановый срок сдачи по RERA',
+        yr_est_title='Оценка: проект сдан, год взят из плановой даты RERA',
+        rn_proj_title='Договоры Ejari по всему проекту (зданий в проекте: {n}): Ejari не указывает конкретное здание',
+        th_rents_title='Договоры аренды Ejari. Ejari привязывает к проекту лишь меньшую часть договоров, поэтому у многих зданий аренды нет',
+        project_filter='Здания проекта RERA №{no}',
+        area_title='Цены района',
         count={'one': '{n} здание', 'few': '{n} здания', 'many': '{n} зданий', 'other': '{n} здания'},
     ),
     'en': dict(
@@ -68,6 +78,13 @@ COPY = {
         map_title='Show on map',
         load_error='Failed to load the building index. Please refresh the page.',
         nav_construction='Dubai construction projects →', nav_search='Building search →',
+        yr_plan='plan',
+        yr_plan_title='Planned completion (RERA)',
+        yr_est_title='Estimate: project delivered, year taken from the RERA planned end date',
+        rn_proj_title='Ejari contracts for the whole project ({n} buildings): Ejari does not record the building',
+        th_rents_title='Ejari rent contracts. Ejari links only a minority of contracts to a project, so many buildings show none',
+        project_filter='Buildings of RERA project #{no}',
+        area_title='Area prices',
         count={'one': '{n} building', 'other': '{n} buildings'},
     ),
     'ar': dict(
@@ -90,6 +107,13 @@ COPY = {
         map_title='عرض على الخريطة',
         load_error='تعذّر تحميل دليل المباني. يرجى تحديث الصفحة.',
         nav_construction='مشاريع البناء في دبي ←', nav_search='البحث عن مبنى ←',
+        yr_plan='مخطط',
+        yr_plan_title='موعد الإنجاز المخطط (ريرا)',
+        yr_est_title='تقدير: المشروع مكتمل، والسنة من تاريخ الانتهاء المخطط في ريرا',
+        rn_proj_title='عقود إيجاري للمشروع بأكمله (عدد المباني: {n}): لا يسجّل إيجاري المبنى نفسه',
+        th_rents_title='عقود الإيجار في إيجاري. يربط إيجاري جزءًا صغيرًا فقط من العقود بمشروع، لذلك لا تظهر إيجارات لكثير من المباني',
+        project_filter='مباني مشروع ريرا رقم {no}',
+        area_title='أسعار المنطقة',
         count={'other': 'عدد المباني: {n}'},
     ),
     'hi': dict(
@@ -112,6 +136,13 @@ COPY = {
         map_title='मानचित्र पर दिखाएँ',
         load_error='इमारत सूची लोड नहीं हो सकी। कृपया पेज रीफ़्रेश करें।',
         nav_construction='दुबई निर्माण परियोजनाएँ →', nav_search='इमारत खोज →',
+        yr_plan='योजना',
+        yr_plan_title='नियोजित पूर्णता (RERA)',
+        yr_est_title='अनुमान: परियोजना पूरी, वर्ष RERA की नियोजित समाप्ति तिथि से',
+        rn_proj_title='पूरी परियोजना के Ejari अनुबंध ({n} इमारतें): Ejari इमारत दर्ज नहीं करता',
+        th_rents_title='Ejari किराया अनुबंध। Ejari केवल कुछ ही अनुबंधों को परियोजना से जोड़ता है, इसलिए कई इमारतों के लिए किराया नहीं दिखता',
+        project_filter='RERA परियोजना #{no} की इमारतें',
+        area_title='क्षेत्र की कीमतें',
         count={'one': '{n} इमारत', 'other': '{n} इमारतें'},
     ),
     'zh': dict(
@@ -134,6 +165,13 @@ COPY = {
         map_title='在地图上显示',
         load_error='楼盘目录加载失败，请刷新页面。',
         nav_construction='迪拜在建项目 →', nav_search='楼盘搜索 →',
+        yr_plan='计划',
+        yr_plan_title='计划完工年份（RERA）',
+        yr_est_title='估计：项目已交付，年份取自 RERA 计划完工日期',
+        rn_proj_title='整个项目的 Ejari 合同（{n} 栋楼）：Ejari 未记录具体楼栋',
+        th_rents_title='Ejari 租赁合同。Ejari 仅将少部分合同关联到项目，因此许多楼盘没有租赁数据',
+        project_filter='RERA 项目 #{no} 的楼盘',
+        area_title='区域价格',
         count={'other': '{n} 栋楼'},
     ),
 }
@@ -173,10 +211,36 @@ def write_if_changed(path, text):
     return True
 
 
-def row_html(b, lang, c):
+def load_areas(idx):
+    """Public area name → [district page slug or None, Arabic name or None]."""
+    with open(GEOJSON, encoding='utf-8') as f:
+        ar = {ft['properties']['name']: ft['properties'].get('name_ar') for ft in json.load(f)['features']}
+    out = {}
+    for b in idx:
+        name = b.get('ad') or b['a']
+        if name and name not in out:
+            sl = district_slug(name)
+            out[name] = [sl if os.path.exists(os.path.join(ROOT, 'en', 'sales', sl, 'index.html')) else None,
+                         ar.get(name)]
+    return out
+
+
+def district_slug(s):
+    s = unicodedata.normalize('NFKD', s).encode('ascii', 'ignore').decode()
+    return re.sub(r'[^a-z0-9]+', '-', s.lower()).strip('-')
+
+
+def row_html(b, lang, c, areas):
     s = escape(b['s'])
     mute = '<span class="mute">—</span>'
-    yr = str(b['yr']) if b.get('yr') is not None else mute
+    if b.get('yr') is None:
+        yr = mute
+    elif b.get('yp'):
+        yr = f'<span class="yr-plan" title="{escape(c["yr_plan_title"])}">{b["yr"]} · {escape(c["yr_plan"])}</span>'
+    elif b.get('yre'):
+        yr = f'<span class="yr-est" title="{escape(c["yr_est_title"])}">≈{b["yr"]}</span>'
+    else:
+        yr = str(b['yr'])
     dev = (escape(b['dev']) + (f'<span class="badge-zone">{escape(c["zone_badge"])}</span>' if b.get('dz') else '')) if b.get('dev') else mute
     st = b.get('st')
     if st:
@@ -184,10 +248,22 @@ def row_html(b, lang, c):
         status = f'<span class="stbadge stbadge-{escape(st)}">{escape(c.get("st_" + st, st))}</span>{pct}'
     else:
         status = mute
-    rn = fmt_num(b['rn'], lang) if b.get('rn') else mute
+    if b.get('rn'):
+        rn = fmt_num(b['rn'], lang)
+        if b.get('rs'):
+            rn = f'<span class="rn-proj" title="{escape(c["rn_proj_title"].format(n=b["rs"]))}">{rn}</span>'
+    else:
+        rn = mute
+    aname = b.get('ad') or b['a']
+    aslug, aar = areas.get(aname, [None, None])
+    alabel = escape((aar if lang == 'ar' and aar else aname) or '')
+    area = (f'<a class="area-a" href="/{lang}/sales/{aslug}/" title="{escape(c["area_title"])}">{alabel}</a>'
+            if aslug else alabel)
+    if b.get('pj'):
+        area += f' · {escape(b["pj"])}'
+    mp = f'<a class="btn-map" href="/{lang}/sales/?bld={s}" title="{escape(c["map_title"])}">↗</a>' if b.get('m') else ''
     return (f'<tr data-s="{s}"><td class="td-name"><a class="bld-a" href="/search/#{s}">{escape(b["n"])}</a>'
-            f'<div class="td-area">{escape(b.get("a") or "")}</div>'
-            f'<a class="btn-map" href="/{lang}/sales/?bld={s}" title="{escape(c["map_title"])}">↗</a></td>'
+            f'<div class="td-area">{area}</div>{mp}</td>'
             f'<td class="num col-yr">{yr}</td><td class="col-dev">{dev}</td>'
             f'<td class="col-pct">{status}</td>'
             f'<td class="num">{fmt_num(b["tx"], lang)}</td><td class="num">{rn}</td></tr>')
@@ -321,6 +397,13 @@ CSS = """
   .td-name { font-weight: 500; }
   .td-name .bld-a { color: inherit; text-decoration: none; }
   .td-area { color: #6b7280; font-size: 11.5px; margin-top: 2px; }
+  .td-area .area-a { color: inherit; text-decoration: none; border-bottom: 1px dotted #cbd5e1; }
+  .td-area .area-a:hover { color: #1d4ed8; }
+  .yr-plan, .yr-est, .rn-proj { cursor: help; }
+  .yr-plan { color: #92400e; font-size: 12px; white-space: nowrap; }
+  .rn-proj { border-bottom: 1px dotted #94a3b8; }
+  .proj-note { display: flex; align-items: center; gap: 8px; background: #eff6ff; border: 1px solid #bfdbfe; color: #1d4ed8; border-radius: 8px; padding: 6px 10px; font-size: 13px; margin-bottom: 12px; width: fit-content; }
+  .proj-note button { border: none; background: none; color: inherit; cursor: pointer; font-size: 15px; line-height: 1; padding: 0; }
   .btn-map { display: inline-flex; align-items: center; font-size: 13px; font-weight: 600; color: #1d4ed8; text-decoration: none; margin-top: 3px; opacity: .75; transition: opacity .12s; }
   .btn-map:hover { opacity: 1; }
   .badge-zone {
@@ -457,11 +540,16 @@ devList.addEventListener('mousedown', e => { e.preventDefault(); const o = e.tar
 devChips.addEventListener('mousedown', e => { e.preventDefault(); const x = e.target.closest('.chip-x'); if (x) toggleDev(x.dataset.dev); });
 document.addEventListener('mousedown', e => { if (!e.target.closest('.fg-dev')) devDrop.classList.remove('open'); });
 
+function areaName(b){ return b.ad || b.a || ''; }
+function areaLabel(b){ const a = areaName(b), m = AREAS[a]; return (LANG === 'ar' && m && m[1]) || a; }
+function areaHay(b){ return lc(b.a + '|' + areaName(b) + '|' + areaLabel(b)); }
+
 function applyFilters(){
   const name = lc(fName.value.trim()), area = lc(fArea.value.trim());
   FILTERED = ALL.filter(b =>
-    (!name || lc(b.n).includes(name)) &&
-    (!area || lc(b.a).includes(area)) &&
+    (!PROJ_SLUGS || PROJ_SLUGS.has(b.s)) &&
+    (!name || lc(b.n).includes(name) || (b.pj && lc(b.pj).includes(name))) &&
+    (!area || areaHay(b).includes(area)) &&
     yrPass(b.yr) &&
     (!selectedDevs.size || selectedDevs.has(b.dev))
   );
@@ -480,15 +568,30 @@ function statusHtml(b){
   const pct = b.pct != null && b.st !== 'FINISHED' ? `<span class="pct">${fmt(b.pct)}%</span>` : '';
   return `<span class="stbadge stbadge-${esc(b.st)}">${esc(COPY['st_' + b.st] || b.st)}</span>${pct}`;
 }
+function yrHtml(b){
+  if (b.yr == null) return MUTE;
+  if (b.yp) return `<span class="yr-plan" title="${esc(COPY.yr_plan_title)}">${b.yr} · ${esc(COPY.yr_plan)}</span>`;
+  if (b.yre) return `<span class="yr-est" title="${esc(COPY.yr_est_title)}">≈${b.yr}</span>`;
+  return String(b.yr);
+}
+function rnHtml(b){
+  if (!b.rn) return MUTE;
+  return b.rs ? `<span class="rn-proj" title="${esc(tpl(COPY.rn_proj_title, {n: b.rs}))}">${fmt(b.rn)}</span>` : fmt(b.rn);
+}
+function areaHtml(b){
+  const m = AREAS[areaName(b)], label = esc(areaLabel(b));
+  let h = m && m[0] ? `<a class="area-a" href="/${LANG}/sales/${m[0]}/" title="${esc(COPY.area_title)}">${label}</a>` : label;
+  return b.pj ? h + ' · ' + esc(b.pj) : h;
+}
 function rowHtml(b){
   const s = encodeURIComponent(b.s);
   const dev = b.dev ? esc(b.dev) + (b.dz ? `<span class="badge-zone">${esc(COPY.zone_badge)}</span>` : '') : MUTE;
+  const mp = b.m ? `<a class="btn-map" href="/${LANG}/sales/?bld=${s}" title="${esc(COPY.map_title)}">↗</a>` : '';
   return `<tr data-s="${esc(b.s)}"><td class="td-name"><a class="bld-a" href="/search/#${s}">${esc(b.n)}</a>`
-    + `<div class="td-area">${esc(b.a)}</div>`
-    + `<a class="btn-map" href="/${LANG}/sales/?bld=${s}" title="${esc(COPY.map_title)}">↗</a></td>`
-    + `<td class="num col-yr">${b.yr != null ? b.yr : MUTE}</td><td class="col-dev">${dev}</td>`
+    + `<div class="td-area">${areaHtml(b)}</div>${mp}</td>`
+    + `<td class="num col-yr">${yrHtml(b)}</td><td class="col-dev">${dev}</td>`
     + `<td class="col-pct">${statusHtml(b)}</td>`
-    + `<td class="num">${fmt(b.tx)}</td><td class="num">${b.rn ? fmt(b.rn) : MUTE}</td></tr>`;
+    + `<td class="num">${fmt(b.tx)}</td><td class="num">${rnHtml(b)}</td></tr>`;
 }
 function render(){
   const total = FILTERED.length;
@@ -514,24 +617,37 @@ tBody.addEventListener('click', e => {
 [fName, fArea, fYr1, fYr2].forEach(el => el.addEventListener('input', applyFilters));
 pPrev.addEventListener('click', () => { page--; render(); window.scrollTo(0, 0); });
 pNext.addEventListener('click', () => { page++; render(); window.scrollTo(0, 0); });
+function clearProject(){
+  PROJ_SLUGS = null; $('projNote').hidden = true;
+  const u = new URL(location.href); u.searchParams.delete('project'); history.replaceState(null, '', u);
+}
+$('projClear').addEventListener('click', () => { clearProject(); applyFilters(); });
 $('btnReset').addEventListener('click', () => {
+  if (PROJ_SLUGS) clearProject();
   fName.value = ''; fArea.value = ''; fYr1.value = ''; fYr2.value = '';
   selectedDevs.clear(); renderChips(); updateTriggerText();
   yrSort = null; builtIcon.textContent = '↕'; thBuilt.classList.remove('sort-active');
   sortBy.value = 'tx'; applyFilters();
 });
 
-const qParam = new URLSearchParams(location.search).get('q');
-if (qParam) fName.value = qParam;
+const params = new URLSearchParams(location.search);
+if (params.get('q')) fName.value = params.get('q');
+const projParam = params.get('project');
+let PROJ_SLUGS = null;
+const projReady = !projParam ? Promise.resolve() :
+  fetch('/buildings/project-index.json').then(r => r.json()).then(d => {
+    PROJ_SLUGS = new Set(d[projParam] || []);
+    $('projNoteText').textContent = tpl(COPY.project_filter, {no: projParam});
+    $('projNote').hidden = false;
+  }).catch(() => {});
 
-fetch('/buildings/search-index.json')
-  .then(r => { if (!r.ok) throw 0; return r.json(); })
-  .then(data => { ALL = data; buildDevList(); applyFilters(); })
+Promise.all([fetch('/buildings/search-index.json').then(r => { if (!r.ok) throw 0; return r.json(); }), projReady])
+  .then(([data]) => { ALL = data; buildDevList(); applyFilters(); })
   .catch(() => { $('loadErr').hidden = false; });
 """
 
 
-def render(lang, idx):
+def render(lang, idx, areas):
     c = COPY[lang]
     n = len(idx)
     n_s = fmt_num(n, lang)
@@ -575,6 +691,7 @@ def render(lang, idx):
     js = (f'const COPY = {json.dumps(page_copy, ensure_ascii=False)};\n'
           f'const LANG = {json.dumps(lang)};\n'
           f'const INTL_LOCALE = {json.dumps(INTL_LOCALE[lang])};\n'
+          f'const AREAS = {json.dumps(areas if lang == "ar" else {k: [v[0]] for k, v in areas.items()}, ensure_ascii=False)};\n'
           + JS.replace('__PAGE__', str(PAGE)))
     forms = c['count']
     count_txt = forms.get(plural(n, lang), forms['other']).format(n=n_s)
@@ -655,6 +772,8 @@ def render(lang, idx):
     <button class="btn-reset" id="btnReset" type="button">{e(c["reset"])}</button>
   </div>
 
+  <div class="proj-note" id="projNote" hidden><span id="projNoteText"></span><button type="button" id="projClear" aria-label="{e(c["reset"])}">×</button></div>
+
   <div class="results-bar">
     <span id="resultCount">{e(count_txt)}</span>
     <div class="sort-wrap">
@@ -676,9 +795,9 @@ def render(lang, idx):
         <th class="col-dev">{e(c["th_dev"])}</th>
         <th class="col-pct" title="{e(c["th_status_title"])}">{e(c["th_status"])}</th>
         <th class="num">{e(c["th_sales"])}</th>
-        <th class="num">{e(c["th_rents"])}</th>
+        <th class="num" title="{e(c["th_rents_title"])}">{e(c["th_rents"])}</th>
       </tr></thead>
-      <tbody id="tBody">{"".join(row_html(b, lang, c) for b in first)}</tbody>
+      <tbody id="tBody">{"".join(row_html(b, lang, c, areas) for b in first)}</tbody>
     </table>
     <div class="empty" id="emptyMsg" style="display:none;">{e(c["empty"])}</div>
   </div>
@@ -718,10 +837,11 @@ def stub():
 def main():
     with open(INDEX, encoding='utf-8') as f:
         idx = json.load(f)
-    idx.sort(key=lambda b: -b['tx'])
+    idx.sort(key=lambda b: (-b['tx'], b['s']))
+    areas = load_areas(idx)
     changed = 0
     for lang in LANGUAGES:
-        changed += write_if_changed(os.path.join(ROOT, lang, 'buildings', 'index.html'), render(lang, idx))
+        changed += write_if_changed(os.path.join(ROOT, lang, 'buildings', 'index.html'), render(lang, idx, areas))
     changed += write_if_changed(os.path.join(ROOT, 'buildings', 'index.html'), stub())
     print(f'  buildings directory: {len(idx):,} buildings, 5 langs + /buildings/ stub, {changed} file(s) changed')
 

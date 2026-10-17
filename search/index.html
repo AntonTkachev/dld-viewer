@@ -3,7 +3,7 @@
 <head>
 <script>if(location.hostname.endsWith('.github.io')){location.replace('https://dxbcompass.com'+(location.pathname.replace(/^\/dld-viewer/,'')||'/')+location.search+location.hash);}</script>
 <meta charset="UTF-8">
-<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net https://www.googletagmanager.com; style-src 'self' 'unsafe-inline'; img-src 'self' data: https://*.google-analytics.com; connect-src 'self' https://dxbcompass.com https://*.google-analytics.com https://*.analytics.google.com https://*.g.doubleclick.net; font-src 'self'; frame-ancestors 'none'; base-uri 'self'; form-action 'self'">
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net https://www.googletagmanager.com; style-src 'self' 'unsafe-inline'; img-src 'self' data: https://*.google-analytics.com https://www.googletagmanager.com; connect-src 'self' https://dxbcompass.com https://www.googletagmanager.com https://*.google-analytics.com https://*.analytics.google.com https://*.g.doubleclick.net; font-src 'self'; frame-ancestors 'none'; base-uri 'self'; form-action 'self'">
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <link rel="icon" type="image/svg+xml" href="/favicon.svg">
 <link rel="icon" type="image/png" sizes="192x192" href="/icon-192.png">
@@ -219,7 +219,7 @@ function renderSug(items) {
   sugEl.innerHTML = items.map(b => {
     const cnt = [b.tx && fmtNum(b.tx)+' sales', b.rn && fmtNum(b.rn)+' rents'].filter(Boolean).join(' · ');
     return `<div class="sug-item" data-slug="${h(b.s)}" data-name="${h(b.n)}">
-      <div><div class="sug-name">${h(b.n)}</div><div class="sug-area">${h(b.a)}</div></div>
+      <div><div class="sug-name">${h(b.n)}</div><div class="sug-area">${h(b.ad || b.a)}${b.pj ? ' · ' + h(b.pj) : ''}</div></div>
       <div class="sug-cnt">${cnt}</div>
     </div>`;
   }).join('');
@@ -292,13 +292,13 @@ function renderAll() {
 
 function renderHeader() {
   document.getElementById('bld-name').textContent = DATA.name;
-  const sub = [DATA.area, DATA.proj && DATA.proj !== DATA.name ? DATA.proj : ''].filter(Boolean).join(' · ');
+  const sub = [DATA.ad || DATA.area, DATA.proj && DATA.proj !== DATA.name ? DATA.proj : ''].filter(Boolean).join(' · ');
   document.getElementById('bld-sub').textContent = sub;
   const lastSale = (DATA.sy || []).slice(-1)[0];
   const lastRent = (DATA.ry || []).slice(-1)[0];
   const stats = [];
   if (DATA.sn) stats.push({ k:'Sales', v: fmtNum(DATA.sn) });
-  if (DATA.rn) stats.push({ k:'Rent contracts', v: fmtNum(DATA.rn) });
+  if (DATA.rn) stats.push({ k: DATA.rs ? `Rent contracts (whole project, ${DATA.rs} bldgs)` : 'Rent contracts', v: fmtNum(DATA.rn) });
   if (lastSale?.ppsqm) stats.push({ k:(sqft ? 'AED/sqft' : 'AED/m²')+' ('+lastSale.y+')', v: fmtAED(toUnit(lastSale.ppsqm)) });
   if (lastRent?.rent)  stats.push({ k:'Median rent/yr ('+lastRent.y+')', v: fmtAED(lastRent.rent) + ' AED' });
 

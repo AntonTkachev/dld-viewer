@@ -237,6 +237,7 @@ def load_projects():
             row['rn12'] = r['__rent_n_recent']
         if proj_num in project_bld_slugs:
             row['bldn'] = len(project_bld_slugs[proj_num])
+            row['no'] = proj_num
         # *_orig fields are emitted only when an alias actually changed the
         # displayed value — keeps the JSON slim and signals to the UI
         # which cells deserve the "ᵃʳ" tooltip flag.
@@ -904,7 +905,7 @@ function renderBody() {{
     if (p.l) subBits.push(p.l + " land");
     const projSub = subBits.length ? `<span class="proj-sub">${{_h(subBits.join(" · "))}}</span>` : "";
     const bldLink = p.bldn
-      ? `<a class="bld-link" href="${{LANG_PREFIX}}/buildings/?q=${{encodeURIComponent(p.pn)}}" title="${{_h(COPY.bld_link_title)}}" target="_blank" onclick="event.stopPropagation()"><svg width="13" height="13" viewBox="0 0 24 24" aria-hidden="true"><rect x="4" y="3" width="16" height="18" rx="1.5" fill="none" stroke="currentColor" stroke-width="2"/><rect x="7.4" y="6.5" width="2.2" height="2.2" fill="currentColor"/><rect x="14.4" y="6.5" width="2.2" height="2.2" fill="currentColor"/><rect x="7.4" y="11.4" width="2.2" height="2.2" fill="currentColor"/><rect x="14.4" y="11.4" width="2.2" height="2.2" fill="currentColor"/><rect x="7.4" y="16.3" width="2.2" height="2.2" fill="currentColor"/><rect x="14.4" y="16.3" width="2.2" height="2.2" fill="currentColor"/></svg></a>`
+      ? `<a class="bld-link" href="${{LANG_PREFIX}}/buildings/?project=${{encodeURIComponent(p.no)}}" title="${{_h(COPY.bld_link_title)}}" target="_blank" onclick="event.stopPropagation()"><svg width="13" height="13" viewBox="0 0 24 24" aria-hidden="true"><rect x="4" y="3" width="16" height="18" rx="1.5" fill="none" stroke="currentColor" stroke-width="2"/><rect x="7.4" y="6.5" width="2.2" height="2.2" fill="currentColor"/><rect x="14.4" y="6.5" width="2.2" height="2.2" fill="currentColor"/><rect x="7.4" y="11.4" width="2.2" height="2.2" fill="currentColor"/><rect x="14.4" y="11.4" width="2.2" height="2.2" fill="currentColor"/><rect x="7.4" y="16.3" width="2.2" height="2.2" fill="currentColor"/><rect x="14.4" y="16.3" width="2.2" height="2.2" fill="currentColor"/></svg></a>`
       : "";
     // Aliased developer name: show English, tooltip the original Arabic.
     // Marker dot signals "translated" so users know it isn't raw RERA.
