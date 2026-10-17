@@ -73,6 +73,9 @@ $PY scripts/build_buildings_map.py --relink
 phase "8b2. Buildings directory (/{lang}/buildings/ + /buildings/ redirect stub)"
 $PY scripts/build_buildings_directory.py
 
+phase "8b3. Building pages (/{lang}/buildings/<slug>/ + retired-slug redirects)"
+$PY scripts/build_building_seo_pages.py
+
 phase "8c. iOS app data contract (/app/v1/, needs phase 8 sales|rents/<slug>/data.json)"
 $PY scripts/build_app_v1.py
 

@@ -262,7 +262,8 @@ def row_html(b, lang, c, areas):
     if b.get('pj'):
         area += f' · {escape(b["pj"])}'
     mp = f'<a class="btn-map" href="/{lang}/sales/?bld={s}" title="{escape(c["map_title"])}">↗</a>' if b.get('m') else ''
-    return (f'<tr data-s="{s}"><td class="td-name"><a class="bld-a" href="/search/#{s}">{escape(b["n"])}</a>'
+    href = f'/{lang}/buildings/{s}/' if b.get('pg') else f'/search/#{s}'
+    return (f'<tr data-s="{s}" data-h="{href}"><td class="td-name"><a class="bld-a" href="{href}">{escape(b["n"])}</a>'
             f'<div class="td-area">{area}</div>{mp}</td>'
             f'<td class="num col-yr">{yr}</td><td class="col-dev">{dev}</td>'
             f'<td class="col-pct">{status}</td>'
@@ -587,7 +588,8 @@ function rowHtml(b){
   const s = encodeURIComponent(b.s);
   const dev = b.dev ? esc(b.dev) + (b.dz ? `<span class="badge-zone">${esc(COPY.zone_badge)}</span>` : '') : MUTE;
   const mp = b.m ? `<a class="btn-map" href="/${LANG}/sales/?bld=${s}" title="${esc(COPY.map_title)}">↗</a>` : '';
-  return `<tr data-s="${esc(b.s)}"><td class="td-name"><a class="bld-a" href="/search/#${s}">${esc(b.n)}</a>`
+  const href = b.pg ? `/${LANG}/buildings/${s}/` : `/search/#${s}`;
+  return `<tr data-s="${esc(b.s)}" data-h="${href}"><td class="td-name"><a class="bld-a" href="${href}">${esc(b.n)}</a>`
     + `<div class="td-area">${areaHtml(b)}</div>${mp}</td>`
     + `<td class="num col-yr">${yrHtml(b)}</td><td class="col-dev">${dev}</td>`
     + `<td class="col-pct">${statusHtml(b)}</td>`
@@ -611,8 +613,8 @@ function render(){
 
 tBody.addEventListener('click', e => {
   if (e.target.closest('a')) return;
-  const tr = e.target.closest('tr[data-s]');
-  if (tr) location.href = '/search/#' + encodeURIComponent(tr.dataset.s);
+  const tr = e.target.closest('tr[data-h]');
+  if (tr) location.href = tr.dataset.h;
 });
 [fName, fArea, fYr1, fYr2].forEach(el => el.addEventListener('input', applyFilters));
 pPrev.addEventListener('click', () => { page--; render(); window.scrollTo(0, 0); });

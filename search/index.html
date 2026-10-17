@@ -294,6 +294,13 @@ function renderHeader() {
   document.getElementById('bld-name').textContent = DATA.name;
   const sub = [DATA.ad || DATA.area, DATA.proj && DATA.proj !== DATA.name ? DATA.proj : ''].filter(Boolean).join(' · ');
   document.getElementById('bld-sub').textContent = sub;
+  const ent = (INDEX || []).find(b => b.s === currentSlug);
+  if (ent && ent.pg) {
+    const a = document.createElement('a');
+    a.href = '/en/buildings/' + currentSlug + '/'; a.textContent = 'Building page: prices, rents & yield →';
+    a.style.cssText = 'display:block;margin-top:4px;font-size:13px;color:#1d4ed8;text-decoration:none';
+    document.getElementById('bld-sub').appendChild(a);
+  }
   const lastSale = (DATA.sy || []).slice(-1)[0];
   const lastRent = (DATA.ry || []).slice(-1)[0];
   const stats = [];

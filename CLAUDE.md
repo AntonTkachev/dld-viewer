@@ -187,6 +187,7 @@ POI seeds for the map's layers (schools / universities / medical / mosques / met
 | `polygons/curated.js` | `data/curated_polygons.geojson` + AGGREGATES + ROLLUP rules | `scripts/merge_curated_polygons_into_viewer.py` |
 | `periods/all.js` | `{transactions,rents,growth,payback,yearly_sell,yearly_rent}/data/*.json` | `scripts/inline_periods.py` |
 | `/{lang}/buildings/index.html` (directory, 5 langs) + `/buildings/index.html` (redirect stub → `/en/buildings/`) | `buildings/search-index.json` | `scripts/build_buildings_directory.py` (phase 8b2) — don't hand-edit the HTML |
+| `/{lang}/buildings/<slug>/index.html` (per-building pages, 5 langs; pg/ni flags in search-index decide generate/noindex) + redirect stubs for retired slugs (`data/building_slug_history.json`, append-only) | `buildings/<slug>/data.json` | `scripts/build_building_seo_pages.py` (phase 8b3) |
 
 ## Where runtime data bundles live
 

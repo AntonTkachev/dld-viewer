@@ -59,6 +59,20 @@ for slug, area in (('seven-city-jlt', 'JLT (Jumeirah Lake Towers)'), ('princess-
     check(by_slug.get(slug, {}).get('ad') == area, f'{slug} shows public area {area!r}')
 check(any(b.get('dev') == 'Limitless' for b in idx), 'BRAND_MAP keys are stripped (Limitless resolves)')
 
+pages = [b for b in idx if b.get('pg')]
+check(all(os.path.isfile(os.path.join(ROOT, l, 'buildings', b['s'], 'index.html'))
+          for b in pages for l in ('ru', 'en', 'ar', 'hi', 'zh')), f'{len(pages)} building pages exist in 5 langs')
+pt = open(os.path.join(ROOT, 'en', 'buildings', 'princess-tower', 'index.html'), encoding='utf-8').read()
+check(pt.startswith('<!DOCTYPE html>') and '"@type": "ApartmentComplex"' in pt and 'hreflang="x-default"' in pt
+      and 'index,follow' in pt, 'princess-tower page: doctype, JSON-LD, hreflang, indexable')
+check('AED 40,505' not in pt, 'junk DLD share deals filtered from latest transactions')
+sm = open(os.path.join(ROOT, 'sitemap.xml'), encoding='utf-8').read()
+noidx = next((b['s'] for b in pages if b.get('ni')), None)
+check('/en/buildings/princess-tower/' in sm and (not noidx or f'/buildings/{noidx}/' not in sm),
+      'sitemap has indexable building pages, not noindex ones')
+yields = [b['gy'] for b in idx if 'gy' in b]
+check(all(1.5 <= y <= 15 for y in yields), f'{len(yields)} gross yields within 1.5–15%')
+
 n = f'{len(idx):,}'
 for lang in ('ru', 'en', 'ar', 'hi', 'zh'):
     html = open(os.path.join(ROOT, lang, 'buildings', 'index.html'), encoding='utf-8').read()

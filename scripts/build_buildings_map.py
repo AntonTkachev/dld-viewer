@@ -1218,6 +1218,8 @@ def _slim_row(n, a, d, lat, lon, rings, vis, meta) -> dict:
             row['dev'] = meta['dev']
         if meta.get('pct') is not None:
             row['pct'] = meta['pct']
+        if meta.get('pg'):
+            row['pg'] = 1
     if rings:
         row['r'] = rings
     if vis and vis != 'building':
