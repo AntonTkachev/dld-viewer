@@ -67,6 +67,9 @@ $PY scripts/build_renamed_area_redirects.py
 phase "8b. Per-building search data (search-index.json + buildings/{slug}/data.json)"
 $PY scripts/build_building_pages.py
 
+phase "8b1. Map layer links (buildings/data.js slug/rn/yr/dev from search-index, no OSM rematch)"
+$PY scripts/build_buildings_map.py --relink
+
 phase "8b2. Buildings directory (/{lang}/buildings/ + /buildings/ redirect stub)"
 $PY scripts/build_buildings_directory.py
 
@@ -75,6 +78,9 @@ $PY scripts/build_app_v1.py
 
 phase "9. Locale SEO landings + table views"
 $PY scripts/build_pages.py
+
+phase "9a. Construction page (reads buildings/project-index.json from 8b)"
+$PY scripts/build_construction_page.py
 
 phase "9b. FAQ page (standalone content, FAQPage schema)"
 $PY scripts/build_faq_page.py
@@ -90,6 +96,9 @@ $PY scripts/test_masks.py
 
 phase "11b. Building matcher golden test"
 $PY scripts/test_buildings_match.py
+
+phase "11c. Building pages / directory regression test"
+$PY scripts/test_building_pages.py
 
 echo
 echo "[$(ts)] refresh_all: done"

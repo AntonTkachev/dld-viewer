@@ -156,7 +156,7 @@ async function buildPdfReport() {
   doc.text(`${DATA.name} — Market Analysis Report`, marginX + 13, y + 5);
   doc.setFontSize(9); doc.setTextColor(120);
   const genDate = new Date().toLocaleDateString('en-GB', { day: 'numeric', month: 'long', year: 'numeric' });
-  doc.text(`Generated ${genDate} · ${[DATA.area, DATA.proj && DATA.proj !== DATA.name ? DATA.proj : ''].filter(Boolean).join(' · ')}`, marginX + 13, y + 10);
+  doc.text(`Generated ${genDate} · ${[DATA.ad || DATA.area, DATA.proj && DATA.proj !== DATA.name ? DATA.proj : ''].filter(Boolean).join(' · ')}`, marginX + 13, y + 10);
   y += 18;
   doc.setDrawColor(226, 232, 240);
   doc.line(marginX, y, pageW - marginX, y);

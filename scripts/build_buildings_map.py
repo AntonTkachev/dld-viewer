@@ -799,6 +799,9 @@ def report(matched: list, unmatched: list) -> None:
 
 
 def main() -> int:
+    if '--relink' in sys.argv:
+        patch_template_src(relink())
+        return 0
     dld = load_dld()
     osm = load_osm()
     print(f'DLD buildings ≥{MIN_DEALS} deals: {len(dld)}')
@@ -1193,6 +1196,48 @@ def main() -> int:
     return 0
 
 
+def _index_by_name_area() -> dict:
+    """(name, admin area) → search-index entry with the most sales (index is tx-sorted)."""
+    idx_path = OUT_BUNDLE.parent / 'search-index.json'
+    out = {}
+    if idx_path.exists():
+        for rec in json.loads(idx_path.read_text('utf-8')):
+            out.setdefault((rec['n'].strip(), rec.get('a', '')), rec)
+    return out
+
+
+def _slim_row(n, a, d, lat, lon, rings, vis, meta) -> dict:
+    row = {'n': n, 'a': a, 'd': d, 'lat': lat, 'lon': lon}
+    if meta:
+        row['s'] = meta['s']
+        if meta.get('rn'):
+            row['rn'] = meta['rn']
+        if meta.get('yr'):
+            row['yr'] = meta['yr']
+        if meta.get('dev') and not meta.get('dz'):  # skip zone labels
+            row['dev'] = meta['dev']
+        if meta.get('pct') is not None:
+            row['pct'] = meta['pct']
+    if rings:
+        row['r'] = rings
+    if vis and vis != 'building':
+        row['v'] = vis
+    return row
+
+
+def _write_rows(slim: list) -> str:
+    body = ('const BUILDINGS = ' +
+            json.dumps(slim, separators=(',', ':'), ensure_ascii=False) +
+            ';\n')
+    if not OUT_BUNDLE.exists() or OUT_BUNDLE.read_text(encoding='utf-8') != body:
+        OUT_BUNDLE.write_text(body, encoding='utf-8')
+    h = hashlib.sha256(body.encode('utf-8')).hexdigest()[:8]
+    kb = OUT_BUNDLE.stat().st_size // 1024
+    print(f'Wrote {OUT_BUNDLE} ({kb} KB, {len(slim)} entries, '
+          f'{sum(1 for r in slim if r.get("s"))} linked, v={h})')
+    return h
+
+
 def write_bundle(matched: list) -> str:
     """Write buildings/data.js as `const BUILDINGS = [...]`. Slim schema:
        {n, a, d, s?, rn?, yr?, dev?, pct?, lat, lon, r}
@@ -1200,45 +1245,23 @@ def write_bundle(matched: list) -> str:
        yr=year built, dev=developer name, pct=RERA percent complete, r=rings.
     Returns sha8 of the file content for cache-busting."""
     OUT_BUNDLE.parent.mkdir(parents=True, exist_ok=True)
-    # Build slug→meta lookup from search-index (rents count, year, developer).
-    idx_path = OUT_BUNDLE.parent / 'search-index.json'
-    idx_meta: dict[str, dict] = {}
-    if idx_path.exists():
-        import json as _json
-        for rec in _json.loads(idx_path.read_text('utf-8')):
-            s = rec.get('s')
-            if s:
-                idx_meta[s] = rec
-    slim = []
-    for m in matched:
-        row = {'n': m['name'], 'a': m['area'], 'd': m['n_deals'],
-               'lat': m['lat'], 'lon': m['lon']}
-        slug = slugify(m['name'])
-        meta = idx_meta.get(slug)
-        if meta:
-            row['s'] = slug
-            if meta.get('rn'):
-                row['rn'] = meta['rn']
-            if meta.get('yr'):
-                row['yr'] = meta['yr']
-            if meta.get('dev') and not meta.get('dz'):  # skip zone labels
-                row['dev'] = meta['dev']
-            if meta.get('pct') is not None:
-                row['pct'] = meta['pct']
-        if m.get('rings'):
-            row['r'] = m['rings']
-        v = m.get('vis')
-        if v and v != 'building':
-            row['v'] = v
-        slim.append(row)
-    body = ('const BUILDINGS = ' +
-            json.dumps(slim, separators=(',', ':'), ensure_ascii=False) +
-            ';\n')
-    OUT_BUNDLE.write_text(body, encoding='utf-8')
-    h = hashlib.sha256(body.encode('utf-8')).hexdigest()[:8]
-    kb = OUT_BUNDLE.stat().st_size // 1024
-    print(f'Wrote {OUT_BUNDLE} ({kb} KB, {len(slim)} entries, v={h})')
-    return h
+    idx = _index_by_name_area()
+    return _write_rows([
+        _slim_row(m['name'], m['area'], m['n_deals'], m['lat'], m['lon'], m.get('rings'),
+                  m.get('vis'), idx.get((m['name'].strip(), m['area'])))
+        for m in matched])
+
+
+def relink() -> str:
+    """Refresh s/rn/yr/dev/pct of the existing data.js from search-index.json
+    without re-running the OSM matcher (refresh_all phase 8b3)."""
+    raw = OUT_BUNDLE.read_text(encoding='utf-8').strip()
+    rows = json.loads(raw[len('const BUILDINGS = '):].rstrip(';'))
+    idx = _index_by_name_area()
+    return _write_rows([
+        _slim_row(r['n'], r['a'], r['d'], r['lat'], r['lon'], r.get('r'), r.get('v'),
+                  idx.get((r['n'].strip(), r['a'])))
+        for r in rows])
 
 
 def patch_template_src(bundle_hash: str) -> None:
@@ -1246,6 +1269,7 @@ def patch_template_src(bundle_hash: str) -> None:
     buildings/data.js itself, so no static <script src> tag is needed."""
     with HTML.open(encoding='utf-8') as f:
         lines = f.readlines()
+    orig = list(lines)
 
     # Drop any previous inline BUILDINGS line.
     lines = [l for l in lines if not l.startswith('const BUILDINGS = ')]
@@ -1265,8 +1289,9 @@ def patch_template_src(bundle_hash: str) -> None:
         lines.insert(anchor + 1, ver_tag)
         print(f'Inserted __BUILDINGS_VER__ after polygons (line {anchor + 2})')
 
-    with HTML.open('w', encoding='utf-8') as f:
-        f.writelines(lines)
+    if lines != orig:
+        with HTML.open('w', encoding='utf-8') as f:
+            f.writelines(lines)
 
 
 if __name__ == '__main__':

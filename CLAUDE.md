@@ -55,6 +55,10 @@ ZSTD-9 compressed, Parquet. Read with DuckDB / Polars / pyarrow. All columns are
 
    **Better long-term:** swap the CASE-list for a community taxonomy table joined at view-time, source of truth for sub→parent mapping. Or pull community polygons from DLD's GIS shapefile (not OSM) and key by spatial join. Currently a thinking-required problem; CASE is a stopgap.
 
+10. **Ejari has no building field, and tags a project on only ~16% of rent contracts** (`project_name_en` + `project_number` always filled together or both empty; the rest carry only area/master). So building-level rent is really project-level and most buildings legitimately have `rn=0` (e.g. Seven City JLT: 3.5K sales, zero project-tagged contracts). Join rents on `project_number`, never on `project_name_en` — names repeat across areas (two different `BOTANICA` projects, JVC and Marina, were summed by the old name join).
+
+11. **`building_name_en` is not unique.** A building = `(building_name_en, area_name_en)`, split further by `project_number` when two projects each have 5+ sales (Capria East/West both have "CAPRIA 4"). Slugs in `buildings/`: busiest building keeps the bare slug, others get `-<public-area>` suffix — see `build_building_pages.py`; regression test `scripts/test_building_pages.py`.
+
 ## File / data layout
 
 ```
