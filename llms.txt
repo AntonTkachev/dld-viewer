@@ -21,7 +21,7 @@ Every Dubai district/community has its own sale and rent pages, e.g. https://dxb
 ## Reference
 - [FAQ](https://dxbcompass.com/en/faq/): data sourcing, update cadence, methodology, why district names may differ from common usage
 - [Blog](https://dxbcompass.com/en/blog/): market analysis articles
-- [Buildings](https://dxbcompass.com/buildings/): building-level completion data from DM Building Control
+- [Buildings](https://dxbcompass.com/en/buildings/): directory of ~4,800 Dubai buildings with DLD sales and Ejari rent counts, year built, developer and RERA status (also /ru/, /ar/, /hi/, /zh/)
 
 ## Data source
 Dubai Land Department open data via Dubai Pulse: transaction records (dataset 470061) and Ejari rent contracts (dataset 468586), refreshed weekly. Each snapshot is a complete cumulative history — no data is ever removed.
