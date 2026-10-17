@@ -7,7 +7,9 @@ Slugs ever published are kept in data/building_slug_history.json; a slug that
 stops being a page becomes a redirect stub (to the building's new slug, else
 the directory). Writes only changed files.
 """
+import hashlib
 import json
+import math
 import os
 import statistics
 import sys
@@ -27,6 +29,7 @@ STUB_MARKER = '<!-- building-redirect -->'
 SQFT = 10.7639
 ROOMS = ('studio', '1br', '2br', '3br', '4br+', 'villa', 'other')
 RECENT_TX = 15
+CSS_VER = hashlib.sha1(open(os.path.join(ROOT, 'css', 'building.css'), 'rb').read()).hexdigest()[:8]
 YEARS_SHOWN = 12
 
 COPY = {
@@ -189,6 +192,19 @@ COPY = {
 PERIOD_12M = {'ru': 'последние 12 месяцев', 'en': 'the last 12 months', 'ar': 'آخر 12 شهرًا',
               'hi': 'पिछले 12 महीनों', 'zh': '近 12 个月'}
 PERIOD_YEAR = {'ru': '{y} год', 'en': '{y}', 'ar': 'عام {y}', 'hi': '{y}', 'zh': '{y} 年'}
+for _l, _x in {
+    'ru': dict(about='О здании {name}', on_map='📍 На карте', yt='Таблица по годам', k_area='Район', k_project='Проект',
+               rent_chart='Медианная аренда в год, AED', nav_dir='← Все здания', nav_map='Карта Дубая', faq_h='Частые вопросы о {name}'),
+    'en': dict(about='About {name}', on_map='📍 On the map', yt='Year-by-year table', k_area='Area', k_project='Project',
+               rent_chart='Median annual rent by year, AED', nav_dir='← All buildings', nav_map='Dubai map', faq_h='Frequently asked questions about {name}'),
+    'ar': dict(about='عن {name}', on_map='📍 على الخريطة', yt='جدول حسب السنة', k_area='المنطقة', k_project='المشروع',
+               rent_chart='الإيجار السنوي الوسيط حسب السنة، درهم', nav_dir='→ كل المباني', nav_map='خريطة دبي', faq_h='أسئلة شائعة عن {name}'),
+    'hi': dict(about='{name} के बारे में', on_map='📍 मानचित्र पर', yt='वर्षवार तालिका', k_area='क्षेत्र', k_project='प्रोजेक्ट',
+               rent_chart='वर्षवार माध्य वार्षिक किराया, AED', nav_dir='← सभी इमारतें', nav_map='दुबई मानचित्र', faq_h='{name} के बारे में अक्सर पूछे जाने वाले प्रश्न'),
+    'zh': dict(about='关于 {name}', on_map='📍 在地图上', yt='逐年数据表', k_area='区域', k_project='项目',
+               rent_chart='历年年租金中位数，AED', nav_dir='← 全部楼盘', nav_map='迪拜地图', faq_h='关于 {name} 的常见问题'),
+}.items():
+    COPY[_l].update(_x)
 
 
 def money(n, lang):
@@ -247,22 +263,71 @@ def weighted(rows, key, years):
     return (sum(v * w for v, w in pairs) / n, n) if n else (None, 0)
 
 
-def svg_chart(sy, title):
-    rows = [r for r in sy if r.get('ppsqm')][-YEARS_SHOWN:]
-    if len(rows) < 2:
+def nice_step(x):
+    m = 10 ** math.floor(math.log10(x))
+    return next(k * m for k in (1, 2, 2.5, 5, 10) if k * m >= x)
+
+
+def axis_num(v, lang, big):
+    if not big or not v:
+        return fmt_num(round(v), lang)
+    s = f'{v / 1e6:g}M' if v >= 1e6 else f'{v / 1e3:g}K'
+    return s.replace('.', ',') if lang == 'ru' else s
+
+
+def smooth_path(xy):
+    """Catmull-Rom → cubic Bézier, tension like Chart.js 0.25."""
+    d = f'M{xy[0][0]:.2f},{xy[0][1]:.2f}'
+    for i in range(len(xy) - 1):
+        p0, p1, p2 = xy[max(i - 1, 0)], xy[i], xy[i + 1]
+        p3 = xy[min(i + 2, len(xy) - 1)]
+        c1 = (p1[0] + (p2[0] - p0[0]) * .17, p1[1] + (p2[1] - p0[1]) * .17)
+        c2 = (p2[0] - (p3[0] - p1[0]) * .17, p2[1] - (p3[1] - p1[1]) * .17)
+        d += f' C{c1[0]:.2f},{c1[1]:.2f} {c2[0]:.2f},{c2[1]:.2f} {p2[0]:.2f},{p2[1]:.2f}'
+    return d
+
+
+def line_chart(pts, color, lang, tip):
+    """Server-rendered look-alike of the district panel's Chart.js trend: line + area, grey count bars."""
+    pts = pts[-YEARS_SHOWN:]
+    vals = [v for _, v, _ in pts if v]
+    if len(vals) < 2:
         return ''
-    vals = [r['ppsqm'] / SQFT for r in rows]
-    w, h, pad, bw = 640, 180, 24, 640 / len(rows)
-    top = max(vals)
-    bars = []
-    for i, (r, v) in enumerate(zip(rows, vals)):
-        bh = (h - 2 * pad) * v / top
-        x, y = i * bw + bw * 0.15, h - pad - bh
-        bars.append(f'<rect x="{x:.1f}" y="{y:.1f}" width="{bw * 0.7:.1f}" height="{bh:.1f}" rx="3"/>'
-                    f'<text x="{x + bw * 0.35:.1f}" y="{y - 4:.1f}" class="v">{round(v):,}</text>'
-                    f'<text x="{x + bw * 0.35:.1f}" y="{h - 6}" class="l">{r["y"]}</text>')
-    return (f'<figure class="chart"><svg viewBox="0 0 {w} {h}" role="img" aria-label="{e(title)}">'
-            f'<title>{e(title)}</title>{"".join(bars)}</svg><figcaption>{e(title)}</figcaption></figure>')
+    step = nice_step(max(vals) * 1.12 / 4)
+    top = step * math.ceil(max(vals) * 1.12 / step)
+    big = top >= 20000
+    n, cmax = len(pts), max(c for _, _, c in pts) * 2.4 or 1
+    X = lambda i: (i + .5) * 100 / n  # noqa: E731
+    Y = lambda v: 100 - v * 100 / top  # noqa: E731
+    grid = ''.join(f'<line x1="0" x2="100" y1="{Y(k * step):.2f}" y2="{Y(k * step):.2f}"/>'
+                   for k in range(int(round(top / step)) + 1))
+    bars = ''.join(f'<rect x="{i * 100 / n + 10 / n:.2f}" y="{100 - c * 100 / cmax:.2f}" width="{80 / n:.2f}" '
+                   f'height="{c * 100 / cmax:.2f}"/>' for i, (_, _, c) in enumerate(pts) if c)
+    xy = [(X(i), Y(v)) for i, (_, v, _) in enumerate(pts) if v]
+    line = smooth_path(xy)
+    area = f'{line} L{xy[-1][0]:.2f},100 L{xy[0][0]:.2f},100 Z'
+    gid = 'g' + color.strip('#')
+    ylabels = ''.join(f'<span class="yl" style="top:{Y(k * step):.2f}%">{axis_num(k * step, lang, big)}</span>'
+                      for k in range(int(round(top / step)) + 1))
+    xlabels = ''.join(f'<span class="xl{" odd" if (n - 1 - i) % 2 else ""}" style="left:{X(i):.2f}%">{lbl}</span>'
+                      for i, (lbl, _, _) in enumerate(pts))
+    hits = ''.join(
+        f'<span class="hit{" edge-l" if i < 2 else " edge-r" if i >= n - 2 else ""}" tabindex="-1" '
+        f'style="left:{i * 100 / n:.2f}%;width:{100 / n:.2f}%"><i class="pt" style="top:{Y(v):.2f}%;border-color:{color}"></i>'
+        f'<span class="tip{" lo" if Y(v) < 45 else ""}" style="top:{Y(v):.2f}%"><b>{lbl}</b><span><i style="background:{color}"></i>{e(tip[0](v))}</span>'
+        f'<span><i class="cnt"></i>{e(tip[1](c))}</span></span></span>'
+        for i, (lbl, v, c) in enumerate(pts) if v)
+    last = vals[-1]
+    tag = (f'<span class="tag" style="left:{xy[-1][0]:.2f}%;top:{xy[-1][1]:.2f}%;background:{color}">'
+           f'{fmt_num(round(last), lang)}</span>'
+           f'<span class="dot" style="left:{xy[-1][0]:.2f}%;top:{xy[-1][1]:.2f}%;border-color:{color}"></span>')
+    return (f'<div class="bchart" dir="ltr"><div class="plot">'
+            f'<svg viewBox="0 0 100 100" preserveAspectRatio="none" aria-hidden="true">'
+            f'<defs><linearGradient id="{gid}" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="{color}" stop-opacity=".22"/>'
+            f'<stop offset="1" stop-color="{color}" stop-opacity="0"/></linearGradient></defs>'
+            f'<g class="grid">{grid}</g><g class="bars">{bars}</g>'
+            f'<path d="{area}" fill="url(#{gid})"/><path d="{line}" fill="none" stroke="{color}" class="ln"/></svg>'
+            f'{ylabels}{xlabels}{tag}{hits}</div></div>')
 
 
 def load_coords():
@@ -328,39 +393,64 @@ def render(lang, b, d, areas, coords, as_of):
     # ── key figures ──
     stats = []
     if hp:
-        sub = hlabel + (f' · {c["yoy"].format(sign="+" if yoy >= 0 else "−", p=pct(abs(yoy), lang))}' if yoy is not None else '')
-        stats.append((c['k_ppsqft'], fmt_num(round(hp / SQFT), lang), f'{fmt_num(round(hp), lang)} {c["c_ppsqm"]} · {sub}'))
+        sub = f'{fmt_num(round(hp), lang)} {c["c_ppsqm"]} · {hlabel}'
+        if yoy is not None:
+            cls = 'dp-trend-up' if yoy >= 0 else 'dp-trend-down'
+            sub = (e(sub) + f' · <span class="{cls}">'
+                   + e(c['yoy'].format(sign='+' if yoy >= 0 else '−', p=pct(abs(yoy), lang))) + '</span>')
+        else:
+            sub = e(sub)
+        stats.append((c['k_ppsqft'], fmt_num(round(hp / SQFT), lang), sub))
     if hprice:
-        stats.append((c['k_price'], money(hprice, lang), hlabel))
-    stats.append((c['k_n12'], fmt_num(r12['n'], lang), f'{c["k_total"]}: {fmt_num(d["sn"], lang)}'))
-    if last_r:
-        stats.append((c['k_rent'], money(last_r['rent'], lang), c['k_year'].format(y=last_r['y'])))
+        stats.append((c['k_price'], money(hprice, lang), e(hlabel)))
+    stats.append((c['k_n12'], fmt_num(r12['n'], lang), e(f'{c["k_total"]}: {fmt_num(d["sn"], lang)}')))
     if gy:
-        stats.append((c['k_yield'], f'{pct(gy["y"], lang)}%', ''))
+        stats.append((c['k_yield'], f'{pct(gy["y"], lang)}%',
+                      e(f'{c["k_rent"]}: {money(last_r["rent"], lang)}') if last_r else ''))
+    elif last_r:
+        stats.append((c['k_rent'], money(last_r['rent'], lang), e(c['k_year'].format(y=last_r['y']))))
+    stats_html = ''.join(f'<div class="dp-stat"><div class="k">{e(k)}</div><div class="v">{e(v)}</div>'
+                         + (f'<div class="sub">{s}</div>' if s else '') + '</div>' for k, v, s in stats)
+
+    # ── about: lede + facts ──
+    facts = []
+    if area:
+        facts.append((c['k_area'], f'<a href="/{lang}/sales/{aslug}/">{e(area)}</a>' if aslug else e(area)))
     if b.get('yr'):
-        yr = f'≈{b["yr"]}' if b.get('yre') else (f'{b["yr"]} · {dc["yr_plan"]}' if b.get('yp') else str(b['yr']))
-        stats.append((c['k_built'], yr, ''))
+        facts.append((c['k_built'], e(f'≈{b["yr"]}' if b.get('yre') else (
+            f'{b["yr"]} · {dc["yr_plan"]}' if b.get('yp') else str(b['yr'])))))
     if b.get('dev'):
-        stats.append((c['k_dev'], b['dev'], ''))
+        facts.append((c['k_dev'], e(b['dev'])))
     if b.get('st'):
-        stv = dc.get('st_' + b['st'], b['st']) + (f' · {b["pct"]}%' if b.get('pct') is not None and b['st'] != 'FINISHED' else '')
-        stats.append((c['k_status'], stv, ''))
-    stats_html = ''.join(f'<div class="kf"><div class="k">{e(k)}</div><div class="v">{e(v)}</div>'
-                         + (f'<div class="s">{e(s)}</div>' if s else '') + '</div>' for k, v, s in stats)
+        facts.append((c['k_status'], e(dc.get('st_' + b['st'], b['st']) + (
+            f' · {b["pct"]}%' if b.get('pct') is not None and b['st'] != 'FINISHED' else ''))))
+    if b.get('pj'):
+        facts.append((c['k_project'], e(b['pj'])))
+    facts.append((c['k_total'], fmt_num(d['sn'], lang)))
+    if d.get('rn'):
+        facts.append((c['c_contracts'] + ' (Ejari)', fmt_num(d['rn'], lang)))
+    about_html = (f'<details class="about" open><summary>{e(c["about"].format(name=name))}</summary>'
+                  f'<p class="lede">{e(desc)}</p><div class="about-grid">'
+                  + ''.join(f'<div class="about-stat"><div class="k">{e(k)}</div><div class="v">{v}</div></div>' for k, v in facts)
+                  + '</div></details>')
 
     # ── prices by year ──
     yrows = ''.join(
-        f'<tr><td>{r["y"]}</td><td class="n">{fmt_num(r["n"], lang)}</td>'
-        f'<td class="n">{fmt_num(round(r["ppsqm"] / SQFT), lang) if r.get("ppsqm") else "—"}</td>'
-        f'<td class="n">{fmt_num(r["ppsqm"], lang) if r.get("ppsqm") else "—"}</td>'
-        f'<td class="n">{money(r["price"], lang) if r.get("price") else "—"}</td>'
-        f'<td class="n">{round(100 * r.get("op", 0) / r["n"])}%</td></tr>'
+        f'<tr><td>{r["y"]}</td><td class="num">{fmt_num(r["n"], lang)}</td>'
+        f'<td class="num">{fmt_num(round(r["ppsqm"] / SQFT), lang) if r.get("ppsqm") else "—"}</td>'
+        f'<td class="num">{fmt_num(r["ppsqm"], lang) if r.get("ppsqm") else "—"}</td>'
+        f'<td class="num">{money(r["price"], lang) if r.get("price") else "—"}</td>'
+        f'<td class="num">{round(100 * r.get("op", 0) / r["n"])}%</td></tr>'
         for r in reversed(sy[-YEARS_SHOWN:]))
-    years_html = (f'<section><h2>{e(c["h_years"])}</h2>{svg_chart(sy, c["chart_title"])}'
-                  f'<div class="tw"><table><thead><tr><th>{e(c["c_year"])}</th><th class="n">{e(c["c_sales"])}</th>'
-                  f'<th class="n">{e(c["c_ppsqft"])}</th><th class="n">{e(c["c_ppsqm"])}</th>'
-                  f'<th class="n">{e(c["c_price"])}</th><th class="n">{e(c["c_op"])}</th></tr></thead>'
-                  f'<tbody>{yrows}</tbody></table></div></section>') if sy else ''
+    price_chart = line_chart(
+        [(r['y'], r['ppsqm'] / SQFT if r.get('ppsqm') else None, r['n']) for r in sy], '#4f46e5', lang,
+        (lambda v: f'{fmt_num(round(v), lang)} {c["c_ppsqft"]}', lambda n: f'{c["c_sales"]}: {fmt_num(n, lang)}'))
+    years_html = ((f'<h3 class="dp-chart-title">{e(c["chart_title"])}</h3>{price_chart}' if price_chart else '')
+                  + f'<details class="dp-collapsible"{"" if price_chart else " open"}><summary>{e(c["yt"])}</summary>'
+                  f'<div class="tw"><table class="bt"><thead><tr><th>{e(c["c_year"])}</th><th class="num">{e(c["c_sales"])}</th>'
+                  f'<th class="num">{e(c["c_ppsqft"])}</th><th class="num">{e(c["c_ppsqm"])}</th>'
+                  f'<th class="num">{e(c["c_price"])}</th><th class="num">{e(c["c_op"])}</th></tr></thead>'
+                  f'<tbody>{yrows}</tbody></table></div></details>') if sy else ''
 
     # ── by bedrooms, last 24 months ──
     rent_years = {as_of.year, as_of.year - 1}
@@ -374,14 +464,14 @@ def render(lang, b, d, areas, coords, as_of):
         rent, rn = weighted(rr.get(room, []), 'rent', rent_years)
         yc = gyr.get(room)
         room_rows.append(
-            f'<tr><td>{e(room_label(c, room))}</td><td class="n">{fmt_num(len(sel), lang)}</td>'
-            f'<td class="n">{money(median([t["p"] for t in sel]), lang)}</td>'
-            f'<td class="n">{fmt_num(round(pp / SQFT), lang) if pp else "—"}</td>'
-            f'<td class="n">{money(rent, lang) if rent and rn >= 5 else "—"}</td>'
-            f'<td class="n">{pct(yc["y"], lang) + "%" if yc else "—"}</td></tr>')
-    rooms_html = (f'<section><h2>{e(c["h_rooms"])}</h2><div class="tw"><table><thead><tr>'
-                  f'<th>{e(c["c_rooms"])}</th><th class="n">{e(c["c_sales"])}</th><th class="n">{e(c["c_price"])}</th>'
-                  f'<th class="n">{e(c["c_ppsqft"])}</th><th class="n">{e(c["c_rent"])}</th><th class="n">{e(c["c_yield"])}</th>'
+            f'<tr><td>{e(room_label(c, room))}</td><td class="num">{fmt_num(len(sel), lang)}</td>'
+            f'<td class="num">{money(median([t["p"] for t in sel]), lang)}</td>'
+            f'<td class="num">{fmt_num(round(pp / SQFT), lang) if pp else "—"}</td>'
+            f'<td class="num">{money(rent, lang) if rent and rn >= 5 else "—"}</td>'
+            f'<td class="num">{"<b>" + pct(yc["y"], lang) + "%</b>" if yc else "—"}</td></tr>')
+    rooms_html = (f'<section class="card"><h2>{e(c["h_rooms"])}</h2><div class="tw"><table class="bt"><thead><tr>'
+                  f'<th>{e(c["c_rooms"])}</th><th class="num">{e(c["c_sales"])}</th><th class="num">{e(c["c_price"])}</th>'
+                  f'<th class="num">{e(c["c_ppsqft"])}</th><th class="num">{e(c["c_rent"])}</th><th class="num">{e(c["c_yield"])}</th>'
                   f'</tr></thead><tbody>{"".join(room_rows)}</tbody></table></div>'
                   + (f'<p class="note">{e(c["yield_note"].format(**{"from": d["gyw"][0], "to": d["gyw"][1]}))}'
                      + (f' {e(c["yield_master"])}' if gy.get("lvl") == "m" else '') + '</p>' if gy else '')
@@ -390,25 +480,31 @@ def render(lang, b, d, areas, coords, as_of):
     # ── rents by year ──
     rents_html = ''
     if [r for r in ry if r.get('rent')]:
-        rrows = ''.join(f'<tr><td>{r["y"]}</td><td class="n">{fmt_num(r["n"], lang)}</td>'
-                        f'<td class="n">{money(r["rent"], lang) if r.get("rent") else "—"}</td></tr>'
+        rrows = ''.join(f'<tr><td>{r["y"]}</td><td class="num">{fmt_num(r["n"], lang)}</td>'
+                        f'<td class="num">{money(r["rent"], lang) if r.get("rent") else "—"}</td></tr>'
                         for r in reversed(ry[-YEARS_SHOWN:]))
-        rents_html = (f'<section><h2>{e(c["h_rents"])}</h2>'
-                      + (f'<p class="note">{e(c["rent_project"].format(n=rs))}</p>' if rs else '')
-                      + f'<div class="tw"><table><thead><tr><th>{e(c["c_year"])}</th><th class="n">{e(c["c_contracts"])}</th>'
-                      f'<th class="n">{e(c["c_rent"])}</th></tr></thead><tbody>{rrows}</tbody></table></div></section>')
+        rent_chart = line_chart(
+            [(r['y'], r.get('rent') if r['n'] >= 5 else None, r['n']) for r in ry], '#0d9488', lang,
+            (lambda v: money(v, lang), lambda n: f'{c["c_contracts"]}: {fmt_num(n, lang)}'))
+        rents_html = (f'<section class="card"><h2>{e(c["h_rents"])}</h2>'
+                      + (f'<p class="note top">{e(c["rent_project"].format(n=rs))}</p>' if rs else '')
+                      + (f'<h3 class="dp-chart-title">{e(c["rent_chart"])}</h3>{rent_chart}' if rent_chart else '')
+                      + f'<details class="dp-collapsible"{"" if rent_chart else " open"}><summary>{e(c["yt"])}</summary>'
+                      f'<div class="tw"><table class="bt"><thead><tr><th>{e(c["c_year"])}</th><th class="num">{e(c["c_contracts"])}</th>'
+                      f'<th class="num">{e(c["c_rent"])}</th></tr></thead><tbody>{rrows}</tbody></table></div></details></section>')
 
     # ── latest transactions ──
     trows = ''.join(
         f'<tr><td>{t["d"]}</td><td>{e(room_label(c, t["r"]))}</td>'
-        f'<td class="n">{fmt_num(round(t["sqm"] * SQFT), lang) if t.get("sqm") else "—"}</td>'
-        f'<td class="n">{money(t["p"], lang) if t.get("p") else "—"}</td>'
-        f'<td class="n">{fmt_num(round(t["p"] / t["sqm"] / SQFT), lang) if t.get("p") and t.get("sqm") and t["sqm"] > 5 else "—"}</td>'
-        f'<td>{e(c["t_offplan"] if t.get("op") else c["t_ready"])}</td></tr>'
+        f'<td class="num">{fmt_num(round(t["sqm"] * SQFT), lang) if t.get("sqm") else "—"}</td>'
+        f'<td class="num">{money(t["p"], lang) if t.get("p") else "—"}</td>'
+        f'<td class="num">{fmt_num(round(t["p"] / t["sqm"] / SQFT), lang) if t.get("p") and t.get("sqm") and t["sqm"] > 5 else "—"}</td>'
+        f'<td><span class="dp-tag-op dp-tag-op-{"Off-Plan" if t.get("op") else "Ready"}">'
+        f'{e(c["t_offplan"] if t.get("op") else c["t_ready"])}</span></td></tr>'
         for t in txs[:RECENT_TX])
-    recent_html = (f'<section><h2>{e(c["h_recent"])}</h2><div class="tw"><table><thead><tr>'
-                   f'<th>{e(c["c_date"])}</th><th>{e(c["c_rooms"])}</th><th class="n">{e(c["c_size"])}</th>'
-                   f'<th class="n">{e(c["c_deal"])}</th><th class="n">{e(c["c_ppsqft"])}</th><th>{e(c["c_type"])}</th>'
+    recent_html = (f'<section class="card"><h2>{e(c["h_recent"])}</h2><div class="tw"><table class="bt"><thead><tr>'
+                   f'<th>{e(c["c_date"])}</th><th>{e(c["c_rooms"])}</th><th class="num">{e(c["c_size"])}</th>'
+                   f'<th class="num">{e(c["c_deal"])}</th><th class="num">{e(c["c_ppsqft"])}</th><th>{e(c["c_type"])}</th>'
                    f'</tr></thead><tbody>{trows}</tbody></table></div></section>') if txs else ''
 
     # ── FAQ (visible + FAQPage) ──
@@ -423,8 +519,8 @@ def render(lang, b, d, areas, coords, as_of):
     if gy:
         faqs.append((c['q_yield'].format(name=name), c['a_yield'].format(
             y=pct(gy['y'], lang), rp=fmt_num(gy['rp'], lang), sp=fmt_num(gy['sp'], lang))))
-    faq_html = (f'<section><h2>{e(c["faq"])}</h2>'
-                + ''.join(f'<h3>{e(q)}</h3><p>{e(a)}</p>' for q, a in faqs) + '</section>') if faqs else ''
+    faq_html = (f'<section class="district-faq"><h2>{e(c["faq_h"].format(name=name))}</h2>'
+                + ''.join(f'<div class="qa"><h3>{e(q)}</h3><p>{e(a)}</p></div>' for q, a in faqs) + '</section>') if faqs else ''
 
     # ── links ──
     links = []
@@ -434,7 +530,7 @@ def render(lang, b, d, areas, coords, as_of):
         links.append((f'/{lang}/sales/?bld={slug}', c['l_map']))
     links.append((f'/search/#{slug}', c['l_charts']))
     links.append((f'/{lang}/buildings/', c['l_dir']))
-    links_html = ''.join(f'<a href="{e(u)}">{e(t)}</a>' for u, t in links)
+    links_html = ''.join(f'<li><a href="{e(u)}">{e(t)}</a></li>' for u, t in links)
 
     # ── JSON-LD ──
     place = {'@type': 'Place', 'name': area}
@@ -477,6 +573,8 @@ def render(lang, b, d, areas, coords, as_of):
                          for l in LANGUAGES)
     robots = 'noindex,follow' if b.get('ni') else 'index,follow'
     sub = c['h1_sub'].format(area=area) + (f' · {b["pj"]}' if b.get('pj') else '')
+    crumb_area = f'<a href="/{lang}/sales/{aslug}/">{e(area)}</a> › ' if aslug else ''
+    map_btn = f'<a class="map-btn" href="/{lang}/sales/?bld={slug}">{e(c["on_map"])}</a>' if b.get('m') else ''
     return f'''<!DOCTYPE html>
 {PAGE_MARKER}
 <html lang="{lang}" dir="{DIR_FOR_LANG[lang]}">
@@ -498,26 +596,35 @@ def render(lang, b, d, areas, coords, as_of):
 <meta property="og:image" content="{BASE_URL}/og/cover.png">
 <meta name="twitter:card" content="summary_large_image">
 <link rel="icon" type="image/svg+xml" href="/favicon.svg">
-<link rel="stylesheet" href="/css/building.css">
+<link rel="stylesheet" href="/css/building.css?v={CSS_VER}">
 {ld_html}
 <script async src="https://www.googletagmanager.com/gtag/js?id=G-5G3EY3Y2KG"></script>
 <script>window.dataLayer=window.dataLayer||[];function gtag(){{dataLayer.push(arguments);}}gtag('js',new Date());if(!/^(localhost|127\\.0\\.0\\.1|0\\.0\\.0\\.0)$/.test(location.hostname)){{gtag('config','G-5G3EY3Y2KG');}}</script>
 </head>
 <body>
 <div class="wrap">
-<nav class="crumbs"><a href="/{lang}/sales/">{e(c["crumb_home"])}</a> › <a href="/{lang}/buildings/">{e(c["crumb_dir"])}</a> › <span>{e(name)}</span></nav>
-<header class="top">
-<div><h1>{e(name)}</h1><p class="sub">{e(sub)}</p></div>
-<details class="langswitch-dd"><summary><span aria-hidden="true">🌐</span> <span class="lang-current">{lang.upper()}</span> <span class="caret" aria-hidden="true">▾</span></summary><div class="lang-menu">{lang_links}</div></details>
-</header>
-<section><h2>{e(c["key"])}</h2><div class="kfs">{stats_html}</div></section>
-{years_html}
-{rooms_html}
-{rents_html}
-{recent_html}
-{faq_html}
-<section><h2>{e(c["links"])}</h2><div class="links">{links_html}</div></section>
-<p class="source">{e(c["source"].format(date=d_to))}</p>
+  <div class="breadcrumb"><a href="/{lang}/sales/">{e(c["crumb_home"])}</a> › <a href="/{lang}/buildings/">{e(c["crumb_dir"])}</a> › {crumb_area}<span>{e(name)}</span></div>
+  <div class="topbar">
+    <div class="ttl"><h1>{e(name)}</h1><div class="h1-sub">{e(sub)}</div></div>
+    <div class="topbar-controls">
+      {map_btn}<details class="langswitch-dd"><summary><span class="globe" aria-hidden="true">🌐</span><span class="lang-current">{lang.upper()}</span><span class="caret" aria-hidden="true">▾</span></summary><div class="lang-menu">{lang_links}</div></details>
+      <a class="faq-link" href="/{lang}/faq/" title="FAQ" aria-label="FAQ">?</a>
+      <a class="blog-link" href="/{lang}/blog/" title="Blog">Blog</a>
+    </div>
+  </div>
+  {about_html}
+  <div class="panel">
+    <h2 class="panel-h">{e(c["key"])}</h2>
+    <div class="dp-stats">{stats_html}</div>
+    {years_html}
+  </div>
+  {rooms_html}
+  {rents_html}
+  {recent_html}
+  {faq_html}
+  <nav class="nearby-districts"><h2>{e(c["links"])}</h2><ul>{links_html}</ul></nav>
+  <p class="source">{e(c["source"].format(date=d_to))}</p>
+  <div class="nav"><a href="/{lang}/buildings/">{e(c["nav_dir"])}</a><a href="/{lang}/sales/">{e(c["nav_map"])}</a></div>
 </div>
 </body>
 </html>

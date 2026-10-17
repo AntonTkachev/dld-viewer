@@ -263,8 +263,8 @@ def row_html(b, lang, c, areas):
         area += f' · {escape(b["pj"])}'
     mp = f'<a class="btn-map" href="/{lang}/sales/?bld={s}" title="{escape(c["map_title"])}">↗</a>' if b.get('m') else ''
     href = f'/{lang}/buildings/{s}/' if b.get('pg') else f'/search/#{s}'
-    return (f'<tr data-s="{s}" data-h="{href}"><td class="td-name"><a class="bld-a" href="{href}">{escape(b["n"])}</a>'
-            f'<div class="td-area">{area}</div>{mp}</td>'
+    return (f'<tr data-s="{s}" data-h="{href}"><td class="td-name"><a class="bld-a" href="{href}">{escape(b["n"])}</a>{mp}'
+            f'<div class="td-area">{area}</div></td>'
             f'<td class="num col-yr">{yr}</td><td class="col-dev">{dev}</td>'
             f'<td class="col-pct">{status}</td>'
             f'<td class="num">{fmt_num(b["tx"], lang)}</td><td class="num">{rn}</td></tr>')
@@ -277,6 +277,10 @@ CSS = """
   .breadcrumb a { color: #1d4ed8; text-decoration: none; }
   .breadcrumb a:hover { text-decoration: underline; }
   .topbar { display: flex; align-items: baseline; justify-content: space-between; gap: 16px; flex-wrap: wrap; }
+  .topbar-controls { display: flex; gap: 10px; align-items: center; }
+  .faq-link { display: inline-flex; align-items: center; justify-content: center; width: 28px; height: 28px; background: #f1f5f9; border-radius: 8px; font-size: 14px; font-weight: 600; color: #6b7280; text-decoration: none; }
+  .blog-link { display: inline-flex; align-items: center; height: 28px; padding: 0 10px; background: #f1f5f9; border-radius: 8px; font-size: 12px; font-weight: 600; color: #6b7280; text-decoration: none; }
+  .faq-link:hover, .blog-link:hover { background: #e2e8f0; color: #1d4ed8; }
   h1 { font-size: 24px; margin: 0 0 4px; line-height: 1.25; }
   .lede { font-size: 14px; color: #6b7280; margin: 0 0 20px; }
   .load-err { color: #b91c1c; font-size: 13px; margin: -10px 0 16px; }
@@ -405,7 +409,8 @@ CSS = """
   .rn-proj { border-bottom: 1px dotted #94a3b8; }
   .proj-note { display: flex; align-items: center; gap: 8px; background: #eff6ff; border: 1px solid #bfdbfe; color: #1d4ed8; border-radius: 8px; padding: 6px 10px; font-size: 13px; margin-bottom: 12px; width: fit-content; }
   .proj-note button { border: none; background: none; color: inherit; cursor: pointer; font-size: 15px; line-height: 1; padding: 0; }
-  .btn-map { display: inline-flex; align-items: center; font-size: 13px; font-weight: 600; color: #1d4ed8; text-decoration: none; margin-top: 3px; opacity: .75; transition: opacity .12s; }
+  .btn-map { display: inline-flex; align-items: center; font-size: 13px; font-weight: 600; color: #1d4ed8; text-decoration: none; margin-inline-start: 6px; opacity: .75; transition: opacity .12s; }
+  .proj-note[hidden] { display: none; }
   .btn-map:hover { opacity: 1; }
   .badge-zone {
     display: inline-block; font-size: 10px; font-weight: 600;
@@ -589,8 +594,8 @@ function rowHtml(b){
   const dev = b.dev ? esc(b.dev) + (b.dz ? `<span class="badge-zone">${esc(COPY.zone_badge)}</span>` : '') : MUTE;
   const mp = b.m ? `<a class="btn-map" href="/${LANG}/sales/?bld=${s}" title="${esc(COPY.map_title)}">↗</a>` : '';
   const href = b.pg ? `/${LANG}/buildings/${s}/` : `/search/#${s}`;
-  return `<tr data-s="${esc(b.s)}" data-h="${href}"><td class="td-name"><a class="bld-a" href="${href}">${esc(b.n)}</a>`
-    + `<div class="td-area">${areaHtml(b)}</div>${mp}</td>`
+  return `<tr data-s="${esc(b.s)}" data-h="${href}"><td class="td-name"><a class="bld-a" href="${href}">${esc(b.n)}</a>${mp}`
+    + `<div class="td-area">${areaHtml(b)}</div></td>`
     + `<td class="num col-yr">${yrHtml(b)}</td><td class="col-dev">${dev}</td>`
     + `<td class="col-pct">${statusHtml(b)}</td>`
     + `<td class="num">${fmt(b.tx)}</td><td class="num">${rnHtml(b)}</td></tr>`;
@@ -739,7 +744,11 @@ def render(lang, idx, areas):
   <div class="breadcrumb"><a href="/{lang}/sales/">{e(c["crumb_home"])}</a> › <span>{e(c["crumb"])}</span></div>
   <div class="topbar">
     <h1>{e(c["h1"])}</h1>
-    {lang_switcher}
+    <div class="topbar-controls">
+      {lang_switcher}
+      <a class="faq-link" href="/{lang}/faq/" title="FAQ" aria-label="FAQ">?</a>
+      <a class="blog-link" href="/{lang}/blog/" title="Blog">Blog</a>
+    </div>
   </div>
   <p class="lede">{e(lede)}</p>
   <p class="load-err" id="loadErr" hidden>{e(c["load_error"])}</p>
