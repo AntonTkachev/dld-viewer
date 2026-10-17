@@ -70,6 +70,22 @@ sm = open(os.path.join(ROOT, 'sitemap.xml'), encoding='utf-8').read()
 noidx = next((b['s'] for b in pages if b.get('ni')), None)
 check('/en/buildings/princess-tower/' in sm and (not noidx or f'/buildings/{noidx}/' not in sm),
       'sitemap has indexable building pages, not noindex ones')
+import re
+def headline(slug):
+    h = open(os.path.join(ROOT, 'en', 'buildings', slug, 'index.html'), encoding='utf-8').read()
+    m = re.search(r'Median AED / sqft</div><div class="v">([\d,]+)<', h)
+    return int(m.group(1).replace(',', '')) if m else None
+check((headline('bulgari-lighthouse-dubai') or 0) > 5000, 'ultra-luxury deals (>100K AED/m²) not filtered as noise')
+check((headline('reehan-2') or 0) > 500, 'headline year fallback ignores junk single-deal years')
+titles = {}
+for b in pages:
+    h = open(os.path.join(ROOT, 'en', 'buildings', b['s'], 'index.html'), encoding='utf-8').read(3000)
+    t = re.search(r'<title>([^<]*)</title>', h).group(1)
+    titles.setdefault(t, []).append(b['s'])
+    if re.search(r'\{(name|area|n|y|date|rent|price|ppsqft)\}', h):
+        check(False, f'unformatted placeholder in {b["s"]}')
+dups = [v for v in titles.values() if len(v) > 1]
+check(not dups, f'building page titles unique {dups[:2]}')
 yields = [b['gy'] for b in idx if 'gy' in b]
 check(all(1.5 <= y <= 15 for y in yields), f'{len(yields)} gross yields within 1.5–15%')
 

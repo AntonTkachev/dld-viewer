@@ -213,14 +213,32 @@ def room_label(c, r):
 
 
 def sane(t):
-    """Drop DLD noise (share/gift deals at a few AED per m²): same AED/m² band as _yield_cells users."""
-    return bool(t.get('p')) and (not t.get('sqm') or t['sqm'] <= 5 or 2000 <= t['p'] / t['sqm'] <= 100000)
+    """Drop DLD noise: share/gift deals at a few AED per m² (top bound clears Bulgari/Aman ~135K/m²)."""
+    return bool(t.get('p')) and (not t.get('sqm') or t['sqm'] <= 5 or 2000 <= t['p'] / t['sqm'] <= 250000)
 
 
 def recent_stats(txs, d_from, d_to):
     sel = [t for t in txs if d_from <= t['d'] <= d_to and sane(t)]
     pp = [t['p'] / t['sqm'] for t in sel if t.get('sqm') and t['sqm'] > 5]
     return {'n': len(sel), 'ppsqm': median(pp), 'price': median([t['p'] for t in sel])}
+
+
+def yearly(txs):
+    """Sales by calendar year from the filtered deals: y, n, op, ppsqm, price."""
+    by = {}
+    for t in txs:
+        by.setdefault(int(t['d'][:4]), []).append(t)
+    out = []
+    for y in sorted(by):
+        if y < 2008:
+            continue
+        ts = by[y]
+        row = {'y': y, 'n': len(ts), 'op': sum(1 for t in ts if t.get('op')), 'price': median([t['p'] for t in ts])}
+        pp = median([t['p'] / t['sqm'] for t in ts if t.get('sqm') and t['sqm'] > 5])
+        if pp:
+            row['ppsqm'] = round(pp)
+        out.append(row)
+    return out
 
 
 def weighted(rows, key, years):
@@ -267,8 +285,8 @@ def render(lang, b, d, areas, coords, as_of):
     d24 = (as_of - timedelta(days=730)).isoformat()
     txs = [t for t in d.get('txs', []) if sane(t)]
     r12, r_prev = recent_stats(txs, d12, d_to), recent_stats(txs, d24, d12)
-    sy = d.get('sy', [])
-    last_y = next((r for r in reversed(sy) if r.get('ppsqm')), None)
+    sy = yearly(txs)
+    last_y = next((r for r in reversed(sy) if r.get('ppsqm') and r['n'] >= 3), None)
 
     # Headline price: last 12 months if ≥3 sales with area, else latest year with data
     if r12['n'] >= 3 and r12['ppsqm']:
@@ -280,7 +298,7 @@ def render(lang, b, d, areas, coords, as_of):
         hp = hprice = None
         hn, hlabel, hperiod = 0, '', ''
     yoy = None
-    if r12['n'] >= 5 and r_prev['n'] >= 5 and r12['ppsqm'] and r_prev['ppsqm']:
+    if r12['n'] >= 10 and r_prev['n'] >= 10 and r12['ppsqm'] and r_prev['ppsqm']:
         yoy = (r12['ppsqm'] / r_prev['ppsqm'] - 1) * 100
 
     ry = d.get('ry', [])
@@ -289,7 +307,7 @@ def render(lang, b, d, areas, coords, as_of):
     rs = d.get('rs')
 
     # ── meta ──
-    fill = dict(name=name, area=area)
+    fill = dict(name=f'{name} ({b["pj"]})' if b.get('pj') else name, area=area)
     title = c['title'].format(**fill)
     if hp and hlabel == c['k_12m']:
         desc = c['desc_sales'].format(**fill, n=fmt_num(hn, lang), ppsqft=fmt_num(round(hp / SQFT), lang),
@@ -298,12 +316,14 @@ def render(lang, b, d, areas, coords, as_of):
         desc = c['desc_sales_old'].format(**fill, n=fmt_num(d['sn'], lang), ppsqft=fmt_num(round(hp / SQFT), lang),
                                           year=last_y['y'])
     else:
-        desc = c['desc_sales_old'].split(':')[0] + '.'
+        stop = {'zh': '。', 'hi': '। '}.get(lang, '. ')
+        desc = fill['name'] + stop + c['h1_sub'].format(area=area) + stop.strip()
     if last_r:
         desc += c['desc_rent'].format(rent=money(last_r['rent'], lang))
     if gy:
         desc += c['desc_yield'].format(y=pct(gy['y'], lang))
-    desc += c['desc_tail'].format(date=d_to)
+    if len(desc) < 140:
+        desc += c['desc_tail'].format(date=d_to)
 
     # ── key figures ──
     stats = []
