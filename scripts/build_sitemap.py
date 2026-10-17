@@ -40,7 +40,7 @@ TOP_DIRS = (
     # POI category landings
     'metro', 'schools', 'universities', 'medical', 'mosques', 'construction', 'malls',
     # Content pages
-    'faq', 'blog',
+    'faq', 'blog', 'buildings',
 )
 LANG_DIRS = ('ru', 'en', 'ar', 'hi', 'zh')
 
