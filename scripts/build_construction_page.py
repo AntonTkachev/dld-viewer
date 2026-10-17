@@ -905,7 +905,7 @@ function renderBody() {{
     if (p.l) subBits.push(p.l + " land");
     const projSub = subBits.length ? `<span class="proj-sub">${{_h(subBits.join(" · "))}}</span>` : "";
     const bldLink = p.bldn
-      ? `<a class="bld-link" href="${{LANG_PREFIX}}/buildings/?project=${{encodeURIComponent(p.no)}}" title="${{_h(COPY.bld_link_title)}}" target="_blank" onclick="event.stopPropagation()"><svg width="13" height="13" viewBox="0 0 24 24" aria-hidden="true"><rect x="4" y="3" width="16" height="18" rx="1.5" fill="none" stroke="currentColor" stroke-width="2"/><rect x="7.4" y="6.5" width="2.2" height="2.2" fill="currentColor"/><rect x="14.4" y="6.5" width="2.2" height="2.2" fill="currentColor"/><rect x="7.4" y="11.4" width="2.2" height="2.2" fill="currentColor"/><rect x="14.4" y="11.4" width="2.2" height="2.2" fill="currentColor"/><rect x="7.4" y="16.3" width="2.2" height="2.2" fill="currentColor"/><rect x="14.4" y="16.3" width="2.2" height="2.2" fill="currentColor"/></svg></a>`
+      ? `<a class="bld-link" href="${{LANG_PREFIX}}/buildings/?${{p.no ? "project=" + encodeURIComponent(p.no) : "q=" + encodeURIComponent(p.pn)}}" title="${{_h(COPY.bld_link_title)}}" target="_blank" onclick="event.stopPropagation()"><svg width="13" height="13" viewBox="0 0 24 24" aria-hidden="true"><rect x="4" y="3" width="16" height="18" rx="1.5" fill="none" stroke="currentColor" stroke-width="2"/><rect x="7.4" y="6.5" width="2.2" height="2.2" fill="currentColor"/><rect x="14.4" y="6.5" width="2.2" height="2.2" fill="currentColor"/><rect x="7.4" y="11.4" width="2.2" height="2.2" fill="currentColor"/><rect x="14.4" y="11.4" width="2.2" height="2.2" fill="currentColor"/><rect x="7.4" y="16.3" width="2.2" height="2.2" fill="currentColor"/><rect x="14.4" y="16.3" width="2.2" height="2.2" fill="currentColor"/></svg></a>`
       : "";
     // Aliased developer name: show English, tooltip the original Arabic.
     // Marker dot signals "translated" so users know it isn't raw RERA.
@@ -1023,7 +1023,7 @@ async function boot() {{
   // Always fetch from the canonical RU path — same origin, no CORS, and
   // it skips the symlink-from-/<lang>/ path entirely (GH Pages doesn't
   // always follow symlinks).
-  const r = await fetch(BASE_URL + "/construction/data.json");
+  const r = await fetch("/construction/data.json");
   STATE.data = await r.json();
   renderHero();
   renderStatusChips();
