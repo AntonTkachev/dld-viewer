@@ -185,6 +185,10 @@ COPY = {
         'about_mostly_flat':  'Преобладают квартиры — {pct}% сделок.',
         'about_mostly_villa': 'Преобладают виллы/таунхаусы — {pct}% сделок.',
         'about_mixed': 'Доля квартир — {pct}%, остальное виллы/таунхаусы.',
+        'about_mix_full': 'Структура сделок: {parts}.',
+        'mix_parts': ('квартиры — {p}%', 'виллы и таунхаусы — {p}%', 'земля и коммерческая недвижимость — {p}%'),
+        'mix_join': ', ',
+        'a_mix_parts': 'В {name} структура сделок: {parts}.',
         'about_offplan': 'Около {pct}% сделок — off-plan покупки в строящихся проектах.',
         'about_top_room': 'Самый частый тип — {label} ({n} сделок).',
         'about_top_project': 'Один из наиболее активных проектов — {proj}.',
@@ -194,6 +198,9 @@ COPY = {
         'about_stat_ppsqm':       'Цена за м²',
         'about_stat_rent_n':      'Договоров аренды',
         'about_stat_rent_med':    'Медианная аренда',
+        'about_stat_rent_n_home': 'Договоров аренды жилья',
+        'about_stat_rent_med_home': 'Медианная аренда жилья',
+        'about_rent_hint_home': 'Также зарегистрировано {n} договоров аренды жилья.',
         'about_room_studio':  'студии',
         'about_room_1br':     '1-комнатные',
         'about_room_2br':     '2-комнатные',
@@ -292,6 +299,10 @@ COPY = {
         'about_mostly_flat':  'Mostly apartments — {pct}% of transactions.',
         'about_mostly_villa': 'Mostly villas/townhouses — {pct}% of transactions.',
         'about_mixed': 'Apartments account for {pct}%, the rest are villas/townhouses.',
+        'about_mix_full': 'Transaction mix: {parts}.',
+        'mix_parts': ('apartments {p}%', 'villas and townhouses {p}%', 'land and commercial property {p}%'),
+        'mix_join': ', ',
+        'a_mix_parts': 'In {name}, the transaction mix is: {parts}.',
         'about_offplan': 'About {pct}% are off-plan purchases in under-construction projects.',
         'about_top_room': 'Most common type — {label} ({n} transactions).',
         'about_top_project': 'One of the most active projects — {proj}.',
@@ -301,6 +312,9 @@ COPY = {
         'about_stat_ppsqm':       'Price per m²',
         'about_stat_rent_n':      'Rental contracts',
         'about_stat_rent_med':    'Median rent',
+        'about_stat_rent_n_home': 'Residential leases',
+        'about_stat_rent_med_home': 'Median home rent',
+        'about_rent_hint_home': '{n} residential leases have also been recorded.',
         'about_room_studio':  'studios',
         'about_room_1br':     '1-bedroom',
         'about_room_2br':     '2-bedroom',
@@ -399,6 +413,10 @@ COPY = {
         'about_mostly_flat':  'الأغلب شقق — {pct}% من الصفقات.',
         'about_mostly_villa': 'الأغلب فلل/تاون هاوس — {pct}% من الصفقات.',
         'about_mixed': 'نسبة الشقق {pct}%، والباقي فلل/تاون هاوس.',
+        'about_mix_full': 'توزيع الصفقات: {parts}.',
+        'mix_parts': ('شقق {p}%', 'فلل وتاون هاوس {p}%', 'أراضٍ وعقارات تجارية {p}%'),
+        'mix_join': '، ',
+        'a_mix_parts': 'توزيع الصفقات في {name}: {parts}.',
         'about_offplan': 'نحو {pct}% من الصفقات قبل التسليم (Off-Plan) في مشاريع قيد الإنشاء.',
         'about_top_room': 'أكثر الأنواع شيوعًا — {label} ({n} صفقة).',
         'about_top_project': 'أحد أكثر المشاريع نشاطًا — {proj}.',
@@ -408,6 +426,9 @@ COPY = {
         'about_stat_ppsqm':       'السعر للمتر',
         'about_stat_rent_n':      'عقود الإيجار',
         'about_stat_rent_med':    'الإيجار الوسيط',
+        'about_stat_rent_n_home': 'عقود إيجار سكنية',
+        'about_stat_rent_med_home': 'الإيجار السكني الوسيط',
+        'about_rent_hint_home': 'كما سُجّل {n} عقد إيجار سكني.',
         'about_room_studio':  'استوديوهات',
         'about_room_1br':     'غرفة واحدة',
         'about_room_2br':     'غرفتان',
@@ -506,6 +527,10 @@ COPY = {
         'about_mostly_flat':  'अधिकतर अपार्टमेंट — {pct}% सौदे।',
         'about_mostly_villa': 'अधिकतर विला/टाउनहाउस — {pct}% सौदे।',
         'about_mixed': 'अपार्टमेंट का हिस्सा {pct}%, बाकी विला/टाउनहाउस।',
+        'about_mix_full': 'सौदों का वितरण: {parts}।',
+        'mix_parts': ('अपार्टमेंट {p}%', 'विला और टाउनहाउस {p}%', 'भूमि और वाणिज्यिक संपत्ति {p}%'),
+        'mix_join': ', ',
+        'a_mix_parts': '{name} में सौदों का वितरण: {parts}।',
         'about_offplan': 'लगभग {pct}% सौदे — निर्माणाधीन परियोजनाओं में ऑफ-प्लान खरीदारी।',
         'about_top_room': 'सबसे लोकप्रिय प्रकार — {label} ({n} सौदे)।',
         'about_top_project': 'सबसे सक्रिय परियोजनाओं में से एक — {proj}।',
@@ -515,6 +540,9 @@ COPY = {
         'about_stat_ppsqm':       'प्रति m² कीमत',
         'about_stat_rent_n':      'किराया अनुबंध',
         'about_stat_rent_med':    'औसत किराया',
+        'about_stat_rent_n_home': 'आवासीय किराया अनुबंध',
+        'about_stat_rent_med_home': 'आवास का औसत किराया',
+        'about_rent_hint_home': '{n} आवासीय किराया अनुबंध भी दर्ज हैं।',
         'about_room_studio':  'स्टूडियो',
         'about_room_1br':     '1-बेडरूम',
         'about_room_2br':     '2-बेडरूम',
@@ -613,6 +641,10 @@ COPY = {
         'about_mostly_flat':  '以公寓为主 — {pct}% 的交易。',
         'about_mostly_villa': '以别墅/联排别墅为主 — {pct}% 的交易。',
         'about_mixed': '公寓占 {pct}%,其余为别墅/联排别墅。',
+        'about_mix_full': '交易构成：{parts}。',
+        'mix_parts': ('公寓 {p}%', '别墅及联排别墅 {p}%', '土地和商业地产 {p}%'),
+        'mix_join': '、',
+        'a_mix_parts': '{name} 的交易构成：{parts}。',
         'about_offplan': '约 {pct}% 的交易为在建项目的期房 (Off-Plan)。',
         'about_top_room': '最常见的户型 — {label}({n} 笔交易)。',
         'about_top_project': '最活跃的项目之一 — {proj}。',
@@ -622,6 +654,9 @@ COPY = {
         'about_stat_ppsqm':       '每平方米价格',
         'about_stat_rent_n':      '租赁合同',
         'about_stat_rent_med':    '中位租金',
+        'about_stat_rent_n_home': '住宅租赁合同',
+        'about_stat_rent_med_home': '住宅中位租金',
+        'about_rent_hint_home': '另有 {n} 份住宅租赁合同登记。',
         'about_room_studio':  '开间',
         'about_room_1br':     '1 卧',
         'about_room_2br':     '2 卧',
@@ -728,6 +763,7 @@ FAQ_COPY = {
         'q_rent':   'Какая средняя аренда в {name}?',
         'a_rent':   'Медианная годовая аренда в {name} — {med} AED. '
                     'Всего зарегистрировано {n} договоров аренды (Ejari).',
+        'a_rent_home': 'Медианная годовая аренда жилья (квартиры и виллы) в {name} — {med} AED, по {n} договорам Ejari. Офисы, склады и общежития считаются отдельно.',
         'q_rent_types': 'Сколько стоит аренда квартиры или виллы в {name}?',
         'a_rent_types': 'Медианная годовая аренда в {name} по типам: {parts}. По зарегистрированным договорам Ejari в Dubai Land Department.',
         'rent_type_labels': {'studio': 'студия', '1br': '1 спальня', '2br': '2 спальни', '3br': '3 спальни', '4br+': '4+ спальни', 'villa': 'вилла'},
@@ -758,6 +794,7 @@ FAQ_COPY = {
         'q_rent':   'What is the average rent in {name}?',
         'a_rent':   'The median annual rent in {name} is {med} AED. '
                     'A total of {n} rental contracts (Ejari) are registered.',
+        'a_rent_home': 'The median annual rent for homes (apartments and villas) in {name} is {med} AED, across {n} Ejari contracts. Offices, warehouses and labour camps are counted separately.',
         'q_rent_types': 'How much does it cost to rent an apartment or villa in {name}?',
         'a_rent_types': 'Median annual rent in {name} by unit type: {parts}. Based on registered Ejari contracts in the Dubai Land Department.',
         'rent_type_labels': {'studio': 'studio', '1br': '1-bedroom', '2br': '2-bedroom', '3br': '3-bedroom', '4br+': '4+ bedrooms', 'villa': 'villa'},
@@ -789,6 +826,7 @@ FAQ_COPY = {
         'q_rent':   'ما متوسط الإيجار في {name}؟',
         'a_rent':   'الإيجار السنوي الوسيط في {name} هو {med} درهم. '
                     'إجمالي {n} عقد إيجار مسجل (إيجاري).',
+        'a_rent_home': 'الإيجار السنوي الوسيط للمساكن (شقق وفلل) في {name} هو {med} درهم، عبر {n} عقد إيجاري. المكاتب والمستودعات وسكن العمال تُحتسب بشكل منفصل.',
         'q_rent_types': 'كم تبلغ تكلفة استئجار شقة أو فيلا في {name}؟',
         'a_rent_types': 'الإيجار السنوي الوسيط في {name} حسب نوع الوحدة: {parts}. استنادًا إلى عقود إيجاري المسجلة في دائرة الأراضي والأملاك في دبي.',
         'rent_type_labels': {'studio': 'استوديو', '1br': 'غرفة نوم واحدة', '2br': 'غرفتا نوم', '3br': '3 غرف نوم', '4br+': '4+ غرف نوم', 'villa': 'فيلا'},
@@ -818,6 +856,7 @@ FAQ_COPY = {
         'q_rent':   '{name} में औसत किराया क्या है?',
         'a_rent':   '{name} में मध्यिका वार्षिक किराया {med} AED है। '
                     'कुल {n} किराये के अनुबंध (Ejari) पंजीकृत हैं।',
+        'a_rent_home': '{name} में आवास (अपार्टमेंट और विला) का मध्यिका वार्षिक किराया {med} AED है, {n} Ejari अनुबंधों के आधार पर। ऑफिस, गोदाम और श्रमिक आवास अलग गिने जाते हैं।',
         'q_rent_types': '{name} में अपार्टमेंट या विला किराए पर लेने में कितना खर्च आता है?',
         'a_rent_types': '{name} में यूनिट प्रकार के अनुसार मध्यिका वार्षिक किराया: {parts}। Dubai Land Department में पंजीकृत Ejari अनुबंधों पर आधारित।',
         'rent_type_labels': {'studio': 'स्टूडियो', '1br': '1 बेडरूम', '2br': '2 बेडरूम', '3br': '3 बेडरूम', '4br+': '4+ बेडरूम', 'villa': 'विला'},
@@ -847,6 +886,7 @@ FAQ_COPY = {
         'q_rent':   '{name} 的平均租金是多少？',
         'a_rent':   '{name} 的年租金中位数为 {med} 迪拉姆。'
                     '已登记 {n} 份租赁合同（Ejari）。',
+        'a_rent_home': '{name} 住宅（公寓和别墅）的年租金中位数为 {med} 迪拉姆，基于 {n} 份 Ejari 合同。办公室、仓库和劳工宿舍单独统计。',
         'q_rent_types': '在 {name} 租一套公寓或别墅要多少钱？',
         'a_rent_types': '{name} 按户型划分的年租金中位数：{parts}。基于迪拜土地局登记的 Ejari 租约。',
         'rent_type_labels': {'studio': '开间', '1br': '一居室', '2br': '两居室', '3br': '三居室', '4br+': '四居及以上', 'villa': '别墅'},
@@ -1142,7 +1182,8 @@ def period_record_for(rec, period):
     """Full summary of one period window from the aggregates; 'all' is the record itself."""
     if period == 'all':
         return rec or {}
-    return ((rec or {}).get('periods') or {}).get(period) or {}
+    p = ((rec or {}).get('periods') or {}).get(period) or {}
+    return {**p, 'scope': rec['scope']} if p and (rec or {}).get('scope') else p
 
 
 def _copy_for(lang, is_dubai=False):
@@ -1178,6 +1219,24 @@ def build_lede(mode, name, period_h1, rec, lang, is_dubai=False):
     return ' '.join(pieces)
 
 
+def sale_mix(sale_rec):
+    """(apartments %, villas %, land+commercial+other %) of every sale, from the room buckets."""
+    bu = sale_rec.get('by_rooms_unit') or {}
+    n = lambda k: (bu.get(k) or {}).get('n', 0)
+    apt, villa = sum(n(k) for k in ('studio', '1br', '2br', '3br', '4br+')), n('villa')
+    total = n('all') or (apt + villa + n('land') + n('commercial') + n('other'))
+    if not total or not (apt + villa):
+        return None
+    a, v = round(apt / total * 100), round(villa / total * 100)
+    return a, v, 100 - a - v
+
+
+def mix_parts(mix, lang):
+    """'apartments 71%, land and commercial property 29%' — zero shares left out."""
+    c = COPY[lang]
+    return c['mix_join'].join(lbl.format(p=p) for lbl, p in zip(c['mix_parts'], mix) if p > 0)
+
+
 def build_about(name, sale_rec, rent_rec, lang, is_dubai=False):
     """Period-independent paragraph + a stat-pill row — unique facts per
     district that Google can use as descriptive context. Localized via COPY[lang]."""
@@ -1189,8 +1248,11 @@ def build_about(name, sale_rec, rent_rec, lang, is_dubai=False):
     offplan = sale_rec.get('offplan', {}) or {}
     bru = sale_rec.get('by_rooms_unit', {}) or {}
 
-    if flat.get('n') and (flat.get('n') + villa.get('n', 0)) > 0:
-        share_flat = round(flat['n'] / (flat['n'] + villa.get('n', 0)) * 100)
+    mix = sale_mix(sale_rec)
+    if mix and mix[2] >= 5:
+        facts.append(c['about_mix_full'].format(parts=mix_parts(mix, lang)))
+    elif mix:
+        share_flat = round(mix[0] / (mix[0] + mix[1]) * 100) if mix[0] + mix[1] else 0
         if share_flat == 100:
             facts.append(c['about_all_flat'])
         elif share_flat == 0:
@@ -1232,8 +1294,12 @@ def build_about(name, sale_rec, rent_rec, lang, is_dubai=False):
         facts.append(c['about_top_project'].format(proj=named[0]['proj'].title()))
 
     if rent_rec.get('n'):
-        residential = n_total and (flat.get('n', 0) + villa.get('n', 0)) / n_total >= 0.5
-        hint = c['about_rent_hint'] if residential or not n_total else c['about_rent_hint_plain']
+        # Judge "a place to live" by the leases themselves: homes must be most of them
+        all_n = ((rent_rec.get('by_rooms_unit') or {}).get('all') or {}).get('n') or rent_rec['n']
+        if rent_rec.get('scope') != 'home':
+            hint = c['about_rent_hint_plain']
+        else:
+            hint = c['about_rent_hint'] if rent_rec['n'] / all_n >= 0.5 else c['about_rent_hint_home']
         facts.append(hint.format(n=fmt_int(rent_rec['n'], lang)))
 
     if not facts:
@@ -1248,10 +1314,11 @@ def build_about(name, sale_rec, rent_rec, lang, is_dubai=False):
         grid_items.append((c['about_stat_med_price'], f'{fmt_aed(sale_rec["med"], lang)} AED'))
     if sale_rec.get('med_ppsqm'):
         grid_items.append((c['about_stat_ppsqm'], f'{fmt_int(sale_rec["med_ppsqm"], lang)} AED'))
+    home = rent_rec.get('scope') == 'home'
     if rent_rec.get('n'):
-        grid_items.append((c['about_stat_rent_n'], fmt_int(rent_rec['n'], lang)))
+        grid_items.append((c['about_stat_rent_n_home' if home else 'about_stat_rent_n'], fmt_int(rent_rec['n'], lang)))
     if rent_rec.get('med_annual'):
-        grid_items.append((c['about_stat_rent_med'], f'{fmt_aed(rent_rec["med_annual"], lang)} AED'))
+        grid_items.append((c['about_stat_rent_med_home' if home else 'about_stat_rent_med'], f'{fmt_aed(rent_rec["med_annual"], lang)} AED'))
 
     grid_html = ''
     if grid_items:
@@ -1266,55 +1333,36 @@ def build_about(name, sale_rec, rent_rec, lang, is_dubai=False):
     return f'<details class="about"><summary>{html_escape(title_text)}</summary><!--__LEDE_P__-->{intro}{grid_html}</details>'
 
 
-def _polygon_centroid(feature):
-    """Plain vertex-average centroid — not area-weighted, but good enough
-    to rank nearby districts (Dubai's polygons are small relative to the
-    distances between them)."""
-    g = feature.get('geometry') or {}
-    coords = []
-    if g.get('type') == 'Polygon':
-        for ring in g['coordinates']:
-            coords.extend(ring)
-    elif g.get('type') == 'MultiPolygon':
-        for poly in g['coordinates']:
-            for ring in poly:
-                coords.extend(ring)
-    if not coords:
-        return None
-    xs = [c[0] for c in coords]
-    ys = [c[1] for c in coords]
-    return (sum(xs) / len(xs), sum(ys) / len(ys))
-
-
 def build_nearby_index(sale_agg, rent_agg):
-    """key -> [neighbor_key, ...] sorted nearest-first, restricted to keys
-    that (a) have a polygon in curated_polygons.geojson and (b) have at
-    least some sale or rent data (no point linking to an empty page)."""
+    """key -> [neighbor_key, ...]: polygons sharing a border first (longest shared border
+    first), then the closest boundaries. Polygons nested in this one or containing it
+    (its sub-communities / parent area) are not neighbours — the "Inside" block lists those.
+    Restricted to keys with a polygon and some sale or rent data."""
     if not os.path.exists(CURATED_GEO):
         return {}
+    from shapely.geometry import shape
     with open(CURATED_GEO, encoding='utf-8') as f:
         features = json.load(f)['features']
-
-    centroids = {}
+    has_data = lambda k: bool((sale_agg.get(k) or {}).get('n')) or bool((rent_agg.get(k) or {}).get('n'))
+    geo = {}
     for feat in features:
         key = (feat.get('properties') or {}).get('key')
-        if not key:
-            continue
-        c = _polygon_centroid(feat)
-        if c:
-            centroids[key] = c
+        if key and has_data(key) and feat.get('geometry'):
+            geo[key] = shape(feat['geometry']).buffer(0)
 
-    has_data = lambda k: bool((sale_agg.get(k) or {}).get('n')) or bool((rent_agg.get(k) or {}).get('n'))
-    keys = [k for k in centroids if has_data(k)]
-
+    TOUCH = 0.0005   # ~50 m in degrees: DM/OSM borders rarely meet exactly
     index = {}
-    for k in keys:
-        x0, y0 = centroids[k]
-        others = sorted(
-            (o for o in keys if o != k),
-            key=lambda o: (centroids[o][0] - x0) ** 2 + (centroids[o][1] - y0) ** 2,
-        )
-        index[k] = others[:NEARBY_N]
+    for k, g in geo.items():
+        ranked = []
+        for o, h in geo.items():
+            if o == k:
+                continue
+            if g.intersection(h).area > 0.5 * min(g.area, h.area):
+                continue   # one sits inside the other
+            d = g.distance(h)
+            shared = g.boundary.intersection(h.buffer(TOUCH)).length if d < TOUCH else 0
+            ranked.append((d >= TOUCH, -shared if d < TOUCH else d, o))
+        index[k] = [o for *_, o in sorted(ranked)[:NEARBY_N]]
     return index
 
 
@@ -1391,10 +1439,7 @@ def _rent_type_parts(rent_rec, lang):
     """'studio — 54,000 AED; 1-bedroom — …; villa — …' from rent medians by unit type."""
     c = FAQ_COPY[lang]
     rooms = rent_rec.get('by_rooms_unit') or {}
-    rows = [(k, rooms[k]) for k in ('studio', '1br', '2br', '3br', '4br+') if k in rooms]
-    villa = (rent_rec.get('by_subtype') or {}).get('Villa')
-    if villa:
-        rows.append(('villa', villa))
+    rows = [(k, rooms[k]) for k in ('studio', '1br', '2br', '3br', '4br+', 'villa') if k in rooms]
     rows = [(k, r) for k, r in rows if r.get('n', 0) >= RENT_TYPE_MIN_N and r.get('med')]
     if len(rows) < 2:
         return ''
@@ -1431,9 +1476,8 @@ def build_district_faq(name, sale_rec, rent_rec, lang, pois=None):
     if rent_rec.get('med_annual') and rent_rec.get('n'):
         qa.append((
             c['q_rent'].format(name=name),
-            c['a_rent'].format(name=name,
-                               med=fmt_aed(rent_rec['med_annual'], lang),
-                               n=fmt_int(rent_rec['n'], lang)),
+            c['a_rent_home' if rent_rec.get('scope') == 'home' else 'a_rent'].format(
+                name=name, med=fmt_aed(rent_rec['med_annual'], lang), n=fmt_int(rent_rec['n'], lang)),
         ))
         parts = _rent_type_parts(rent_rec, lang)
         if parts:
@@ -1443,18 +1487,16 @@ def build_district_faq(name, sale_rec, rent_rec, lang, pois=None):
             ))
         qa.append((
             c['q_rent_history'].format(name=name),
-            c['a_rent_history'].format(name=name, n=fmt_int(rent_rec['n'], lang)),
+            c['a_rent_history'].format(name=name, n=fmt_int(
+                ((rent_rec.get('by_rooms_unit') or {}).get('all') or {}).get('n') or rent_rec['n'], lang)),
         ))
 
-    flat = sale_rec.get('flat', {}) or {}
-    villa = sale_rec.get('villa', {}) or {}
-    flat_n = flat.get('n', 0)
-    villa_n = villa.get('n', 0)
-    if flat_n + villa_n > 0:
-        share_flat = round(flat_n / (flat_n + villa_n) * 100)
+    mix = sale_mix(sale_rec)
+    if mix:
         qa.append((
             c['q_mix'].format(name=name),
-            c['a_mix'].format(name=name, flat_pct=share_flat, villa_pct=100 - share_flat),
+            COPY[lang]['a_mix_parts'].format(name=name, parts=mix_parts(mix, lang)) if mix[2] >= 5
+            else c['a_mix'].format(name=name, flat_pct=mix[0], villa_pct=mix[1]),
         ))
 
     tp = sale_rec.get('top_projects') or []
