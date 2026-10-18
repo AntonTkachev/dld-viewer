@@ -18,6 +18,7 @@ DATE_TO   = '2026-12-31'
 # ROLLUP folds sub-master names (DUBAI HILLS - MAPLE …) into one project.
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 from _curated_sql import hierarchy_select, hierarchy_views
+from _segments import HOME_SQL, SALE_BUCKET_SQL, SALE_ROOMS_SQL, SALE_VILLA_PLOT_SQL
 ROLLUP_SQL = """
 CASE
   WHEN master_project_en LIKE 'DUBAI HILLS - %'              THEN 'Dubai Hills Estate'
@@ -35,16 +36,23 @@ HSEL = hierarchy_select(ROLLUP_SQL)
 
 # We register the view once so every query uses the same window+remapping
 print(f'period: {DATE_FROM} → {DATE_TO}', file=sys.stderr)
+PROJECTS = os.path.join(ROOT, 'data/dld_projects.csv.gz')
+# RERA completion per project: villa plots sold before it (or while it has none) were off-plan
+con.execute(f"""CREATE TEMP TABLE rera AS
+SELECT project_number AS pn, MAX(completion_date) AS cd, BOOL_AND(project_status = 'FINISHED') AS fin
+FROM read_csv_auto('{PROJECTS}') GROUP BY 1""")
 con.execute(f"""
 CREATE TEMP TABLE tx_base AS
 SELECT
   {HSEL},
   transaction_id AS tid,
   instance_date AS d,
-  property_type_en AS pt,
-  COALESCE(property_sub_type_en, CASE WHEN property_type_en = 'Villa' THEN 'Villa' END) AS sbt,  -- 77K villa sales have no subtype
+  CASE WHEN {SALE_VILLA_PLOT_SQL} THEN 'Villa' ELSE property_type_en END AS pt,
+  CASE WHEN {SALE_VILLA_PLOT_SQL} THEN 'Villa'
+       ELSE COALESCE(property_sub_type_en, CASE WHEN property_type_en = 'Villa' THEN 'Villa' END) END AS sbt,  -- 77K villa sales have no subtype
   rooms_en AS rooms,
-  reg_type_en AS reg,
+  CASE WHEN {SALE_VILLA_PLOT_SQL} AND (rera.cd > instance_date::DATE OR (rera.cd IS NULL AND NOT rera.fin))
+       THEN 'Off-Plan Properties' ELSE reg_type_en END AS reg,
   TRY_CAST(actual_worth   AS DOUBLE) AS val,
   -- DLD sometimes stores the price in procedure_area (→ 1 AED/m²); drop area below 10 AED/m²
   CASE WHEN TRY_CAST(actual_worth AS DOUBLE) / NULLIF(TRY_CAST(procedure_area AS DOUBLE), 0) < 10
@@ -54,7 +62,7 @@ SELECT
   trans_group_en    AS grp,
   project_number    AS pn,
   building_name_en  AS bn
-FROM '{TX}'
+FROM '{TX}' LEFT JOIN rera ON rera.pn = TRY_CAST(TRY_CAST(project_number AS DOUBLE) AS BIGINT)
 WHERE area_name_en IS NOT NULL
   AND instance_date BETWEEN '{DATE_FROM}' AND '{DATE_TO}'
   -- Restrict to actual property transfers. Mortgage Registrations are the
@@ -68,9 +76,18 @@ WHERE area_name_en IS NOT NULL
 """)
 # Hierarchy: a deal counts in its area (lvl 0), its sub-community polygon (lvl 1) and
 # its master project's own page when that project has no polygon (lvl 2)
-KEY_LVL = hierarchy_views(con, 'tx_base', 'tx', 'tx_p')
+con.execute(f"ALTER TABLE tx_base ADD COLUMN rooms_seg VARCHAR")
+con.execute(f"UPDATE tx_base SET rooms_seg = {SALE_ROOMS_SQL}")
+KEY_LVL = hierarchy_views(con, 'tx_base', 'tx_all', 'tx_all_p')
 SEC_KEYS = {k for k, l in KEY_LVL.items() if l == 2}
 AREA_KEYS = {k for k, l in KEY_LVL.items() if l == 0}
+# Headline population: homes; a key with no home sales at all (industrial plots) keeps every deal.
+# Breakdowns (rooms, segments, flat/villa/commercial/land) read tx_all.
+HOME_SEG = HOME_SQL.replace('rooms', 'rooms_seg')
+con.execute(f"CREATE TEMP TABLE home_keys AS SELECT k FROM tx_all WHERE {HOME_SEG} GROUP BY k HAVING COUNT(*) >= 5")
+HOME_KEYS = {r[0] for r in con.execute("SELECT k FROM home_keys").fetchall()}
+con.execute(f"CREATE TEMP VIEW tx AS SELECT * FROM tx_all WHERE {HOME_SEG} OR k NOT IN (SELECT k FROM home_keys)")
+con.execute(f"CREATE TEMP VIEW tx_p AS SELECT * FROM tx_all_p WHERE {HOME_SEG}")
 
 # ─── Mortgage Registrations (separate view, for cash-vs-financed split)
 # We DON'T merge these into `tx`. We keep them in `mort` and LEFT JOIN
@@ -100,24 +117,12 @@ def safe_int(v):  return int(v) if v == v and v else 0
 def safe_float(v, p=1): return round(float(v), p) if v == v and v else 0
 
 # Subtype bucket: parquet PROP_SB_TYPE_EN → 'flat'|'villa'|'commercial'|'land'
-def bucket(sbt, pt):
+def bucket(sbt, pt):   # = _segments.SALE_BUCKET_SQL
     if sbt == 'Villa':     return 'villa'
-    if sbt == 'Flat':      return 'flat'
-    if sbt in ('Office','Shop','Hotel Apartment','Hotel Rooms','Show Rooms'):
-        return 'commercial'
+    if sbt in ('Flat', 'Hotel Apartment'): return 'flat'
     if pt == 'Land':       return 'land'
     return 'commercial'
 
-# Rooms-unit bucket: same convention as before
-def room_unit(sbt, rooms):
-    if sbt == 'Villa':            return 'villa'
-    r = (str(rooms) if rooms is not None else '').strip()
-    if r == 'Studio':             return 'studio'
-    if r == '1 B/R':              return '1br'
-    if r == '2 B/R':              return '2br'
-    if r == '3 B/R':              return '3br'
-    if r in ('4 B/R','5 B/R','6 B/R','7 B/R'): return '4br+'
-    return 'other'
 
 def room_label(rooms):
     r = (str(rooms) if rooms is not None else '').strip()
@@ -149,7 +154,7 @@ n_days = (con.execute(f"SELECT COUNT(DISTINCT d) FROM tx").fetchone()[0]) or 1
 
 # ─── Q2: per-area per-subtype bucket ────────────────────────────
 print('subtype splits (flat/villa/commercial/land)...', file=sys.stderr)
-subt_raw = q("SELECT k, sbt, pt, val, sqm FROM tx WHERE val > 0")
+subt_raw = q("SELECT k, sbt, pt, val, sqm FROM tx_all WHERE val > 0")
 from collections import defaultdict
 sub_agg = defaultdict(lambda: defaultdict(lambda: {'vals':[], 'sqms':[], 'ppsqm':[]}))
 for _, r in subt_raw.iterrows():
@@ -265,27 +270,21 @@ for _, r in tl_df.iterrows():
 
 # ─── Q6: by_rooms_unit + timeline_by_rooms ─────────────────────
 print('by_rooms_unit + timeline_by_rooms (monthly w/ med, ppsqm)...', file=sys.stderr)
-br_df = q("SELECT k, substr(d,1,7) AS d, sbt, rooms, val, sqm FROM tx WHERE val > 0")
+br_df = q("SELECT k, substr(d,1,7) AS d, rooms_seg, val, sqm FROM tx_all WHERE val > 0")
 by_unit = defaultdict(lambda: defaultdict(lambda: {'n':0,'vol':0.0,'vals':[],'ppsqm':[]}))
 by_day_rooms = defaultdict(
     lambda: defaultdict(
         lambda: defaultdict(
             lambda: {'n':0, 'vol':0.0, 'vals':[], 'ppsqm':[]})))
-ROOM_ORDER = ['studio','1br','2br','3br','4br+','villa','other']
+ROOM_ORDER = ['studio','1br','2br','3br','4br+','villa','land','commercial','other','all']
 for _, r in br_df.iterrows():
-    ru = room_unit(r['sbt'], r['rooms'])
-    rec = by_unit[r['k']][ru]
-    rec['n']   += 1
-    rec['vol'] += float(r['val'])
-    rec['vals'].append(float(r['val']))
-    if r['sqm'] and r['sqm'] > 0:
-        rec['ppsqm'].append(float(r['val']) / float(r['sqm']))
-    rec2 = by_day_rooms[r['k']][ru][r['d']]
-    rec2['n']   += 1
-    rec2['vol'] += float(r['val'])
-    rec2['vals'].append(float(r['val']))
-    if r['sqm'] and r['sqm'] > 0:
-        rec2['ppsqm'].append(float(r['val']) / float(r['sqm']))
+    for ru in (r['rooms_seg'], 'all'):   # 'all' = every deal, the headline may be homes only
+        for rec in (by_unit[r['k']][ru], by_day_rooms[r['k']][ru][r['d']]):
+            rec['n']   += 1
+            rec['vol'] += float(r['val'])
+            rec['vals'].append(float(r['val']))
+            if r['sqm'] and r['sqm'] > 0:
+                rec['ppsqm'].append(float(r['val']) / float(r['sqm']))
 
 # ─── Q7: top_projects (top 10 by total value) ──────────────────
 print('top_projects...', file=sys.stderr)
@@ -395,6 +394,7 @@ for _, r in totals.iterrows():
         'top_deals':  top_deals[k],
         'recent':     recent[k],
         'trend_pct':  None,
+        'scope':      'home' if k in HOME_KEYS else 'all',   # population of the headline fields
     }
     # by_rooms_unit — also period-stable med + ppsqm per room
     bu = {}
@@ -680,6 +680,7 @@ dubai = {
     'vintage_paths': dubai_paths,
     'vintage_paths_m': dubai_paths_m,
     'trend_pct': None,
+    'scope': 'home',
 }
 
 # Sub-community and project keys repeat area deals — Dubai rollups use area keys only
@@ -775,17 +776,13 @@ out['__dubai__'] = dubai
 print('period summaries (1y/3y/5y/10y)...', file=sys.stderr)
 from datetime import date, timedelta
 PERIOD_YEARS = [('1y', 1), ('3y', 3), ('5y', 5), ('10y', 10)]
-BUCKET_SQL = """CASE WHEN sbt = 'Villa' THEN 'villa' WHEN sbt = 'Flat' THEN 'flat'
-  WHEN sbt IN ('Office','Shop','Hotel Apartment','Hotel Rooms','Show Rooms') THEN 'commercial'
-  WHEN pt = 'Land' THEN 'land' ELSE 'commercial' END"""
-ROOM_SQL = """CASE WHEN sbt = 'Villa' THEN 'villa' WHEN TRIM(rooms) = 'Studio' THEN 'studio'
-  WHEN TRIM(rooms) = '1 B/R' THEN '1br' WHEN TRIM(rooms) = '2 B/R' THEN '2br' WHEN TRIM(rooms) = '3 B/R' THEN '3br'
-  WHEN TRIM(rooms) IN ('4 B/R','5 B/R','6 B/R','7 B/R') THEN '4br+' ELSE 'other' END"""
 _EMPTY_B = {'n': 0, 'total': 0, 'med': 0, 'mean': 0, 'p25': 0, 'p75': 0, 'med_sqm': 0, 'med_ppsqm': 0}
 
 def period_summaries(dfrom, src, kx):
-    """{key: summary} for deals with d >= dfrom. src = tx (area + project copies) or tx_p; kx = key column/expr."""
+    """{key: summary} for deals with d >= dfrom. src = tx (area + project copies) or tx_p; kx = key column/expr.
+    Headline from src (homes), flat/villa/… split and room buckets from every deal."""
     w = f"FROM {src} WHERE d >= '{dfrom}'"
+    wa = f"FROM {src.replace('tx', 'tx_all', 1)} WHERE d >= '{dfrom}'"
     res = {}
     for _, r in q(f"""SELECT {kx} AS k, ANY_VALUE(area_orig) AS name, COUNT(*) AS n, ROUND(SUM(val)) AS total,
           ROUND(MEDIAN(val) FILTER (WHERE val > 0)) AS med, ROUND(AVG(val) FILTER (WHERE val > 0)) AS mean,
@@ -799,11 +796,12 @@ def period_summaries(dfrom, src, kx):
                        'p90': safe_int(r['p90']), 'med_sqm': safe_float(r['med_sqm']), 'med_ppsqm': safe_int(r['med_ppsqm']),
                        **{b: dict(_EMPTY_B) for b in ('flat', 'villa', 'commercial', 'land')},
                        'offplan': {}, 'payment': {'financed': 0, 'cash': 0}, 'by_rooms_unit': {}, 'top_projects': []}
-    for _, r in q(f"""SELECT {kx} AS k, {BUCKET_SQL} AS b, COUNT(*) AS n, ROUND(SUM(val)) AS total,
+    for _, r in q(f"""SELECT {kx} AS k, {SALE_BUCKET_SQL} AS b, COUNT(*) AS n, ROUND(SUM(val)) AS total,
           ROUND(MEDIAN(val)) AS med, ROUND(AVG(val)) AS mean,
           ROUND(QUANTILE_CONT(val,0.25)) AS p25, ROUND(QUANTILE_CONT(val,0.75)) AS p75,
           ROUND(MEDIAN(sqm) FILTER (WHERE sqm > 0), 1) AS med_sqm, ROUND(MEDIAN(val/sqm) FILTER (WHERE sqm > 0)) AS med_ppsqm
-          {w} AND val > 0 GROUP BY 1, 2""").iterrows():
+          {wa} AND val > 0 GROUP BY 1, 2""").iterrows():
+        if r['k'] not in res: continue
         res[r['k']][r['b']] = {'n': int(r['n']), 'total': safe_int(r['total']), 'med': safe_int(r['med']), 'mean': safe_int(r['mean']),
                                'p25': safe_int(r['p25']), 'p75': safe_int(r['p75']),
                                'med_sqm': safe_float(r['med_sqm']), 'med_ppsqm': safe_int(r['med_ppsqm'])}
@@ -811,10 +809,11 @@ def period_summaries(dfrom, src, kx):
           WHEN reg LIKE '%Off-Plan%' OR reg LIKE '%Off Plan%' THEN 'Off-Plan' ELSE reg END AS op, COUNT(*) AS n
           {w} AND reg IS NOT NULL GROUP BY 1, 2""").iterrows():
         res[r['k']]['offplan'][r['op']] = int(r['n'])
-    for _, r in q(f"""SELECT {kx} AS k, {ROOM_SQL} AS ru, COUNT(*) AS n, ROUND(SUM(val)) AS vol,
+    for _, r in q(f"""SELECT {kx} AS k, rooms_seg AS ru, COUNT(*) AS n, ROUND(SUM(val)) AS vol,
           ROUND(MEDIAN(val)) AS med, ROUND(MEDIAN(val/sqm) FILTER (WHERE sqm > 0)) AS ppsqm
-          {w} AND val > 0 GROUP BY 1, 2""").iterrows():
-        res[r['k']]['by_rooms_unit'][r['ru']] = {'n': int(r['n']), 'vol': safe_int(r['vol']),
+          {wa} AND val > 0 GROUP BY GROUPING SETS ((k, rooms_seg), (k))""").iterrows():
+        if r['k'] not in res: continue
+        res[r['k']]['by_rooms_unit'][r['ru'] if isinstance(r['ru'], str) else 'all'] = {'n': int(r['n']), 'vol': safe_int(r['vol']),
                                                  'med': safe_int(r['med']), 'ppsqm': safe_int(r['ppsqm'])}
     for _, r in q(f"""WITH g AS (SELECT {kx} AS k, COALESCE(NULLIF(proj,''), '') AS proj, COUNT(*) AS n, ROUND(SUM(val)) AS total,
           ROUND(MEDIAN(val) FILTER (WHERE val > 0)) AS med {w} GROUP BY 1, 2),
@@ -857,7 +856,7 @@ for code in [c for c, _ in PERIOD_YEARS] + ['all']:
         if k in SEC_KEYS:
             continue
         rec = e if code == 'all' else (e.get('periods') or {}).get(code)
-        if rec and rec.get('n'):
+        if rec and rec.get('n') and (k in HOME_KEYS or k == '__dubai__'):   # sales mask = home sales
             shard[k] = _headline(rec, e.get('name'))
     if '__dubai__' in shard:
         shard['__dubai__']['name'] = 'DUBAI'

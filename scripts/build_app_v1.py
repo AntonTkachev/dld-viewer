@@ -233,11 +233,11 @@ def summary(timeline, asof_month, with_total):
     return out
 
 
-def with_apartments(by_room, fields):
-    """detail-panel.js → _addApartmentsBucket"""
-    if not by_room:
-        return by_room
-    rows = [by_room.get(r) or {} for r in APARTMENT_ROOMS]
+V1_ROOMS = APARTMENT_ROOMS + ['villa']
+
+
+def _pool(rows, fields):
+    """n summed; vol summed; medians n-weighted (detail-panel.js → _addApartmentsBucket)"""
     n = sum(r.get('n') or 0 for r in rows)
     agg = {'n': n}
     for f in fields:
@@ -245,7 +245,19 @@ def with_apartments(by_room, fields):
             agg[f] = round(sum(r.get(f) or 0 for r in rows))
         else:
             agg[f] = round(sum((r.get(f) or 0) * (r.get('n') or 0) for r in rows) / n) if n else 0
-    return {**by_room, 'apartments': agg}
+    return agg
+
+
+def with_apartments(by_room, fields):
+    """v1 room keys only: non-home segments (office, labor, land…) fold back into 'other'"""
+    if not by_room:
+        return by_room
+    rest = [v for k, v in by_room.items() if k not in V1_ROOMS and k != 'all']
+    out = {k: by_room[k] for k in V1_ROOMS if k in by_room}
+    if rest:
+        out['other'] = _pool(rest, fields)
+    out['apartments'] = _pool([by_room.get(r) or {} for r in APARTMENT_ROOMS], fields)
+    return out
 
 
 def build_sale(src, asof_month, bad):

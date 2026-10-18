@@ -28,6 +28,7 @@ TODAY     = date.today().isoformat()
 # build_sale_aggregates.py (see _curated_sql.hierarchy_select).
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 from _curated_sql import hierarchy_select, hierarchy_views
+from _segments import HOME_SQL, RENT_ROOMS_SQL
 ROLLUP_SQL = """
 CASE
   WHEN master_project_en LIKE 'DUBAI HILLS - %'              THEN 'Dubai Hills Estate'
@@ -63,26 +64,8 @@ SELECT {hierarchy_select(ROLLUP_SQL, 'ejari_property_type_en')},
        TRY_CAST(annual_amount AS DOUBLE)
            / GREATEST(COALESCE(TRY_CAST(no_of_prop AS DOUBLE), 1), 1) AS amt,
        TRY_CAST(actual_area   AS DOUBLE) AS sqm,
-       -- Room bucket parsed from Ejari's freeform sub-type ("1bed room+Hall",
-       -- "2 bed rooms+hall", "Studio", "Penthouse", …). Mapped to the same
-       -- studio/1br/2br/3br/4br+/villa/other vocabulary as sales' by_rooms_unit so
-       -- renderRoomChips/renderRoomBreakdown can be reused 1:1 across modes.
-       -- Villas get their own bucket; bedroom buckets only for apartment types
-       -- (labor-camp rooms, office "studios" etc. go to other).
-       CASE
-         WHEN ejari_property_type_en IN ('Villa', 'Complex Villas') THEN 'villa'
-         WHEN COALESCE(ejari_property_type_en, '') NOT IN ('Flat', 'Studio', 'Penthouse', 'Hotel apartments') THEN 'other'
-         WHEN ejari_property_type_en = 'Penthouse'           THEN '4br+'
-         WHEN ejari_property_sub_type_en ILIKE '%studio%'    THEN 'studio'
-         WHEN ejari_property_sub_type_en ILIKE 'penthouse%'  THEN '4br+'
-         WHEN ejari_property_sub_type_en ILIKE '1%bed%'      THEN '1br'
-         WHEN ejari_property_sub_type_en ILIKE '2%bed%'      THEN '2br'
-         WHEN ejari_property_sub_type_en ILIKE '3%bed%'      THEN '3br'
-         WHEN ejari_property_sub_type_en ILIKE '4%bed%'      THEN '4br+'
-         WHEN ejari_property_sub_type_en ILIKE '5%bed%'      THEN '4br+'
-         WHEN ejari_property_sub_type_en ILIKE '6%bed%'      THEN '4br+'
-         ELSE 'other'
-       END AS rooms,
+       -- Room bucket (studio…4br+, villa) or non-home segment, shared with sales via _segments.py
+       {RENT_ROOMS_SQL} AS rooms,
        -- Person / Authority. "Authority" in Ejari = legal entity tenant
        -- (corporate, govt., institutional). Useful B2B vs B2C signal.
        COALESCE(NULLIF(tenant_type_en,''), 'Unknown') AS tenant,
@@ -100,11 +83,17 @@ WHERE area_name_en IS NOT NULL
 # and its master project's own page when that project has no polygon (lvl 2)
 KEY_LVL = hierarchy_views(con, 'r_base', 'r', 'r_p')
 SEC_KEYS = {k for k, l in KEY_LVL.items() if l == 2}
+# Headline population: homes; a key with no home leases at all (airport, ports) keeps every lease
+con.execute(f"CREATE TEMP TABLE home_keys AS SELECT k FROM r WHERE {HOME_SQL} GROUP BY k HAVING COUNT(*) >= 5")
+HOME_KEYS = {r[0] for r in con.execute("SELECT k FROM home_keys").fetchall()}
+con.execute(f"CREATE TEMP VIEW rh AS SELECT * FROM r WHERE {HOME_SQL} OR k NOT IN (SELECT k FROM home_keys)")
+con.execute(f"CREATE TEMP VIEW rh_p AS SELECT * FROM r_p WHERE {HOME_SQL}")
 
 def q(sql, **params):
     return con.execute(sql, params).fetchdf()
 
 def safe_int(v):  return int(v) if v == v and v else 0
+def room_key(v): return v if isinstance(v, str) else 'all'   # grouping-set total row
 def safe_float(v, p=1): return round(float(v), p) if v == v and v else 0
 
 # ─── totals per area ─────────────────────────────────────────────
@@ -122,7 +111,7 @@ SELECT k, ANY_VALUE(area_orig) AS name,
        ROUND(MEDIAN(sqm)              FILTER (WHERE sqm > 0), 1) AS med_sqm,
        ROUND(MEDIAN(amt/sqm)          FILTER (WHERE amt > 0 AND sqm > 0)) AS med_ppsqm,
        ROUND(MEDIAN(dur_months)       FILTER (WHERE dur_months > 0), 1) AS med_dur_months
-FROM r GROUP BY k
+FROM rh GROUP BY k
 """)
 print(f'  areas: {len(totals)}', file=sys.stderr)
 
@@ -134,7 +123,7 @@ SELECT k, rooms,
        ROUND(MEDIAN(amt)     FILTER (WHERE amt > 0)) AS med,
        ROUND(MEDIAN(sqm)     FILTER (WHERE sqm > 0), 1) AS med_sqm,
        ROUND(MEDIAN(amt/sqm) FILTER (WHERE amt > 0 AND sqm > 0)) AS med_ppsqm
-FROM r GROUP BY k, rooms
+FROM r GROUP BY GROUPING SETS ((k, rooms), (k))
 """)
 
 # Monthly timeline per room — fuel for renderRoomBreakdown / renderRoomChips.
@@ -146,12 +135,12 @@ SELECT k, rooms, substr(d, 1, 7) AS d,
        ROUND(MEDIAN(amt)     FILTER (WHERE amt > 0))                 AS med,
        ROUND(SUM(amt))                                               AS vol,
        ROUND(MEDIAN(amt/sqm) FILTER (WHERE amt > 0 AND sqm > 0))     AS ppsqm
-FROM r GROUP BY k, rooms, substr(d, 1, 7) ORDER BY k, rooms, d
+FROM r GROUP BY GROUPING SETS ((k, rooms, substr(d, 1, 7)), (k, substr(d, 1, 7))) ORDER BY k, rooms, d
 """)
 
 # ─── by_tenant_type (Person / Authority / Unknown) ───────────────
 print('by_tenant_type (Person vs Authority)...', file=sys.stderr)
-tenant = q("SELECT k, tenant AS t, COUNT(*) AS n FROM r GROUP BY k, tenant")
+tenant = q("SELECT k, tenant AS t, COUNT(*) AS n FROM rh GROUP BY k, tenant")
 
 # ─── by_subtype ──────────────────────────────────────────────────
 print('by_subtype (Flat / Villa / Other…)...', file=sys.stderr)
@@ -175,7 +164,7 @@ WITH ranked AS (
   SELECT k, proj, COUNT(*) AS n,
          ROUND(MEDIAN(amt) FILTER (WHERE amt > 0)) AS med,
          ROW_NUMBER() OVER (PARTITION BY k ORDER BY COUNT(*) DESC) AS rn
-  FROM r GROUP BY k, proj
+  FROM rh GROUP BY k, proj
 )
 SELECT k, proj, n, med FROM ranked WHERE rn <= 10 ORDER BY k, rn
 """)
@@ -187,7 +176,7 @@ WITH r2 AS (
   SELECT k, d, proj, sub, sqm, amt AS val,
          CASE WHEN rt = 'New' THEN 'N' ELSE 'R' END AS v,
          ROW_NUMBER() OVER (PARTITION BY k ORDER BY d DESC) AS rn
-  FROM r WHERE d <= '{TODAY}'
+  FROM rh WHERE d <= '{TODAY}'
 )
 SELECT k, d, proj, sub, sqm, val, v FROM r2 WHERE rn <= 6 ORDER BY k, rn
 """)
@@ -200,7 +189,7 @@ SELECT k, substr(d, 1, 7) AS d,
        ROUND(MEDIAN(amt)     FILTER (WHERE amt > 0))                            AS med,
        ROUND(SUM(amt))                                                          AS vol,
        ROUND(MEDIAN(amt/sqm) FILTER (WHERE amt > 0 AND sqm > 0))                AS ppsqm
-FROM r GROUP BY k, substr(d, 1, 7) ORDER BY k, d
+FROM rh GROUP BY k, substr(d, 1, 7) ORDER BY k, d
 """)
 
 # ─── assemble per-area ───────────────────────────────────────────
@@ -230,6 +219,7 @@ for _, row in totals.iterrows():
         'recent':      [],
         'timeline':    [],
         'trend_pct':   None,
+        'scope':       'home' if k in HOME_KEYS else 'all',   # population of the headline fields
     }
 
 for _, row in subt.iterrows():
@@ -250,7 +240,7 @@ for _, row in usage.iterrows():
 for _, row in rooms_agg.iterrows():
     k = row['k']
     if k not in out: continue
-    out[k]['by_rooms_unit'][row['rooms']] = {
+    out[k]['by_rooms_unit'][room_key(row['rooms'])] = {
         'n':         safe_int(row['n']),
         'med':       safe_int(row['med']),
         'med_sqm':   safe_float(row['med_sqm']),
@@ -260,7 +250,7 @@ for _, row in rooms_agg.iterrows():
 for _, row in tl_rooms.iterrows():
     k = row['k']
     if k not in out: continue
-    rk = row['rooms']
+    rk = room_key(row['rooms'])
     out[k]['timeline_by_rooms'].setdefault(rk, []).append({
         'd':     row['d'],
         'n':     safe_int(row['n']),
@@ -314,7 +304,7 @@ CREATE TEMP TABLE trend_cells AS
 WITH w AS (
   SELECT k, lvl, COALESCE(NULLIF(proj, ''), master) AS cp, sub, subt, amt,
          (d::DATE > DATE '{TODAY}' - INTERVAL 365 DAY)::INT AS win
-  FROM r
+  FROM rh
   WHERE amt > 0 AND d::DATE <= DATE '{TODAY}' AND d::DATE > DATE '{TODAY}' - INTERVAL 730 DAY
 ),
 c AS (SELECT k, lvl, cp, sub, subt, win, MEDIAN(amt) AS m, COUNT(*) AS n FROM w WHERE cp IS NOT NULL GROUP BY ALL)
@@ -439,7 +429,7 @@ SELECT COUNT(*) AS n,
        ROUND(QUANTILE_CONT(amt,0.90) FILTER (WHERE amt > 0)) AS p90,
        ROUND(MEDIAN(sqm)             FILTER (WHERE sqm > 0), 1) AS med_sqm,
        ROUND(MEDIAN(amt/sqm)         FILTER (WHERE amt > 0 AND sqm > 0)) AS med_ppsqm
-FROM r_p
+FROM rh_p
 """).fetchdf().iloc[0]
 
 d_subt = q("""
@@ -459,7 +449,7 @@ SELECT rooms,
        ROUND(MEDIAN(amt)     FILTER (WHERE amt > 0)) AS med,
        ROUND(MEDIAN(sqm)     FILTER (WHERE sqm > 0), 1) AS med_sqm,
        ROUND(MEDIAN(amt/sqm) FILTER (WHERE amt > 0 AND sqm > 0)) AS med_ppsqm
-FROM r_p GROUP BY rooms
+FROM r_p GROUP BY GROUPING SETS ((rooms), ())
 """)
 
 d_tl_rooms = q("""
@@ -468,19 +458,19 @@ SELECT rooms, substr(d, 1, 7) AS d,
        ROUND(MEDIAN(amt)     FILTER (WHERE amt > 0))             AS med,
        ROUND(SUM(amt))                                           AS vol,
        ROUND(MEDIAN(amt/sqm) FILTER (WHERE amt > 0 AND sqm > 0)) AS ppsqm
-FROM r_p GROUP BY rooms, substr(d, 1, 7) ORDER BY rooms, d
+FROM r_p GROUP BY GROUPING SETS ((rooms, substr(d, 1, 7)), (substr(d, 1, 7))) ORDER BY rooms, d
 """)
 
 d_proj = q("""
 SELECT proj, COUNT(*) AS n,
        ROUND(MEDIAN(amt) FILTER (WHERE amt > 0)) AS med
-FROM r_p GROUP BY proj ORDER BY n DESC LIMIT 10
+FROM rh_p GROUP BY proj ORDER BY n DESC LIMIT 10
 """)
 
 d_recent = con.execute(f"""
 SELECT d, proj, sub, sqm, amt AS val,
        CASE WHEN rt='New' THEN 'N' ELSE 'R' END AS v
-FROM r_p WHERE d <= '{TODAY}' ORDER BY d DESC LIMIT 6
+FROM rh_p WHERE d <= '{TODAY}' ORDER BY d DESC LIMIT 6
 """).fetchdf()
 
 d_tl = q("""
@@ -489,7 +479,7 @@ SELECT substr(d,1,7) AS d,
        ROUND(MEDIAN(amt)     FILTER (WHERE amt > 0)) AS med,
        ROUND(SUM(amt))                              AS vol,
        ROUND(MEDIAN(amt/sqm) FILTER (WHERE amt > 0 AND sqm > 0)) AS ppsqm
-FROM r_p GROUP BY substr(d,1,7) ORDER BY d
+FROM rh_p GROUP BY substr(d,1,7) ORDER BY d
 """)
 
 dubai = {
@@ -510,7 +500,7 @@ dubai = {
                                   'med_ppsqm': safe_int(row['med_ppsqm'])}
                     for _, row in d_subt.iterrows()},
     'by_usage':    {row['u']: safe_int(row['n']) for _, row in d_usage.iterrows()},
-    'by_rooms_unit': {row['rooms']: {'n': safe_int(row['n']),
+    'by_rooms_unit': {room_key(row['rooms']): {'n': safe_int(row['n']),
                                      'med': safe_int(row['med']),
                                      'med_sqm': safe_float(row['med_sqm']),
                                      'med_ppsqm': safe_int(row['med_ppsqm'])}
@@ -528,6 +518,7 @@ dubai = {
                       'vol':   safe_int(row['vol']),
                       'ppsqm': safe_int(row['ppsqm'])}
                     for _, row in d_tl.iterrows()],
+    'scope':       'home',
     'vintage':     dubai_vintage,
     'vintage_paths':   dubai_paths,
     'vintage_paths_m': dubai_paths_m,
@@ -536,7 +527,7 @@ dubai = {
 dubai['trend_pct'] = round(float(q("SELECT MEDIAN(r) AS r FROM trend_cells WHERE lvl = 0").iloc[0]['r']) * 100, 1)
 
 for _, row in d_tl_rooms.iterrows():
-    dubai['timeline_by_rooms'].setdefault(row['rooms'], []).append({
+    dubai['timeline_by_rooms'].setdefault(room_key(row['rooms']), []).append({
         'd':     row['d'],
         'n':     safe_int(row['n']),
         'med':   safe_int(row['med']),
@@ -553,8 +544,10 @@ from datetime import timedelta
 PERIOD_YEARS = [('1y', 1), ('3y', 3), ('5y', 5), ('10y', 10)]
 
 def period_summaries(dfrom, src, kx):
-    """{key: summary} for contracts starting on/after dfrom. src = r (area + project copies) or r_p."""
+    """{key: summary} for contracts starting on/after dfrom. src = r (area + project copies) or r_p;
+    headline fields and top projects come from its homes view (rh / rh_p), breakdowns from every lease."""
     w = f"FROM {src} WHERE d >= '{dfrom}'"
+    wh = f"FROM {src.replace('r', 'rh', 1)} WHERE d >= '{dfrom}'"
     res = {}
     for _, row in q(f"""SELECT {kx} AS k, ANY_VALUE(area_orig) AS name, COUNT(*) AS n,
           COUNT(*) FILTER (WHERE rt = 'New') AS new, COUNT(*) FILTER (WHERE rt = 'Renew') AS renewed,
@@ -563,7 +556,7 @@ def period_summaries(dfrom, src, kx):
           ROUND(QUANTILE_CONT(amt,0.90) FILTER (WHERE amt > 0)) AS p90,
           ROUND(MEDIAN(sqm) FILTER (WHERE sqm > 0), 1) AS med_sqm,
           ROUND(MEDIAN(amt/sqm) FILTER (WHERE amt > 0 AND sqm > 0)) AS med_ppsqm
-          {w} GROUP BY 1""").iterrows():
+          {wh} GROUP BY 1""").iterrows():
         res[row['k']] = {'name': row['name'], 'n': int(row['n']), 'new': int(row['new']), 'renewed': int(row['renewed']),
                          'med_annual': safe_int(row['med_annual']), 'mean_annual': safe_int(row['mean_annual']),
                          'p25': safe_int(row['p25']), 'p75': safe_int(row['p75']), 'p90': safe_int(row['p90']),
@@ -571,17 +564,21 @@ def period_summaries(dfrom, src, kx):
                          'by_rooms_unit': {}, 'by_subtype': {}, 'by_usage': {}, 'top_projects': []}
     for _, row in q(f"""SELECT {kx} AS k, rooms, COUNT(*) AS n, ROUND(MEDIAN(amt) FILTER (WHERE amt > 0)) AS med,
           ROUND(MEDIAN(sqm) FILTER (WHERE sqm > 0), 1) AS med_sqm,
-          ROUND(MEDIAN(amt/sqm) FILTER (WHERE amt > 0 AND sqm > 0)) AS med_ppsqm {w} GROUP BY 1, 2""").iterrows():
-        res[row['k']]['by_rooms_unit'][row['rooms']] = {'n': int(row['n']), 'med': safe_int(row['med']),
+          ROUND(MEDIAN(amt/sqm) FILTER (WHERE amt > 0 AND sqm > 0)) AS med_ppsqm {w}
+          GROUP BY GROUPING SETS ((k, rooms), (k))""").iterrows():
+        if row['k'] not in res: continue
+        res[row['k']]['by_rooms_unit'][room_key(row['rooms'])] = {'n': int(row['n']), 'med': safe_int(row['med']),
                                                         'med_sqm': safe_float(row['med_sqm']), 'med_ppsqm': safe_int(row['med_ppsqm'])}
     for _, row in q(f"""SELECT {kx} AS k, sub, COUNT(*) AS n, ROUND(MEDIAN(amt) FILTER (WHERE amt > 0)) AS med,
           ROUND(MEDIAN(sqm) FILTER (WHERE sqm > 0), 1) AS med_sqm,
           ROUND(MEDIAN(amt/sqm) FILTER (WHERE amt > 0 AND sqm > 0)) AS med_ppsqm {w} GROUP BY 1, 2""").iterrows():
+        if row['k'] not in res: continue
         res[row['k']]['by_subtype'][row['sub']] = {'n': int(row['n']), 'med': safe_int(row['med']),
                                                    'med_sqm': safe_float(row['med_sqm']), 'med_ppsqm': safe_int(row['med_ppsqm'])}
     for _, row in q(f"SELECT {kx} AS k, usage AS u, COUNT(*) AS n {w} GROUP BY 1, 2").iterrows():
+        if row['k'] not in res: continue
         res[row['k']]['by_usage'][row['u']] = int(row['n'])
-    for _, row in q(f"""WITH g AS (SELECT {kx} AS k, proj, COUNT(*) AS n, ROUND(MEDIAN(amt) FILTER (WHERE amt > 0)) AS med {w} GROUP BY 1, 2),
+    for _, row in q(f"""WITH g AS (SELECT {kx} AS k, proj, COUNT(*) AS n, ROUND(MEDIAN(amt) FILTER (WHERE amt > 0)) AS med {wh} GROUP BY 1, 2),
           ranked AS (SELECT *, ROW_NUMBER() OVER (PARTITION BY k ORDER BY n DESC) AS rn FROM g)
           SELECT * FROM ranked WHERE rn <= 10 ORDER BY k, rn""").iterrows():
         res[row['k']]['top_projects'].append({'proj': row['proj'], 'n': int(row['n']), 'med': safe_int(row['med'])})
@@ -599,7 +596,8 @@ for code, yrs in PERIOD_YEARS + [('all', None)]:
                 e.setdefault('periods', {})[code] = per[k]
     shards[code] = {k: {'name': (out.get(k) or {}).get('name') or e['name'], 'n': e['n'], 'med': e['med_annual'],
                         'med_sqm': e['med_sqm'], 'med_ppsqm': e['med_ppsqm']}
-                    for k, e in per.items() if e and e.get('n') and k not in SEC_KEYS}
+                    for k, e in per.items() if e and e.get('n') and k not in SEC_KEYS
+                    and (k in HOME_KEYS or k == '__dubai__')}   # rent mask = home rents only
     shards[code]['__dubai__']['name'] = 'DUBAI'
 
 # Map period shards (rents/data/{1y..all}.json) — polygon keys only, headline fields, per-unit rent

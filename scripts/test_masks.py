@@ -52,7 +52,7 @@ GOLDEN_PAYBACK = GOLDEN_GROWTH
 # The numbers we DO publish are now honest — fewer districts is the
 # correct trade-off for fewer phantom 6.79B median spikes.
 COV_MIN = {
-    'TX_PERIODS':      {'1y':0.70, '3y':0.75, '5y':0.75, '10y':0.75, 'all':0.80},
+    'TX_PERIODS':      {'1y':0.55, '3y':0.58, '5y':0.58, '10y':0.60, 'all':0.60},   # home sales only: plot/building-only areas stay gray
     'RENTS_PERIODS':   {'1y':0.70, '3y':0.75, '5y':0.75, '10y':0.75, 'all':0.80},
     'GROWTH_PERIODS':  {'1y':0.45, '3y':0.42, '5y':0.40, '10y':0.40, '15y':0.35, 'all':0.45},
     'PAYBACK_PERIODS': {'studio':0.15, '1br':0.20, '2br':0.25, '3br':0.25, '4br_plus':0.15},

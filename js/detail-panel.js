@@ -28,9 +28,12 @@
     { k: '10y', months: 120 },
     { k: 'all', months: null },
   ];
-  const ROOM_ORDER    = ['all','apartments','studio','1br','2br','3br','4br+','villa','other'];
-  const ROOM_BREAKDOWN = ['studio','1br','2br','3br','4br+','villa','other'];
-  const ROOM_COLORS   = { all:'#1d4ed8', apartments:'#16a34a', studio:'#9ca3af', '1br':'#60a5fa', '2br':'#3b82f6', '3br':'#1d4ed8', '4br+':'#1e3a8a', villa:'#d97706', other:'#a78bfa' };
+  // 'homes' = the headline record itself (a.timeline / a.n); 'all' = every deal incl. offices, labor camps, land
+  const SEGMENTS      = ['office','shop','warehouse','labor','land','commercial','other'];
+  const ROOM_ORDER    = ['homes','apartments','studio','1br','2br','3br','4br+','villa', ...SEGMENTS, 'all'];
+  const ROOM_BREAKDOWN = ['studio','1br','2br','3br','4br+','villa', ...SEGMENTS];
+  const ROOM_COLORS   = { homes:'#0f766e', all:'#1d4ed8', apartments:'#16a34a', studio:'#9ca3af', '1br':'#60a5fa', '2br':'#3b82f6', '3br':'#1d4ed8', '4br+':'#1e3a8a', villa:'#d97706',
+                          office:'#7c3aed', shop:'#db2777', warehouse:'#78716c', labor:'#b45309', land:'#65a30d', commercial:'#9333ea', other:'#a78bfa' };
   // Rooms that make up the "apartments" tab — everything except villa/other.
   const APARTMENT_ROOMS = ['studio','1br','2br','3br','4br+'];
   const KNOWN_BAD_POINTS = [
@@ -247,6 +250,8 @@
     if (k==='apartments') return t('room_all'); // reuses the "All apartments" string — accurate here, unlike for 'all'
     if (k==='villa')  return t('ru_villa');
     if (k==='other')  return t('ru_other');
+    if (k==='homes')  return t('room_chip_homes');
+    if (SEGMENTS.includes(k)) return t('seg_' + k);
     return {studio:'Studio','1br':'1BR','2br':'2BR','3br':'3BR','4br+':'4BR+'}[k];
   }
 
@@ -375,8 +380,16 @@
     return t('ch_est').replace('{a}', est.a).replace('{b}', est.b);
   }
   function roomTimelineFor(a) {
-    if (S.roomFilter === 'all') return a.timeline || [];
-    return (a.timeline_by_rooms || {})[S.roomFilter] || [];
+    const tbr = a.timeline_by_rooms || {};
+    if (S.roomFilter === 'homes' || (S.roomFilter === 'all' && !tbr.all)) return a.timeline || [];
+    return tbr[S.roomFilter] || [];
+  }
+  // Chips a record offers: 'homes' only when its headline is homes, 'all' only when it adds deals
+  function _roomAvailable(a, k) {
+    const tbr = a.timeline_by_rooms || {}, bu = a.by_rooms_unit || {};
+    if (k === 'homes') return a.scope === 'home';
+    if (k === 'all') return a.scope !== 'home' || (bu.all && bu.all.n > a.n);
+    return !!(tbr[k] && tbr[k].length);
   }
 
   function renderPeriodChips() {
@@ -452,9 +465,8 @@
     const tbr = a.timeline_by_rooms || {};
     const bu  = a.by_rooms_unit || {};
     return ROOM_ORDER.map(k => {
-      const n = k === 'all' ? a.n : (bu[k] ? bu[k].n : 0);
-      const disabled = k !== 'all' && (!tbr[k] || !tbr[k].length);
-      if (disabled) return '';
+      if (!_roomAvailable(a, k)) return '';
+      const n = k === 'homes' ? a.n : k === 'all' ? (bu.all ? bu.all.n : a.n) : (bu[k] ? bu[k].n : 0);
       const active = (k === S.roomFilter) ? ' active' : '';
       const color  = ROOM_COLORS[k];
       const style  = (k === S.roomFilter) ? ` style="background:${color};border-color:${color};color:#fff"` : '';
@@ -2426,9 +2438,7 @@
   }
   function renderRentCharts(r) {
 
-    const tlSource = (r.timeline_by_rooms && S.roomFilter !== 'all' && r.timeline_by_rooms[S.roomFilter])
-      ? r.timeline_by_rooms[S.roomFilter]
-      : (r.timeline || []);
+    const tlSource = roomTimelineFor(r);
     const series = periodSlice(tlSource);
     const labels = series.map(p => p.d.length === 10 ? p.d.slice(5) : p.d);
     const fullLabels = series.map(p => p.d);
@@ -2664,7 +2674,7 @@
     S.isDubai         = !!isDubai;
     S.mode            = mode || 'both';
     S.period          = (initialPeriod && PERIODS.find(p => p.k === initialPeriod)) ? initialPeriod : 'all';
-    S.roomFilter      = 'all';
+    S.roomFilter      = [S.rent, S.sale].some(x => x && x.scope === 'home') ? 'homes' : 'all';
     S.roomBreakdownHidden = new Set();
     S.periodHref      = (typeof periodHref === 'function') ? periodHref : null;
     S.onPeriodChange  = (typeof onPeriodChange === 'function') ? onPeriodChange : null;
