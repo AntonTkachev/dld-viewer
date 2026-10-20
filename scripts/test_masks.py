@@ -71,7 +71,14 @@ COV_MIN = {
     # gates (>=30 ready deals/yr, rented-vs-sold stock area match).
     # Measured July 2026: all 21%, studio 12%, 1br 18%, 2br 19%, 3br 9%, 4br+ 2%.
     'FORMULA_PERIODS': {'all':0.15, 'studio':0.08, '1br':0.13, '2br':0.13, '3br':0.06, '4br_plus':0.01},
+    # Off-plan premium: keys = districts with ≥30 off-plan deals or delivered-project history (gray ones too).
+    # Measured Oct 2026: all 32%, studio 19%, 1br 29%, 2br 30%, 3br 22%.
+    'OFFPLAN_PERIODS': {'all':0.25, 'studio':0.14, '1br':0.22, '2br':0.23, '3br':0.16},
 }
+
+# Colored share (gap_pct present) — measured Oct 2026: all 14.4%, studio 5.0%, 1br 12.2%, 2br 13.3%, 3br 5.0%.
+OFFPLAN_COLORED_MIN = {'all':0.11, 'studio':0.03, '1br':0.09, '2br':0.10, '3br':0.03}
+OFFPLAN_GOLDEN = ['jumeirah village circle', 'business bay', 'marsa dubai', 'dubai creek harbour', 'downtown dubai']
 
 # Lifecycle is structurally different: one flat {area_key: rec} dict, no
 # nested periods. It also has lower coverage than the period masks because
@@ -256,6 +263,7 @@ def main():
         ('INVESTOR_PERIODS', ('all','1br'),               GOLDEN_GROWTH),
         ('INCOME_PERIODS',   ('all','1br'),               GOLDEN_GROWTH),
         ('FORMULA_PERIODS',  ('all',), ['jumeirah village circle', 'business bay', 'dubai marina']),
+        ('OFFPLAN_PERIODS',  ('all','1br'), ['jumeirah village circle', 'business bay', 'marsa dubai']),
     ]
     for const_name, periods, golden in golden_specs:
         for period in periods:
@@ -274,6 +282,30 @@ def main():
         print(f'  FAIL LIFECYCLE: missing {lc_missing}')
     else:
         print(f'  OK   LIFECYCLE: all {len(LIFECYCLE_GOLDEN)} key districts present')
+
+    print('\n[offplan]')
+    op = consts['OFFPLAN_PERIODS']
+    for period, threshold in OFFPLAN_COLORED_MIN.items():
+        data = op.get(period, {})
+        col = {k for k, r in data.items() if 'gap_pct' in r} & poly_keys
+        cov = len(col) / len(poly_keys) if poly_keys else 0
+        bad = [k for k, r in data.items() if 'gap_pct' in r and not (
+            -60 <= r['gap_pct'] <= 150 and r['n_op'] >= 30 and r['n_rd'] >= 15 and r.get('win') in (1, 2))]
+        bad += [k for k, r in data.items() if 'h_paid_pct' in r and not (0 <= r['h_paid_pct'] <= 100 and r['h_n'] >= 3)]
+        bad += [k for k, r in data.items() if k != '__dubai__' and 'gap_pct' not in r and r.get('why') not in ('fresh', 'proj', 'op')]
+        ok = cov >= threshold and not bad
+        print(f'  {"OK " if ok else "FAIL"}  OFFPLAN colored/{period}: {cov*100:5.1f}%  (need ≥{threshold*100:.0f}%)'
+              + (f'  bad records {bad[:5]}' if bad else ''))
+        if not ok:
+            fails.append(f'[offplan] {period}: colored {cov*100:.1f}% (need ≥{threshold*100:.0f}%), bad {bad[:5]}')
+    gm = [g for g in OFFPLAN_GOLDEN if 'gap_pct' not in op.get('all', {}).get(g, {})]
+    if '__dubai__' not in op.get('all', {}) or 'gap_pct' not in op['all']['__dubai__']:
+        gm.append('__dubai__')
+    if gm:
+        fails.append(f'[offplan] all: no gap_pct for {gm}')
+        print(f'  FAIL OFFPLAN/all: no gap_pct for {gm}')
+    else:
+        print(f'  OK   OFFPLAN/all: all {len(OFFPLAN_GOLDEN)} key districts + Dubai colored')
 
     split_keys = load_split_master_keys(os.path.join(ROOT, 'polygons/curated.js'))
     if split_keys:

@@ -24,6 +24,7 @@ setTimeout(() => {
   if (typeof INVESTOR_PERIODS    === 'undefined') missing.push('INVESTOR_PERIODS');
   if (typeof INCOME_PERIODS      === 'undefined') missing.push('INCOME_PERIODS');
   if (typeof FORMULA_PERIODS     === 'undefined') missing.push('FORMULA_PERIODS');
+  if (typeof OFFPLAN_PERIODS     === 'undefined') missing.push('OFFPLAN_PERIODS');
   if (typeof LIFECYCLE       === 'undefined') missing.push('LIFECYCLE');
   if (missing.length) {
     console.error('viewer.js: required data bundles missing:', missing.join(', '));
@@ -330,6 +331,7 @@ const _MASK_FIELDS = [
   'real_strategy','real_yield','real_past1y','real_offplan_ppsqm','real_premium',
   'real_fresh','real_overdue','real_n_offplan','real_vs_peak','real_rent_trend',
   'real_renewal','real_net_yield','real_n_checks','real_checks',
+  'real_n_op','real_n_rd','real_op_share','real_op_win','real_op_why','real_h_n','real_h_med','real_h_paid',
 ];
 
 const _MASK_FIELDS_NULLABLE = new Set([
@@ -337,6 +339,7 @@ const _MASK_FIELDS_NULLABLE = new Set([
   'real_strategy', 'real_yield', 'real_past1y', 'real_premium',
   'real_fresh', 'real_overdue', 'real_vs_peak', 'real_rent_trend', 'real_renewal',
   'real_net_yield', 'real_n_checks',
+  'real_op_share', 'real_op_win', 'real_op_why', 'real_h_n', 'real_h_med', 'real_h_paid',
 ]);
 function _resetMaskFields(p) {
   for (const f of _MASK_FIELDS) p[f] = _MASK_FIELDS_NULLABLE.has(f) ? null : 0;
@@ -390,7 +393,7 @@ function setView(view, opts) {
   if (opts.pushUrl !== false) _pushPageUrl(currentMask, view);
 }
 
-const _SEO_MASKS = ['sales', 'rents', 'growth', 'payback', 'lifecycle', 'investor', 'income', 'formula'];
+const _SEO_MASKS = ['sales', 'rents', 'growth', 'payback', 'lifecycle', 'investor', 'income', 'formula', 'offplan'];
 
 function _isSeoMask(m) { return _SEO_MASKS.indexOf(m) !== -1; }
 
@@ -461,7 +464,8 @@ function _tableFmt(col, v) {
       if (n >= 1e6) return (n/1e6).toFixed(1) + ' ' + t('abbr_m');
       return n.toLocaleString('ru-RU');
     }
-    case 'pct':     return (v >= 0 ? '+' : '') + Number(v).toFixed(1) + '%';
+    case 'pct':
+    case 'pct_inv': return (v >= 0 ? '+' : '') + Number(v).toFixed(1) + '%';
     case 'pct_abs': return Number(v).toFixed(1) + '%';
     case 'pct_int': return Math.round(Number(v)) + '%';
     case 'yrs':     return Number(v).toFixed(1) + ' ' + t('unit_years');
@@ -709,6 +713,7 @@ function renderTable() {
     const txt = _tableFmt(c, v);
     let cls = isNum ? 'num' : '';
     if (c.type === 'pct' && typeof v === 'number' && !isDubai) cls += ' ' + (v >= 0 ? 'pos' : 'neg');
+    if (c.type === 'pct_inv' && typeof v === 'number' && !isDubai) cls += ' ' + (v <= 0 ? 'pos' : 'neg');
     cls = cls.trim();
     
     if (c.type === 'phase') {
@@ -1286,7 +1291,7 @@ function _refreshOverlay(mask) {
     let norm = Math.max(0, Math.min(1, (item.num - lo) / range));  
     if (mask.invertRamp) norm = 1 - norm;          
     const fontSize = Math.round((4 + norm * 4) * zoomFactor * 10) / 10;
-    const color = _overlayColorFor(item.label);
+    const color = mask.overlayColor ? mask.overlayColor(String(item.label)) : _overlayColorFor(item.label);
     const bb = _bbox(f.geometry);
     const icon = L.divIcon({
       className: 'choro-overlay',
@@ -1415,12 +1420,15 @@ function renderChoro(){
   const scale     = mask.scaleMode || 'log';
   const allowZero = !!mask.allowZero;
   const isCategorical = scale === 'categorical';
+  const isDiverging = scale === 'diverging';
+  const ramp = isDiverging ? mask.palette : RAMP;
   const isMissing = isCategorical
     ? (f) => !f.properties.real_phase
     : (v) => v === null || v === undefined || isNaN(v) || (!allowZero && v === 0);
   
   let breaks = null;
-  if (!isCategorical) {
+  if (isDiverging) breaks = mask.breaks;
+  else if (!isCategorical) {
     const vs = GEOJSON.features
       .map(f => f.properties[metricKey])
       .filter(v => !isMissing(v));
@@ -1442,8 +1450,8 @@ function renderChoro(){
       const v = f.properties[metricKey], z = isMissing(v);
       if (z) return {weight:0.8,color:'#64748b',fillColor:'url(#nodata-hatch)',fillOpacity:1,dashArray:'4,3'};
       let idx = classify(v, breaks);
-      if (mask.invertRamp) idx = RAMP.length - 1 - idx;
-      const st = {weight:0.6,color:'#1f2933',fillColor:RAMP[idx],fillOpacity:0.7};
+      if (mask.invertRamp) idx = ramp.length - 1 - idx;
+      const st = {weight:0.6,color:'#1f2933',fillColor:ramp[idx],fillOpacity:0.7};
       return mask.styleExtra ? Object.assign(st, mask.styleExtra(f.properties)) : st;
     },
     onEachFeature: (f, layer) => {
@@ -1463,6 +1471,14 @@ function renderChoro(){
     html = `<div style="margin-bottom:4px"><span style="font-weight:600">${title}</span></div>`;
     for (const id of LIFECYCLE_PHASE_ORDER) {
       html += `<div class="row"><span class="sw" style="background:${LIFECYCLE_PHASE_COLORS[id]}"></span>${t('lifecycle_phase_' + id)}</div>`;
+    }
+    html += `<div class="row"><span class="sw" style="background:repeating-linear-gradient(45deg,transparent,transparent 3px,#94a3b8 3px,#94a3b8 4px)"></span>${t('legend_no_data')}</div>`;
+  } else if (isDiverging) {
+    const fmt = mask.legendFmt || METRIC_FMT.count;
+    html = `<div style="margin-bottom:4px"><span style="font-weight:600">${title}</span></div>`;
+    for (let i = ramp.length - 1; i >= 0; i--) {
+      const lbl = i === 0 ? `< ${fmt(breaks[0])}` : i === ramp.length - 1 ? `> ${fmt(breaks[i - 1])}` : `${fmt(breaks[i - 1])} … ${fmt(breaks[i])}`;
+      html += `<div class="row"><span class="sw" style="background:${ramp[i]}"></span>${lbl}</div>`;
     }
     html += `<div class="row"><span class="sw" style="background:repeating-linear-gradient(45deg,transparent,transparent 3px,#94a3b8 3px,#94a3b8 4px)"></span>${t('legend_no_data')}</div>`;
   } else {

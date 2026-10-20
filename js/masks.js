@@ -30,6 +30,9 @@ const _YRENT_P   = (typeof YEARLY_RENT_PERIODS !== 'undefined') ? YEARLY_RENT_PE
 const _INVESTOR_P = (typeof INVESTOR_PERIODS !== 'undefined') ? INVESTOR_PERIODS : {};
 const _INCOME_P   = (typeof INCOME_PERIODS   !== 'undefined') ? INCOME_PERIODS   : {};
 const _FORMULA_P  = (typeof FORMULA_PERIODS  !== 'undefined') ? FORMULA_PERIODS  : {};
+const _OFFPLAN_P  = (typeof OFFPLAN_PERIODS  !== 'undefined') ? OFFPLAN_PERIODS  : {};
+const OFFPLAN_BREAKS  = [-10, -3, 3, 10, 25];
+const OFFPLAN_PALETTE = ['#1a9850', '#91cf60', '#f1eee4', '#fdd49e', '#fc8d59', '#d73027'];
 
 (function _stubSplitAggregates() {
   const EMPTY_BUCKET = {n:0,total:0,med:0,mean:0,p25:0,p75:0,p90:0,med_sqm:0,med_ppsqm:0};
@@ -472,6 +475,79 @@ const MASKS = {
       { key: 'n_rent',         labelKey: 'tv_col_n_rent_1y',      type: 'int',     width: '13%' },
     ],
   },
+  offplan: {
+    labelKey: 'mask_offplan', descKey: 'mask_offplan_desc',
+    periods: ['all','studio','1br','2br','3br'], defaultPeriod: 'all',
+    data: {
+      'all':    _OFFPLAN_P['all']    || {},
+      'studio': _OFFPLAN_P['studio'] || {},
+      '1br':    _OFFPLAN_P['1br']    || {},
+      '2br':    _OFFPLAN_P['2br']    || {},
+      '3br':    _OFFPLAN_P['3br']    || {},
+    },
+    pluck: r => ({
+      real_count: r.n_12m || 0,
+      real_total_aed: 0,
+      real_med_price: r.op_ppsqm || 0,
+      real_med_ppsqm: r.rd_ppsqm || 0,
+      real_metric: (typeof r.gap_pct === 'number') ? r.gap_pct : null,
+      real_n_op: r.n_op || 0,
+      real_n_rd: r.n_rd || 0,
+      real_op_share: (typeof r.op_share_pct === 'number') ? r.op_share_pct : null,
+      real_op_win: r.win || null,
+      real_op_why: r.why || null,
+      real_h_n: (typeof r.h_n === 'number') ? r.h_n : null,
+      real_h_med: (typeof r.h_med_pct === 'number') ? r.h_med_pct : null,
+      real_h_paid: (typeof r.h_paid_pct === 'number') ? r.h_paid_pct : null,
+    }),
+    legendKey: 'legend_offplan', popupCountKey: 'pp_trans_ytd', showVolume: false,
+    metricKey: 'real_metric', scaleMode: 'diverging', allowZero: true,
+    breaks: OFFPLAN_BREAKS, palette: OFFPLAN_PALETTE,
+    periodLabelKey: 'mask_room_label',
+    overlay: r => (typeof r.gap_pct !== 'number') ? null
+                  : (r.gap_pct > 0 ? '+' : r.gap_pct < 0 ? '−' : '') + Math.abs(r.gap_pct).toFixed(0) + '%',
+    overlayColor: label => label[0] === '+' ? '#b45309' : label[0] === '−' ? '#15803d' : '#1f2933',
+    legendFmt: v => (v > 0 ? '+' : v < 0 ? '−' : '') + Math.abs(v) + '%',
+    popupRows: (p, t) => {
+      const pct = v => (v > 0 ? '+' : v < 0 ? '−' : '') + Math.abs(v).toFixed(1) + '%';
+      const num = v => (v || 0).toLocaleString('ru-RU');
+      const row = (k, v, st) => `<div class="stat"><span class="k">${k}</span><span class="v"${st ? ' style="' + st + '"' : ''}>${v}</span></div>`;
+      const note = s => `<div class="muted" style="font-size:11px;color:#888;padding:2px 0">${s}</div>`;
+      let html = '';
+      if (typeof p.real_metric === 'number') {
+        const c = p.real_metric <= -3 ? '#15803d' : p.real_metric > 10 ? '#b45309' : '#0f172a';
+        html += row(t('pp_op_gap'), pct(p.real_metric), `font-weight:700;color:${c}`)
+          + row(t('pp_offplan_ppsqm'), `${num(p.real_med_price)} ${t('tv_col_ppsqm')}`)
+          + row(t('pp_rd_fresh_ppsqm'), `${num(p.real_med_ppsqm)} ${t('tv_col_ppsqm')}`)
+          + row(t('pp_op_matched'), `${num(p.real_n_op)} / ${num(p.real_n_rd)}`)
+          + (p.real_op_win === 2 ? note(t('pp_op_win2')) : '');
+      } else if (p.real_op_why) {
+        html += note(t('pp_op_why_' + p.real_op_why));
+      }
+      if (typeof p.real_op_share === 'number') html += row(t('pp_op_share'), p.real_op_share + '%');
+      if (typeof p.real_h_n === 'number') {
+        const per = (typeof currentMaskPeriod !== 'undefined') ? currentMaskPeriod : 'all';
+        const dub = (_OFFPLAN_P[per] || {}).__dubai__;
+        html += `<div style="margin-top:6px;font-weight:600;font-size:12px">${t('pp_op_hist')}</div>`
+          + row(t('pp_op_hist_paid'), `${p.real_h_paid}% <span style="color:#888;font-weight:400">(${t('pp_op_hist_of').replace('{n}', p.real_h_n)})</span>`, 'font-weight:600')
+          + row(t('pp_op_hist_med'), pct(p.real_h_med))
+          + (dub && typeof dub.h_paid_pct === 'number' ? row(t('pp_op_hist_city'), dub.h_paid_pct + '%', 'color:#888') : '')
+          + note(t('pp_op_hist_note'));
+      }
+      return html;
+    },
+    tableColumns: [
+      { key: 'name',         labelKey: 'tv_col_district',  type: 'str',     width: '20%' },
+      { key: 'gap_pct',      labelKey: 'tv_col_op_gap',    type: 'pct_inv', width: '11%', defaultSort: true, defaultSortDir: 'asc' },
+      { key: 'op_ppsqm',     labelKey: 'tv_col_op_ppsqm',  type: 'int',     width: '11%' },
+      { key: 'rd_ppsqm',     labelKey: 'tv_col_rd_ppsqm',  type: 'int',     width: '11%' },
+      { key: 'n_op',         labelKey: 'tv_col_n_op',      type: 'int',     width: '9%' },
+      { key: 'n_rd',         labelKey: 'tv_col_n_rd',      type: 'int',     width: '9%' },
+      { key: 'op_share_pct', labelKey: 'tv_col_op_share',  type: 'pct_int', width: '9%' },
+      { key: 'h_paid_pct',   labelKey: 'tv_col_h_paid',    type: 'pct_int', width: '10%' },
+      { key: 'h_n',          labelKey: 'tv_col_h_n',       type: 'int',     width: '10%' },
+    ],
+  },
   yearly_sell: {
     labelKey: 'mask_yearly_sell', descKey: 'mask_yearly_sell_desc',
     periods: ['studio','1br','2br','3br','4br_plus','villa'], defaultPeriod: '1br',
@@ -546,5 +622,5 @@ const MASKS = {
   },
 };
 
-const PRIMARY_MASKS   = ['formula', 'investor', 'income', 'yearly_rent', 'growth', 'lifecycle', 'payback'];
+const PRIMARY_MASKS   = ['formula', 'investor', 'income', 'offplan', 'yearly_rent', 'growth', 'lifecycle', 'payback'];
 const SECONDARY_MASKS = ['sales', 'rents', 'yearly_sell'];
