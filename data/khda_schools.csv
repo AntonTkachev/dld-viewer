@@ -184,7 +184,7 @@ school_id,center_id,name,area,phone,curriculum,grade_range,overall_rating,wellbe
 353,127,North American International School L.L.C,AL MIZHAR FIRST,97142884844,American,KG 1 - GRADE 12,Acceptable,Good,Good
 211,140,SCHOOL OF MODERN SKILLS,MUHAISNAH FIRST,042887765,American,KG 1 - GRADE 12,Acceptable,Acceptable,Acceptable
 306,141,International Academic School,AL WARQA FIRST,042800993,American,Pre primary - GRADE 12,Acceptable,Acceptable,Acceptable
-4296,265,The Philippine School,MUHAISANAH SECOND,97142844465,Philippine,KG 1 - GRADE 12,Acceptable,Good,Good
+4296,265,THE PHILIPPINE SCHOOL L.L.C,MUHAISANAH SECOND,97142844465,Philippine,KG 1 - GRADE 12,Acceptable,Good,Good
 4297,339,Deira Private School,AL TWAR FIRST,042641595,UK (13 Y),FS 1 - YEAR 9,Acceptable,Acceptable,Acceptable
 4419,872,The International School of Choueifat (Branch),DUBAI INVESTMENT PARK FIRST,048847884,SABIS (UK/US),Pre primary - GRADE 12,Acceptable,Acceptable,Weak
 4447,1687,Woodlem Park School L.L.C,AL QUSAIS FIRST,042040900,Indian,Pre primary - GRADE 12,Acceptable,Acceptable,Acceptable
@@ -227,4 +227,4 @@ school_id,center_id,name,area,phone,curriculum,grade_range,overall_rating,wellbe
 5607,506702,Dubai English Speaking School - Academic City,Academic City,04 614 6999,UK (13 Y),,Not inspected yet,,
 5620,506837,The Scholars School,AL QOUZ FIRST,,"UK (13 Y),UK/BTEC",,Not inspected yet,,
 5614,507697,DUBAI INTERNATIONAL ACADEMY TOWN SQUARE,Dubai Land,,"Early Years Foundation Stage,International Baccalaureate",,Not inspected yet,,
-5622,507700,Ash Mount School LLC,Mudon,,International Baccalaureate,,,,
+5622,507700,Ash Mount School L.L.C,Mudon,,International Baccalaureate,,,,

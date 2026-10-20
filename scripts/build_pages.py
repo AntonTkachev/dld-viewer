@@ -87,6 +87,7 @@ MASK_NAME_I18N = {
     'investor':  dict(ru='Инвестор: рост', en='Investor: growth', ar='المستثمر: نمو', hi='निवेशक: ग्रोथ', zh='投资者：增值'),
     'income':    dict(ru='Инвестор: рента', en='Investor: income', ar='المستثمر: دخل إيجاري', hi='निवेशक: किराया आय', zh='投资者：租金收益'),
     'formula':   dict(ru='Дубайская формула', en='Dubai formula', ar='معادلة دبي', hi='दुबई फ़ॉर्मूला', zh='迪拜公式'),
+    'offplan':   dict(ru='Премия off-plan', en='Off-plan premium', ar='علاوة على المخطط', hi='ऑफ-प्लान प्रीमियम', zh='期房溢价'),
 }
 
 # Page chrome — title / desc / keywords / dataset_name per language.
@@ -452,6 +453,50 @@ PAGES = {
             ar='استرداد الإيجار في دبي',
             hi='दुबई किराये की पेबैक अवधि',
             zh='迪拜租金回本年限',
+        ),
+    ),
+    'offplan': dict(
+        initial_mask='offplan',
+        initial_period='all',
+        og_image='/og/offplan.png',
+        title=dict(
+            ru='Off-plan или готовое: на сколько дороже стройка в районах Дубая — DXBCompass',
+            en='Off-plan vs ready: how much more new launches cost by Dubai district — DXBCompass',
+            ar='على المخطط أم جاهز: كم تزيد أسعار المشاريع الجديدة في أحياء دبي — DXBCompass',
+            hi='ऑफ-प्लान बनाम रेडी: दुबई के जिलों में नए प्रोजेक्ट कितने महंगे — DXBCompass',
+            zh='期房还是现房：迪拜各社区新盘贵多少 — DXBCompass',
+        ),
+        desc=dict(
+            ru='Разница цены off-plan и готового жилья, сданного за последние 3 года, '
+               'в каждом районе Дубая — при той же комнатности и площади. Плюс история: '
+               'окупалась ли покупка на стройке в уже сданных проектах. На данных DLD.',
+            en='Price gap between off-plan and ready homes handed over in the last 3 years, '
+               'in every Dubai district — same bedrooms and size. Plus history: did buying '
+               'off-plan pay off in delivered projects. Built on DLD data.',
+            ar='فرق السعر بين العقارات على المخطط والجاهزة المسلّمة خلال آخر 3 سنوات في كل حي '
+               'بدبي — بنفس عدد الغرف والمساحة. مع التاريخ: هل أثمر الشراء على المخطط في '
+               'المشاريع المسلّمة. على بيانات DLD.',
+            hi='हर दुबई जिले में ऑफ-प्लान और पिछले 3 साल में सौंपे गए रेडी घरों के बीच कीमत का '
+               'अंतर — समान बेडरूम और आकार। साथ में इतिहास: क्या सौंपे गए प्रोजेक्ट्स में '
+               'ऑफ-प्लान खरीद फ़ायदेमंद रही। DLD डेटा पर।',
+            zh='迪拜各社区期房与近 3 年交付现房的价差——同户型、同面积。'
+               '另附历史：已交付项目中买期房是否划算。基于 DLD 数据。',
+        ),
+        keywords=dict(
+            ru='off-plan или вторичка Дубай, переплата за off-plan Дубай, новостройки Дубай '
+               'цены, готовое жильё Дубай, премия застройщика Дубай',
+            en='Dubai off-plan vs ready, Dubai off-plan premium, is off-plan worth it Dubai, '
+               'Dubai new launch prices, Dubai ready property prices',
+            ar='على المخطط أم جاهز دبي، علاوة العقارات على المخطط دبي، أسعار المشاريع الجديدة دبي',
+            hi='दुबई ऑफ-प्लान बनाम रेडी, दुबई ऑफ-प्लान प्रीमियम, दुबई नए प्रोजेक्ट कीमतें',
+            zh='迪拜期房还是现房, 迪拜期房溢价, 迪拜新盘价格, 迪拜现房价格',
+        ),
+        dataset_name=dict(
+            ru='Премия off-plan к готовому жилью по районам Дубая',
+            en='Dubai off-plan premium over ready homes by district',
+            ar='علاوة العقارات على المخطط مقارنة بالجاهزة حسب أحياء دبي',
+            hi='दुबई जिलेवार रेडी घरों पर ऑफ-प्लान प्रीमियम',
+            zh='迪拜各社区期房相对现房溢价',
         ),
     ),
 }

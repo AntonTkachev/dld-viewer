@@ -46,6 +46,9 @@ $PY scripts/build_lifecycle.py
 phase "4b. Investor score (reads lifecycle/data/all.json for pipeline field)"
 $PY scripts/build_investor_map.py
 
+phase "4c. Off-plan premium vs fresh ready (offplan mask)"
+$PY scripts/build_offplan_premium_map.py
+
 phase "5. Inline period consts (TX/RENTS/GROWTH/PAYBACK_PERIODS)"
 $PY scripts/inline_periods.py
 
