@@ -238,3 +238,17 @@ After any of those (or after editing `polygon_overrides.json` / `dm_to_dld_alias
 ./scripts/refresh_all.sh    # rebuilds 5 masks + every inlined const + 22K SEO pages + sitemap, ends with smoke test
 ```
 It does NOT pull network sources — those still own their own refresh scripts above.
+
+## Deploy — generated pages live only on `gh-pages`
+
+Generated pages (`en/ ru/ ar/ hi/ zh/ buildings/ app/`, `sales/<slug>/`, `rents/<slug>/`) are gitignored in `main`: committing them grew the repo ~3.4 GB/month (history was purged with `git filter-repo` on 2026-10-26). `scripts/deploy.sh` packs them into one orphan commit on `gh-pages` (force-push, no history) and starts the Pages workflow, which checks out `main` and overlays `gh-pages` before the Jekyll build.
+
+```bash
+./scripts/refresh_all.sh
+git commit -am "Refresh data"  # tracked files refresh_all touched: index.html, template.html, periods/, polygons/, */data/
+./scripts/deploy.sh            # pushes gh-pages, pushes main if ahead, starts the deploy
+```
+
+- Pushing `main` alone redeploys code with whatever pages are already on `gh-pages`.
+- Restore one generated file from the live snapshot: `git restore -s origin/gh-pages -W -- <path>`.
+- New generated top-level dir → add it to `.gitignore` AND `GEN=` in `scripts/deploy.sh`, or it never reaches the site.

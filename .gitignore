@@ -33,3 +33,16 @@ data/.linkedin_outreach/
 
 # LinkedIn agent-leads skill state (found/contacted agent tracking — runtime, not data)
 data/.linkedin_agent_leads/
+
+# Generated site pages — published by scripts/deploy.sh to the gh-pages branch, never committed to main
+/en/
+/ru/
+/ar/
+/hi/
+/zh/
+/buildings/
+/app/
+/sales/*/
+!/sales/data/
+/rents/*/
+!/rents/data/

@@ -63,6 +63,13 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+      # Generated pages live only on gh-pages (scripts/deploy.sh); overlay them onto main's code
+      - uses: actions/checkout@v4
+        with:
+          ref: gh-pages
+          path: _pages
+      - name: Overlay generated pages
+        run: rm -rf _pages/.git && cp -a _pages/. . && rm -rf _pages
       - name: Setup Pages
         uses: actions/configure-pages@v5
       - name: Build with Jekyll
