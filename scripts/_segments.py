@@ -10,6 +10,7 @@ HOME_ROOMS = ('studio', '1br', '2br', '3br', '4br+', 'villa')
 RENT_SEGMENTS = ('office', 'shop', 'warehouse', 'labor', 'other')
 
 HOME_SQL = "rooms IN ('studio','1br','2br','3br','4br+','villa')"
+APARTMENT_SQL = "rooms IN ('studio','1br','2br','3br','4br+')"
 
 # Ejari: one row per line item; bedroom buckets only for apartment types
 RENT_ROOMS_SQL = """CASE

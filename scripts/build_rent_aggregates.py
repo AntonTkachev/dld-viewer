@@ -28,7 +28,7 @@ TODAY     = date.today().isoformat()
 # build_sale_aggregates.py (see _curated_sql.hierarchy_select).
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 from _curated_sql import hierarchy_select, hierarchy_views
-from _segments import HOME_SQL, RENT_ROOMS_SQL
+from _segments import APARTMENT_SQL, HOME_SQL, RENT_ROOMS_SQL
 ROLLUP_SQL = """
 CASE
   WHEN master_project_en LIKE 'DUBAI HILLS - %'              THEN 'Dubai Hills Estate'
@@ -599,6 +599,28 @@ for code, yrs in PERIOD_YEARS + [('all', None)]:
                     for k, e in per.items() if e and e.get('n') and k not in SEC_KEYS
                     and (k in HOME_KEYS or k == '__dubai__')}   # rent mask = home rents only
     shards[code]['__dubai__']['name'] = 'DUBAI'
+
+# Panel KPIs: true medians per period × room chip ([n, vol, med, ppsqm]); monthly medians can't be re-medianed
+def panel_stats(dfrom, src_h, src_a, kx):
+    w = f"d >= '{dfrom}'"
+    agg = "COUNT(*), ROUND(SUM(amt)), ROUND(MEDIAN(amt) FILTER (WHERE amt > 0)), ROUND(MEDIAN(amt/sqm) FILTER (WHERE amt > 0 AND sqm > 0))"
+    res = {}
+    for kk, b, n, vol, med, pp in con.execute(f"""
+          SELECT kk, 'homes', {agg} FROM (SELECT {kx} AS kk, amt, sqm FROM {src_h} WHERE {w}) GROUP BY kk
+          UNION ALL SELECT kk, COALESCE(rooms, 'all'), {agg}
+            FROM (SELECT {kx} AS kk, rooms, amt, sqm FROM {src_a} WHERE {w}) GROUP BY GROUPING SETS ((kk, rooms), (kk))
+          UNION ALL SELECT kk, 'apartments', {agg}
+            FROM (SELECT {kx} AS kk, amt, sqm FROM {src_a} WHERE {w} AND {APARTMENT_SQL}) GROUP BY kk""").fetchall():
+        res.setdefault(kk, {})[b] = [int(n), safe_int(vol), safe_int(med), safe_int(pp)]
+    return res
+
+for code, yrs in PERIOD_YEARS + [('all', None)]:
+    dfrom = DATE_FROM if yrs is None else (TODAY_D - timedelta(days=365 * yrs)).isoformat()
+    ps = panel_stats(dfrom, 'rh', 'r', 'k')
+    ps['__dubai__'] = panel_stats(dfrom, 'rh_p', 'r_p', "'__dubai__'")['__dubai__']
+    for k, e in out.items():
+        if k in ps and isinstance(e, dict):
+            e.setdefault('pstats', {})[code] = ps[k]
 
 # Map period shards (rents/data/{1y..all}.json) — polygon keys only, headline fields, per-unit rent
 MAP_OUT = os.path.join(ROOT, 'rents', 'data')

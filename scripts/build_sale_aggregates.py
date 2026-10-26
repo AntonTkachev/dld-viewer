@@ -18,7 +18,7 @@ DATE_TO   = '2026-12-31'
 # ROLLUP folds sub-master names (DUBAI HILLS - MAPLE …) into one project.
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 from _curated_sql import hierarchy_select, hierarchy_views
-from _segments import HOME_SQL, SALE_BUCKET_SQL, SALE_ROOMS_SQL, SALE_VILLA_PLOT_SQL
+from _segments import APARTMENT_SQL, HOME_SQL, SALE_BUCKET_SQL, SALE_ROOMS_SQL, SALE_VILLA_PLOT_SQL
 ROLLUP_SQL = """
 CASE
   WHEN master_project_en LIKE 'DUBAI HILLS - %'              THEN 'Dubai Hills Estate'
@@ -844,6 +844,29 @@ for code, dfrom in PERIOD_FROM.items():
     for k, e in out.items():
         if k in per:
             e.setdefault('periods', {})[code] = per[k]
+
+# Panel KPIs: true medians per period × room chip ([n, vol, med, ppsqm]); monthly medians can't be re-medianed
+APT_SEG = APARTMENT_SQL.replace('rooms', 'rooms_seg')
+def panel_stats(dfrom, src_h, src_a, kx):
+    w = f"d >= '{dfrom}'" if dfrom else 'TRUE'
+    agg = "COUNT(*), ROUND(SUM(val)), ROUND(MEDIAN(val) FILTER (WHERE val > 0)), ROUND(MEDIAN(val/sqm) FILTER (WHERE val > 0 AND sqm > 0))"
+    res = defaultdict(dict)
+    for kk, b, n, vol, med, pp in con.execute(f"""
+          SELECT kk, 'homes', {agg} FROM (SELECT {kx} AS kk, val, sqm FROM {src_h} WHERE {w}) GROUP BY kk
+          UNION ALL SELECT kk, COALESCE(rooms_seg, 'all'), {agg}
+            FROM (SELECT {kx} AS kk, rooms_seg, val, sqm FROM {src_a} WHERE {w} AND val > 0)
+            GROUP BY GROUPING SETS ((kk, rooms_seg), (kk))
+          UNION ALL SELECT kk, 'apartments', {agg}
+            FROM (SELECT {kx} AS kk, val, sqm FROM {src_a} WHERE {w} AND val > 0 AND {APT_SEG}) GROUP BY kk""").fetchall():
+        res[kk][b] = [int(n), safe_int(vol), safe_int(med), safe_int(pp)]
+    return res
+
+for code, dfrom in [*PERIOD_FROM.items(), ('all', None)]:
+    ps = panel_stats(dfrom, 'tx', 'tx_all', 'k')
+    ps['__dubai__'] = panel_stats(dfrom, 'tx_p', 'tx_all_p', "'__dubai__'")['__dubai__']
+    for k, e in out.items():
+        if k in ps:
+            e.setdefault('pstats', {})[code] = ps[k]
 
 # Map period shards (transactions/data/{1y..all}.json) — polygon keys only, headline fields
 MAP_OUT = os.path.join(ROOT, 'transactions', 'data')

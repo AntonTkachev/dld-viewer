@@ -404,7 +404,17 @@
   }
   function renderPeriodChipsRent() { return renderPeriodChips(); }
 
+  // Precomputed [n, vol, med, ppsqm] for the period × chip, same windows as page titles and masks
+  function _pstat(a) {
+    const ps = a.pstats && a.pstats[S.period];
+    if (!ps) return null;
+    const tbr = a.timeline_by_rooms || {};
+    const k = (S.roomFilter === 'homes' || (S.roomFilter === 'all' && !tbr.all)) ? 'homes' : S.roomFilter;
+    return ps[k] || [0, 0, 0, 0];
+  }
   function computeStatsSale(a) {
+    const ps = _pstat(a);
+    if (ps) return { n: ps[0], total: ps[1], med: ps[2], med_ppsqm: ps[3] };
     const base = roomTimelineFor(a);
     const slice = periodSlice(base);
     let n = 0, total = 0;
@@ -427,7 +437,8 @@
     `;
   }
   function computeStatsRent(r) {
-
+    const ps = _pstat(r);
+    if (ps) return { n: ps[0], med_annual: ps[2], med_ppsqm: ps[3] };
     const slice = periodSlice(roomTimelineFor(r));
     let n = 0;
     const meds = [], ppsqms = [];
