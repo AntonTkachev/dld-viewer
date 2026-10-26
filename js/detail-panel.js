@@ -2178,12 +2178,6 @@
   }
 
   const OP_COLORS = { 'Off-Plan': '#f59e0b', 'Ready': '#4f46e5' };
-  const ROOM_DONUT_COLORS = {
-    'Studio': '#9ca3af',
-    '1BR': '#60a5fa', '2BR': '#3b82f6', '3BR': '#1d4ed8', '4BR+': '#1e3a8a',
-    'Villa': '#d97706',
-    'Other': '#a78bfa',
-  };
 
   function _donutEmpty(canvasId, msg) {
     const ctx = document.getElementById(canvasId);
@@ -2243,21 +2237,17 @@
     };
   }
 
+  // Same buckets as the room chips: DLD files many villas as unnamed Land plots with no bedroom count
   function _recentByRoomData(a) {
-    const list = (a.recent || []).filter(d => d.room);
+    const list = (a.recent || []).filter(d => d.seg);
     if (!list.length) return null;
-    const order = ['Studio','1BR','2BR','3BR','4BR+','Villa','Other'];
     const counts = new Map();
-    for (const d of list) {
-      const k = d.room;
-      counts.set(k, (counts.get(k) || 0) + 1);
-    }
-    const labels = order.filter(k => counts.has(k));
-    for (const k of counts.keys()) if (!order.includes(k)) labels.push(k);
+    for (const d of list) counts.set(d.seg, (counts.get(d.seg) || 0) + 1);
+    const keys = [...ROOM_ORDER.filter(k => counts.has(k)), ...[...counts.keys()].filter(k => !ROOM_ORDER.includes(k))];
     return {
-      labels,
-      values: labels.map(k => counts.get(k)),
-      colors: labels.map(k => ROOM_DONUT_COLORS[k] || '#64748b'),
+      labels: keys.map(k => roomLabel(k) || k),
+      values: keys.map(k => counts.get(k)),
+      colors: keys.map(k => ROOM_COLORS[k] || '#64748b'),
       fmt: v => fmtInt(v) + ' ' + t('ch_count').toLowerCase(),
     };
   }

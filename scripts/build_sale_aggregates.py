@@ -134,6 +134,11 @@ def room_label(rooms):
     if r in ('5 B/R','6 B/R','7 B/R'): return '5BR+'
     return 'Other'
 
+def recent_room(rooms, seg):
+    r = room_label(rooms)
+    if seg == 'villa': return 'Villa' if r == 'Other' else f'Villa {r}'
+    return {'land': 'Land', 'commercial': 'Commercial'}.get(seg, r)
+
 # ─── Q1: per-area headline numbers ──────────────────────────────
 print('totals...', file=sys.stderr)
 totals = q("""
@@ -312,12 +317,12 @@ for _, r in tp_df.iterrows():
 print('top_deals...', file=sys.stderr)
 td_df = q("""
 WITH ranked AS (
-  SELECT k, d, val, sqm, sbt, pt, rooms, reg,
+  SELECT k, d, val, sqm, sbt, pt, rooms, rooms_seg, reg,
          COALESCE(NULLIF(proj,''), '—') AS proj,
          ROW_NUMBER() OVER (PARTITION BY k ORDER BY val DESC) AS rn
   FROM tx WHERE val > 0
 )
-SELECT k, d, val, sqm, sbt, pt, rooms, reg, proj
+SELECT k, d, val, sqm, sbt, pt, rooms, rooms_seg, reg, proj
 FROM ranked WHERE rn <= 10 ORDER BY k, rn
 """)
 top_deals = defaultdict(list)
@@ -327,7 +332,8 @@ for _, r in td_df.iterrows():
         'd': r['d'][:10],
         'val': safe_int(r['val']),
         'proj': r['proj'],
-        'room': room_label(r['rooms']),
+        'room': recent_room(r['rooms'], r['rooms_seg']),
+        'seg': r['rooms_seg'],
         'area': safe_float(r['sqm']) or None,
         'op': op,
         'pt': bucket(r['sbt'], r['pt']),
@@ -337,12 +343,12 @@ for _, r in td_df.iterrows():
 print('recent...', file=sys.stderr)
 rc_df = q("""
 WITH ranked AS (
-  SELECT k, d, val, sqm, sbt, pt, rooms, reg, grp,
+  SELECT k, d, val, sqm, sbt, pt, rooms, rooms_seg, reg, grp,
          COALESCE(NULLIF(proj,''), '—') AS proj,
          ROW_NUMBER() OVER (PARTITION BY k ORDER BY d DESC) AS rn
   FROM tx WHERE val > 0
 )
-SELECT k, d, val, sqm, sbt, pt, rooms, reg, grp, proj
+SELECT k, d, val, sqm, sbt, pt, rooms, rooms_seg, reg, grp, proj
 FROM ranked WHERE rn <= 20 ORDER BY k, rn
 """)
 recent = defaultdict(list)
@@ -353,7 +359,8 @@ for _, r in rc_df.iterrows():
         'd': r['d'][:10],
         'val': safe_int(r['val']),
         'proj': r['proj'],
-        'room': room_label(r['rooms']),
+        'room': recent_room(r['rooms'], r['rooms_seg']),
+        'seg': r['rooms_seg'],
         'area': safe_float(r['sqm']) or None,
         'op': op,
         'g':  g,
