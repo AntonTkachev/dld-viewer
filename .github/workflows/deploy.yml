@@ -32,7 +32,7 @@ jobs:
       - name: JS syntax — viewer + every shipped bundle
         run: |
           set -e
-          for f in js/viewer.js js/i18n.js js/detail-panel.js \
+          for f in js/*.js \
                    polygons/*.js periods/*.js \
                    transactions/data/*.js rents/data/*.js; do
             [ -f "$f" ] || continue
