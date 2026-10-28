@@ -302,9 +302,8 @@ for (const f of GEOJSON.features) {
   });
 }
 
-let _maskMoreExpanded = false;
-
 let currentMask = (typeof window !== 'undefined' && window.__INITIAL_MASK__ && MASKS[window.__INITIAL_MASK__]) ? window.__INITIAL_MASK__ : 'sales';
+let _maskMoreExpanded = SECONDARY_MASKS.includes(currentMask);
 let currentMaskPeriod = (typeof window !== 'undefined' && window.__INITIAL_PERIOD__ && MASKS[currentMask] && MASKS[currentMask].periods.includes(window.__INITIAL_PERIOD__)) ? window.__INITIAL_PERIOD__ : 'all';
 let currentView = (typeof window !== 'undefined' && window.__INITIAL_VIEW__ === 'table') ? 'table' : 'map';
 
@@ -464,6 +463,7 @@ function _tableFmt(col, v) {
       const n = Number(v) || 0;
       if (n >= 1e9) return (n/1e9).toFixed(2) + ' ' + t('abbr_b');
       if (n >= 1e6) return (n/1e6).toFixed(1) + ' ' + t('abbr_m');
+      if (n >= 1e4) return Math.round(n/1e3) + ' ' + t('abbr_k');
       return n.toLocaleString('ru-RU');
     }
     case 'pct':
@@ -471,6 +471,8 @@ function _tableFmt(col, v) {
     case 'pct_abs': return Number(v).toFixed(1) + '%';
     case 'pct_int': return Math.round(Number(v)) + '%';
     case 'yrs':     return Number(v).toFixed(1) + ' ' + t('unit_years');
+    case 'checks':  return v + '/6';
+    case 'strat':   return t(v === 'offplan' ? 'inv_strat_offplan' : 'inv_strat_rent');
     case 'phase':   return v;  
     default:        return String(v);
   }
@@ -482,7 +484,7 @@ function _tableSort(rows, col, dir) {
     const an = (va === null || va === undefined || (typeof va === 'number' && isNaN(va))) ? 1 : 0;
     const bn = (vb === null || vb === undefined || (typeof vb === 'number' && isNaN(vb))) ? 1 : 0;
     if (an !== bn) return an - bn;  
-    if (col.type === 'str') return sign * String(va).localeCompare(String(vb), 'ru');
+    if (col.type === 'str' || col.type === 'strat') return sign * String(va).localeCompare(String(vb), 'ru');
     return sign * (Number(va) - Number(vb));
   });
 }
@@ -642,6 +644,22 @@ function _renderTvPager(page, totalPages, total) {
   });
 }
 
+function _dedupeTableRows(rows, cols) {
+  const vcols = cols.filter(c => c.key !== 'name');
+  const byKey = new Map();
+  for (const r of rows) {
+    const vals = vcols.map(c => _tableValue(c, r));
+    if (vals.every(v => v === null || v === undefined)) continue;
+    const sig = JSON.stringify(vals);
+    const prev = byKey.get(sig);
+    if (!prev) { byKey.set(sig, r); continue; }
+    const f = _FEAT_BY_KEY.get(prev._k);
+    if (f && f.properties.source === 'split-remainder') byKey.set(sig, r);
+  }
+  const keep = new Set(byKey.values());
+  return rows.filter(r => keep.has(r) || vcols.every(c => _tableValue(c, r) == null));
+}
+
 function renderTable() {
   const mask = MASKS[currentMask];
   if (!mask || !mask.tableColumns) return;
@@ -676,6 +694,7 @@ function renderTable() {
       rows.push(rec);
     }
   }
+  rows = _dedupeTableRows(rows, mask.tableColumns);
   const sortCol = mask.tableColumns.find(c => _tableColIdent(c) === state.sortKey) || mask.tableColumns[0];
   rows = _tableSort(rows, sortCol, state.sortDir);
 
@@ -685,16 +704,8 @@ function renderTable() {
   const start = (state.page - 1) * PAGE_SIZE;
   const pageRows = rows.slice(start, start + PAGE_SIZE);
 
-  const colMax = new Map();
-  for (const c of mask.tableColumns) {
-    if (c.type !== 'int' && c.type !== 'aed_big') continue;
-    let m = 0;
-    for (const r of pageRows) {
-      const v = _tableValue(c, r);
-      if (typeof v === 'number' && !isNaN(v) && v > m) m = v;
-    }
-    colMax.set(_tableColIdent(c), m);
-  }
+  const mainCol = mask.tableColumns.find(c => c.defaultSort) || mask.tableColumns[1];
+  const mainIdent = mainCol ? _tableColIdent(mainCol) : null;
 
   const rankCol = `<col style="width:48px">`;
   const cols = rankCol + mask.tableColumns.map(c => `<col${c.width ? ' style="width:' + c.width + '"' : ''}>`).join('');
@@ -702,8 +713,9 @@ function renderTable() {
   const ths = rankTh + mask.tableColumns.map(c => {
     const ident = _tableColIdent(c);
     const sortedCls = (ident === state.sortKey) ? (' sorted-' + state.sortDir) : '';
-    const numCls = (c.type !== 'str') ? 'num' : '';
-    const cls = (numCls + sortedCls).trim();
+    const numCls = (c.type !== 'str' && c.type !== 'strat') ? 'num' : '';
+    const mainCls = ident === mainIdent ? ' main' : '';
+    const cls = (numCls + mainCls + sortedCls).trim();
     const label = t(c.labelKey);
 
     return `<th data-col="${ident}"${cls ? ' class="' + cls + '"' : ''} data-tip="${_h(label)}">${_h(label)}</th>`;
@@ -711,9 +723,10 @@ function renderTable() {
 
   const renderCell = (c, rec, isDubai) => {
     const v = _tableValue(c, rec);
-    const isNum = c.type !== 'str' && c.type !== 'phase';
+    const isNum = c.type !== 'str' && c.type !== 'phase' && c.type !== 'strat';
     const txt = _tableFmt(c, v);
     let cls = isNum ? 'num' : '';
+    if (_tableColIdent(c) === mainIdent) cls += ' main';
     if (c.type === 'pct' && typeof v === 'number' && !isDubai) cls += ' ' + (v >= 0 ? 'pos' : 'neg');
     if (c.type === 'pct_inv' && typeof v === 'number' && !isDubai) cls += ' ' + (v <= 0 ? 'pos' : 'neg');
     cls = cls.trim();
@@ -728,6 +741,16 @@ function renderTable() {
     }
 
     const titleAttr = ` title="${_h(String(txt))}"`;
+
+    if (c.type === 'strat') {
+      if (!v) return `<td>—</td>`;
+      const sk = v === 'offplan' ? 'offplan' : 'rent';
+      return `<td${titleAttr}><span class="tv-strat ${sk}">${_h(t('tv_strat_' + sk))}</span></td>`;
+    }
+    if (c.type === 'checks' && typeof v === 'number') {
+      const dots = Array.from({length: 6}, (_, i) => `<i${i < v ? ' class="on"' : ''}></i>`).join('');
+      return `<td class="num"${titleAttr}><span class="tv-dots">${dots}</span><span class="v">${v}</span></td>`;
+    }
 
     if (c.key === 'name') {
       const cellHtml = _h(String(txt));
@@ -745,15 +768,7 @@ function renderTable() {
       return `<td${cls ? ' class="' + cls + '"' : ''}${titleAttr}>${_h(String(txt))}</td>`;
     }
 
-    let barHtml = '';
-    if (!isDubai && (c.type === 'int' || c.type === 'aed_big')) {
-      const max = colMax.get(_tableColIdent(c)) || 0;
-      if (max > 0 && typeof v === 'number' && !isNaN(v) && v > 0) {
-        const pct = Math.max(0, Math.min(100, (v / max) * 100));
-        if (pct >= 1) barHtml = `<span class="bar" style="width:${pct.toFixed(1)}%"></span>`;
-      }
-    }
-    return `<td${cls ? ' class="' + cls + '"' : ''}${titleAttr}>${barHtml}<span class="v">${txt}</span></td>`;
+    return `<td${cls ? ' class="' + cls + '"' : ''}${titleAttr}><span class="v">${txt}</span></td>`;
   };
 
   const rankCell = (i, isDubai) => isDubai
