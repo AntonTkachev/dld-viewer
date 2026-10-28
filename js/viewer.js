@@ -1054,6 +1054,79 @@ function _bbox(geom){
   })(geom.coordinates);
   return {area:(maxX-minX)*(maxY-minY), cx:(minX+maxX)/2, cy:(minY+maxY)/2};
 }
+
+function _segDist2(px, py, a, b) {
+  let x = a[0], y = a[1], dx = b[0] - x, dy = b[1] - y;
+  if (dx || dy) {
+    const t = ((px - x) * dx + (py - y) * dy) / (dx * dx + dy * dy);
+    if (t > 1) { x = b[0]; y = b[1]; } else if (t > 0) { x += dx * t; y += dy * t; }
+  }
+  dx = px - x; dy = py - y;
+  return dx * dx + dy * dy;
+}
+
+// Pole of inaccessibility (Mapbox polylabel): [x, y, distance-to-edge]
+function _polylabel(rings, precision) {
+  let minX = Infinity, minY = Infinity, maxX = -Infinity, maxY = -Infinity;
+  for (const [x, y] of rings[0]) { if (x < minX) minX = x; if (y < minY) minY = y; if (x > maxX) maxX = x; if (y > maxY) maxY = y; }
+  const w = maxX - minX, h = maxY - minY, size = Math.min(w, h);
+  if (!size) return [minX, minY, 0];
+  const dist = (x, y) => {
+    let inside = false, d = Infinity;
+    for (const ring of rings) for (let i = 0, j = ring.length - 1; i < ring.length; j = i++) {
+      const a = ring[i], b = ring[j];
+      if ((a[1] > y) !== (b[1] > y) && x < (b[0] - a[0]) * (y - a[1]) / (b[1] - a[1]) + a[0]) inside = !inside;
+      d = Math.min(d, _segDist2(x, y, a, b));
+    }
+    return (inside ? 1 : -1) * Math.sqrt(d);
+  };
+  const cell = (x, y, half) => { const d = dist(x, y); return {x, y, half, d, max: d + half * Math.SQRT2}; };
+  const heap = [];
+  const push = c => {
+    heap.push(c);
+    for (let i = heap.length - 1; i > 0;) { const p = (i - 1) >> 1; if (heap[p].max >= heap[i].max) break; [heap[p], heap[i]] = [heap[i], heap[p]]; i = p; }
+  };
+  const pop = () => {
+    const top = heap[0], last = heap.pop();
+    if (heap.length) {
+      heap[0] = last;
+      for (let i = 0;;) {
+        const l = 2 * i + 1, r = l + 1; let m = i;
+        if (l < heap.length && heap[l].max > heap[m].max) m = l;
+        if (r < heap.length && heap[r].max > heap[m].max) m = r;
+        if (m === i) break;
+        [heap[m], heap[i]] = [heap[i], heap[m]]; i = m;
+      }
+    }
+    return top;
+  };
+  const half0 = size / 2;
+  for (let x = minX; x < maxX; x += size) for (let y = minY; y < maxY; y += size) push(cell(x + half0, y + half0, half0));
+  let best = cell(minX + w / 2, minY + h / 2, 0);
+  while (heap.length) {
+    const c = pop();
+    if (c.d > best.d) best = c;
+    if (c.max - best.d <= precision) continue;
+    const hh = c.half / 2;
+    push(cell(c.x - hh, c.y - hh, hh)); push(cell(c.x + hh, c.y - hh, hh));
+    push(cell(c.x - hh, c.y + hh, hh)); push(cell(c.x + hh, c.y + hh, hh));
+  }
+  return [best.x, best.y, best.d];
+}
+
+// Label anchor for a district: polylabel of its largest part, cached; r = inner radius in degrees
+function _labelPoint(f) {
+  if (f._lp) return f._lp;
+  const g = f.geometry;
+  let rings = g.coordinates;
+  if (g.type === 'MultiPolygon') {
+    rings = g.coordinates.reduce((a, b) => _bbox({coordinates: b}).area > _bbox({coordinates: a}).area ? b : a);
+  }
+  const bb = _bbox({coordinates: rings[0]});
+  const span = Math.max(Math.sqrt(bb.area), 1e-6);
+  const [x, y, r] = _polylabel(rings, span / 100);
+  return f._lp = {ll: L.latLng(y, x), r: Math.max(r, 0)};
+}
 function _pip(pt, ring){
   const x=pt[0], y=pt[1]; let inside=false;
   for (let i=0,j=ring.length-1; i<ring.length; j=i++){
@@ -1261,8 +1334,10 @@ function _overlayColorFor(label) {
 }
 
 let overlayLayer = null;
+let _overlayBoxes = [];
 function _refreshOverlay(mask) {
   if (overlayLayer) { map.removeLayer(overlayLayer); overlayLayer = null; }
+  _overlayBoxes = [];
   if (!mask || typeof mask.overlay !== 'function') return;
   const data = mask.data[currentMaskPeriod] || {};
   const zoom = map.getZoom();
@@ -1294,14 +1369,17 @@ function _refreshOverlay(mask) {
     if (mask.invertRamp) norm = 1 - norm;          
     const fontSize = Math.round((4 + norm * 4) * zoomFactor * 10) / 10;
     const color = mask.overlayColor ? mask.overlayColor(String(item.label)) : _overlayColorFor(item.label);
-    const bb = _bbox(f.geometry);
+    const lp = _labelPoint(f).ll;
+    const c = map.project(lp, zoom);
+    const w = String(item.label).length * fontSize * 0.62 + 6, h = fontSize * 1.3;
+    _overlayBoxes.push({f, x: c.x - w / 2, y: c.y - h / 2, w, h});
     const icon = L.divIcon({
       className: 'choro-overlay',
       html: `<span class="choro-overlay-text" style="font-size:${fontSize}px;color:${color}">${item.label}</span>`,
       iconSize: [0, 0],
       iconAnchor: [0, 0],
     });
-    const marker = L.marker([bb.cy, bb.cx], { icon, interactive: true, keyboard: false, bubblingMouseEvents: false });
+    const marker = L.marker(lp, { icon, interactive: true, keyboard: false, bubblingMouseEvents: false });
 
     marker.on('click', function(e) {
       L.DomEvent.stopPropagation(e);
@@ -1313,9 +1391,62 @@ function _refreshOverlay(mask) {
   overlayLayer.addTo(map);
 }
 
+map.createPane('districtNames');
+map.getPane('districtNames').style.zIndex = 450;
+map.getPane('districtNames').style.pointerEvents = 'none';
+
+let namesLayer = null;
+
+function _splitName(s) {
+  if (s.length <= 14 || s.indexOf(' ') < 0) return [s];
+  let cut = -1;
+  for (let i = 0; i < s.length; i++) {
+    if (s[i] === ' ' && (cut < 0 || Math.abs(i - s.length / 2) < Math.abs(cut - s.length / 2))) cut = i;
+  }
+  return [s.slice(0, cut), s.slice(cut + 1)];
+}
+
+// District names on the map: biggest districts first, a name is skipped when it doesn't
+// fit inside its polygon or would collide with an already placed name / value label
+function _refreshNames() {
+  if (namesLayer) { map.removeLayer(namesLayer); namesLayer = null; }
+  const z = map.getZoom();
+  const fs = z <= 10 ? 10 : z <= 12 ? 11 : 12;
+  const lineH = fs * 1.25, pad = 4;
+  const pxPerDeg = 256 * Math.pow(2, z) / 360;
+  const above = new Set(_overlayBoxes.map(b => b.f));
+  const placed = _overlayBoxes.slice();
+  const hits = (b) => placed.some(o => b.x < o.x + o.w + pad && o.x < b.x + b.w + pad && b.y < o.y + o.h + pad && o.y < b.y + b.h + pad);
+  namesLayer = L.layerGroup();
+  for (const f of GEOJSON.features) {
+    if (f._level !== undefined && f._level < minLevel) continue;
+    const p = f.properties;
+    const name = (currentLang === 'ar' && p.name_ar) ? p.name_ar : p.name;
+    if (!name) continue;
+    const lines = _splitName(name);
+    const w = Math.max(...lines.map(l => l.length)) * fs * 0.56 + 4, h = lines.length * lineH;
+    const lp = _labelPoint(f);
+    const r = lp.r * pxPerDeg;
+    if (2 * r < h || 3 * r < w) continue;
+    const c = map.project(lp.ll, z);
+    const isAbove = above.has(f);
+    const box = {x: c.x - w / 2, y: isAbove ? c.y - h - 6 : c.y - h / 2, w, h};
+    if (hits(box)) continue;
+    placed.push(box);
+    const icon = L.divIcon({
+      className: 'dn-icon',
+      html: `<span class="dn-label${isAbove ? ' above' : ''}" style="font-size:${fs}px">${lines.map(_h).join('<br>')}</span>`,
+      iconSize: [0, 0],
+      iconAnchor: [0, 0],
+    });
+    L.marker(lp.ll, {icon, pane: 'districtNames', interactive: false, keyboard: false}).addTo(namesLayer);
+  }
+  namesLayer.addTo(map);
+}
+
 map.on('zoomend', () => {
-  const m = MASKS[currentMask];
-  if (m && typeof m.overlay === 'function') _refreshOverlay(m);
+  _refreshOverlay(MASKS[currentMask]);
+  _refreshNames();
 });
 
 function _featurePopupHtml(f) {
@@ -1531,6 +1662,7 @@ function renderChoro(){
   if (typeof _updateBldLegend === 'function') _updateBldLegend();
 
   _refreshOverlay(mask);
+  _refreshNames();
 }
 
 const metroLayer = L.layerGroup();
