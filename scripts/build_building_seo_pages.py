@@ -18,8 +18,9 @@ from html import escape as e
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 from _seo_config import BASE_URL  # noqa: E402
-from build_buildings_directory import (  # noqa: E402
-    COPY as DIR_COPY, DIR_FOR_LANG, INTL_LOCALE, LANGUAGES, OG_LOCALE, fmt_num, load_areas, write_if_changed)
+from _html_common import (DIR_FOR_LANG, GH_REDIRECT_JS, GTAG_HTML, LANGUAGES, OG_LOCALE, hreflang_block,  # noqa: E402
+                          write_if_changed)
+from build_buildings_directory import COPY as DIR_COPY, fmt_num, load_areas  # noqa: E402
 
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 B = os.path.join(ROOT, 'buildings')
@@ -580,8 +581,7 @@ def render(lang, b, d, areas, coords, as_of, siblings=()):
     ld_html = '\n'.join('<script type="application/ld+json">' + json.dumps(x, ensure_ascii=False).replace('</', '<\\/')
                         + '</script>' for x in lds)
 
-    hreflangs = '\n'.join(f'<link rel="alternate" hreflang="{l}" href="{page_url(l, slug)}">' for l in LANGUAGES)
-    hreflangs += f'\n<link rel="alternate" hreflang="x-default" href="{page_url("en", slug)}">'
+    hreflangs = hreflang_block(lambda l: page_url(l, slug))
     lang_links = ''.join(f'<a class="{"active" if l == lang else ""}" href="{page_url(l, slug)}" hreflang="{l}" lang="{l}">{l.upper()}</a>'
                          for l in LANGUAGES)
     robots = 'noindex,follow' if b.get('ni') else 'index,follow'
@@ -594,7 +594,7 @@ def render(lang, b, d, areas, coords, as_of, siblings=()):
 {PAGE_MARKER}
 <html lang="{lang}" dir="{DIR_FOR_LANG[lang]}">
 <head>
-<script>if(location.hostname.endsWith('.github.io')){{location.replace('https://dxbcompass.com'+(location.pathname.replace(/^\\/dld-viewer/,'')||'/')+location.search+location.hash);}}</script>
+<script>{GH_REDIRECT_JS}</script>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <title>{e(title)}</title>
@@ -613,8 +613,7 @@ def render(lang, b, d, areas, coords, as_of, siblings=()):
 <link rel="icon" type="image/svg+xml" href="/favicon.svg">
 <link rel="stylesheet" href="/css/building.css?v={CSS_VER}">
 {ld_html}
-<script async src="https://www.googletagmanager.com/gtag/js?id=G-5G3EY3Y2KG"></script>
-<script>window.dataLayer=window.dataLayer||[];function gtag(){{dataLayer.push(arguments);}}gtag('js',new Date());if(!/^(localhost|127\\.0\\.0\\.1|0\\.0\\.0\\.0)$/.test(location.hostname)){{gtag('config','G-5G3EY3Y2KG');}}</script>
+{GTAG_HTML}
 </head>
 <body>
 <div class="wrap">

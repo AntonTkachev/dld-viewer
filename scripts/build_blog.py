@@ -13,17 +13,14 @@ copy. Layout, schema, links, and data are identical across locales.
 import json
 import os
 import sys
-from datetime import date
 from html import escape
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 from _seo_config import BASE_URL
+from _html_common import (BREADCRUMB_DUBAI, DIR_FOR_LANG, GTAG_HTML, LANG_NAME, LANGUAGES, hreflang_block,
+                          lang_prefix, og_locale_meta, social_meta)
 
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-LANGUAGES = ('ru', 'en', 'ar', 'hi', 'zh')
-OG_LOCALE = {'ru': 'ru_RU', 'en': 'en_US', 'ar': 'ar_AE', 'hi': 'hi_IN', 'zh': 'zh_CN'}
-DIR_FOR_LANG = {'ru': 'ltr', 'en': 'ltr', 'ar': 'rtl', 'hi': 'ltr', 'zh': 'ltr'}
-LANG_NAME = {'ru': 'Русский', 'en': 'English', 'ar': 'العربية', 'hi': 'हिन्दी', 'zh': '中文'}
 
 # Static UI strings shared across posts.
 UI = {
@@ -50,10 +47,6 @@ UI = {
 }
 
 
-def _lang_path_prefix(lang):
-    return '/' + lang
-
-
 def _slugify(s):
     """Normalize a DLD area name into a URL slug — matches the slugify in
     build_district_pages.py so per-post district links resolve."""
@@ -69,21 +62,21 @@ def _fmt_int(n, lang):
 
 
 def _post_url(lang, slug):
-    return BASE_URL + _lang_path_prefix(lang) + '/blog/' + slug + '/'
+    return BASE_URL + lang_prefix(lang) + '/blog/' + slug + '/'
 
 
 def _blog_index_url(lang):
-    return BASE_URL + _lang_path_prefix(lang) + '/blog/'
+    return BASE_URL + lang_prefix(lang) + '/blog/'
 
 
 def _district_url(lang, slug):
-    return BASE_URL + _lang_path_prefix(lang) + '/sales/' + slug + '/'
+    return BASE_URL + lang_prefix(lang) + '/sales/' + slug + '/'
 
 
 def _building_url(b, lang):
     """Per-language building page when one is generated (pg), else /search/#slug."""
     if b.get('pg'):
-        return f"{BASE_URL}{_lang_path_prefix(lang)}/buildings/{b['s']}/"
+        return f"{BASE_URL}{lang_prefix(lang)}/buildings/{b['s']}/"
     return BASE_URL + '/search/#' + b['s']
 
 
@@ -92,14 +85,6 @@ def _display_name(n):
     mixed case from OSM. Title-case only the shouty ones for readability;
     leave already-mixed-case names untouched."""
     return n.title() if n.isupper() else n
-
-
-def _hreflang_block(make_url):
-    parts = []
-    for l in LANGUAGES:
-        parts.append(f'<link rel="alternate" hreflang="{l}" href="{make_url(l)}">')
-    parts.append(f'<link rel="alternate" hreflang="x-default" href="{make_url("en")}">')
-    return '\n  '.join(parts)
 
 
 # ─────── Post-1: Top-10 fastest-growing districts (5y) ────────
@@ -538,8 +523,6 @@ CSS = """
 def _head_block(lang, title, desc, canonical, hreflang_html, ld_json_blocks):
     og_image = BASE_URL + '/og/cover.png'
     favicon = BASE_URL + '/favicon.svg'
-    og_main = OG_LOCALE[lang]
-    og_alts = [v for k, v in OG_LOCALE.items() if k != lang]
     ld_html = ''.join(
         f'<script type="application/ld+json">{json.dumps(ld, ensure_ascii=False)}</script>\n'
         for ld in ld_json_blocks
@@ -552,24 +535,10 @@ def _head_block(lang, title, desc, canonical, hreflang_html, ld_json_blocks):
         '<meta name="robots" content="index,follow">\n'
         f'<link rel="canonical" href="{canonical}">\n'
         f'<link rel="icon" type="image/svg+xml" href="{favicon}">\n'
-        '<script async src="https://www.googletagmanager.com/gtag/js?id=G-5G3EY3Y2KG"></script>\n'
-        '<script>window.dataLayer=window.dataLayer||[];function gtag(){dataLayer.push(arguments);}gtag(\'js\',new Date());'
-        'if(!/^(localhost|127\\.0\\.0\\.1|0\\.0\\.0\\.0)$/.test(location.hostname)){gtag(\'config\',\'G-5G3EY3Y2KG\');}</script>\n'
-        '<meta property="og:type" content="article">\n'
-        '<meta property="og:site_name" content="DXBCompass">\n'
-        f'<meta property="og:url" content="{canonical}">\n'
-        f'<meta property="og:title" content="{escape(title)}">\n'
-        f'<meta property="og:description" content="{escape(desc)}">\n'
-        f'<meta property="og:image" content="{og_image}">\n'
-        '<meta property="og:image:width" content="1200">\n'
-        '<meta property="og:image:height" content="630">\n'
-        '<meta name="twitter:card" content="summary_large_image">\n'
-        f'<meta name="twitter:image" content="{og_image}">\n'
-        f'<meta name="twitter:title" content="{escape(title)}">\n'
-        f'<meta name="twitter:description" content="{escape(desc)}">\n'
-        f'<meta property="og:locale" content="{og_main}">\n'
-        + ''.join(f'<meta property="og:locale:alternate" content="{a}">\n' for a in og_alts) +
-        '  ' + hreflang_html + '\n'
+        + GTAG_HTML + '\n'
+        + social_meta('article', canonical, escape(title), escape(desc), og_image, alt=False) + '\n'
+        + og_locale_meta(lang)
+        + '  ' + hreflang_html + '\n'
         + ld_html +
         f'<style>{CSS}</style>'
     )
@@ -613,16 +582,15 @@ def render_post(post, lang):
         '@context': 'https://schema.org', '@type': 'BreadcrumbList',
         'itemListElement': [
             {'@type': 'ListItem', 'position': 1,
-             'name': {'ru': 'Дубай', 'en': 'Dubai', 'ar': 'دبي',
-                      'hi': 'दुबई', 'zh': '迪拜'}[lang],
-             'item': BASE_URL + _lang_path_prefix(lang) + '/'},
+             'name': BREADCRUMB_DUBAI[lang],
+             'item': BASE_URL + lang_prefix(lang) + '/'},
             {'@type': 'ListItem', 'position': 2, 'name': ui['blog_title'],
              'item': _blog_index_url(lang)},
             {'@type': 'ListItem', 'position': 3, 'name': title, 'item': canonical},
         ],
     }
 
-    hreflang_html = _hreflang_block(lambda l: _post_url(l, post['slug']))
+    hreflang_html = hreflang_block(lambda l: _post_url(l, post['slug']), '\n  ')
     lang_switcher_html = _lang_switcher(lambda l: _post_url(l, post['slug']), lang)
 
     head = _head_block(lang, title, desc, canonical, hreflang_html,
@@ -632,7 +600,7 @@ def render_post(post, lang):
         '<main>\n'
         '  <header>\n'
         f'    <a href="{_blog_index_url(lang)}">{escape(ui["back_to_blog"])}</a>\n'
-        f'    <a href="{BASE_URL + _lang_path_prefix(lang) + "/sales/"}">{escape(ui["back_to_map"])}</a>\n'
+        f'    <a href="{BASE_URL + lang_prefix(lang) + "/sales/"}">{escape(ui["back_to_map"])}</a>\n'
         '  </header>\n'
         f'  <h1>{escape(title)}</h1>\n'
         f'  <p class="meta">{escape(ui["date_label"])}: {post["date"]}</p>\n'
@@ -641,7 +609,7 @@ def render_post(post, lang):
         f'  {body_html}\n'
         f'  <aside class="footer-note">'
         f'<strong>{escape(ui["methodology"])}.</strong> {escape(footer)} '
-        f'<a href="{BASE_URL + _lang_path_prefix(lang) + "/faq/"}">{escape(ui["methodology_link"])}</a>'
+        f'<a href="{BASE_URL + lang_prefix(lang) + "/faq/"}">{escape(ui["methodology_link"])}</a>'
         f'</aside>\n'
         '</main>\n'
     )
@@ -655,7 +623,7 @@ def render_blog_index(lang):
     title = ui['blog_title']
     desc = ui['blog_desc']
     canonical = _blog_index_url(lang)
-    hreflang_html = _hreflang_block(_blog_index_url)
+    hreflang_html = hreflang_block(_blog_index_url, '\n  ')
     lang_switcher_html = _lang_switcher(_blog_index_url, lang)
 
     items = []
@@ -682,9 +650,8 @@ def render_blog_index(lang):
         '@context': 'https://schema.org', '@type': 'BreadcrumbList',
         'itemListElement': [
             {'@type': 'ListItem', 'position': 1,
-             'name': {'ru': 'Дубай', 'en': 'Dubai', 'ar': 'دبي',
-                      'hi': 'दुबई', 'zh': '迪拜'}[lang],
-             'item': BASE_URL + _lang_path_prefix(lang) + '/'},
+             'name': BREADCRUMB_DUBAI[lang],
+             'item': BASE_URL + lang_prefix(lang) + '/'},
             {'@type': 'ListItem', 'position': 2, 'name': title, 'item': canonical},
         ],
     }
@@ -692,7 +659,7 @@ def render_blog_index(lang):
     head = _head_block(lang, title, desc, canonical, hreflang_html, [blog_ld, breadcrumb_ld])
     body = (
         '<main>\n'
-        f'  <header><a href="{BASE_URL + _lang_path_prefix(lang) + "/sales/"}">{escape(ui["back_to_map"])}</a></header>\n'
+        f'  <header><a href="{BASE_URL + lang_prefix(lang) + "/sales/"}">{escape(ui["back_to_map"])}</a></header>\n'
         f'  <h1>{escape(title)}</h1>\n'
         f'  <p class="intro">{escape(desc)}</p>\n'
         f'  {lang_switcher_html}\n'

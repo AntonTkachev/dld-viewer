@@ -23,7 +23,6 @@ import json
 import os
 import re
 import sys
-import unicodedata
 
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 SRC = os.path.join(ROOT, 'pois', 'all.js')
@@ -32,8 +31,7 @@ GEO = os.path.join(ROOT, 'data', 'dld_communities_osm.geojson')
 # Single source of truth for BASE_URL (env-overridable for dev builds).
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 from _seo_config import BASE_URL
-
-LANGUAGES = ('ru', 'en', 'ar', 'hi', 'zh')
+from _html_common import LANGUAGES, hreflang_block, html_escape, lang_prefix, slugify
 
 # Category configuration.
 #   slug      — URL path component (/metro/, /schools/, …)
@@ -292,12 +290,6 @@ def extract_const(text, name):
     return json.loads(m.group(1))
 
 
-def slugify(s):
-    s = unicodedata.normalize('NFKD', s).encode('ascii', 'ignore').decode()
-    s = re.sub(r'[^a-z0-9]+', '-', s.lower()).strip('-')
-    return s
-
-
 # ===================== POINT-IN-POLYGON =====================
 
 def _point_in_ring(x, y, ring):
@@ -394,14 +386,6 @@ def fmt_int(v, lang):
     return f'{n:,}'
 
 
-def html_escape(s):
-    if s is None:
-        return ''
-    return (str(s)
-            .replace('&', '&amp;').replace('<', '&lt;').replace('>', '&gt;')
-            .replace('"', '&quot;'))
-
-
 def render_kind(kind, lang):
     if not kind:
         return ''
@@ -430,10 +414,6 @@ def fmt_cell(val, kind, lang):
 
 # ===================== HREFLANG / SWITCHERS =====================
 
-def lang_prefix(lang):
-    return '/' + lang
-
-
 def page_url(lang, slug):
     """Absolute URL — used for canonical, hreflang, AND internal anchors
     (lang switcher, district links). Internal anchors NEED absolute on the
@@ -445,15 +425,6 @@ def page_url(lang, slug):
 def map_deep_url(lang, layer_key):
     """Open the SALES viewer with the requested layer toggled on."""
     return f'{BASE_URL}{lang_prefix(lang)}/sales/?layers={layer_key}'
-
-
-def hreflang_block(slug):
-    parts = []
-    for l in LANGUAGES:
-        parts.append(f'<link rel="alternate" hreflang="{l}" href="{page_url(l, slug)}">')
-    # x-default → English (see build_pages.py for the rationale).
-    parts.append(f'<link rel="alternate" hreflang="x-default" href="{page_url("en", slug)}">')
-    return '\n'.join(parts)
 
 
 def lang_switcher_html(slug, lang):
@@ -687,7 +658,7 @@ def build_page(cat, rows_with_district, lang):
         title=h1_plain,
         desc=re.sub(r'<[^>]+>', '', lede),
         canonical=canonical,
-        hreflang=hreflang_block(slug),
+        hreflang=hreflang_block(lambda l: page_url(l, slug)),
         ld_json=ld_json,
         css_url=f'{BASE_URL}/css/viewer.css',
         favicon_url=f'{BASE_URL}/favicon.svg',
