@@ -22,7 +22,6 @@ To force a re-seed (after manual ack of new data): rerun with --seed.
 """
 import hashlib
 import json
-import os
 import subprocess
 import sys
 import time

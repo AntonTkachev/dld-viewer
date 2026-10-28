@@ -14,7 +14,6 @@ Run from repo root:
 """
 import argparse
 import json
-import sys
 import time
 import urllib.parse
 import urllib.request

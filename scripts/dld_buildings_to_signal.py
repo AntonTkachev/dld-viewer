@@ -25,7 +25,6 @@ import gzip
 import json
 import os
 import sys
-from collections import Counter
 
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 SRC = os.path.join(ROOT, 'data', 'raw', 'dld_buildings', 'building_summary_information.csv.gz')

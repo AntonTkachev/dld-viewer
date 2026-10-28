@@ -90,26 +90,6 @@ def build_idx(items: list[dict], name_key: str = 'name') -> dict:
             idx.setdefault(n, []).append(item)
     return idx
 
-def fuzzy_match(query: str, idx: dict, blacklist: set = frozenset()):
-    """Return (item, score) or (None, 0)."""
-    n = norm(query)
-    # exact
-    if n in idx:
-        cands = [b for b in idx[n] if id(b) not in blacklist]
-        if cands:
-            return cands[0], 100
-    if not meaningful(query):
-        return None, 0
-    if not HAS_RF:
-        return None, 0
-    norms = [k for k in idx if k not in blacklist]
-    res = rfprocess.extractOne(n, norms, scorer=fuzz.token_sort_ratio)
-    if res and res[1] >= FUZZY_THRESHOLD:
-        cands = [b for b in idx[res[0]] if id(b) not in blacklist]
-        if cands:
-            return cands[0], res[1]
-    return None, 0
-
 # ─────────────────────────────────────────────────────────────────────────
 def main():
     # ── load sources ──────────────────────────────────────────────────────

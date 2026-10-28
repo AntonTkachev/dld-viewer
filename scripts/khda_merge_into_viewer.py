@@ -29,18 +29,9 @@ import sys
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parent.parent
-HTML = ROOT / 'template.html'
 KHDA = ROOT / 'data' / 'khda_schools.csv'
 OSM  = ROOT / 'data' / 'osm_schools.json'
-# GEOJSON polygons used to live as a `const GEOJSON = …;` inline literal in
-# template.html. After the 2.1 MB externalization, they live in this file
-# and template.html just references it via <script src=…>. Listed in
-# priority order — first existing file wins (data/curated_polygons.js was
-# the original externalized location before the move to /polygons/).
-GEOJSON_JS_CANDIDATES = (
-    ROOT / 'polygons' / 'curated.js',
-    ROOT / 'data' / 'curated_polygons.js',
-)
+GEOJSON_JS = ROOT / 'polygons' / 'curated.js'
 
 # Geo-sanity threshold: a name-match is rejected if the OSM coords sit more
 # than this far from the centroid of the polygon corresponding to KHDA `area`.
@@ -251,23 +242,15 @@ def _feat_contains(feat, pt):
     return False
 
 def load_geojson_polygons():
-    """Pull the GEOJSON const out of polygons/curated.js for polygon lookups.
-
-    Falls back through:
-      1. polygons/curated.js                — current location
-      2. data/curated_polygons.js           — legacy externalized path
-      3. inline `const GEOJSON` in template.html — pre-externalization layout
-    so the script is forward+backward compatible across all three eras.
-    """
-    for path in (*GEOJSON_JS_CANDIDATES, HTML):
-        if not path.exists():
-            continue
-        with path.open(encoding='utf-8') as f:
-            for line in f:
-                if line.startswith('const GEOJSON = '):
-                    m = re.match(r'const GEOJSON = (.+);\s*$', line)
-                    if m:
-                        return json.loads(m.group(1))['features']
+    """Pull the GEOJSON const out of polygons/curated.js for polygon lookups."""
+    if not GEOJSON_JS.exists():
+        return []
+    with GEOJSON_JS.open(encoding='utf-8') as f:
+        for line in f:
+            if line.startswith('const GEOJSON = '):
+                m = re.match(r'const GEOJSON = (.+);\s*$', line)
+                if m:
+                    return json.loads(m.group(1))['features']
     return []
 
 def find_district(features, lat, lon):

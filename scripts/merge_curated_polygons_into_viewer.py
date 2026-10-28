@@ -29,8 +29,7 @@ lowercased polygon name, which is also what build_curated_sql() in
 _curated_sql.py uses.
 
 Downstream merge scripts (khda_*, dld_projects_*, osm_subcommunities_*)
-read this same `const GEOJSON = …;` literal but from data/curated_polygons.js
-now instead of template.html.
+read this same `const GEOJSON = …;` literal from polygons/curated.js.
 
 Run this AFTER build_curated_polygons.py and BEFORE inline_periods.py.
 

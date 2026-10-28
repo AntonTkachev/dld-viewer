@@ -18,7 +18,6 @@ Run from repo root:
     python3 scripts/osm_medical_pull.py
 """
 import json
-import re
 import subprocess
 import sys
 import time
