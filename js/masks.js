@@ -302,7 +302,7 @@ const MASKS = {
     overlay: r => (typeof r.score === 'number') ? String(r.score) : null,
     legendFmt: v => String(Math.round(v)),
     styleExtra: p => p.real_strategy === 'offplan'
-      ? { dashArray: '5,4', weight: 1.3, color: '#7c3aed' } : null,
+      ? { stroke: true, dashArray: '5,4', weight: 1.3, color: '#7c3aed' } : null,
     popupRows: (p, t) => {
       if (p.real_metric === null || p.real_metric === undefined) return '';
       const stratLabel = p.real_strategy === 'offplan' ? t('inv_strat_offplan') : t('inv_strat_rent');

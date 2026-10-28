@@ -227,10 +227,31 @@ document.body.insertAdjacentHTML('beforeend',
   + '</defs></svg>');
 
 const map = L.map('map', { zoomControl: false }).setView([25.12, 55.25], 10);
-L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-  attribution: '© OpenStreetMap contributors',
-  maxZoom: 19,
-}).addTo(map);
+// Free key from carto.com/basemaps/apikey; empty = greyscale OSM fallback
+const CARTO_KEY = '';
+const _OSM_ATTR = '© <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>';
+if (CARTO_KEY) {
+  // Voyager base under the choropleth, street/place labels in a pane above it
+  map.createPane('labels');
+  map.getPane('labels').style.zIndex = 450;
+  map.getPane('labels').style.pointerEvents = 'none';
+  L.tileLayer('https://{s}.basemaps.cartocdn.com/rastertiles/voyager_nolabels/{z}/{x}/{y}{r}.png?key=' + CARTO_KEY, {
+    attribution: _OSM_ATTR + ' © <a href="https://carto.com/attributions">CARTO</a>',
+    subdomains: 'abcd',
+    maxZoom: 19,
+  }).addTo(map);
+  L.tileLayer('https://{s}.basemaps.cartocdn.com/rastertiles/voyager_only_labels/{z}/{x}/{y}{r}.png?key=' + CARTO_KEY, {
+    pane: 'labels',
+    subdomains: 'abcd',
+    maxZoom: 19,
+  }).addTo(map);
+} else {
+  L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+    attribution: _OSM_ATTR,
+    className: 'base-muted',
+    maxZoom: 19,
+  }).addTo(map);
+}
 
 const RAMP_VIRIDIS = ['#440154','#3b528b','#21918c','#5ec962','#fde725'];
 const RAMP_BLUE    = ['#eaf2fb','#b8d0f0','#7da4e2','#3f73d4','#1d4ed8'];
@@ -385,8 +406,9 @@ function setView(view, opts) {
       setTimeout(() => map.invalidateSize(), 50);
     }
   } else if (typeof map !== 'undefined' && map.invalidateSize) {
-    
+
     setTimeout(() => map.invalidateSize(), 50);
+    _declutterTicks(document.getElementById('legend'));
   }
   if (typeof renderMaskList === 'function') renderMaskList();
   if (typeof updateMaskCurrentLabel === 'function') updateMaskCurrentLabel();
@@ -1322,7 +1344,7 @@ function _featurePopupHtml(f) {
   const newDev = p._new_dev_count || 0;
   const newDevRow = newDev ? `<div class="stat"><span class="k">${t("new_buildings")}</span><span class="v">${newDev|0}</span></div>` : '';
   const detailsBtn = p.real_area_key
-    ? `<div style="margin-top:8px"><a href="${_h(_safeUrl(_districtHrefForKey(p.real_area_key, p.name, p.legacy_area_key, p.master_project_key)))}" style="background:#0366d6;color:#fff;text-decoration:none;padding:6px 12px;border-radius:4px;font-size:12px;font-weight:600;display:inline-block">${t("pp_open")}</a></div>`
+    ? `<div style="margin-top:8px"><a href="${_h(_safeUrl(_districtHrefForKey(p.real_area_key, p.name, p.legacy_area_key, p.master_project_key)))}" class="pp-btn">${t("pp_open")}</a></div>`
     : '';
   let bodyRows;
   if (typeof m.popupRows === 'function') {
@@ -1378,8 +1400,9 @@ function _openSmallestPopup(latlng) {
 let _hoveredFeat = null;
 let _selectedFeat = null;
 let _hoverRaf = 0;
-const _STYLE_HOVER    = {weight: 2,   color: '#000'};
-const _STYLE_SELECTED = {weight: 3.5, color: '#000'};
+const _STYLE_HOVER    = {stroke: true, weight: 2.5, color: '#0f172a', opacity: 1};
+const _STYLE_SELECTED = {stroke: true, weight: 3,   color: '#1d4ed8', opacity: 1};
+const _STYLE_EDGE     = {stroke: true, weight: 0.6, color: '#0f172a', opacity: 0.15, fillOpacity: 0.65};
 
 function _restoreStyle(f) {
   if (!f || !f._layer) return;
@@ -1414,6 +1437,36 @@ map.on('mousemove', (e) => {
 });
 map.on('mouseout', () => _setHover(null));
 
+function _compactNum(v) {
+  return v >= 1e6 ? (v / 1e6).toFixed(1) + 'M' : v >= 1e4 ? Math.round(v / 1e3) + 'K' : Math.round(v).toLocaleString('ru-RU');
+}
+
+// Segmented colour bar; ticks sit on class boundaries (n+1 labels, '' = none)
+function _legendBar(colors, ticks, tips) {
+  const n = colors.length;
+  const cells = colors.map((c, i) => `<span style="background:${c}" title="${_h(tips[i])}"></span>`).join('');
+  const marks = ticks.map((l, i) => l === '' ? ''
+    : `<span class="${i === 0 ? 'lo' : i === n ? 'hi' : ''}" style="left:${i * 100 / n}%">${_h(l)}</span>`).join('');
+  return `<div class="lg-bar">${cells}</div><div class="lg-ticks">${marks}</div>`;
+}
+
+// Hide inner ticks that would collide with a neighbour; end ticks always stay
+function _declutterTicks(host) {
+  const box = host.querySelector('.lg-ticks');
+  if (!box || !box.offsetWidth) return;
+  const spans = [...box.children];
+  spans.forEach(s => { s.style.visibility = ''; });
+  const last = spans[spans.length - 1];
+  const hiLeft = last.classList.contains('hi') ? last.getBoundingClientRect().left : Infinity;
+  let prevRight = -Infinity;
+  for (const s of spans) {
+    const r = s.getBoundingClientRect();
+    const isEnd = s.classList.contains('lo') || s.classList.contains('hi');
+    if (!isEnd && (r.left < prevRight + 6 || r.right > hiLeft - 6)) { s.style.visibility = 'hidden'; continue; }
+    prevRight = r.right;
+  }
+}
+
 function renderChoro(){
   const mask = MASKS[currentMask] || MASKS.sales;
   const metricKey = mask.metricKey || 'real_count';
@@ -1445,13 +1498,13 @@ function renderChoro(){
       if (isCategorical) {
         const phase = f.properties.real_phase;
         if (!phase) return {weight:0.8,color:'#64748b',fillColor:'url(#nodata-hatch)',fillOpacity:1,dashArray:'4,3'};
-        return {weight:0.6,color:'#1f2933',fillColor:LIFECYCLE_PHASE_COLORS[phase] || '#cbd5e1',fillOpacity:0.7};
+        return {..._STYLE_EDGE, fillColor:LIFECYCLE_PHASE_COLORS[phase] || '#cbd5e1'};
       }
       const v = f.properties[metricKey], z = isMissing(v);
       if (z) return {weight:0.8,color:'#64748b',fillColor:'url(#nodata-hatch)',fillOpacity:1,dashArray:'4,3'};
       let idx = classify(v, breaks);
       if (mask.invertRamp) idx = ramp.length - 1 - idx;
-      const st = {weight:0.6,color:'#1f2933',fillColor:ramp[idx],fillOpacity:0.7};
+      const st = {..._STYLE_EDGE, fillColor:ramp[idx]};
       return mask.styleExtra ? Object.assign(st, mask.styleExtra(f.properties)) : st;
     },
     onEachFeature: (f, layer) => {
@@ -1466,21 +1519,19 @@ function renderChoro(){
   choro.bringToBack();
 
   const title = t(mask.legendKey || 'ch_count');
+  const noDataRow = `<div class="row lg-nodata"><span class="sw sw-hatch"></span>${t('legend_no_data')}</div>`;
   let html;
   if (isCategorical) {
-    html = `<div style="margin-bottom:4px"><span style="font-weight:600">${title}</span></div>`;
+    html = `<div class="lg-head"><span class="lg-title">${title}</span></div>`;
     for (const id of LIFECYCLE_PHASE_ORDER) {
       html += `<div class="row"><span class="sw" style="background:${LIFECYCLE_PHASE_COLORS[id]}"></span>${t('lifecycle_phase_' + id)}</div>`;
     }
-    html += `<div class="row"><span class="sw" style="background:repeating-linear-gradient(45deg,transparent,transparent 3px,#94a3b8 3px,#94a3b8 4px)"></span>${t('legend_no_data')}</div>`;
+    html += noDataRow;
   } else if (isDiverging) {
     const fmt = mask.legendFmt || METRIC_FMT.count;
-    html = `<div style="margin-bottom:4px"><span style="font-weight:600">${title}</span></div>`;
-    for (let i = ramp.length - 1; i >= 0; i--) {
-      const lbl = i === 0 ? `< ${fmt(breaks[0])}` : i === ramp.length - 1 ? `> ${fmt(breaks[i - 1])}` : `${fmt(breaks[i - 1])} … ${fmt(breaks[i])}`;
-      html += `<div class="row"><span class="sw" style="background:${ramp[i]}"></span>${lbl}</div>`;
-    }
-    html += `<div class="row"><span class="sw" style="background:repeating-linear-gradient(45deg,transparent,transparent 3px,#94a3b8 3px,#94a3b8 4px)"></span>${t('legend_no_data')}</div>`;
+    const tips = ramp.map((_, i) => i === 0 ? `< ${fmt(breaks[0])}` : i === ramp.length - 1 ? `> ${fmt(breaks[i - 1])}` : `${fmt(breaks[i - 1])} … ${fmt(breaks[i])}`);
+    const ticks = ['', ...breaks.map(fmt), ''];
+    html = `<div class="lg-head"><span class="lg-title">${title}</span></div>` + _legendBar(ramp, ticks, tips) + noDataRow;
   } else {
     const fmt = mask.legendFmt || METRIC_FMT.count;
     const vs = GEOJSON.features
@@ -1489,15 +1540,14 @@ function renderChoro(){
     const lo = vs.length ? Math.min(...vs) : 0;
     const hi = vs.length ? Math.max(...vs) : 0;
     const all = [lo, ...breaks, hi];
+    const colors = RAMP.map((_, i) => RAMP[mask.invertRamp ? (RAMP.length - 1 - i) : i]);
+    const tips = colors.map((_, i) => `${fmt(all[i])} – ${fmt(all[i + 1])}`);
     const paletteName = _paletteName.charAt(0).toUpperCase() + _paletteName.slice(1);
-    html = `<div style="display:flex;justify-content:space-between;align-items:center;gap:10px;margin-bottom:4px"><span style="font-weight:600">${title}</span><button type="button" onclick="togglePalette()" title="Сменить палитру (A/B-тест)" style="border:1px solid #d1d5db;background:#fff;border-radius:4px;padding:1px 7px;cursor:pointer;font-size:11px;color:#374151;line-height:1.4">🎨 ${paletteName}</button></div>`;
-    for(let i=0;i<RAMP.length;i++) {
-      const cIdx = mask.invertRamp ? (RAMP.length - 1 - i) : i;
-      html += `<div class="row"><span class="sw" style="background:${RAMP[cIdx]}"></span>${fmt(all[i])} – ${fmt(all[i+1])}</div>`;
-    }
-    html += `<div class="row"><span class="sw" style="background:repeating-linear-gradient(45deg,transparent,transparent 3px,#94a3b8 3px,#94a3b8 4px)"></span>${t('legend_no_data')}</div>`;
+    html = `<div class="lg-head"><span class="lg-title">${title}</span><button type="button" class="lg-palette" onclick="togglePalette()" title="Сменить палитру (A/B-тест)">🎨 ${paletteName}</button></div>`
+      + _legendBar(colors, all.map(mask.legendFmt ? fmt : _compactNum), tips) + noDataRow;
   }
   document.getElementById('legend').innerHTML = html;
+  _declutterTicks(document.getElementById('legend'));
   if (typeof _updateBldLegend === 'function') _updateBldLegend();
 
   _refreshOverlay(mask);
@@ -1899,7 +1949,7 @@ function _initBuildingShapes() {
         ${salesCell}${rentCell}
       </div>
       ${(yrCell||devCell||pctCell) ? `<div style="display:flex;gap:16px;flex-wrap:wrap;border-top:1px solid #f3f4f6;padding-top:8px">${yrCell}${devCell}${pctCell}</div>` : ''}
-      ${b.s ? `<div style="margin-top:10px"><a href="${b.pg ? `/${currentLang}/buildings/${b.s}/` : `/search/#${b.s}`}" style="background:#1d4ed8;color:#fff;text-decoration:none;padding:5px 12px;border-radius:5px;font-size:12px;font-weight:600;display:inline-block">${t('bld_details')}</a></div>` : ''}
+      ${b.s ? `<div style="margin-top:10px"><a href="${b.pg ? `/${currentLang}/buildings/${b.s}/` : `/search/#${b.s}`}" class="pp-btn">${t('bld_details')}</a></div>` : ''}
     `;
   };
   for (const b of BUILDINGS) {
@@ -1957,7 +2007,7 @@ function _updateBldLegend() {
   const sec = document.createElement('div');
   sec.id = 'bld-legend-section';
   sec.innerHTML =
-    `<div style="border-top:1px solid #e5e7eb;margin-top:7px;padding-top:7px;font-weight:600;margin-bottom:4px">${t('buildings')} — ${t('bld_deals')}</div>` +
+    `<div class="lg-title" style="display:block;border-top:1px solid #e5e7eb;margin-top:8px;padding-top:8px;margin-bottom:4px">${t('buildings')} — ${t('bld_deals')}</div>` +
     labels.map((lbl, i) =>
       `<div class="row"><span class="sw" style="background:${_BLD_RAMP[i]}"></span>${lbl}</div>`
     ).join('') +
