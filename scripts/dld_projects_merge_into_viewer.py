@@ -17,25 +17,14 @@ Shape per entry:
   total_units, total_villas, total_buildings, total_lands
   avg_percent     — mean of percent_completed across in-flight rows (or null)
 """
-import csv
-import gzip
 import json
-import os
 import re
 import sys
 from collections import Counter, defaultdict
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parent.parent
-HTML = ROOT / 'template.html'
-# GEOJSON polygons used to live as an inline literal in template.html;
-# now they're externalized into polygons/curated.js. Listed in priority
-# order — first existing file wins.
-GEOJSON_JS_CANDIDATES = (
-    ROOT / 'polygons' / 'curated.js',
-    ROOT / 'data' / 'curated_polygons.js',  # legacy externalized location
-)
-SRC  = ROOT / 'data' / 'dld_projects.csv.gz'
+GEOJSON_JS = ROOT / 'polygons' / 'curated.js'
 
 # In-flight = projects still in some "not yet done" state. Note: we use the
 # DERIVED status from _rera_enrich, so projects that RERA still has marked
@@ -92,11 +81,9 @@ def polygon_centroid(geom):
 def build_polygon_index() -> dict:
     """{norm(name): (lat, lon, display_name)} from the curated GEOJSON.
 
-    Reads polygons/curated.js (the externalized const), falling back
-    through data/curated_polygons.js (legacy externalized path) and
-    finally the inline literal in template.html.
+    Reads the externalized const in polygons/curated.js.
     """
-    src = next((p for p in (*GEOJSON_JS_CANDIDATES, HTML) if p.exists()), HTML)
+    src = GEOJSON_JS
     with src.open() as f:
         h = f.read()
     m = re.search(r'^const GEOJSON = (\{.*?\});\s*$', h, re.M)

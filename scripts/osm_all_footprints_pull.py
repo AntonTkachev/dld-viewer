@@ -22,7 +22,6 @@ Run from repo root:
     python3 scripts/osm_all_footprints_pull.py --resume  # skip already-done tiles
 """
 import json
-import math
 import subprocess
 import sys
 import time

@@ -14,7 +14,6 @@ Run from repo root:
 import json
 import subprocess
 import sys
-import time
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parent.parent
@@ -25,14 +24,6 @@ LISTING_API = (
     '?datasetId=467654&page=1&pageSize=5&sortDir=desc'
 )
 UA = 'dld-viewer/1'
-
-
-def _curl_json(url: str, dest: str = None) -> dict | bytes:
-    args = ['curl', '-sS', '--max-time', '180', '-A', UA, '-H', 'Accept: application/json', url]
-    if dest:
-        args = ['curl', '-sS', '--max-time', '300', '-A', UA, '-o', dest, '-w', '%{http_code}', url]
-    p = subprocess.run(args, check=True, capture_output=True, text=False)
-    return p.stdout if not dest else p.stdout.decode().strip()
 
 
 def fetch_presigned() -> tuple[str, str]:
@@ -58,7 +49,7 @@ def main() -> int:
     url, folder = fetch_presigned()
     print(f'Snapshot folder: {folder}')
     print(f'Downloading → {OUT}')
-    rc = subprocess.run(
+    subprocess.run(
         ['curl', '-sS', '--max-time', '300', '-A', UA, url, '-o', str(OUT),
          '-w', 'HTTP=%{http_code} bytes=%{size_download}\n'],
         check=True, text=True,

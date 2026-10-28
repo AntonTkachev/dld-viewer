@@ -24,7 +24,7 @@ Run from repo root:
     python3 scripts/nominatim_buildings_pull.py
     python3 scripts/nominatim_buildings_pull.py --status   # just print progress
 """
-import json, time, sys, re, os, urllib.request, urllib.parse
+import json, time, sys, urllib.request, urllib.parse
 from pathlib import Path
 
 ROOT  = Path(__file__).resolve().parent.parent

@@ -23,7 +23,6 @@ Run from repo root:
 import json
 import math
 import subprocess
-import sys
 import time
 import unicodedata
 import re

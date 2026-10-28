@@ -26,11 +26,10 @@ import csv
 import duckdb
 import gzip
 import json
-import math
 import os
 import re
 import sys
-from collections import Counter, defaultdict
+from collections import defaultdict
 from datetime import date, timedelta
 
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))

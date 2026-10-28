@@ -19,14 +19,7 @@ import sys
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parent.parent
-HTML = ROOT / 'template.html'
-# Externalized GEOJSON literal (was an inline const in template.html before).
-# Priority order — first existing file wins. data/curated_polygons.js was
-# the original location before the move to /polygons/.
-GEOJSON_JS_CANDIDATES = (
-    ROOT / 'polygons' / 'curated.js',
-    ROOT / 'data' / 'curated_polygons.js',
-)
+GEOJSON_JS = ROOT / 'polygons' / 'curated.js'
 KHDA = ROOT / 'data' / 'khda_universities.csv'
 OSM  = ROOT / 'data' / 'osm_universities.json'
 
@@ -132,17 +125,14 @@ def _feat_contains(feat, pt):
     return False
 
 def load_polygons():
-    # Try the externalized GEOJSON first (post-2026-06-25 layout); fall back
-    # to the original /data/ path; finally to the inline const in template.html.
-    for path in (*GEOJSON_JS_CANDIDATES, HTML):
-        if not path.exists():
-            continue
-        with path.open(encoding='utf-8') as f:
-            for line in f:
-                if line.startswith('const GEOJSON = '):
-                    m = re.match(r'const GEOJSON = (.+);\s*$', line)
-                    if m:
-                        return json.loads(m.group(1))['features']
+    if not GEOJSON_JS.exists():
+        return []
+    with GEOJSON_JS.open(encoding='utf-8') as f:
+        for line in f:
+            if line.startswith('const GEOJSON = '):
+                m = re.match(r'const GEOJSON = (.+);\s*$', line)
+                if m:
+                    return json.loads(m.group(1))['features']
     return []
 
 def find_district(features, lat, lon):

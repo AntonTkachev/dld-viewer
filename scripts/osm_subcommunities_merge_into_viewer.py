@@ -38,19 +38,13 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parent.parent
 HTML = ROOT / 'template.html'
-# Priority order — first existing file wins. data/curated_polygons.js was
-# the original externalized location before the move to /polygons/.
-GEOJSON_JS_CANDIDATES = (
-    ROOT / 'polygons' / 'curated.js',
-    ROOT / 'data' / 'curated_polygons.js',
-)
+GEOJSON_JS = ROOT / 'polygons' / 'curated.js'
 SRC  = ROOT / 'data' / 'osm_subcommunities.json'
 
-# 1. Read GEOJSON literal — externalized file first, fall back to legacy inline
-#    const in template.html for trees from before the externalize change.
+# 1. Read GEOJSON literal from the externalized file.
 inline_re = re.compile(r'^const GEOJSON = (\{.*?\});\s*$', re.MULTILINE)
 
-src_path = next((p for p in GEOJSON_JS_CANDIDATES if p.exists()), HTML)
+src_path = GEOJSON_JS
 with src_path.open(encoding='utf-8') as f:
     src_text = f.read()
 m = inline_re.search(src_text)
@@ -71,31 +65,19 @@ added = len(new['features'])
 
 new_literal = 'const GEOJSON = ' + json.dumps(geo, ensure_ascii=False, separators=(', ', ': ')) + ';\n'
 
-if src_path != HTML:
-    # Post-externalize: write back to the external JS file and re-stamp
-    # template.html's <script src=…?v=hash> so the browser refetches.
-    src_path.parent.mkdir(parents=True, exist_ok=True)
-    with src_path.open('w', encoding='utf-8') as f:
-        f.write(new_literal)
-    sha = hashlib.sha256(new_literal.encode('utf-8')).hexdigest()[:8]
-    html_text = HTML.read_text(encoding='utf-8')
-    # Match both the legacy /data/ path and the current /polygons/ path so
-    # this script works against any tree state.
-    tag_re = re.compile(
-        r'<script src="(?:/polygons/curated|/data/curated_polygons)\.js(?:\?v=[a-f0-9]{8})?"></script>'
-    )
-    # Substitute the canonical /polygons/ path with the fresh hash.
-    new_tag = f'<script src="/polygons/curated.js?v={sha}"></script>'
-    html_text2, n = tag_re.subn(new_tag, html_text, count=1)
-    if n:
-        HTML.write_text(html_text2, encoding='utf-8')
-    else:
-        print('warn: curated polygons script tag not found in template.html '
-              '— browser will not pick up the new hash', file=sys.stderr)
+# Write back to the external JS file and re-stamp template.html's
+# <script src=…?v=hash> so the browser refetches.
+with src_path.open('w', encoding='utf-8') as f:
+    f.write(new_literal)
+sha = hashlib.sha256(new_literal.encode('utf-8')).hexdigest()[:8]
+html_text = HTML.read_text(encoding='utf-8')
+tag_re = re.compile(r'<script src="/polygons/curated\.js(?:\?v=[a-f0-9]{8})?"></script>')
+new_tag = f'<script src="/polygons/curated.js?v={sha}"></script>'
+html_text2, n = tag_re.subn(new_tag, html_text, count=1)
+if n:
+    HTML.write_text(html_text2, encoding='utf-8')
 else:
-    # Pre-externalize fallback: write the literal back inline.
-    text = src_text[:m.start()] + new_literal.rstrip('\n') + src_text[m.end():]
-    with HTML.open('w', encoding='utf-8') as f:
-        f.write(text)
+    print('warn: curated polygons script tag not found in template.html '
+          '— browser will not pick up the new hash', file=sys.stderr)
 
 print(f'features dropped={dropped} added={added}; total={len(geo["features"])}', file=sys.stderr)

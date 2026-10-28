@@ -6,9 +6,6 @@ every bucket, so offices, labor camps or land plots stay visible but never
 leak into a district's "median rent".
 """
 
-HOME_ROOMS = ('studio', '1br', '2br', '3br', '4br+', 'villa')
-RENT_SEGMENTS = ('office', 'shop', 'warehouse', 'labor', 'other')
-
 HOME_SQL = "rooms IN ('studio','1br','2br','3br','4br+','villa')"
 APARTMENT_SQL = "rooms IN ('studio','1br','2br','3br','4br+')"
 
@@ -34,8 +31,6 @@ RENT_ROOMS_SQL = """CASE
   WHEN ejari_property_type_en IN ('Labor Camps', 'Staff Accommodation', 'Portacabin') THEN 'labor'
   ELSE 'other'
 END"""
-
-SALE_SEGMENTS = ('land', 'commercial', 'other')
 
 # DLD registers many villa/townhouse sales as Land (DAMAC Hills 2/Lagoons, Mudon, The Oasis…):
 # a named project on a plot under 1,500 m² is a villa, not a land deal
