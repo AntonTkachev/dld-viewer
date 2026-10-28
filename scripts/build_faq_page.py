@@ -13,11 +13,10 @@ from html import escape
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 from _seo_config import BASE_URL
+from _html_common import (BREADCRUMB_DUBAI, DIR_FOR_LANG, GTAG_HTML, LANG_NAME, LANGUAGES, hreflang_block,
+                          lang_prefix, og_locale_meta, social_meta)
 
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-LANGUAGES = ('ru', 'en', 'ar', 'hi', 'zh')
-OG_LOCALE = {'ru': 'ru_RU', 'en': 'en_US', 'ar': 'ar_AE', 'hi': 'hi_IN', 'zh': 'zh_CN'}
-DIR_FOR_LANG = {'ru': 'ltr', 'en': 'ltr', 'ar': 'rtl', 'hi': 'ltr', 'zh': 'ltr'}
 
 PAGE_TITLE = {
     'ru': 'Часто задаваемые вопросы — DXBCompass',
@@ -58,15 +57,6 @@ BACK_LINK = {
     'ar': '← العودة إلى الخريطة',
     'hi': '← मानचित्र पर वापस',
     'zh': '← 返回地图',
-}
-
-# Native autonyms — what speakers of each language call their own language.
-LANG_NAME = {
-    'ru': 'Русский',
-    'en': 'English',
-    'ar': 'العربية',
-    'hi': 'हिन्दी',
-    'zh': '中文',
 }
 
 # Questions — each entry is a (lang → text) dict for question and answer.
@@ -474,20 +464,8 @@ FAQS = [
 ]
 
 
-def _lang_path_prefix(lang):
-    return '/' + lang
-
-
 def _page_url(lang):
-    return BASE_URL + _lang_path_prefix(lang) + '/faq/'
-
-
-def _hreflang_block():
-    parts = []
-    for l in LANGUAGES:
-        parts.append(f'<link rel="alternate" hreflang="{l}" href="{_page_url(l)}">')
-    parts.append(f'<link rel="alternate" hreflang="x-default" href="{_page_url("en")}">')
-    return '\n  '.join(parts)
+    return BASE_URL + lang_prefix(lang) + '/faq/'
 
 
 def build(lang):
@@ -519,17 +497,14 @@ def build(lang):
         '@context': 'https://schema.org', '@type': 'BreadcrumbList',
         'itemListElement': [
             {'@type': 'ListItem', 'position': 1,
-             'name': {'ru': 'Дубай', 'en': 'Dubai', 'ar': 'دبي',
-                      'hi': 'दुबई', 'zh': '迪拜'}[lang],
-             'item': BASE_URL + _lang_path_prefix(lang) + '/'},
+             'name': BREADCRUMB_DUBAI[lang],
+             'item': BASE_URL + lang_prefix(lang) + '/'},
             {'@type': 'ListItem', 'position': 2,
              'name': H1[lang], 'item': canonical},
         ],
     }
 
-    og_locale_main = OG_LOCALE[lang]
-    og_locale_alts = [v for k, v in OG_LOCALE.items() if k != lang]
-    back_target = BASE_URL + _lang_path_prefix(lang) + '/sales/'
+    back_target = BASE_URL + lang_prefix(lang) + '/sales/'
 
     qa_html = []
     for item in FAQS:
@@ -558,25 +533,10 @@ def build(lang):
         '<meta name="robots" content="index,follow">\n'
         f'<link rel="canonical" href="{canonical}">\n'
         f'<link rel="icon" type="image/svg+xml" href="{favicon}">\n'
-        '<script async src="https://www.googletagmanager.com/gtag/js?id=G-5G3EY3Y2KG"></script>\n'
-        '<script>window.dataLayer=window.dataLayer||[];function gtag(){dataLayer.push(arguments);}gtag(\'js\',new Date());'
-        'if(!/^(localhost|127\\.0\\.0\\.1|0\\.0\\.0\\.0)$/.test(location.hostname)){gtag(\'config\',\'G-5G3EY3Y2KG\');}</script>\n'
-        '<meta property="og:type" content="website">\n'
-        '<meta property="og:site_name" content="DXBCompass">\n'
-        f'<meta property="og:url" content="{canonical}">\n'
-        f'<meta property="og:title" content="{escape(title)}">\n'
-        f'<meta property="og:description" content="{escape(desc)}">\n'
-        f'<meta property="og:image" content="{og_image}">\n'
-        '<meta property="og:image:width" content="1200">\n'
-        '<meta property="og:image:height" content="630">\n'
-        '<meta property="og:image:alt" content="DXBCompass — Dubai real estate data">\n'
-        '<meta name="twitter:card" content="summary_large_image">\n'
-        f'<meta name="twitter:image" content="{og_image}">\n'
-        f'<meta name="twitter:title" content="{escape(title)}">\n'
-        f'<meta name="twitter:description" content="{escape(desc)}">\n'
-        f'<meta property="og:locale" content="{og_locale_main}">\n'
-        + ''.join(f'<meta property="og:locale:alternate" content="{a}">\n' for a in og_locale_alts) +
-        '  ' + _hreflang_block() + '\n'
+        + GTAG_HTML + '\n'
+        + social_meta('website', canonical, escape(title), escape(desc), og_image) + '\n'
+        + og_locale_meta(lang)
+        + '  ' + hreflang_block(_page_url, '\n  ') + '\n'
         '<script type="application/ld+json">' + json.dumps(faq_ld, ensure_ascii=False) + '</script>\n'
         '<script type="application/ld+json">' + json.dumps(bc_ld, ensure_ascii=False) + '</script>\n'
         '<style>\n'

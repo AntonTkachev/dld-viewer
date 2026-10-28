@@ -14,7 +14,7 @@ Output schema (per lowercased area key + __dubai__ + __period__):
 REMAP (parquet admin sector → community-style key the polygons reference) is
 applied at SQL read time so the same keys work as in AGGREGATES (sale).
 """
-import duckdb, json, sys, os, re, hashlib
+import duckdb, json, sys, os
 from datetime import date
 
 ROOT  = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
@@ -29,17 +29,8 @@ TODAY     = date.today().isoformat()
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 from _curated_sql import hierarchy_select, hierarchy_views
 from _segments import APARTMENT_SQL, HOME_SQL, RENT_ROOMS_SQL
-ROLLUP_SQL = """
-CASE
-  WHEN master_project_en LIKE 'DUBAI HILLS - %'              THEN 'Dubai Hills Estate'
-  WHEN master_project_en = 'DUBAI HILLS'                     THEN 'Dubai Hills Estate'
-  WHEN master_project_en LIKE 'Lakes - %'                    THEN 'Emirates Living'
-  WHEN master_project_en = 'Jumeirah Golf Estates - Phase B' THEN 'Jumeirah Golf Estates'
-  WHEN master_project_en = 'International City Phase 2'      THEN 'International City Phase 3'
-  WHEN master_project_en IN ('Liwan1', 'Liwan2')             THEN 'Liwan'
-  ELSE master_project_en
-END
-"""
+from _aggregates_common import (PERIOD_YEARS, ROLLUP_SQL, panel_stats, patch_choropleth_tag, room_key,
+                                safe_float, safe_int, write_choropleth)
 con = duckdb.connect()
 print(f'period: {DATE_FROM} → {DATE_TO} (today={TODAY})', file=sys.stderr)
 
@@ -91,10 +82,6 @@ con.execute(f"CREATE TEMP VIEW rh_p AS SELECT * FROM r_p WHERE {HOME_SQL}")
 
 def q(sql, **params):
     return con.execute(sql, params).fetchdf()
-
-def safe_int(v):  return int(v) if v == v and v else 0
-def room_key(v): return v if isinstance(v, str) else 'all'   # grouping-set total row
-def safe_float(v, p=1): return round(float(v), p) if v == v and v else 0
 
 # ─── totals per area ─────────────────────────────────────────────
 print('totals...', file=sys.stderr)
@@ -297,7 +284,6 @@ for _, row in tl.iterrows():
 
 # YoY trend: like-for-like annual rent (same project + Ejari type + sub-type), last 365d vs prior 365d of
 # contracts already in force; plain monthly medians swing with the mix (+1500% in sparse areas)
-TODAY_MONTH = TODAY[:7]
 TREND_MIN_CELL, TREND_MIN_MATCHED = 3, 20
 con.execute(f"""
 CREATE TEMP TABLE trend_cells AS
@@ -541,7 +527,6 @@ out['__dubai__']  = dubai
 # Same windows as the old build_rents_map.py (contract start ≥ today − N×365 days).
 print('period summaries (1y/3y/5y/10y)...', file=sys.stderr)
 from datetime import timedelta
-PERIOD_YEARS = [('1y', 1), ('3y', 3), ('5y', 5), ('10y', 10)]
 
 def period_summaries(dfrom, src, kx):
     """{key: summary} for contracts starting on/after dfrom. src = r (area + project copies) or r_p;
@@ -601,23 +586,10 @@ for code, yrs in PERIOD_YEARS + [('all', None)]:
     shards[code]['__dubai__']['name'] = 'DUBAI'
 
 # Panel KPIs: true medians per period × room chip ([n, vol, med, ppsqm]); monthly medians can't be re-medianed
-def panel_stats(dfrom, src_h, src_a, kx):
-    w = f"d >= '{dfrom}'"
-    agg = "COUNT(*), ROUND(SUM(amt)), ROUND(MEDIAN(amt) FILTER (WHERE amt > 0)), ROUND(MEDIAN(amt/sqm) FILTER (WHERE amt > 0 AND sqm > 0))"
-    res = {}
-    for kk, b, n, vol, med, pp in con.execute(f"""
-          SELECT kk, 'homes', {agg} FROM (SELECT {kx} AS kk, amt, sqm FROM {src_h} WHERE {w}) GROUP BY kk
-          UNION ALL SELECT kk, COALESCE(rooms, 'all'), {agg}
-            FROM (SELECT {kx} AS kk, rooms, amt, sqm FROM {src_a} WHERE {w}) GROUP BY GROUPING SETS ((kk, rooms), (kk))
-          UNION ALL SELECT kk, 'apartments', {agg}
-            FROM (SELECT {kx} AS kk, amt, sqm FROM {src_a} WHERE {w} AND {APARTMENT_SQL}) GROUP BY kk""").fetchall():
-        res.setdefault(kk, {})[b] = [int(n), safe_int(vol), safe_int(med), safe_int(pp)]
-    return res
-
 for code, yrs in PERIOD_YEARS + [('all', None)]:
     dfrom = DATE_FROM if yrs is None else (TODAY_D - timedelta(days=365 * yrs)).isoformat()
-    ps = panel_stats(dfrom, 'rh', 'r', 'k')
-    ps['__dubai__'] = panel_stats(dfrom, 'rh_p', 'r_p', "'__dubai__'")['__dubai__']
+    ps = panel_stats(con, dfrom, 'rh', 'r', 'k', 'amt', APARTMENT_SQL, rooms='rooms')
+    ps['__dubai__'] = panel_stats(con, dfrom, 'rh_p', 'r_p', "'__dubai__'", 'amt', APARTMENT_SQL, rooms='rooms')['__dubai__']
     for k, e in out.items():
         if k in ps and isinstance(e, dict):
             e.setdefault('pstats', {})[code] = ps[k]
@@ -655,69 +627,6 @@ print(f'  key: master_project_en → fallback area_name_en (no manual remap)', f
 # scope viewer.js reads from. Index.html patch below cuts the 2.9 MB
 # inline literal and stitches in a script tag instead.
 CHOROPLETH_JS = os.path.join(ROOT, 'rents/data/choropleth.js')
-# Skip non-district markers: `__period__` is a {min, max} date-range
-# stamp, not a polygon — projecting it through .get('name', 0) leaks a
-# `{"name":null,"n":0,...}` row into the shard. `__dubai__` IS a real
-# city-wide aggregate (has `name='DUBAI'` and real numbers) so it stays.
-# The `name is not None` predicate filters out any future metadata
-# additions of the same shape without needing a hardcoded blocklist.
-thin = {
-    k: {
-        'name':       v.get('name'),
-        'n':          v.get('n', 0),
-        'med_annual': v.get('med_annual', 0),
-        'med_ppsqm':  v.get('med_ppsqm', 0),
-    }
-    for k, v in out.items()
-    if v.get('name') is not None
-}
-with open(CHOROPLETH_JS, 'w', encoding='utf-8') as f:
-    f.write('const RENT_AGGREGATES = ')
-    # sort_keys for deterministic byte-output; cache-bust below relies
-    # on stable hash across builds with no parquet change.
-    json.dump(thin, f, ensure_ascii=False, separators=(',', ':'), sort_keys=True)
-    f.write(';\n')
-# Hash excludes the `name` field deliberately: DLD parquet has multiple
-# capitalizations per district and the SQL aggregator picks any. Hash
-# should only bump on real key/number change, not display-name flips.
-hash_payload = json.dumps(
-    {k: {f: x for f, x in v.items() if f != 'name'} for k, v in thin.items()},
-    sort_keys=True, separators=(',', ':'),
-).encode('utf-8')
-CHOROPLETH_HASH = hashlib.sha256(hash_payload).hexdigest()[:8]
-print(f'wrote {CHOROPLETH_JS}', file=sys.stderr)
-print(f'  entries: {len(thin)}, size: {os.path.getsize(CHOROPLETH_JS):,} bytes, hash: {CHOROPLETH_HASH}', file=sys.stderr)
-
-# ─── Splice into index.html ─────────────────────────────────────
-HTML = os.path.join(ROOT, 'template.html')
-print(f'patching {HTML}: const RENT_AGGREGATES → <script src ?v={CHOROPLETH_HASH}>', file=sys.stderr)
-with open(HTML, encoding='utf-8') as f:
-    lines = f.readlines()
-choropleth_tag = f'<script src="/rents/data/choropleth.js?v={CHOROPLETH_HASH}"></script>\n'
-splice = '</script>\n' + choropleth_tag + '<script>\n'
-# Idempotent: match any past 8-char hash via regex, replace with current.
-# {8} pins length so a hand-edited longer hex string doesn't silently
-# get clobbered.
-CHOROPLETH_TAG_RE = re.compile(r'^<script src="/rents/data/choropleth\.js(\?v=[a-f0-9]{8})?"></script>\s*$')
-state = None
-for i, ln in enumerate(lines):
-    if ln.startswith('const RENT_AGGREGATES = '):
-        lines[i] = splice
-        state = 'replaced'
-        print(f'  replaced inline literal at line {i+1} (was {len(ln):,} bytes)', file=sys.stderr)
-        break
-    if CHOROPLETH_TAG_RE.match(ln):
-        if ln == choropleth_tag:
-            state = 'already-current'
-            print(f'  line {i+1} already references current hash — no-op', file=sys.stderr)
-        else:
-            lines[i] = choropleth_tag
-            state = 'hash-bumped'
-            print(f'  line {i+1} hash refreshed → {CHOROPLETH_HASH}', file=sys.stderr)
-        break
-if state is None:
-    print('  ERROR: index.html does not contain `const RENT_AGGREGATES = …` or the choropleth script tag', file=sys.stderr)
-    sys.exit(1)
-if state != 'already-current':
-    with open(HTML, 'w', encoding='utf-8') as f:
-        f.writelines(lines)
+# `name is not None` keeps `__period__` (a date stamp, not a polygon) out of the shard
+CHOROPLETH_HASH = write_choropleth(out, CHOROPLETH_JS, 'RENT_AGGREGATES', ('name', 'n', 'med_annual', 'med_ppsqm'))
+patch_choropleth_tag('RENT_AGGREGATES', '/rents/data/choropleth.js', CHOROPLETH_HASH)

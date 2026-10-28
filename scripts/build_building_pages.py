@@ -18,6 +18,7 @@ import duckdb
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 from _curated_sql import hierarchy_select  # noqa: E402
+from _html_common import write_if_changed  # noqa: E402
 from _yield_cells import MIN_MATCHED_SHARE, CELL, cell_yields, room_case  # noqa: E402
 
 OUT_DIR = 'buildings'
@@ -207,17 +208,6 @@ def norm(s):
     """Strip all non-alphanumeric for fuzzy project-name matching."""
     if not s: return ''
     return re.sub(r'[^a-z0-9]', '', s.lower())
-
-
-def write_if_changed(path, text):
-    if os.path.exists(path):
-        with open(path, encoding='utf-8') as f:
-            if f.read() == text:
-                return False
-    os.makedirs(os.path.dirname(path), exist_ok=True)
-    with open(path, 'w', encoding='utf-8') as f:
-        f.write(text)
-    return True
 
 
 def dumps(obj):
