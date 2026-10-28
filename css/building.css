@@ -88,6 +88,7 @@ h1 { font-size: 26px; margin: 0; line-height: 1.25; overflow-wrap: anywhere; }
 .bt .num { text-align: end; font-variant-numeric: tabular-nums; }
 .bt tbody tr:hover td { background: #f9fafb; }
 .bt b { color: #0f172a; }
+.rt .ms { display: none; }
 .dp-tag-op { display: inline-block; padding: 1px 6px; border-radius: 4px; font-size: 11px; font-weight: 600; }
 .dp-tag-op-Off-Plan { background: #fff5e6; color: #b8590a; }
 .dp-tag-op-Ready { background: #e6f7e6; color: #0a7f00; }
@@ -123,4 +124,12 @@ h1 { font-size: 26px; margin: 0; line-height: 1.25; overflow-wrap: anywhere; }
   .bchart .plot { left: 42px; right: 6px; }
   .bchart .xl.odd { display: none; }
   .bt th, .bt td { padding: 7px 8px; }
+  .rt th, .rt td { padding: 7px 5px; }
+  .rt th { white-space: normal; }
+  .rt .mf, .rt th:nth-child(3), .rt td:nth-child(3), .rt th:nth-child(6), .rt td:nth-child(6) { display: none; }
+  .rt th { letter-spacing: 0; }
+  .rt .ms { display: inline; }
+}
+@media (max-width: 360px) {
+  .rt th, .rt td { padding: 6px 3px; }
 }

@@ -531,7 +531,7 @@ CSS = """
   .lang-item{display:inline-block;padding:4px 10px;font-size:12.5px;color:#475569;background:#fff;border:1px solid #e5e7eb;border-radius:6px;text-decoration:none}
   .lang-item:hover{border-color:#1d4ed8;color:#1d4ed8}
   .lang-item.active{background:#1d4ed8;color:#fff;border-color:#1d4ed8;cursor:default;pointer-events:none}
-  @media (max-width:640px){h1{font-size:24px}.blog-table{font-size:13px}.blog-table th,.blog-table td{padding:8px 10px}}
+  @media (max-width:640px){h1{font-size:24px}.blog-table{font-size:13px;display:block;overflow-x:auto}.blog-table th,.blog-table td{padding:8px 6px}}
 """
 
 

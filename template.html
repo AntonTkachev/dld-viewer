@@ -296,6 +296,7 @@
 
 (function () {
   var KEY = 'dxbc_lang_banner_dismissed';
+  if (document.documentElement.lang !== 'ru') return;
   try { if (localStorage.getItem(KEY)) return; } catch (e) {}
   var lang = (navigator.language || 'en').toLowerCase();
   if (lang.indexOf('ru') === 0) return;

@@ -253,8 +253,6 @@
     .mp-item:not(:last-child){border-inline-end:none}
     .mp-item{position:static}
     .mp-body{position:absolute;top:calc(100% + 6px);left:8px;right:8px;transform:none;width:auto;min-width:0;max-width:none}
-    .mp-body-mask{min-width:0;max-width:none}
-    #mp-mask-list{min-width:0;max-width:none}
   }
   .mp-section-title{font-size:11px;color:var(--c-muted);font-weight:600;text-transform:uppercase;letter-spacing:.04em;padding:10px 14px 4px}
   
@@ -282,6 +280,7 @@
   
   .mp-body-mask{min-width:440px;max-width:520px;max-height:calc(100vh - 80px);overflow-y:auto;overscroll-behavior:contain}
   #mp-mask-list{display:flex;flex-direction:column;padding:6px;min-width:440px;max-width:520px}
+  @media (max-width:640px){.mp-body-mask,#mp-mask-list{min-width:0;max-width:none}.mp-body-mask{max-height:calc(100dvh - 200px)}}
   .mask-row{display:flex;flex-direction:column;padding:8px 10px;border-radius:var(--r-sm);cursor:pointer;border:1px solid transparent;transition:background .12s,border-color .12s}
   .mask-row:hover{background:var(--c-subtle)}
   .mask-row.active{background:#eef3fc;border-color:#cdd9f3}
@@ -374,6 +373,7 @@
   #faq-link:hover{background:#fff;border-color:var(--c-accent);color:var(--c-accent)}
   #blog-link{position:fixed;bottom:14px;inset-inline-start:52px;z-index:1200;height:30px;padding:0 12px;display:flex;align-items:center;justify-content:center;background:rgba(255,255,255,.96);color:#475569;border:1px solid var(--c-border);border-radius:var(--r-sm);font-size:12.5px;font-weight:600;text-decoration:none;font-family:inherit;box-shadow:var(--shadow-sm)}
   #blog-link:hover{background:#fff;border-color:var(--c-accent);color:var(--c-accent)}
+  @media (max-width:640px){#faq-link,#blog-link{display:none}body:not(.view-table) #view-switch{top:auto;bottom:14px;inset-inline-start:14px;inset-inline-end:auto}}
   .tv-pager{display:flex;align-items:center;justify-content:center;gap:4px;padding:10px;border-top:1px solid var(--c-border);flex-shrink:0;background:var(--c-surface);font-size:12px}
   .tv-pager-btn{background:var(--c-surface);border:1px solid var(--c-border);color:#374151;padding:4px 10px;border-radius:var(--r-sm);cursor:pointer;font-family:inherit;font-size:12px;min-width:30px;font-variant-numeric:tabular-nums}
   .tv-pager-btn:hover:not(.disabled):not(.active){background:#f1f5fb;border-color:#9bb6e2}

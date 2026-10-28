@@ -627,6 +627,10 @@ PAGE_TEMPLATE = '''<!DOCTYPE html>
   td.num, th.num {{ text-align:end; font-variant-numeric:tabular-nums; }}
   .nav {{ margin-top:24px; padding-top:18px; border-top:1px solid #e5e7eb; font-size:14px; }}
   .nav a {{ color:#1d4ed8; text-decoration:none; margin-inline-end:18px; }}
+  @media (max-width:760px) {{
+    .panel {{ overflow-x:auto; padding-left:12px; padding-right:12px; }}
+    th, td {{ padding:8px 6px; }}
+  }}
 </style>
 </head>
 <body>

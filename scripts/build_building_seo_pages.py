@@ -212,6 +212,17 @@ def money(n, lang):
     return {'ru': f'{s} AED', 'ar': f'{s} درهم'}.get(lang, f'AED {s}')
 
 
+def money_short(n, lang):
+    mln, k = (' млн', ' тыс.') if lang == 'ru' else ('M', 'K')
+    v, u = (n / 1e6, mln) if n >= 1e6 else (n / 1e3, k)
+    s = f'{v:.1f}' if v < 100 else f'{v:.0f}'
+    return (s.replace('.', ',') if lang == 'ru' else s) + u
+
+
+def deal_cell(p, lang):
+    return f'<span class="mf">{money(p, lang)}</span><span class="ms">{money_short(p, lang)}</span>' if p else '—'
+
+
 def pct(n, lang):
     return (f'{n:.1f}'.replace('.', ',') if lang == 'ru' else f'{n:.1f}')
 
@@ -503,12 +514,12 @@ def render(lang, b, d, areas, coords, as_of, siblings=()):
     trows = ''.join(
         f'<tr><td>{t["d"]}</td><td>{e(room_label(c, t["r"]))}</td>'
         f'<td class="num">{fmt_num(round(t["sqm"] * SQFT), lang) if t.get("sqm") else "—"}</td>'
-        f'<td class="num">{money(t["p"], lang) if t.get("p") else "—"}</td>'
+        f'<td class="num">{deal_cell(t.get("p"), lang)}</td>'
         f'<td class="num">{fmt_num(round(t["p"] / t["sqm"] / SQFT), lang) if t.get("p") and t.get("sqm") and t["sqm"] > 5 else "—"}</td>'
         f'<td><span class="dp-tag-op dp-tag-op-{"Off-Plan" if t.get("op") else "Ready"}">'
         f'{e(c["t_offplan"] if t.get("op") else c["t_ready"])}</span></td></tr>'
         for t in txs[:RECENT_TX])
-    recent_html = (f'<section class="card"><h2>{e(c["h_recent"])}</h2><div class="tw"><table class="bt"><thead><tr>'
+    recent_html = (f'<section class="card"><h2>{e(c["h_recent"])}</h2><div class="tw"><table class="bt rt"><thead><tr>'
                    f'<th>{e(c["c_date"])}</th><th>{e(c["c_rooms"])}</th><th class="num">{e(c["c_size"])}</th>'
                    f'<th class="num">{e(c["c_deal"])}</th><th class="num">{e(c["c_ppsqft"])}</th><th>{e(c["c_type"])}</th>'
                    f'</tr></thead><tbody>{trows}</tbody></table></div></section>') if txs else ''

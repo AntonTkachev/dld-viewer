@@ -50,6 +50,10 @@
   .panel th, .panel td { padding:8px 12px; text-align:left; border-bottom:1px solid #f3f4f6; }
   .panel th { font-weight:600; color:#6b7280; font-size:11px; text-transform:uppercase; letter-spacing:0.04em; background:#f8fafc; position:sticky; top:0; }
   .panel td.num, .panel th.num { text-align:right; font-variant-numeric:tabular-nums; }
+  @media (max-width:760px) {
+    .panel { overflow-x:auto; padding-left:12px; padding-right:12px; }
+    .panel th, .panel td { padding:8px 6px; }
+  }
   .nav { margin-top:24px; padding-top:18px; border-top:1px solid #e5e7eb; font-size:14px; }
   .nav a { color:#1d4ed8; text-decoration:none; margin-right:18px; }
   .tag { display:inline-block; padding:2px 8px; border-radius:4px; font-size:11px; font-weight:600; }
