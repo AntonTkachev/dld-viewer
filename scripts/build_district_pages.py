@@ -169,6 +169,7 @@ COPY = {
         'load_err': 'Не удалось загрузить данные',
         'about_title': 'О районе {name}',
         'nearby_title': 'Похожие районы рядом с {name}',
+        'buildings_title': 'Здания в {name}',
         'within_title': 'Внутри {name}',
         'within_n_sale': '{n} сделок',
         'within_n_rent': '{n} договоров',
@@ -221,6 +222,9 @@ COPY = {
         'title_sales_nomed': '{name}: сделки продажи{period_title} — {n} сделок DLD',
         'title_rent':        '{name}: сделки аренды{period_title} — медиана {med} AED/год, {n} DLD',
         'title_rent_nomed':  '{name}: сделки аренды{period_title} — {n} контрактов DLD',
+        'title_rent_types':  '{name}: аренда{period_title} — {parts} AED/год',
+        'desc_rent_types':   'Сколько платят за аренду в {name} за последние 12 месяцев (договоры Ejari, DLD): {parts} в год. Динамика по месяцам и топ проектов — бесплатно.',
+        'lede_rent_types':   'Медианная годовая аренда за последние 12 месяцев: {parts}.',
         'desc_sales':        '{n} сделок продажи в {name} — данные Dubai Land Department. Медиана {med} AED. Топ-проекты, цена за м², динамика по месяцам — бесплатно.',
         'desc_sales_nomed':  'Сделки продажи в {name}: {n} реальных записей Dubai Land Department. Топ-проекты, цена за м², динамика по месяцам — бесплатно.',
         'desc_rent':         '{n} договоров аренды в {name} — данные Dubai Land Department. Медиана {med} AED/год. Разбивка по комнатам, динамика — бесплатно.',
@@ -283,6 +287,7 @@ COPY = {
         'load_err': 'Could not load data',
         'about_title': 'About {name}',
         'nearby_title': 'Similar districts near {name}',
+        'buildings_title': 'Buildings in {name}',
         'within_title': 'Inside {name}',
         'within_n_sale': '{n} deals',
         'within_n_rent': '{n} contracts',
@@ -335,6 +340,9 @@ COPY = {
         'title_sales_nomed': '{name} Sale Transactions{period_title}: {n} DLD Deals',
         'title_rent':        '{name} Rent Prices{period_title}: Median AED {med}/Year — {n} DLD Contracts',
         'title_rent_nomed':  '{name} Rent Prices{period_title}: {n} DLD Contracts',
+        'title_rent_types':  '{name} Rent{period_title}: {parts} AED/yr',
+        'desc_rent_types':   'What renters pay in {name} over the last 12 months (registered Ejari contracts, DLD): {parts} per year. Monthly trend and top projects — free.',
+        'lede_rent_types':   'Median annual rent over the last 12 months: {parts}.',
         'desc_sales':        '{n} real sale transactions in {name} from Dubai Land Department. Median price AED {med}. Top projects, price per m², monthly trend — free.',
         'desc_sales_nomed':  'Sale transactions in {name}: {n} real Dubai Land Department deals. Top projects, price per m², monthly trend — free.',
         'desc_rent':         'Rent prices in {name}: median annual rent AED {med} across {n} registered Ejari contracts (Dubai Land Department). Studio to 4BR+ and villa rents, monthly trend — free.',
@@ -397,6 +405,7 @@ COPY = {
         'load_err': 'تعذر تحميل البيانات',
         'about_title': 'عن منطقة {name}',
         'nearby_title': 'مناطق مشابهة قريبة من {name}',
+        'buildings_title': 'المباني في {name}',
         'within_title': 'داخل {name}',
         'within_n_sale': '{n} صفقة',
         'within_n_rent': '{n} عقد',
@@ -449,6 +458,9 @@ COPY = {
         'title_sales_nomed': '{name}: صفقات بيع العقارات{period_title} — {n} صفقة DLD',
         'title_rent':        'إيجارات {name}{period_title}: متوسط {med} درهم/سنة — {n} عقد إيجار DLD',
         'title_rent_nomed':  'إيجارات {name}{period_title}: {n} عقد إيجار DLD',
+        'title_rent_types':  'إيجارات {name}{period_title}: {parts} درهم/سنة',
+        'desc_rent_types':   'الإيجارات في {name} خلال آخر 12 شهرًا (عقود إيجاري المسجلة، دائرة الأراضي والأملاك): {parts} سنويًا. التغير الشهري وأفضل المشاريع — مجانًا.',
+        'lede_rent_types':   'الإيجار السنوي الوسيط خلال آخر 12 شهرًا: {parts}.',
         'desc_sales':        '{n} صفقة بيع حقيقية في {name} من دائرة الأراضي والأملاك بدبي. متوسط السعر {med} درهم. أهم المشاريع، السعر للمتر، التغير الشهري — مجانًا.',
         'desc_sales_nomed':  'صفقات بيع العقارات في {name}: {n} صفقة حقيقية من دائرة الأراضي والأملاك بدبي. أهم المشاريع، السعر للمتر، التغير الشهري — مجانًا.',
         'desc_rent':         '{n} عقد إيجار حقيقي في {name} من دائرة الأراضي والأملاك بدبي. متوسط الإيجار السنوي {med} درهم. الأسعار من الاستوديو إلى 4+ غرف، التغير الشهري — مجانًا.',
@@ -511,6 +523,7 @@ COPY = {
         'load_err': 'डेटा लोड नहीं हो सका',
         'about_title': '{name} के बारे में',
         'nearby_title': '{name} के पास समान जिले',
+        'buildings_title': '{name} में इमारतें',
         'within_title': '{name} के अंदर',
         'within_n_sale': '{n} सौदे',
         'within_n_rent': '{n} अनुबंध',
@@ -563,6 +576,9 @@ COPY = {
         'title_sales_nomed': '{name}: प्रॉपर्टी बिक्री लेनदेन{period_title} — {n} DLD सौदे',
         'title_rent':        '{name}: किराया लेनदेन{period_title} — औसत AED {med}/वर्ष, {n} DLD अनुबंध',
         'title_rent_nomed':  '{name}: किराया लेनदेन{period_title} — {n} DLD अनुबंध',
+        'title_rent_types':  '{name} किराया{period_title}: {parts} AED/वर्ष',
+        'desc_rent_types':   'पिछले 12 महीनों में {name} में किराया (पंजीकृत Ejari अनुबंध, DLD): {parts} प्रति वर्ष। मासिक ट्रेंड और शीर्ष प्रोजेक्ट — मुफ़्त।',
+        'lede_rent_types':   'पिछले 12 महीनों में मध्यिका वार्षिक किराया: {parts}।',
         'desc_sales':        '{name} में {n} वास्तविक बिक्री लेनदेन — Dubai Land Department डेटा। औसत मूल्य AED {med}। शीर्ष परियोजनाएं, प्रति m² मूल्य, मासिक ट्रेंड — मुफ़्त।',
         'desc_sales_nomed':  '{name} में प्रॉपर्टी बिक्री लेनदेन: Dubai Land Department के {n} वास्तविक सौदे। शीर्ष परियोजनाएं, प्रति m² मूल्य, मासिक ट्रेंड — मुफ़्त।',
         'desc_rent':         '{name} में {n} वास्तविक किराया लेनदेन — Dubai Land Department डेटा। औसत वार्षिक किराया AED {med}। स्टूडियो से 4BR+ मूल्य, मासिक ट्रेंड — मुफ़्त।',
@@ -625,6 +641,7 @@ COPY = {
         'load_err': '无法加载数据',
         'about_title': '关于 {name}',
         'nearby_title': '{name}附近的相似区域',
+        'buildings_title': '{name}的楼盘',
         'within_title': '{name}内',
         'within_n_sale': '{n} 笔交易',
         'within_n_rent': '{n} 份合同',
@@ -677,6 +694,9 @@ COPY = {
         'title_sales_nomed': '{name} 成交记录{period_title}:{n} 笔 DLD 成交',
         'title_rent':        '{name} 租赁成交记录{period_title}:中位 AED {med}/年,{n} 份 DLD 合同',
         'title_rent_nomed':  '{name} 租赁成交记录{period_title}:{n} 份 DLD 合同',
+        'title_rent_types':  '{name} 租金{period_title}：{parts} AED/年',
+        'desc_rent_types':   '{name} 近 12 个月租金（迪拜土地局登记的 Ejari 租约）：{parts}/年。月度走势与热门项目 — 免费。',
+        'lede_rent_types':   '近 12 个月年租金中位数：{parts}。',
         'desc_sales':        '{name} 共有 {n} 笔真实成交记录,来自迪拜土地局数据。中位价 AED {med}。热门项目、每平方米价格、月度走势 — 免费。',
         'desc_sales_nomed':  '{name} 成交记录:迪拜土地局 {n} 笔真实成交数据。热门项目、每平方米价格、月度走势 — 免费。',
         'desc_rent':         '{name} 共有 {n} 份真实租约,来自迪拜土地局数据。年租金中位数 AED {med}。开间至 4+ 卧价格、月度走势 — 免费。',
@@ -764,8 +784,11 @@ FAQ_COPY = {
         'a_rent':   'Медианная годовая аренда в {name} — {med} AED. '
                     'Всего зарегистрировано {n} договоров аренды (Ejari).',
         'a_rent_home': 'Медианная годовая аренда жилья (квартиры и виллы) в {name} — {med} AED, по {n} договорам Ejari. Офисы, склады и общежития считаются отдельно.',
+        'a_rent_home_1y': 'За последние 12 месяцев медианная годовая аренда жилья (квартиры и виллы) в {name} — {med} AED, по {n} договорам Ejari (за всё время — {med_all} AED). Офисы, склады и общежития считаются отдельно.',
         'q_rent_types': 'Сколько стоит аренда квартиры или виллы в {name}?',
         'a_rent_types': 'Медианная годовая аренда в {name} по типам: {parts}. По зарегистрированным договорам Ejari в Dubai Land Department.',
+        'a_rent_types_1y': 'Медианная годовая аренда в {name} за последние 12 месяцев: {parts}. По зарегистрированным договорам Ejari в Dubai Land Department.',
+        'rent_type_short': {'studio': 'студия', '1br': '1BR', '2br': '2BR', '3br': '3BR', '4br+': '4BR+', 'villa': 'вилла'},
         'rent_type_labels': {'studio': 'студия', '1br': '1 спальня', '2br': '2 спальни', '3br': '3 спальни', '4br+': '4+ спальни', 'villa': 'вилла'},
         'rent_type_fmt': '{label} — {v} AED',
         'rent_type_join': '; ',
@@ -795,8 +818,11 @@ FAQ_COPY = {
         'a_rent':   'The median annual rent in {name} is {med} AED. '
                     'A total of {n} rental contracts (Ejari) are registered.',
         'a_rent_home': 'The median annual rent for homes (apartments and villas) in {name} is {med} AED, across {n} Ejari contracts. Offices, warehouses and labour camps are counted separately.',
+        'a_rent_home_1y': 'Over the last 12 months the median annual rent for homes (apartments and villas) in {name} is {med} AED, across {n} Ejari contracts (all-time median: {med_all} AED). Offices, warehouses and labour camps are counted separately.',
         'q_rent_types': 'How much does it cost to rent an apartment or villa in {name}?',
         'a_rent_types': 'Median annual rent in {name} by unit type: {parts}. Based on registered Ejari contracts in the Dubai Land Department.',
+        'a_rent_types_1y': 'Median annual rent in {name} over the last 12 months: {parts}. Based on registered Ejari contracts in the Dubai Land Department.',
+        'rent_type_short': {'studio': 'Studio', '1br': '1BR', '2br': '2BR', '3br': '3BR', '4br+': '4BR+', 'villa': 'Villa'},
         'rent_type_labels': {'studio': 'studio', '1br': '1-bedroom', '2br': '2-bedroom', '3br': '3-bedroom', '4br+': '4+ bedrooms', 'villa': 'villa'},
         'rent_type_fmt': '{label} — {v} AED',
         'rent_type_join': '; ',
@@ -827,8 +853,11 @@ FAQ_COPY = {
         'a_rent':   'الإيجار السنوي الوسيط في {name} هو {med} درهم. '
                     'إجمالي {n} عقد إيجار مسجل (إيجاري).',
         'a_rent_home': 'الإيجار السنوي الوسيط للمساكن (شقق وفلل) في {name} هو {med} درهم، عبر {n} عقد إيجاري. المكاتب والمستودعات وسكن العمال تُحتسب بشكل منفصل.',
+        'a_rent_home_1y': 'خلال آخر 12 شهرًا بلغ الإيجار السنوي الوسيط للمساكن (شقق وفلل) في {name} {med} درهم، عبر {n} عقد إيجاري (الوسيط لكل الوقت: {med_all} درهم). المكاتب والمستودعات وسكن العمال تُحتسب بشكل منفصل.',
         'q_rent_types': 'كم تبلغ تكلفة استئجار شقة أو فيلا في {name}؟',
         'a_rent_types': 'الإيجار السنوي الوسيط في {name} حسب نوع الوحدة: {parts}. استنادًا إلى عقود إيجاري المسجلة في دائرة الأراضي والأملاك في دبي.',
+        'a_rent_types_1y': 'الإيجار السنوي الوسيط في {name} خلال آخر 12 شهرًا: {parts}. استنادًا إلى عقود إيجاري المسجلة في دائرة الأراضي والأملاك في دبي.',
+        'rent_type_short': {'studio': 'استوديو', '1br': '1BR', '2br': '2BR', '3br': '3BR', '4br+': '4BR+', 'villa': 'فيلا'},
         'rent_type_labels': {'studio': 'استوديو', '1br': 'غرفة نوم واحدة', '2br': 'غرفتا نوم', '3br': '3 غرف نوم', '4br+': '4+ غرف نوم', 'villa': 'فيلا'},
         'rent_type_fmt': '{label} — {v} درهم',
         'rent_type_join': '؛ ',
@@ -857,8 +886,11 @@ FAQ_COPY = {
         'a_rent':   '{name} में मध्यिका वार्षिक किराया {med} AED है। '
                     'कुल {n} किराये के अनुबंध (Ejari) पंजीकृत हैं।',
         'a_rent_home': '{name} में आवास (अपार्टमेंट और विला) का मध्यिका वार्षिक किराया {med} AED है, {n} Ejari अनुबंधों के आधार पर। ऑफिस, गोदाम और श्रमिक आवास अलग गिने जाते हैं।',
+        'a_rent_home_1y': 'पिछले 12 महीनों में {name} में आवास (अपार्टमेंट और विला) का मध्यिका वार्षिक किराया {med} AED रहा, {n} Ejari अनुबंधों के आधार पर (सर्व समय मध्यिका: {med_all} AED)। ऑफिस, गोदाम और श्रमिक आवास अलग गिने जाते हैं।',
         'q_rent_types': '{name} में अपार्टमेंट या विला किराए पर लेने में कितना खर्च आता है?',
         'a_rent_types': '{name} में यूनिट प्रकार के अनुसार मध्यिका वार्षिक किराया: {parts}। Dubai Land Department में पंजीकृत Ejari अनुबंधों पर आधारित।',
+        'a_rent_types_1y': 'पिछले 12 महीनों में {name} में मध्यिका वार्षिक किराया: {parts}। Dubai Land Department में पंजीकृत Ejari अनुबंधों पर आधारित।',
+        'rent_type_short': {'studio': 'स्टूडियो', '1br': '1BR', '2br': '2BR', '3br': '3BR', '4br+': '4BR+', 'villa': 'विला'},
         'rent_type_labels': {'studio': 'स्टूडियो', '1br': '1 बेडरूम', '2br': '2 बेडरूम', '3br': '3 बेडरूम', '4br+': '4+ बेडरूम', 'villa': 'विला'},
         'rent_type_fmt': '{label} — AED {v}',
         'rent_type_join': '; ',
@@ -887,8 +919,11 @@ FAQ_COPY = {
         'a_rent':   '{name} 的年租金中位数为 {med} 迪拉姆。'
                     '已登记 {n} 份租赁合同（Ejari）。',
         'a_rent_home': '{name} 住宅（公寓和别墅）的年租金中位数为 {med} 迪拉姆，基于 {n} 份 Ejari 合同。办公室、仓库和劳工宿舍单独统计。',
+        'a_rent_home_1y': '{name} 近 12 个月住宅（公寓和别墅）年租金中位数为 {med} AED，基于 {n} 份 Ejari 租约（全部时间中位数：{med_all} AED）。办公、仓库和劳工宿舍单独统计。',
         'q_rent_types': '在 {name} 租一套公寓或别墅要多少钱？',
         'a_rent_types': '{name} 按户型划分的年租金中位数：{parts}。基于迪拜土地局登记的 Ejari 租约。',
+        'a_rent_types_1y': '{name} 近 12 个月年租金中位数：{parts}。基于迪拜土地局登记的 Ejari 租约。',
+        'rent_type_short': {'studio': '开间', '1br': '1BR', '2br': '2BR', '3br': '3BR', '4br+': '4BR+', 'villa': '别墅'},
         'rent_type_labels': {'studio': '开间', '1br': '一居室', '2br': '两居室', '3br': '三居室', '4br+': '四居及以上', 'villa': '别墅'},
         'rent_type_fmt': '{label} {v} 迪拉姆',
         'rent_type_join': '；',
@@ -1390,6 +1425,33 @@ def build_nearby_index(sale_agg, rent_agg):
     return index
 
 
+BUILDINGS_PER_DISTRICT = 12
+
+
+def load_district_buildings():
+    """District slug → indexable building pages, busiest first (search-index from the previous build)."""
+    path = os.path.join(ROOT, 'buildings', 'search-index.json')
+    if not os.path.exists(path):
+        return {}
+    out = {}
+    for b in json.load(open(path, encoding='utf-8')):   # tx-sorted
+        if b.get('pg') and not b.get('ni'):
+            out.setdefault(slugify(b.get('ad') or b['a']), []).append(b)
+    return out
+
+
+def build_buildings_html(name, slug, lang, district_buildings):
+    """Links to this district's building pages."""
+    rows = district_buildings.get(slug, [])[:BUILDINGS_PER_DISTRICT]
+    if not rows:
+        return ''
+    c = COPY[lang]
+    items = ''.join(f'<li><a href="{BASE_URL}/{lang}/buildings/{html_escape(b["s"])}/">{html_escape(b["n"])}</a></li>'
+                    for b in rows)
+    return (f'<nav class="nearby-districts"><h2>{html_escape(c["buildings_title"].format(name=name))}</h2>'
+            f'<ul>{items}</ul></nav>')
+
+
 def build_within_html(name, mode, lang, key, sale_agg, rent_agg):
     """Links to pages covering part of this district: sub-community polygons + master-project pages."""
     c = COPY[lang]
@@ -1459,6 +1521,34 @@ def build_top_projects_html(name, mode, slug, rec, lang):
 RENT_TYPE_MIN_N = 20
 
 
+def rent_types_1y(rent_rec):
+    """[(type, median, n)] over the last 12 months, enough contracts each, canonical order."""
+    p = ((rent_rec or {}).get('pstats') or {}).get('1y') or {}
+    return [(k, p[k][2], p[k][0]) for k in ('studio', '1br', '2br', '3br', '4br+', 'villa')
+            if k in p and p[k][0] >= RENT_TYPE_MIN_N and p[k][2]]
+
+
+def _short_aed(v):
+    return f'{v / 1e6:.1f}M' if v >= 1e6 else f'{round(v / 1e3)}K'
+
+
+def rent_title_parts(rent_rec, lang, top_n=3):
+    """'Studio 65K, 1BR 86K, 2BR 140K' — the busiest unit types, 12 months."""
+    rows = rent_types_1y(rent_rec)
+    top = {k for k, _, _ in sorted(rows, key=lambda r: -r[2])[:top_n]}
+    labels = FAQ_COPY[lang]['rent_type_short']
+    return ', '.join(f'{labels[k]} {_short_aed(med)}' for k, med, _ in rows if k in top)
+
+
+def rent_type_parts_1y(rent_rec, lang):
+    rows = rent_types_1y(rent_rec)
+    if not rows:
+        return ''
+    c = FAQ_COPY[lang]
+    return c['rent_type_join'].join(
+        c['rent_type_fmt'].format(label=c['rent_type_labels'][k], v=fmt_aed(med, lang)) for k, med, _ in rows)
+
+
 def _rent_type_parts(rent_rec, lang):
     """'studio — 54,000 AED; 1-bedroom — …; villa — …' from rent medians by unit type."""
     c = FAQ_COPY[lang]
@@ -1498,16 +1588,20 @@ def build_district_faq(name, sale_rec, rent_rec, lang, pois=None):
         ))
 
     if rent_rec.get('med_annual') and rent_rec.get('n'):
-        qa.append((
-            c['q_rent'].format(name=name),
-            c['a_rent_home' if rent_rec.get('scope') == 'home' else 'a_rent'].format(
-                name=name, med=fmt_aed(rent_rec['med_annual'], lang), n=fmt_int(rent_rec['n'], lang)),
-        ))
-        parts = _rent_type_parts(rent_rec, lang)
+        h1y = ((rent_rec.get('pstats') or {}).get('1y') or {}).get('homes')
+        if rent_rec.get('scope') == 'home' and h1y and h1y[0] >= RENT_TYPE_MIN_N and h1y[2]:
+            a_rent = c['a_rent_home_1y'].format(name=name, med=fmt_aed(h1y[2], lang), n=fmt_int(h1y[0], lang),
+                                                med_all=fmt_aed(rent_rec['med_annual'], lang))
+        else:
+            a_rent = c['a_rent_home' if rent_rec.get('scope') == 'home' else 'a_rent'].format(
+                name=name, med=fmt_aed(rent_rec['med_annual'], lang), n=fmt_int(rent_rec['n'], lang))
+        qa.append((c['q_rent'].format(name=name), a_rent))
+        parts_1y = rent_type_parts_1y(rent_rec, lang)
+        parts = parts_1y or _rent_type_parts(rent_rec, lang)
         if parts:
             qa.append((
                 c['q_rent_types'].format(name=name),
-                c['a_rent_types'].format(name=name, parts=parts),
+                c['a_rent_types_1y' if parts_1y else 'a_rent_types'].format(name=name, parts=parts),
             ))
         qa.append((
             c['q_rent_history'].format(name=name),
@@ -1605,6 +1699,15 @@ def seo_title_desc(mode, name, rec, period_code, lang):
     fmt_kwargs = dict(name=name, period_title=period_title_suffix, n=n_s)
     if has_med:
         fmt_kwargs['med'] = fmt_aed(med, lang)
+    # canonical rent page: searchers want today's rent per bedroom, not an all-time median
+    if mode == 'rent' and period_code == 'all' and isinstance(rec, dict):
+        full = rent_type_parts_1y(rec, lang)
+        if full:
+            # Google cuts titles around 60–70 chars: drop the least busy type for long names
+            title = c['title_rent_types'].format(**fmt_kwargs, parts=rent_title_parts(rec, lang))
+            if len(title) > 70:
+                title = c['title_rent_types'].format(**fmt_kwargs, parts=rent_title_parts(rec, lang, 2))
+            return title, c['desc_rent_types'].format(**fmt_kwargs, parts=full)
     return c[title_key].format(**fmt_kwargs), c[desc_key].format(**fmt_kwargs)
 
 
@@ -1784,6 +1887,7 @@ def main():
         rent = json.load(f)
     nearby_index = build_nearby_index(agg, rent)
     poi_index = build_poi_index()
+    district_buildings = load_district_buildings()
     written_json = set()
     with open(TPL, encoding='utf-8') as f:
         template = f.read()
@@ -1845,7 +1949,8 @@ def main():
                 base_rec = sale_rec if mode == 'sale' else rent_rec
                 if not base_rec:
                     continue
-                nearby_html = (build_within_html(display_name, mode, lang, key, agg, rent)
+                nearby_html = (build_buildings_html(display_name, slug, lang, district_buildings)
+                               + build_within_html(display_name, mode, lang, key, agg, rent)
                                + build_nearby_html(display_name, mode, lang, key, nearby_index, agg, rent))
 
                 # Build data.json bundle once per (key, mode) — shared across
@@ -1897,6 +2002,9 @@ def main():
                                 + build_lede(mode, display_name, PERIOD_SUFFIX[lang]['all']['h1'], base_rec, lang, is_dubai=is_dubai))
                     else:
                         lede = build_lede(mode, display_name, period_h1, rec_for_period, lang, is_dubai=is_dubai)
+                        parts_1y = rent_type_parts_1y(base_rec, lang) if mode == 'rent' and period_code == 'all' else ''
+                        if parts_1y:
+                            lede += ' ' + c['lede_rent_types'].format(parts=parts_1y)
                     title, _ = seo_title_desc(mode, heading_name, {'n': 0} if empty_period else rec_for_period, period_code, lang)
                     about_full = about_p.replace('<!--__LEDE_P__-->', f'<p class="lede" id="d-lede">{html_escape(lede)}</p>')
                     period_copy[period_code] = {'h1': headline, 'title': title, 'lede': lede, 'n': n_p,

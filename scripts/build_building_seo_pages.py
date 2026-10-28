@@ -59,7 +59,7 @@ COPY = {
         a_rent_proj=' (по всему проекту)',
         q_yield='Какая доходность от аренды в {name}?',
         a_yield='Валовая доходность — около {y}%: годовая аренда {rp} AED/м² против цены {sp} AED/м² за последние 24 месяца.',
-        links='Ссылки', l_area='Цены района {area}', l_map='Открыть на карте', l_charts='Интерактивные графики и PDF', l_dir='Все здания Дубая',
+        links='Ссылки', l_area='Цены района {area}', l_area_rent='Аренда в районе {area}', h_siblings='Другие здания в {area}', l_map='Открыть на карте', l_charts='Интерактивные графики и PDF', l_dir='Все здания Дубая',
         source='Источник: Земельный департамент Дубая (DLD) и договоры аренды Ejari через Dubai Pulse. Медианы; данные на {date}.',
         chart_title='Медианная цена за кв. фут по годам, AED',
         moved='Эта страница переехала', moved_link='Открыть актуальную страницу →',
@@ -90,7 +90,7 @@ COPY = {
         a_rent_proj=' (whole project)',
         q_yield='What is the rental yield of {name}?',
         a_yield='The gross yield is about {y}%: annual rent of AED {rp}/m² against a price of AED {sp}/m² over the last 24 months.',
-        links='Links', l_area='{area} prices', l_map='Open on the map', l_charts='Interactive charts & PDF', l_dir='All Dubai buildings',
+        links='Links', l_area='{area} prices', l_area_rent='{area} rents', h_siblings='Other buildings in {area}', l_map='Open on the map', l_charts='Interactive charts & PDF', l_dir='All Dubai buildings',
         source='Source: Dubai Land Department (DLD) transactions and Ejari rent contracts via Dubai Pulse. Medians; data as of {date}.',
         chart_title='Median price per sqft by year, AED',
         moved='This page has moved', moved_link='Open the current page →',
@@ -121,7 +121,7 @@ COPY = {
         a_rent_proj=' (للمشروع بأكمله)',
         q_yield='ما عائد الإيجار في {name}؟',
         a_yield='العائد الإجمالي نحو {y}%: إيجار سنوي {rp} درهم/م² مقابل سعر {sp} درهم/م² خلال آخر 24 شهرًا.',
-        links='روابط', l_area='أسعار {area}', l_map='عرض على الخريطة', l_charts='رسوم تفاعلية وPDF', l_dir='كل مباني دبي',
+        links='روابط', l_area='أسعار {area}', l_area_rent='إيجارات {area}', h_siblings='مبانٍ أخرى في {area}', l_map='عرض على الخريطة', l_charts='رسوم تفاعلية وPDF', l_dir='كل مباني دبي',
         source='المصدر: دائرة الأراضي والأملاك في دبي وعقود إيجاري عبر دبي بالس. قيم وسيطة؛ البيانات حتى {date}.',
         chart_title='السعر الوسيط للقدم المربع حسب السنة، درهم',
         moved='تم نقل هذه الصفحة', moved_link='افتح الصفحة الحالية ←',
@@ -152,7 +152,7 @@ COPY = {
         a_rent_proj=' (पूरी परियोजना)',
         q_yield='{name} की रेंटल यील्ड क्या है?',
         a_yield='सकल यील्ड लगभग {y}% है: पिछले 24 महीनों में AED {rp}/m² वार्षिक किराया बनाम AED {sp}/m² कीमत।',
-        links='लिंक', l_area='{area} की कीमतें', l_map='मानचित्र पर खोलें', l_charts='इंटरैक्टिव चार्ट और PDF', l_dir='दुबई की सभी इमारतें',
+        links='लिंक', l_area='{area} की कीमतें', l_area_rent='{area} किराया', h_siblings='{area} में अन्य इमारतें', l_map='मानचित्र पर खोलें', l_charts='इंटरैक्टिव चार्ट और PDF', l_dir='दुबई की सभी इमारतें',
         source='स्रोत: दुबई भूमि विभाग (DLD) लेन-देन और Ejari किराया अनुबंध, Dubai Pulse के माध्यम से। माध्य मान; डेटा {date} तक।',
         chart_title='वर्षवार प्रति वर्ग फुट माध्य कीमत, AED',
         moved='यह पेज स्थानांतरित हो गया है', moved_link='वर्तमान पेज खोलें →',
@@ -183,7 +183,7 @@ COPY = {
         a_rent_proj='（整个项目）',
         q_yield='{name} 的租金收益率是多少？',
         a_yield='毛收益率约 {y}%：近 24 个月每平方米年租金 AED {rp}，对应每平方米价格 AED {sp}。',
-        links='链接', l_area='{area} 价格', l_map='在地图上打开', l_charts='交互图表与 PDF', l_dir='迪拜全部楼盘',
+        links='链接', l_area='{area} 价格', l_area_rent='{area} 租金', h_siblings='{area} 的其他楼盘', l_map='在地图上打开', l_charts='交互图表与 PDF', l_dir='迪拜全部楼盘',
         source='来源：迪拜土地局（DLD）成交数据与 Ejari 租赁合同（Dubai Pulse）。中位数；数据截至 {date}。',
         chart_title='历年每平方英尺中位价，AED',
         moved='此页面已迁移', moved_link='打开当前页面 →',
@@ -338,7 +338,7 @@ def load_coords():
     return {r['s']: (r['lat'], r['lon']) for r in json.loads(raw[len('const BUILDINGS = '):].rstrip(';')) if r.get('s')}
 
 
-def render(lang, b, d, areas, coords, as_of):
+def render(lang, b, d, areas, coords, as_of, siblings=()):
     c, dc = COPY[lang], DIR_COPY[lang]
     slug, name = b['s'], b['n']
     aname = b.get('ad') or b['a']
@@ -526,11 +526,16 @@ def render(lang, b, d, areas, coords, as_of):
     links = []
     if aslug:
         links.append((f'/{lang}/sales/{aslug}/', c['l_area'].format(area=area)))
+        if os.path.exists(os.path.join(ROOT, lang, 'rents', aslug, 'index.html')):
+            links.append((f'/{lang}/rents/{aslug}/', c['l_area_rent'].format(area=area)))
     if b.get('m'):
         links.append((f'/{lang}/sales/?bld={slug}', c['l_map']))
     links.append((f'/search/#{slug}', c['l_charts']))
     links.append((f'/{lang}/buildings/', c['l_dir']))
     links_html = ''.join(f'<li><a href="{e(u)}">{e(t)}</a></li>' for u, t in links)
+    sib_html = (f'<nav class="nearby-districts"><h2>{e(c["h_siblings"].format(area=area))}</h2><ul>'
+                + ''.join(f'<li><a href="/{lang}/buildings/{e(sb["s"])}/">{e(sb["n"])}</a></li>' for sb in siblings)
+                + '</ul></nav>') if siblings and area else ''
 
     # ── JSON-LD ──
     place = {'@type': 'Place', 'name': area}
@@ -622,6 +627,7 @@ def render(lang, b, d, areas, coords, as_of):
   {rents_html}
   {recent_html}
   {faq_html}
+  {sib_html}
   <nav class="nearby-districts"><h2>{e(c["links"])}</h2><ul>{links_html}</ul></nav>
   <p class="source">{e(c["source"].format(date=d_to))}</p>
   <div class="nav"><a href="/{lang}/buildings/">{e(c["nav_dir"])}</a><a href="/{lang}/sales/">{e(c["nav_map"])}</a></div>
@@ -655,12 +661,17 @@ def main():
 
     pages = [b for b in idx if b.get('pg')]
     page_slugs = {b['s'] for b in pages}
+    by_area = {}   # index is tx-sorted, so each list is busiest-first
+    for b in pages:
+        if not b.get('ni'):
+            by_area.setdefault(b.get('ad') or b['a'], []).append(b)
     changed = 0
     for b in pages:
         d = json.load(open(os.path.join(B, b['s'], 'data.json'), encoding='utf-8'))
         for lang in LANGUAGES:
             changed += write_if_changed(os.path.join(ROOT, lang, 'buildings', b['s'], 'index.html'),
-                                        render(lang, b, d, areas, coords, as_of))
+                                        render(lang, b, d, areas, coords, as_of,
+                                               [o for o in by_area.get(b.get('ad') or b['a'], []) if o is not b][:8]))
 
     # Retired slugs → redirect to the same building's current page, else the directory
     history = json.load(open(HISTORY, encoding='utf-8')) if os.path.exists(HISTORY) else {}
