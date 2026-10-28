@@ -22,3 +22,10 @@ if git diff --cached --name-only | grep -qE '^(index\.html|data/(curated_polygon
 else
     echo "==> pre-commit: no mask-relevant files staged, skipping smoke tests"
 fi
+
+# Unit tests (tests/, no parquet): only when code/templates/tests are staged
+if git diff --cached --name-only | grep -qE '^(scripts/.*\.py|js/.*\.js|template\.html|templates/.*\.html|tests/.*|pytest\.ini)$' \
+        && /usr/bin/python3 -c 'import pytest' 2>/dev/null; then
+    echo "==> pre-commit: running unit tests (pytest -m 'not data')..."
+    /usr/bin/python3 -m pytest -q --no-header -m 'not data' tests
+fi

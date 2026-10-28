@@ -106,5 +106,8 @@ $PY scripts/test_buildings_match.py
 phase "11c. Building pages / directory regression test"
 $PY scripts/test_building_pages.py
 
+phase "11d. Unit + data-contract tests (tests/, read-only)"
+if $PY -c 'import pytest' 2>/dev/null; then $PY -m pytest -q --no-header -k 'not golden_script' tests; else echo "  pytest missing for $PY — skipped"; fi
+
 echo
 echo "[$(ts)] refresh_all: done"

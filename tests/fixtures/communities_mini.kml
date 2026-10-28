@@ -1,0 +1,39 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<kml xmlns="http://www.opengis.net/kml/2.2">
+<Document>
+<name>Community_test</name>
+<Placemark id="kml_1">
+<name>kml_1</name>
+<ExtendedData>
+<SchemaData schemaUrl="doc.kml#kml_schema">
+<SimpleData name="OBJECTID">16</SimpleData>
+<SimpleData name="CNAME_E">MADINAT AL MATAAR</SimpleData>
+<SimpleData name="CNAME_A">مدينة المطار</SimpleData>
+<SimpleData name="LABEL_E">MADINAT AL MATAAR</SimpleData>
+<SimpleData name="COMMUNITY_E">MADINAT AL MATAAR - 521</SimpleData>
+<SimpleData name="DGIS_ID">0000172</SimpleData>
+<SimpleData name="COMM_NUM">521</SimpleData>
+<SimpleData name="NDGIS_ID">17x</SimpleData>
+</SchemaData>
+</ExtendedData>
+<Polygon>
+<outerBoundaryIs><LinearRing><coordinates>
+55.1,24.9,0.0 55.2,24.9,0.0 55.2,25.0,0.0 55.1,25.0,0.0 55.1,24.9,0.0
+</coordinates></LinearRing></outerBoundaryIs>
+<innerBoundaryIs><LinearRing><coordinates>55.12,24.92 55.14,24.92 55.14,24.94 55.12,24.92</coordinates></LinearRing></innerBoundaryIs>
+</Polygon>
+</Placemark>
+<Placemark id="kml_2">
+<name>kml_2</name>
+<ExtendedData><SchemaData><SimpleData name="CNAME_E">NO GEOMETRY</SimpleData></SchemaData></ExtendedData>
+</Placemark>
+<Placemark id="kml_3">
+<name>kml_3</name>
+<ExtendedData><SchemaData><SimpleData name="CNAME_E">TWO POLYS</SimpleData></SchemaData></ExtendedData>
+<MultiGeometry>
+<Polygon><outerBoundaryIs><LinearRing><coordinates>0,0 1,0 1,1 0,0</coordinates></LinearRing></outerBoundaryIs></Polygon>
+<Polygon><outerBoundaryIs><LinearRing><coordinates>2,2 3,2 3,3 2,2</coordinates></LinearRing></outerBoundaryIs></Polygon>
+</MultiGeometry>
+</Placemark>
+</Document>
+</kml>

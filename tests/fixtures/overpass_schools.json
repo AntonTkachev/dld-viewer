@@ -1,0 +1,10 @@
+{"elements": [
+ {"type": "node", "id": 1, "lat": 25.1, "lon": 55.2, "tags": {"amenity": "school", "name": "Repton School", "addr:suburb": "Nad Al Sheba", "website": "https://repton.ae"}},
+ {"type": "way", "id": 2, "center": {"lat": 25.2, "lon": 55.3}, "tags": {"amenity": "school", "name": "مدرسة الاتحاد", "name:en": "Al Ittihad School"}},
+ {"type": "node", "id": 3, "lat": 25.3, "lon": 55.4, "tags": {"amenity": "school", "name": "مدرسة النور"}},
+ {"type": "node", "id": 4, "lat": 25.0, "lon": 55.1, "tags": {"amenity": "school"}},
+ {"type": "way", "id": 5, "center": {"lat": 25.0, "lon": 55.1}, "tags": {"amenity": "school", "barrier": "fence", "name": "Fence"}},
+ {"type": "node", "id": 6, "lat": 25.05, "lon": 55.15, "tags": {"amenity": "school", "school:type": "kindergarten"}},
+ {"type": "relation", "id": 7, "tags": {"amenity": "school", "name": "No Coords"}},
+ {"type": "node", "id": 8, "lat": 25.1234567, "lon": 55.7654321, "tags": {"amenity": "school", "official_name": "Official Name School", "name": "Short"}}
+]}
