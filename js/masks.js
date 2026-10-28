@@ -27,6 +27,14 @@ const _LIFECYCLE = (typeof LIFECYCLE       !== 'undefined') ? LIFECYCLE       : 
 const _PAYBACK_P = (typeof PAYBACK_PERIODS !== 'undefined') ? PAYBACK_PERIODS : {};
 const _YSELL_P   = (typeof YEARLY_SELL_PERIODS !== 'undefined') ? YEARLY_SELL_PERIODS : {};
 const _YRENT_P   = (typeof YEARLY_RENT_PERIODS !== 'undefined') ? YEARLY_RENT_PERIODS : {};
+
+// Median annual rent for the selected room type; empty for "all apartments" (no meaningful mix)
+function _annualRentRow(p, t) {
+  const per = (typeof currentMaskPeriod !== 'undefined') ? currentMaskPeriod : null;
+  const r = per && _YRENT_P[per] && _YRENT_P[per][p.real_area_key];
+  if (!r || !r.med) return '';
+  return `<div class="stat"><span class="k">${t('pp_rent_ppsqm')}</span><span class="v">${r.med.toLocaleString('ru-RU')} ${t('unit_aed_year')}</span></div>`;
+}
 const _INVESTOR_P = (typeof INVESTOR_PERIODS !== 'undefined') ? INVESTOR_PERIODS : {};
 const _INCOME_P   = (typeof INCOME_PERIODS   !== 'undefined') ? INCOME_PERIODS   : {};
 const _FORMULA_P  = (typeof FORMULA_PERIODS  !== 'undefined') ? FORMULA_PERIODS  : {};
@@ -108,7 +116,7 @@ const MASKS = {
       '10y': _RENTS_P['10y'] || {},
     },
     pluck: r => ({ real_count: r.n || 0, real_total_aed: 0, real_med_price: r.med_annual || r.med || 0, real_med_ppsqm: r.med_ppsqm || 0, real_metric: r.n || 0 }),
-    legendKey: 'legend_rents', popupCountKey: 'rent_sc_contracts', showVolume: false,
+    legendKey: 'legend_rents', popupCountKey: 'rent_sc_contracts', showVolume: false, annualRent: true,
     tableColumns: [
       { key: 'name',                       labelKey: 'tv_col_district',      type: 'str',     width: '38%' },
       { key: 'n',                          labelKey: 'tv_col_n_rents',       type: 'int',     width: '17%', defaultSort: true, defaultSortDir: 'desc' },
@@ -249,7 +257,7 @@ const MASKS = {
       <div class="stat"><span class="k">${t('pp_payback_years')}</span><span class="v" style="font-weight:700">${p.real_metric.toFixed(1)} ${t('unit_years')}</span></div>
       <div class="stat"><span class="k">${t('tv_col_yield')}</span><span class="v" style="font-weight:700">${yld}</span></div>
       <div class="stat"><span class="k">${t('pp_sale_ppsqm')}</span><span class="v">${(p.real_med_price||0).toLocaleString('ru-RU')} ${t('tv_col_ppsqm')}</span></div>
-      <div class="stat"><span class="k">${t('pp_rent_ppsqm')}</span><span class="v">${(p.real_med_ppsqm||0).toLocaleString('ru-RU')} ${t('tv_col_ppsqm_year')}</span></div>
+      ${_annualRentRow(p, t)}
       <div class="stat"><span class="k">${t('pp_n_sale')}</span><span class="v">${(p.real_n_sale||0).toLocaleString('ru-RU')}</span></div>
       <div class="stat"><span class="k">${t('pp_n_rent')}</span><span class="v">${(p.real_n_rent||0).toLocaleString('ru-RU')}</span></div>
     `; },
@@ -335,7 +343,7 @@ const MASKS = {
       <div class="stat"><span class="k">${t('pp_yield')}</span><span class="v" style="font-weight:700">${(p.real_yield || 0).toFixed(1)}%</span></div>
       ${past}${peak}
       <div class="stat"><span class="k">${t('pp_sale_ppsqm')}</span><span class="v">${(p.real_med_price||0).toLocaleString('ru-RU')} ${t('tv_col_ppsqm')}</span></div>
-      <div class="stat"><span class="k">${t('pp_rent_ppsqm')}</span><span class="v">${(p.real_med_ppsqm||0).toLocaleString('ru-RU')} ${t('tv_col_ppsqm_year')}</span></div>
+      ${_annualRentRow(p, t)}
       ${pipe}
       <div class="stat"><span class="k">${t('pp_n_sale_1y')}</span><span class="v">${(p.real_n_sale||0).toLocaleString('ru-RU')}</span></div>
     `;
@@ -451,7 +459,7 @@ const MASKS = {
       <div class="stat"><span class="k">${t('pp_yield')}</span><span class="v" style="font-weight:700">${(p.real_yield || 0).toFixed(1)}%</span></div>
       ${trend}${renew}
       <div class="stat"><span class="k">${t('pp_sale_ppsqm')}</span><span class="v">${(p.real_med_price||0).toLocaleString('ru-RU')} ${t('tv_col_ppsqm')}</span></div>
-      <div class="stat"><span class="k">${t('pp_rent_ppsqm')}</span><span class="v">${(p.real_med_ppsqm||0).toLocaleString('ru-RU')} ${t('tv_col_ppsqm_year')}</span></div>
+      ${_annualRentRow(p, t)}
       <div class="stat"><span class="k">${t('pp_n_rent_1y')}</span><span class="v">${(p.real_n_rent||0).toLocaleString('ru-RU')}</span></div>
     `;
     },
@@ -593,7 +601,6 @@ const MASKS = {
     legendFmt: v => v >= 1e6 ? (v/1e6).toFixed(1) + 'M' : Math.round(v/1e3) + 'K',
     popupRows: (p, t) => (p.real_metric === null || p.real_metric === undefined) ? '' : `
       <div class="stat"><span class="k">${t('pp_median_annual')}</span><span class="v" style="font-weight:700">${(p.real_med_price||0).toLocaleString('ru-RU')} AED</span></div>
-      <div class="stat"><span class="k">${t('pp_rent_ppsqm')}</span><span class="v">${(p.real_med_ppsqm||0).toLocaleString('ru-RU')} ${t('tv_col_ppsqm_year')}</span></div>
       <div class="stat"><span class="k">${t('pp_n_rent_1y')}</span><span class="v">${(p.real_count||0).toLocaleString('ru-RU')}</span></div>
     `,
     tableColumns: [
