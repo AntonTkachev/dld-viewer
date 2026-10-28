@@ -5,7 +5,7 @@ Period: YTD 2026 (Jan 1 → 2026-05-21, what parquet has).
 Sector → community remap applied at read time so polygons referencing
 community-style keys (e.g. 'dubai marina') still find data.
 """
-import duckdb, json, sys, os, re, hashlib
+import duckdb, json, sys, os
 
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 OUT = os.path.join(ROOT, 'data', 'aggregates_intermediate', 'sale.json')
@@ -19,17 +19,9 @@ DATE_TO   = '2026-12-31'
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 from _curated_sql import hierarchy_select, hierarchy_views
 from _segments import APARTMENT_SQL, HOME_SQL, SALE_BUCKET_SQL, SALE_ROOMS_SQL, SALE_VILLA_PLOT_SQL
-ROLLUP_SQL = """
-CASE
-  WHEN master_project_en LIKE 'DUBAI HILLS - %'              THEN 'Dubai Hills Estate'
-  WHEN master_project_en = 'DUBAI HILLS'                     THEN 'Dubai Hills Estate'
-  WHEN master_project_en LIKE 'Lakes - %'                    THEN 'Emirates Living'
-  WHEN master_project_en = 'Jumeirah Golf Estates - Phase B' THEN 'Jumeirah Golf Estates'
-  WHEN master_project_en = 'International City Phase 2'      THEN 'International City Phase 3'
-  WHEN master_project_en IN ('Liwan1', 'Liwan2')             THEN 'Liwan'
-  ELSE master_project_en
-END
-"""
+from _aggregates_common import (PERIOD_YEARS, ROLLUP_SQL, panel_stats, patch_choropleth_tag, safe_float,
+                                safe_int, write_choropleth)
+from _sale_vintage import add_vintage
 
 con = duckdb.connect()
 HSEL = hierarchy_select(ROLLUP_SQL)
@@ -112,9 +104,6 @@ WHERE trans_group_en   = 'Mortgages'
 """)
 
 def q(sql): return con.execute(sql).fetchdf()
-
-def safe_int(v):  return int(v) if v == v and v else 0
-def safe_float(v, p=1): return round(float(v), p) if v == v and v else 0
 
 # Subtype bucket: parquet PROP_SB_TYPE_EN → 'flat'|'villa'|'commercial'|'land'
 def bucket(sbt, pt):   # = _segments.SALE_BUCKET_SQL
@@ -472,180 +461,8 @@ for _, r in q(f"SELECT k, MEDIAN(r) AS r FROM trend_cells GROUP BY k HAVING SUM(
     if r['k'] in out:
         out[r['k']]['trend_pct'] = round(float(r['r']) * 100, 1)
 
-# ─── Vintage: ready prices by building-age cohort (last 365d) ──────────
-# The district median is refreshed by new stock every year (same-building
-# change 2014→2026 was +1.9% while the index did +41%). These cohorts show
-# what buildings of each age actually trade at TODAY — the steps a specific
-# apartment's price walks down as it ages. Age = years since the building's
-# first ready sale.
-print('vintage cohorts...', file=sys.stderr)
-_VIN_SQL = """
-WITH s AS (
-  SELECT {sel_k} bn, YEAR(d::DATE) AS y, d::DATE AS dd, val/sqm AS ppsqm
-  FROM {src}
-  WHERE pt = 'Unit' AND reg = 'Existing Properties' AND bn IS NOT NULL
-    AND rooms IN ('Studio','1 B/R','2 B/R','3 B/R','4 B/R','PENTHOUSE')
-    AND sqm BETWEEN 10 AND 1000
-    AND val/sqm BETWEEN 2000 AND 100000
-),
-birth AS (SELECT {grp_k} bn, MIN(y) AS birth_y FROM s GROUP BY {grp_all}),
-cur AS (
-  SELECT {sel_sk} CASE WHEN s.y - birth.birth_y <= 1  THEN 'v0_1'
-              WHEN s.y - birth.birth_y <= 4  THEN 'v2_4'
-              WHEN s.y - birth.birth_y <= 10 THEN 'v5_10'
-              ELSE 'v11p' END AS b,
-         s.ppsqm
-  FROM s JOIN birth USING ({join_k} bn)
-  WHERE s.dd >= current_date - INTERVAL 365 DAY
-)
-SELECT {sel_ck} b, COUNT(*) AS n, ROUND(MEDIAN(ppsqm)) AS med
-FROM cur GROUP BY {grp_cur} HAVING COUNT(*) >= 8
-"""
-vin = q(_VIN_SQL.format(sel_k='k,', src='tx', grp_k='k,', grp_all='1, 2', sel_sk='s.k,',
-                        join_k='k,', sel_ck='k,', grp_cur='1, 2'))
-for _, r in vin.iterrows():
-    e = out.get(r['k'])
-    if e is not None:
-        e.setdefault('vintage', {})[r['b']] = {'n': safe_int(r['n']), 'ppsqm': safe_int(r['med'])}
-dubai_vintage = {}
-for _, r in q(_VIN_SQL.format(sel_k='', src='tx_p', grp_k='', grp_all='1', sel_sk='',
-                              join_k='', sel_ck='', grp_cur='1')).iterrows():
-    dubai_vintage[r['b']] = {'n': safe_int(r['n']), 'ppsqm': safe_int(r['med'])}
-print(f'  vintage: {sum(1 for e in out.values() if e.get("vintage"))} districts',
-      file=sys.stderr)
+dubai_vintage, dubai_paths, dubai_paths_m = add_vintage(q, out)
 
-# ─── Vintage timeline: monthly cohort medians per room class ────────────
-# Powers the age-cohort history chart in the detail panel — same period +
-# room chips as the price timeline. Age is evaluated at SALE time, so a
-# building migrates from the ≤3y line to the 4-8y line as it ages.
-print('vintage timeline...', file=sys.stderr)
-vin_tl = q("""
-WITH s AS (
-  SELECT k, bn, YEAR(d::DATE) AS y, strftime(d::DATE, '%Y-%m') AS m,
-         CASE rooms WHEN 'Studio' THEN 'studio' WHEN '1 B/R' THEN '1br'
-                    WHEN '2 B/R' THEN '2br' WHEN '3 B/R' THEN '3br'
-                    ELSE 'other' END AS room,
-         val/sqm AS ppsqm
-  FROM tx
-  WHERE pt = 'Unit' AND reg = 'Existing Properties' AND bn IS NOT NULL
-    AND rooms IN ('Studio','1 B/R','2 B/R','3 B/R','4 B/R','PENTHOUSE')
-    AND sqm BETWEEN 10 AND 1000
-    AND val/sqm BETWEEN 2000 AND 100000
-),
-birth AS (SELECT k, bn, MIN(y) AS birth_y FROM s GROUP BY 1, 2),
-cur AS (
-  SELECT s.k, s.m, s.room,
-         CASE WHEN s.y - birth.birth_y <= 3 THEN 'v0_3'
-              WHEN s.y - birth.birth_y <= 8 THEN 'v4_8'
-              ELSE 'v9p' END AS b,
-         s.ppsqm
-  FROM s JOIN birth USING (k, bn)
-)
-SELECT k, room, b, m, COUNT(*) AS n, ROUND(MEDIAN(ppsqm)) AS med
-FROM cur WHERE room != 'other'
-GROUP BY 1, 2, 3, 4 HAVING COUNT(*) >= 5
-UNION ALL
-SELECT k, 'all' AS room, b, m, COUNT(*) AS n, ROUND(MEDIAN(ppsqm)) AS med
-FROM cur GROUP BY 1, 3, 4 HAVING COUNT(*) >= 5
-ORDER BY m
-""")
-n_vtl = 0
-for _, r in vin_tl.iterrows():
-    e = out.get(r['k'])
-    if e is None:
-        continue
-    vt = e.setdefault('vintage_timeline', {})
-    vt.setdefault(r['room'], {}).setdefault(r['b'], []).append(
-        {'d': r['m'], 'n': safe_int(r['n']), 'med': safe_int(r['med'])})
-    n_vtl += 1
-print(f'  vintage timeline: {n_vtl:,} points across '
-      f'{sum(1 for e in out.values() if e.get("vintage_timeline"))} districts',
-      file=sys.stderr)
-
-# ─── Vintage paths: the buyer's journey per purchase-year cohort ─────────
-# «Купил в 2015 — сколько стоит сейчас»: fix the set of buildings that
-# traded ready in year Y, then track the median ppsqm of THOSE SAME
-# buildings every following year. Unlike the age-cohort timeline (a
-# cross-section that swaps buildings as they age), each path follows one
-# frozen cohort — the closest open data gets to a repeat-sales index.
-print('vintage paths...', file=sys.stderr)
-_PATH_SQL = """
-WITH s AS (
-  SELECT {sel_k} bn, YEAR(d::DATE) AS y, val/sqm AS ppsqm
-  FROM {src}
-  WHERE pt = 'Unit' AND reg = 'Existing Properties' AND bn IS NOT NULL
-    AND rooms IN ('Studio','1 B/R','2 B/R','3 B/R','4 B/R','PENTHOUSE')
-    AND sqm BETWEEN 10 AND 1000
-    AND val/sqm BETWEEN 2000 AND 100000
-),
-seed AS (
-  SELECT DISTINCT {sel_k} bn, y AS cy FROM s
-  WHERE y BETWEEN 2008 AND YEAR(current_date) - 1
-)
-SELECT {sel_pk} seed.cy, s.y, COUNT(*) AS n, ROUND(MEDIAN(s.ppsqm)) AS med
-FROM s JOIN seed ON {join_cond} seed.bn = s.bn AND s.y >= seed.cy
-GROUP BY {grp} HAVING COUNT(*) >= 5
-ORDER BY seed.cy, s.y
-"""
-paths = q(_PATH_SQL.format(sel_k='k,', src='tx', sel_pk='s.k,',
-                           join_cond='seed.k = s.k AND', grp='1, 2, 3'))
-n_vp = 0
-for _, r in paths.iterrows():
-    e = out.get(r['k'])
-    if e is None:
-        continue
-    vp = e.setdefault('vintage_paths', {})
-    vp.setdefault(str(int(r['cy'])), []).append(
-        {'d': str(int(r['y'])), 'n': safe_int(r['n']), 'med': safe_int(r['med'])})
-    n_vp += 1
-dubai_paths = {}
-for _, r in q(_PATH_SQL.format(sel_k='', src='tx_p', sel_pk='',
-                               join_cond='', grp='1, 2')).iterrows():
-    dubai_paths.setdefault(str(int(r['cy'])), []).append(
-        {'d': str(int(r['y'])), 'n': safe_int(r['n']), 'med': safe_int(r['med'])})
-print(f'  vintage paths: {n_vp:,} points across '
-      f'{sum(1 for e in out.values() if e.get("vintage_paths"))} districts',
-      file=sys.stderr)
-
-# Monthly variant for the fullscreen modal (even-year cohorts only — the
-# inline fan shows the same subset, and monthly × all cohorts would double
-# the payload for lines nobody draws).
-_PATH_M_SQL = """
-WITH s AS (
-  SELECT {sel_k} bn, YEAR(d::DATE) AS y, strftime(d::DATE, '%Y-%m') AS m,
-         val/sqm AS ppsqm
-  FROM {src}
-  WHERE pt = 'Unit' AND reg = 'Existing Properties' AND bn IS NOT NULL
-    AND rooms IN ('Studio','1 B/R','2 B/R','3 B/R','4 B/R','PENTHOUSE')
-    AND sqm BETWEEN 10 AND 1000
-    AND val/sqm BETWEEN 2000 AND 100000
-),
-seed AS (
-  SELECT DISTINCT {sel_k} bn, y AS cy FROM s
-  WHERE y BETWEEN 2008 AND YEAR(current_date) - 1 AND y % 2 = 0
-)
-SELECT {sel_pk} seed.cy, s.m, COUNT(*) AS n, ROUND(MEDIAN(s.ppsqm)) AS med
-FROM s JOIN seed ON {join_cond} seed.bn = s.bn AND s.y >= seed.cy
-GROUP BY {grp} HAVING COUNT(*) >= 5
-ORDER BY seed.cy, s.m
-"""
-paths_m = q(_PATH_M_SQL.format(sel_k='k,', src='tx', sel_pk='s.k,',
-                               join_cond='seed.k = s.k AND', grp='1, 2, 3'))
-n_vpm = 0
-for _, r in paths_m.iterrows():
-    e = out.get(r['k'])
-    if e is None:
-        continue
-    vp = e.setdefault('vintage_paths_m', {})
-    vp.setdefault(str(int(r['cy'])), []).append(
-        {'d': r['m'], 'n': safe_int(r['n']), 'med': safe_int(r['med'])})
-    n_vpm += 1
-dubai_paths_m = {}
-for _, r in q(_PATH_M_SQL.format(sel_k='', src='tx_p', sel_pk='',
-                                 join_cond='', grp='1, 2')).iterrows():
-    dubai_paths_m.setdefault(str(int(r['cy'])), []).append(
-        {'d': r['m'], 'n': safe_int(r['n']), 'med': safe_int(r['med'])})
-print(f'  vintage paths monthly: {n_vpm:,} points', file=sys.stderr)
 
 # ─── __dubai__ ────────────────────────────────────────────────
 print('__dubai__...', file=sys.stderr)
@@ -782,7 +599,6 @@ out['__dubai__'] = dubai
 # Windows match the old build_transactions_map.py (today − N×365 days → DATE_TO).
 print('period summaries (1y/3y/5y/10y)...', file=sys.stderr)
 from datetime import date, timedelta
-PERIOD_YEARS = [('1y', 1), ('3y', 3), ('5y', 5), ('10y', 10)]
 _EMPTY_B = {'n': 0, 'total': 0, 'med': 0, 'mean': 0, 'p25': 0, 'p75': 0, 'med_sqm': 0, 'med_ppsqm': 0}
 
 def period_summaries(dfrom, src, kx):
@@ -854,23 +670,9 @@ for code, dfrom in PERIOD_FROM.items():
 
 # Panel KPIs: true medians per period × room chip ([n, vol, med, ppsqm]); monthly medians can't be re-medianed
 APT_SEG = APARTMENT_SQL.replace('rooms', 'rooms_seg')
-def panel_stats(dfrom, src_h, src_a, kx):
-    w = f"d >= '{dfrom}'" if dfrom else 'TRUE'
-    agg = "COUNT(*), ROUND(SUM(val)), ROUND(MEDIAN(val) FILTER (WHERE val > 0)), ROUND(MEDIAN(val/sqm) FILTER (WHERE val > 0 AND sqm > 0))"
-    res = defaultdict(dict)
-    for kk, b, n, vol, med, pp in con.execute(f"""
-          SELECT kk, 'homes', {agg} FROM (SELECT {kx} AS kk, val, sqm FROM {src_h} WHERE {w}) GROUP BY kk
-          UNION ALL SELECT kk, COALESCE(rooms_seg, 'all'), {agg}
-            FROM (SELECT {kx} AS kk, rooms_seg, val, sqm FROM {src_a} WHERE {w} AND val > 0)
-            GROUP BY GROUPING SETS ((kk, rooms_seg), (kk))
-          UNION ALL SELECT kk, 'apartments', {agg}
-            FROM (SELECT {kx} AS kk, val, sqm FROM {src_a} WHERE {w} AND val > 0 AND {APT_SEG}) GROUP BY kk""").fetchall():
-        res[kk][b] = [int(n), safe_int(vol), safe_int(med), safe_int(pp)]
-    return res
-
 for code, dfrom in [*PERIOD_FROM.items(), ('all', None)]:
-    ps = panel_stats(dfrom, 'tx', 'tx_all', 'k')
-    ps['__dubai__'] = panel_stats(dfrom, 'tx_p', 'tx_all_p', "'__dubai__'")['__dubai__']
+    ps = panel_stats(con, dfrom, 'tx', 'tx_all', 'k', 'val', APT_SEG, ' AND val > 0')
+    ps['__dubai__'] = panel_stats(con, dfrom, 'tx_p', 'tx_all_p', "'__dubai__'", 'val', APT_SEG, ' AND val > 0').get('__dubai__', {})
     for k, e in out.items():
         if k in ps:
             e.setdefault('pstats', {})[code] = ps[k]
@@ -921,92 +723,6 @@ print(f'  key: master_project_en → fallback area_name_en (no manual remap)', f
 # reads from. The index.html patch below cuts the 7.7 MB inline literal
 # out and stitches in a script tag instead.
 CHOROPLETH_JS = os.path.join(ROOT, 'transactions/data/choropleth.js')
-# Defensive symmetry with build_rent_aggregates.py: filter out entries
-# without a `name` so any future metadata marker (rent script writes
-# `__period__` for date-range stamps) doesn't leak as a {"name":null}
-# row in the shard. Currently the sale aggregator emits only real
-# districts + `__dubai__` (which has name='DUBAI'), so this is a no-op
-# today — kept as a guard against future drift.
-thin = {
-    k: {
-        'name':      v.get('name'),
-        'n':         v.get('n', 0),
-        'total':     v.get('total', 0),
-        'med':       v.get('med', 0),
-        'med_ppsqm': v.get('med_ppsqm', 0),
-    }
-    for k, v in out.items()
-    if v.get('name') is not None
-}
-with open(CHOROPLETH_JS, 'w', encoding='utf-8') as f:
-    f.write('const AGGREGATES = ')
-    # sort_keys for deterministic byte-output: the content hash below feeds
-    # the index.html cachebust, and DuckDB's row order is not stable across
-    # runs. Without sort_keys, the hash flips on every build even when the
-    # actual data hasn't changed → useless cache invalidation.
-    json.dump(thin, f, ensure_ascii=False, separators=(',', ':'), sort_keys=True)
-    f.write(';\n')
-# Content hash → ?v= query string in index.html. Without this, a new
-# polygon key added to choropleth.js (alias batch / split) reaches the
-# browser AFTER the new index.html (which references the new key from
-# GEOJSON), causing greyed-out districts until Cloudflare's 600 s edge
-# cache + browser cache both expire. Same bug we hit with growth/payback
-# last sprint.
-#
-# Hash deliberately excludes the `name` field: DLD parquet has multiple
-# capitalizations per district (e.g. "DAMAC HILLS 2" vs "DAMAC Hills 2")
-# and the SQL aggregator picks "any" — non-deterministic across runs.
-# Cache-busting on display-name flips is useless: it'd invalidate the
-# cache on every deploy regardless of whether real data changed. The
-# hash should only bump when keys/numbers actually change.
-hash_payload = json.dumps(
-    {k: {f: x for f, x in v.items() if f != 'name'} for k, v in thin.items()},
-    sort_keys=True, separators=(',', ':'),
-).encode('utf-8')
-CHOROPLETH_HASH = hashlib.sha256(hash_payload).hexdigest()[:8]
-print(f'wrote {CHOROPLETH_JS}', file=sys.stderr)
-print(f'  entries: {len(thin)}, size: {os.path.getsize(CHOROPLETH_JS):,} bytes, hash: {CHOROPLETH_HASH}', file=sys.stderr)
-
-# ─── Splice into index.html. Previously this inlined the full 7.7 MB
-# `const AGGREGATES = {...};` literal directly into the page. That made
-# every visitor download the entire dataset on first paint and reduced
-# scraping to a single request. We now emit the thin shard above as a
-# separate JS file and replace the inline literal with a `<script src>`
-# tag, so the heavy lifting happens out-of-band, browser caching kicks
-# in, and main-page payload drops by ~7.6 MB.
-#
-# The AGGREGATES line sits inside an existing classic `<script>` block
-# (next to GEOJSON / RENT_AGGREGATES / POIS), so we have to close that
-# block, load the external script, and reopen — classic scripts share
-# the global lexical scope, so subsequent `const RENT_AGGREGATES = …`
-# still works as before.
-HTML = os.path.join(ROOT, 'template.html')
-print(f'patching {HTML}: const AGGREGATES → <script src ?v={CHOROPLETH_HASH}>', file=sys.stderr)
-with open(HTML, encoding='utf-8') as f:
-    lines = f.readlines()
-choropleth_tag = f'<script src="/transactions/data/choropleth.js?v={CHOROPLETH_HASH}"></script>\n'
-splice = '</script>\n' + choropleth_tag + '<script>\n'
-# Idempotency: match any past hash via regex, replace with the current one.
-CHOROPLETH_TAG_RE = re.compile(r'^<script src="/transactions/data/choropleth\.js(\?v=[a-f0-9]{8})?"></script>\s*$')
-state = None
-for i, ln in enumerate(lines):
-    if ln.startswith('const AGGREGATES = '):
-        lines[i] = splice
-        state = 'replaced'
-        print(f'  replaced inline literal at line {i+1} (was {len(ln):,} bytes)', file=sys.stderr)
-        break
-    if CHOROPLETH_TAG_RE.match(ln):
-        if ln == choropleth_tag:
-            state = 'already-current'
-            print(f'  line {i+1} already references current hash — no-op', file=sys.stderr)
-        else:
-            lines[i] = choropleth_tag
-            state = 'hash-bumped'
-            print(f'  line {i+1} hash refreshed → {CHOROPLETH_HASH}', file=sys.stderr)
-        break
-if state is None:
-    print('  ERROR: index.html does not contain `const AGGREGATES = …` or the choropleth script tag', file=sys.stderr)
-    sys.exit(1)
-if state != 'already-current':
-    with open(HTML, 'w', encoding='utf-8') as f:
-        f.writelines(lines)
+CHOROPLETH_HASH = write_choropleth(out, CHOROPLETH_JS, 'AGGREGATES', ('name', 'n', 'total', 'med', 'med_ppsqm'))
+# Replace the old 7.7 MB inline literal in template.html with a cache-busted <script src>
+patch_choropleth_tag('AGGREGATES', '/transactions/data/choropleth.js', CHOROPLETH_HASH)
