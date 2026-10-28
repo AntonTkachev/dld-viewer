@@ -99,7 +99,7 @@
     if (v >= 1e12) return (v/1e12).toFixed(2) + ' ' + t('abbr_t');
     if (v >= 1e9) return (v/1e9).toFixed(2) + ' ' + t('abbr_b');
     if (v >= 1e6) return (v/1e6).toFixed(2) + ' ' + t('abbr_m');
-    if (v >= 1e3) return (v/1e3).toFixed(0) + t('abbr_k');
+    if (v >= 1e3) { const k = t('abbr_k'); return (v/1e3).toFixed(0) + (k.length > 1 ? ' ' : '') + k; }
     return v.toLocaleString();
   }
   function fmtAxisAed(v) {
@@ -245,6 +245,11 @@
   }
 
   function projName(p) { return _h(p || t('not_specified')); }
+  // per-language value map without the RU fallback t() applies
+  function tVal(mapKey, k) {
+    const L = (typeof I18N !== 'undefined' && typeof currentLang !== 'undefined') ? I18N[currentLang] : null;
+    return (L && L[mapKey] && L[mapKey][k]) || k;
+  }
   function roomLabel(k){
     if (k==='all')        return t('room_chip_all');
     if (k==='apartments') return t('room_all'); // reuses the "All apartments" string — accurate here, unlike for 'all'
@@ -1098,11 +1103,11 @@
     const sub = r.by_subtype || {};
     const subSorted = Object.entries(sub).sort((a,b) => b[1].n - a[1].n);
     const sub_rows = subSorted.map(([k, v]) => `
-      <tr><td>${_h(k)}</td><td class="num">${fmtInt(v.n)}</td><td class="num">${fmtAedDP(v.med)}</td><td class="num">${fmtInt(v.med_ppsqm)}</td></tr>`).join('');
+      <tr><td>${_h(tVal('rent_ptype_map', k))}</td><td class="num">${fmtInt(v.n)}</td><td class="num">${fmtAedDP(v.med)}</td><td class="num">${fmtInt(v.med_ppsqm)}</td></tr>`).join('');
     const proj_rows = (r.top_projects||[]).map(p => `<tr><td>${projName(p.proj)}</td><td class="num">${fmtInt(p.n)}</td><td class="num">${fmtAedDP(p.med)}</td></tr>`).join('');
     const recent_rows = (r.recent||[]).map(d => {
       const vTag = d.v === 'N' ? t('rent_v_new') : t('rent_v_renew');
-      return `<tr><td>${_h(d.d)}</td><td>${projName(d.proj)}</td><td>${_h(d.sub)}</td><td class="num">${d.sqm ? fmtInt(d.sqm) : '—'}</td><td class="num">${fmtAedDP(d.val)}</td><td><span class="dp-tag-g dp-tag-g-${d.v==='N'?'O':'R'}">${_h(vTag)}</span></td></tr>`;
+      return `<tr><td>${_h(d.d)}</td><td>${projName(d.proj)}</td><td>${_h(tVal('rent_ptype_map', d.sub))}</td><td class="num">${d.sqm ? fmtInt(d.sqm) : '—'}</td><td class="num">${fmtAedDP(d.val)}</td><td><span class="dp-tag-g dp-tag-g-${d.v==='N'?'O':'R'}">${_h(vTag)}</span></td></tr>`;
     }).join('');
 
     const hasRooms = !!(r.by_rooms_unit && Object.keys(r.by_rooms_unit).length);
@@ -2389,7 +2394,7 @@
     const top = entries.slice(0, N);
     const tail = entries.slice(N);
     const tailN = tail.reduce((s, [, n]) => s + n, 0);
-    const items = top.map(([k, n]) => ({ name: k, n }));
+    const items = top.map(([k, n]) => ({ name: tVal('rent_ptype_map', k), n }));
     if (tailN > 0) items.push({ name: t('rent_subtype_other'), n: tailN });
     return {
       labels: items.map(i => i.name),
@@ -2404,7 +2409,7 @@
     if (!entries.length) return null;
     entries.sort((a,b) => b[1] - a[1]);
     return {
-      labels: entries.map(([k]) => k),
+      labels: entries.map(([k]) => tVal('rent_usage_map', k)),
       values: entries.map(([, n]) => n),
       colors: _donutPalette(entries.map(([, n]) => n)),
       fmt: v => fmtInt(v) + ' ' + t('rent_sc_contracts').toLowerCase(),

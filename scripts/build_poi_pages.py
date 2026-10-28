@@ -53,8 +53,8 @@ CATS = [
         # interchanges. Display as a comma-separated label like "Red, Green".
         'extra_cols': [(
             'col_line',
-            lambda r, d: ', '.join(g.capitalize() for g in (r.get('groups') or ([r['group']] if r.get('group') else []))),
-            'text',
+            lambda r, d: r.get('groups') or ([r['group']] if r.get('group') else []),
+            'lines',
         )],
     },
     {
@@ -122,9 +122,10 @@ COPY = {
         'lang_label': 'Язык',
         'lang_ru': 'RU', 'lang_en': 'EN', 'lang_ar': 'AR', 'lang_hi': 'HI', 'lang_zh': 'ZH',
         'count_suffix': 'позиций',
+        'line_red': 'Красная', 'line_green': 'Зелёная', 'line_blue': 'Синяя',
         'cats': {
             'metro': ('🚇 Метро Дубая — все станции на карте',
-                      'Все станции метро Дубая по линиям Red и Green. {n} {suf}. По каждой станции — район, в котором она расположена, и ссылка на карту с включённым слоем «Метро».'),
+                      'Все станции метро Дубая на Красной и Зелёной линиях, всего {n}. По каждой станции — район, в котором она расположена, и ссылка на карту с включённым слоем «Метро».'),
             'schools': ('🏫 Школы Дубая — карта и рейтинг KHDA',
                         'Все {n} школ Дубая с указанием района и (где доступно) рейтинга и программы по данным KHDA. Кликните «Показать на карте», чтобы увидеть все школы поверх карты сделок DLD.'),
             'universities': ('🎓 Университеты Дубая',
@@ -156,6 +157,7 @@ COPY = {
         'lang_label': 'Language',
         'lang_ru': 'RU', 'lang_en': 'EN', 'lang_ar': 'AR', 'lang_hi': 'HI', 'lang_zh': 'ZH',
         'count_suffix': 'entries',
+        'line_red': 'Red', 'line_green': 'Green', 'line_blue': 'Blue',
         'cats': {
             'metro': ('🚇 Dubai Metro — all stations on the map',
                       'Every Dubai Metro station on the Red and Green lines. {n} {suf}. Each row shows the district and links to the map with the metro layer active.'),
@@ -190,6 +192,7 @@ COPY = {
         'lang_label': 'اللغة',
         'lang_ru': 'RU', 'lang_en': 'EN', 'lang_ar': 'AR', 'lang_hi': 'HI', 'lang_zh': 'ZH',
         'count_suffix': 'مدخلات',
+        'line_red': 'الأحمر', 'line_green': 'الأخضر', 'line_blue': 'الأزرق',
         'cats': {
             'metro': ('🚇 مترو دبي — كل المحطات على الخريطة',
                       'كل محطات مترو دبي على الخطين الأحمر والأخضر. {n} {suf}. لكل محطة الحي ورابط الخريطة مع تفعيل طبقة المترو.'),
@@ -224,6 +227,7 @@ COPY = {
         'lang_label': 'भाषा',
         'lang_ru': 'RU', 'lang_en': 'EN', 'lang_ar': 'AR', 'lang_hi': 'HI', 'lang_zh': 'ZH',
         'count_suffix': 'प्रविष्टियाँ',
+        'line_red': 'रेड', 'line_green': 'ग्रीन', 'line_blue': 'ब्लू',
         'cats': {
             'metro': ('🚇 दुबई मेट्रो — सभी स्टेशन मानचित्र पर',
                       'रेड और ग्रीन लाइनों पर दुबई मेट्रो के सभी स्टेशन। {n} {suf}. प्रत्येक पंक्ति इलाका दिखाती है और मेट्रो लेयर सक्रिय के साथ मानचित्र से लिंक करती है.'),
@@ -258,6 +262,7 @@ COPY = {
         'lang_label': '语言',
         'lang_ru': 'RU', 'lang_en': 'EN', 'lang_ar': 'AR', 'lang_hi': 'HI', 'lang_zh': 'ZH',
         'count_suffix': '条目',
+        'line_red': '红线', 'line_green': '绿线', 'line_blue': '蓝线',
         'cats': {
             'metro': ('🚇 迪拜地铁 — 地图上的所有站点',
                       '迪拜地铁红线与绿线的所有站点。{n} {suf}。每行显示所在社区，并提供启用「地铁」图层的地图链接。'),
@@ -418,6 +423,8 @@ def fmt_cell(val, kind, lang):
         return fmt_int(val, lang)
     if kind == 'tag':
         return render_kind(val, lang)
+    if kind == 'lines':
+        return html_escape(', '.join(COPY[lang].get('line_' + g, g.capitalize()) for g in val))
     return html_escape(val)
 
 
@@ -503,9 +510,9 @@ def build_table(rows_with_district, cat, lang):
             elif kind == 'num':
                 v = getter(row, district)
                 cells.append(f'<td class="num">{fmt_cell(v, "num", lang)}</td>')
-            elif kind == 'tag':
+            elif kind in ('tag', 'lines'):
                 v = getter(row, district)
-                cells.append(f'<td>{fmt_cell(v, "tag", lang)}</td>')
+                cells.append(f'<td>{fmt_cell(v, kind, lang)}</td>')
             else:
                 v = getter(row, district)
                 cells.append(f'<td>{fmt_cell(v, "text", lang)}</td>')

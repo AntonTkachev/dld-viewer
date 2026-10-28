@@ -262,7 +262,8 @@ def load_projects():
 def compute_hero(projects, this_year):
     inflight = [p for p in projects if p['st'] in IN_FLIGHT_STATES]
     units_pipeline = sum(p['u'] for p in inflight)
-    completing_this_year = sum(1 for p in inflight if p['ey'] == this_year)
+    # same rule as the completion-year chart: overdue rows aren't "completing"
+    completing_this_year = sum(1 for p in inflight if p['ey'] == this_year and not p.get('overdue'))
     dev_counts = Counter(p['dev'] for p in inflight if p['dev'])
     top_dev, top_dev_n = (dev_counts.most_common(1) or [(None, 0)])[0]
     avg_pct_inflight = (sum(p['pct'] for p in inflight) / len(inflight)) if inflight else 0
@@ -291,13 +292,13 @@ COPY = {
         h_avg_pct='Средняя готовность',
         chart_status='Распределение по статусу',
         chart_completion='Сдача активных по годам',
-        chart_top_devs='Топ-10 застройщиков (in-flight)',
-        chart_top_areas='Топ-10 районов (in-flight)',
+        chart_top_devs='Топ-10 застройщиков (в работе)',
+        chart_top_areas='Топ-10 районов (в работе)',
         filter_status='Статус', filter_search='Поиск проекта или застройщика…',
         filter_area='Все районы', filter_clear='Сбросить',
         showing='Показано {n} из {total}',
         sort_col_name='Проект', sort_col_status='Статус', sort_col_pct='Готовность',
-        sort_col_units='Юниты', sort_col_area='Район', sort_col_master='Master-project',
+        sort_col_units='Юниты', sort_col_area='Район', sort_col_master='Мастер-проект',
         sort_col_dev='Застройщик', sort_col_end='Сдача',
         sort_col_sales='Активность за 12 мес (DLD)', col_sales_tooltip='Сделок / аренд за последние 12 месяцев. Аренда может быть короче года — цифра может быть чуть завышена. Всего с начала:',
         bld_link_title='Здания этого проекта',
@@ -384,8 +385,8 @@ COPY = {
         h_avg_pct='औसत पूर्णता',
         chart_status='परियोजना स्थिति',
         chart_completion='अपेक्षित पूर्णता वर्ष',
-        chart_top_devs='शीर्ष-10 डेवलपर (in-flight)',
-        chart_top_areas='शीर्ष-10 क्षेत्र (in-flight)',
+        chart_top_devs='शीर्ष-10 डेवलपर (निर्माणाधीन)',
+        chart_top_areas='शीर्ष-10 क्षेत्र (निर्माणाधीन)',
         filter_status='स्थिति', filter_search='प्रोजेक्ट या डेवलपर खोजें…',
         filter_area='सभी क्षेत्र', filter_clear='रीसेट',
         showing='{n} में से {total}',

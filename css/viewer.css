@@ -109,7 +109,7 @@
   .room-chip{background:#eef2f7;border:1px solid #dde3ec;color:#374151;padding:3px 9px;border-radius:12px;font-size:11px;font-weight:500;cursor:pointer;line-height:1.4;transition:background .12s,color .12s,border-color .12s;font-variant-numeric:tabular-nums}
   .room-chip:hover{background:#dde7f7;border-color:#9bb6e2}
   .room-chip.active{background:#1d4ed8;border-color:#1d4ed8;color:#fff}
-  .room-chip .chip-n{opacity:.62;margin-left:4px;font-size:10px}
+  .room-chip .chip-n{opacity:.62;margin-inline-start:4px;font-size:10px}
   .room-chip.active .chip-n{opacity:.85}
   .period-chips{display:flex;flex-wrap:wrap;gap:4px;margin:0 0 10px;align-items:center}
   .period-chips .pc-lbl{font-size:11px;color:#777;margin-right:4px}

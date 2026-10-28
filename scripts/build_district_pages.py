@@ -922,7 +922,7 @@ LIST_TYPES = (
      'list_lede_top_deals',
      [('col_date',   'd',    'date'),
       ('col_proj',   'proj', 'proj'),
-      ('col_rooms',  'room', 'str'),
+      ('col_rooms',  'room', 'room'),
       ('col_area',   'area', 'int'),
       ('col_amount', 'val',  'aed'),
       ('col_op',     'op',   'str')]),
@@ -933,9 +933,9 @@ LIST_TYPES = (
      'list_lede_recent_sale',
      [('col_date',   'd',    'date'),
       ('col_proj',   'proj', 'proj'),
-      ('col_rooms',  'room', 'str'),
+      ('col_rooms',  'room', 'room'),
       ('col_amount', 'val',  'aed'),
-      ('col_cat',    'g',    'str')]),
+      ('col_cat',    'g',    'grp')]),
 
     ('rent', 'projects', 'top_projects',
      'list_breadcrumb_top_projects',
@@ -951,7 +951,7 @@ LIST_TYPES = (
      'list_lede_recent_rent',
      [('col_date',    'd',    'date'),
       ('col_proj',    'proj', 'proj'),
-      ('col_subtype', 'sub',  'str'),
+      ('col_subtype', 'sub',  'sub'),
       ('col_area',    'sqm',  'int'),
       ('col_aed_yr',  'val',  'aed'),
       ('col_version', 'v',    'rentver')]),
@@ -1017,6 +1017,25 @@ def html_escape(s):
             .replace('"', '&quot;'))
 
 
+# raw DLD/Ejari values in list tables → RU; other languages show them as-is
+VALUE_MAPS = {
+    'room': {'ru': {'Villa': 'Вилла', 'Land': 'Земля', 'Commercial': 'Коммерция', 'Other': 'Прочее'}},
+    'grp':  {'ru': {'Sales': 'Продажа', 'Mortgages': 'Ипотека', 'Gifts': 'Дарение'}},
+    'sub':  {'ru': {
+        'Flat': 'Квартира', 'Office': 'Офис', 'Shop': 'Магазин', 'Villa': 'Вилла', 'Other': 'Другое',
+        'Restaurant': 'Ресторан', 'Studio': 'Студия', 'Showroom': 'Шоурум', 'Clinic': 'Клиника',
+        'Building': 'Здание', 'Kiosk': 'Киоск', 'Warehouse': 'Склад', 'Hotel': 'Отель', 'School': 'Школа',
+        'Store': 'Кладовая', 'Open space': 'Открытая площадка', 'Parking': 'Парковка', 'Health club': 'Фитнес-клуб',
+        'Arabian House': 'Арабский дом', 'GYM': 'Спортзал', 'Labor Camps': 'Общежитие для рабочих',
+        'Complex Villas': 'Комплекс вилл', 'Supermarket': 'Супермаркет', 'Workshop': 'Мастерская',
+        'Hotel apartments': 'Гостиничные апартаменты', 'Ladies Saloon': 'Женский салон', 'Nursery': 'Детский сад',
+        'Open Land': 'Открытый участок', 'Staff Accommodation': 'Жильё для персонала', 'Medical center': 'Медцентр',
+        'Mezzanine': 'Мезонин', 'Storage': 'Хранилище', 'Factory': 'Фабрика', 'Pharmacy': 'Аптека',
+        'Penthouse': 'Пентхаус', 'Warehouse complex': 'Складской комплекс', 'Hospital': 'Больница',
+    }},
+}
+
+
 def format_cell(v, kind, lang='ru'):
     """Format one table cell value by its declared column kind."""
     if v is None or v == '':
@@ -1035,6 +1054,11 @@ def format_cell(v, kind, lang='ru'):
         return html_escape(str(v))
     if kind == 'rentver':
         return COPY[lang]['rent_v_new'] if v == 'N' else COPY[lang]['rent_v_renew']
+    if kind in VALUE_MAPS:
+        m = VALUE_MAPS[kind].get(lang, {})
+        head, _, tail = str(v).partition(' ')
+        # 'Villa 3BR' → translate the type, keep the bedroom code
+        v = m.get(v) or (m[head] + ' ' + tail if kind == 'room' and head in m and tail else v)
     return html_escape(str(v))
 
 
