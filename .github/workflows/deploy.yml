@@ -42,8 +42,7 @@ jobs:
       - name: JSON config files parse
         run: |
           set -e
-          for f in data/dld_seen.json \
-                   data/polygon_overrides.json \
+          for f in data/polygon_overrides.json \
                    data/dm_to_dld_aliases.json \
                    data/rera_arabic_aliases.json \
                    data/seo_whitelist.json; do
