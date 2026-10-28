@@ -260,6 +260,7 @@ HSEL = hierarchy_select('master_project_en')
 con.execute(f"""
     CREATE TEMP TABLE s AS
     SELECT TRIM(building_name_en) AS bname,
+           TRIM(COALESCE(building_name_ar, '')) AS bname_ar,
            COALESCE(area_name_en, '') AS area,
            COALESCE(TRY_CAST(TRY_CAST(project_number AS DOUBLE) AS INTEGER), -1) AS pno,
            TRIM(COALESCE(project_name_en, '')) AS proj,
@@ -310,10 +311,13 @@ def _dominant(col):
 
 ent = {}  # eid → {bname, area, pno, proj, area_d}
 dom_proj, dom_area_d = _dominant('proj'), _dominant('area_d')
+# Arabic name for /ar/ pages; DLD mangles some to '?', and codes like P-01 transliterate to noise
+dom_ar = _dominant("CASE WHEN regexp_matches(bname_ar, '[ء-ي]') AND NOT regexp_matches(bname_ar, '[?\ufffd]') THEN bname_ar ELSE '' END")
 for eid, bname, area in con.execute("SELECT eid, ANY_VALUE(bname), ANY_VALUE(area) FROM t GROUP BY eid").fetchall():
     p = ent_pno[eid]
     ent[eid] = {'bname': bname, 'area': area, 'pno': p if p != -1 else None,
-                'proj': dom_proj.get(eid, ''), 'area_d': dom_area_d.get(eid, area)}
+                'proj': dom_proj.get(eid, ''), 'area_d': dom_area_d.get(eid, area),
+                'ar': dom_ar.get(eid) if len(re.findall('[A-Za-z]', bname)) >= 3 else None}
 
 # ── 1. Sales: year + reg_type ─────────────────────────────────────────────
 print("Query 1: sales by (building, year, reg_type)…", flush=True)
@@ -663,6 +667,8 @@ for eid in kept:
     idx_entry = {'n': e['bname'], 's': slug, 'a': e['area'], 'tx': n_sales[eid], 'rn': rents_total_n}
     if e['area_d'] != e['area']:
         idx_entry['ad'] = e['area_d']
+    if e['ar']:
+        idx_entry['na'] = e['ar']
     if name_count[e['bname'].lower()] > 1 and e['proj'] and norm(e['proj']) != norm(e['bname']):
         idx_entry['pj'] = e['proj']
     if rent_share.get(rk, 0) > 1:

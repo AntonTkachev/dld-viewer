@@ -341,6 +341,9 @@ def load_coords():
 def render(lang, b, d, areas, coords, as_of, siblings=()):
     c, dc = COPY[lang], DIR_COPY[lang]
     slug, name = b['s'], b['n']
+    en_name = name
+    if lang == 'ar' and b.get('na'):
+        name = b['na']
     aname = b.get('ad') or b['a']
     aslug, aar = areas.get(aname, [None, None])
     area = (aar if lang == 'ar' and aar else aname) or ''
@@ -373,7 +376,10 @@ def render(lang, b, d, areas, coords, as_of, siblings=()):
 
     # ── meta ──
     fill = dict(name=f'{name} ({b["pj"]})' if b.get('pj') else name, area=area)
-    title = c['title'].format(**fill)
+    if name != en_name:
+        title = c['title'].format(name=f'{name} ({en_name}' + (f', {b["pj"]})' if b.get('pj') else ')'), area=area)
+    else:
+        title = c['title'].format(**fill)
     if hp and hlabel == c['k_12m']:
         desc = c['desc_sales'].format(**fill, n=fmt_num(hn, lang), ppsqft=fmt_num(round(hp / SQFT), lang),
                                       ppsqm=fmt_num(round(hp), lang), price=money(hprice, lang) if hprice else '—')
@@ -534,7 +540,7 @@ def render(lang, b, d, areas, coords, as_of, siblings=()):
     links.append((f'/{lang}/buildings/', c['l_dir']))
     links_html = ''.join(f'<li><a href="{e(u)}">{e(t)}</a></li>' for u, t in links)
     sib_html = (f'<nav class="nearby-districts"><h2>{e(c["h_siblings"].format(area=area))}</h2><ul>'
-                + ''.join(f'<li><a href="/{lang}/buildings/{e(sb["s"])}/">{e(sb["n"])}</a></li>' for sb in siblings)
+                + ''.join(f'<li><a href="/{lang}/buildings/{e(sb["s"])}/">{e(sb.get("na") if lang == "ar" and sb.get("na") else sb["n"])}</a></li>' for sb in siblings)
                 + '</ul></nav>') if siblings and area else ''
 
     # ── JSON-LD ──
@@ -546,6 +552,8 @@ def render(lang, b, d, areas, coords, as_of, siblings=()):
         'address': {'@type': 'PostalAddress', 'addressLocality': area, 'addressRegion': 'Dubai', 'addressCountry': 'AE'},
         'containedInPlace': place,
     }
+    if name != en_name:
+        residence['alternateName'] = en_name
     if slug in coords:
         residence['geo'] = {'@type': 'GeoCoordinates', 'latitude': coords[slug][0], 'longitude': coords[slug][1]}
     first_d = txs[-1]['d'] if txs else d_to
@@ -578,6 +586,8 @@ def render(lang, b, d, areas, coords, as_of, siblings=()):
                          for l in LANGUAGES)
     robots = 'noindex,follow' if b.get('ni') else 'index,follow'
     sub = c['h1_sub'].format(area=area) + (f' · {b["pj"]}' if b.get('pj') else '')
+    if name != en_name:
+        sub = f'{en_name} · {sub}'
     crumb_area = f'<a href="/{lang}/sales/{aslug}/">{e(area)}</a> › ' if aslug else ''
     map_btn = f'<a class="map-btn" href="/{lang}/sales/?bld={slug}">{e(c["on_map"])}</a>' if b.get('m') else ''
     return f'''<!DOCTYPE html>

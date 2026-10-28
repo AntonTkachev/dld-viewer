@@ -1446,7 +1446,8 @@ def build_buildings_html(name, slug, lang, district_buildings):
     if not rows:
         return ''
     c = COPY[lang]
-    items = ''.join(f'<li><a href="{BASE_URL}/{lang}/buildings/{html_escape(b["s"])}/">{html_escape(b["n"])}</a></li>'
+    items = ''.join(f'<li><a href="{BASE_URL}/{lang}/buildings/{html_escape(b["s"])}/">'
+                    f'{html_escape(b["na"] if lang == "ar" and b.get("na") else b["n"])}</a></li>'
                     for b in rows)
     return (f'<nav class="nearby-districts"><h2>{html_escape(c["buildings_title"].format(name=name))}</h2>'
             f'<ul>{items}</ul></nav>')

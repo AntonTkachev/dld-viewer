@@ -98,7 +98,7 @@ COPY = {
         grp_brand='المطوّرون', grp_zone='المطوّرون الرئيسيون / المناطق', zone_badge='منطقة',
         no_matches='لا توجد نتائج', reset='إعادة ضبط',
         sort_lbl='الترتيب:', sort_tx='الأكثر صفقات', sort_yr_asc='الأقدم أولاً',
-        sort_yr_desc='الأحدث أولاً', sort_az='الاسم A–Z',
+        sort_yr_desc='الأحدث أولاً', sort_az='الاسم أ–ي',
         th_building='المبنى', th_built='سنة البناء', th_dev='المطوّر / المنطقة', th_status='الحالة',
         th_status_title='حالة المشروع ونسبة الإنجاز حسب ريرا',
         th_sales='المبيعات', th_rents='الإيجارات',
@@ -263,7 +263,8 @@ def row_html(b, lang, c, areas):
         area += f' · {escape(b["pj"])}'
     mp = f'<a class="btn-map" href="/{lang}/sales/?bld={s}" title="{escape(c["map_title"])}">↗</a>' if b.get('m') else ''
     href = f'/{lang}/buildings/{s}/' if b.get('pg') else f'/search/#{s}'
-    return (f'<tr data-s="{s}" data-h="{href}"><td class="td-name"><a class="bld-a" href="{href}">{escape(b["n"])}</a>{mp}'
+    nm = b['na'] if lang == 'ar' and b.get('na') else b['n']
+    return (f'<tr data-s="{s}" data-h="{href}"><td class="td-name"><a class="bld-a" href="{href}">{escape(nm)}</a>{mp}'
             f'<div class="td-area">{area}</div></td>'
             f'<td class="num col-yr">{yr}</td><td class="col-dev">{dev}</td>'
             f'<td class="col-pct">{status}</td>'
@@ -547,6 +548,7 @@ devChips.addEventListener('mousedown', e => { e.preventDefault(); const x = e.ta
 document.addEventListener('mousedown', e => { if (!e.target.closest('.fg-dev')) devDrop.classList.remove('open'); });
 
 function areaName(b){ return b.ad || b.a || ''; }
+function bname(b){ return (LANG === 'ar' && b.na) || b.n; }
 function areaLabel(b){ const a = areaName(b), m = AREAS[a]; return (LANG === 'ar' && m && m[1]) || a; }
 function areaHay(b){ return lc(b.a + '|' + areaName(b) + '|' + areaLabel(b)); }
 
@@ -554,7 +556,7 @@ function applyFilters(){
   const name = lc(fName.value.trim()), area = lc(fArea.value.trim());
   FILTERED = ALL.filter(b =>
     (!PROJ_SLUGS || PROJ_SLUGS.has(b.s)) &&
-    (!name || lc(b.n).includes(name) || (b.pj && lc(b.pj).includes(name))) &&
+    (!name || lc(b.n).includes(name) || (b.na && b.na.includes(name)) || (b.pj && lc(b.pj).includes(name))) &&
     (!area || areaHay(b).includes(area)) &&
     yrPass(b.yr) &&
     (!selectedDevs.size || selectedDevs.has(b.dev))
@@ -562,7 +564,7 @@ function applyFilters(){
   const s = sortBy.value;
   FILTERED.sort((a, b) =>
     s === 'tx' ? b.tx - a.tx :
-    s === 'az' ? a.n.localeCompare(b.n) :
+    s === 'az' ? bname(a).localeCompare(bname(b)) :
     s === 'yr_asc' ? (a.yr ?? 9999) - (b.yr ?? 9999) :
                      (b.yr ?? -1) - (a.yr ?? -1)
   );
@@ -594,7 +596,7 @@ function rowHtml(b){
   const dev = b.dev ? esc(b.dev) + (b.dz ? `<span class="badge-zone">${esc(COPY.zone_badge)}</span>` : '') : MUTE;
   const mp = b.m ? `<a class="btn-map" href="/${LANG}/sales/?bld=${s}" title="${esc(COPY.map_title)}">↗</a>` : '';
   const href = b.pg ? `/${LANG}/buildings/${s}/` : `/search/#${s}`;
-  return `<tr data-s="${esc(b.s)}" data-h="${href}"><td class="td-name"><a class="bld-a" href="${href}">${esc(b.n)}</a>${mp}`
+  return `<tr data-s="${esc(b.s)}" data-h="${href}"><td class="td-name"><a class="bld-a" href="${href}">${esc(bname(b))}</a>${mp}`
     + `<div class="td-area">${areaHtml(b)}</div></td>`
     + `<td class="num col-yr">${yrHtml(b)}</td><td class="col-dev">${dev}</td>`
     + `<td class="col-pct">${statusHtml(b)}</td>`
