@@ -227,31 +227,11 @@ document.body.insertAdjacentHTML('beforeend',
   + '</defs></svg>');
 
 const map = L.map('map', { zoomControl: false }).setView([25.12, 55.25], 10);
-// Free key from carto.com/basemaps/apikey; empty = greyscale OSM fallback
-const CARTO_KEY = '';
-const _OSM_ATTR = '© <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>';
-if (CARTO_KEY) {
-  // Voyager base under the choropleth, street/place labels in a pane above it
-  map.createPane('labels');
-  map.getPane('labels').style.zIndex = 450;
-  map.getPane('labels').style.pointerEvents = 'none';
-  L.tileLayer('https://{s}.basemaps.cartocdn.com/rastertiles/voyager_nolabels/{z}/{x}/{y}{r}.png?key=' + CARTO_KEY, {
-    attribution: _OSM_ATTR + ' © <a href="https://carto.com/attributions">CARTO</a>',
-    subdomains: 'abcd',
-    maxZoom: 19,
-  }).addTo(map);
-  L.tileLayer('https://{s}.basemaps.cartocdn.com/rastertiles/voyager_only_labels/{z}/{x}/{y}{r}.png?key=' + CARTO_KEY, {
-    pane: 'labels',
-    subdomains: 'abcd',
-    maxZoom: 19,
-  }).addTo(map);
-} else {
-  L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-    attribution: _OSM_ATTR,
-    className: 'base-muted',
-    maxZoom: 19,
-  }).addTo(map);
-}
+L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+  attribution: '© <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>',
+  className: 'base-muted',
+  maxZoom: 19,
+}).addTo(map);
 
 const RAMP_VIRIDIS = ['#440154','#3b528b','#21918c','#5ec962','#fde725'];
 const RAMP_BLUE    = ['#eaf2fb','#b8d0f0','#7da4e2','#3f73d4','#1d4ed8'];
