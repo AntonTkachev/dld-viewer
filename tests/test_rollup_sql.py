@@ -2,6 +2,8 @@
 
 ROLLUP_SQL is read from the scripts' source via ast (the build_* scripts run on import).
 """
+from pathlib import Path
+
 import pytest
 
 from conftest import ast_constants, ast_function, make_table
@@ -19,6 +21,7 @@ ROLLED = {
     'Liwan1': 'Liwan',
     'Liwan2': 'Liwan',
 }
+SCRIPTS = Path(__file__).resolve().parent.parent / 'scripts'
 KEPT = [
     'Arabian Ranches - 1', 'Arabian Ranches - II', 'Arabian Ranches - 3',
     'DAMAC Hills', 'DAMAC Hills 2', 'Dubai Marina', 'Jumeirah Beach Residence',
@@ -40,8 +43,10 @@ def rolled(duck, sql, masters):
     return dict(rows)
 
 
-def test_sale_and_rent_rollups_exist(rollups):
-    assert len(rollups) >= 2, f'expected sale+rent ROLLUP_SQL, found {sorted(rollups)}'
+def test_sale_and_rent_share_one_rollup(rollups):
+    assert '_aggregates_common.py' in rollups, f'ROLLUP_SQL not in _aggregates_common.py: {sorted(rollups)}'
+    for f in ('build_sale_aggregates.py', 'build_rent_aggregates.py'):
+        assert 'from _aggregates_common import' in (SCRIPTS / f).read_text() and 'ROLLUP_SQL' in (SCRIPTS / f).read_text(), f
 
 
 def test_all_rollup_copies_identical(rollups):

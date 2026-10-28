@@ -36,7 +36,6 @@ def test_schools_name_preference(school_rows):
     assert school_rows[8]['name'] == 'Official Name School'
 
 
-@pytest.mark.xfail(strict=True, reason='osm_*_pull.harvest drops an Arabic `name` when `name:en` is set and `name:ar` is absent')
 def test_schools_keep_arabic_name_when_english_present(school_rows):
     assert school_rows[2].get('name_ar') == 'مدرسة الاتحاد'
 

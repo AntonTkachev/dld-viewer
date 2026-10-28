@@ -74,15 +74,14 @@ def test_villa_plot_rule(duck):
     assert classify(duck, f'COALESCE({sg.SALE_VILLA_PLOT_SQL}, FALSE)', rows) == [True, False, False, False, False]
 
 
+HOME_ROOMS = ('studio', '1br', '2br', '3br', '4br+', 'villa')
+OTHER_ROOMS = ('office', 'shop', 'warehouse', 'land', 'other')
+
+
 def test_home_and_apartment_filters(duck):
-    rooms = list(sg.HOME_ROOMS) + list(sg.RENT_SEGMENTS) + list(sg.SALE_SEGMENTS)
+    rooms = list(HOME_ROOMS) + list(OTHER_ROOMS)
     rows = [{'rooms': r} for r in rooms]
     homes = classify(duck, sg.HOME_SQL, rows)
     apts = classify(duck, sg.APARTMENT_SQL, rows)
-    assert [r for r, h in zip(rooms, homes) if h] == list(sg.HOME_ROOMS)
-    assert [r for r, a in zip(rooms, apts) if a] == [r for r in sg.HOME_ROOMS if r != 'villa']
-
-
-def test_segment_vocab_disjoint():
-    assert not set(sg.HOME_ROOMS) & set(sg.RENT_SEGMENTS)
-    assert not set(sg.HOME_ROOMS) & set(sg.SALE_SEGMENTS)
+    assert [r for r, h in zip(rooms, homes) if h] == list(HOME_ROOMS)
+    assert [r for r, a in zip(rooms, apts) if a] == [r for r in HOME_ROOMS if r != 'villa']

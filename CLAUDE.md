@@ -49,7 +49,7 @@ ZSTD-9 compressed, Parquet. Read with DuckDB / Polars / pyarrow. All columns are
    | International City Phase 3 | `International City Phase 2` (same Warsan Fourth area) | +142 |
    | Liwan | `Liwan1`, `Liwan2` (no hyphen) | +11.8K |
 
-   **Current handling: hardcoded `ROLLUP_SQL` CASE** in `build_{sale,rent}_aggregates.py`. Pattern is hand-curated, not auto-detected. Surveying for new fragmentation: query areas where `master_project_en` values share first 1-2 words (DuckDB `REGEXP_REPLACE` to extract family root).
+   **Current handling: hardcoded `ROLLUP_SQL` CASE** in `scripts/_aggregates_common.py` (shared by sale + rent; Python mirror `rollup_master` in `merge_curated_polygons_into_viewer.py` — `tests/test_rollup_sql.py` guards drift). Pattern is hand-curated, not auto-detected. Surveying for new fragmentation: query areas where `master_project_en` values share first 1-2 words (DuckDB `REGEXP_REPLACE` to extract family root).
 
    What NOT to roll up: `Arabian Ranches - 1 / II / 3` (legit separate geographies), `DAMAC Hills` vs `DAMAC Hills 2` (different `area_name_en` sectors), `Marsa Dubai` containing `Dubai Marina / JBR / Dubai Harbour` (legitimately distinct communities). Geographic separation > naming similarity.
 
@@ -164,10 +164,8 @@ POI seeds for the map's layers (schools / universities / medical / mosques / met
 | Medical | `amenity=hospital\|clinic\|doctors` (Dubai bbox) | `scripts/osm_medical_pull.py` | `data/osm_medical.json` |
 | Malls + souqs | `shop=mall` + `amenity=marketplace` (souq-tagged) | `scripts/osm_malls_pull.py` | `data/osm_malls.json` |
 | Sub-communities (Springs/Meadows phases etc.) | named `landuse=residential` / `place=residential` polygons | `scripts/osm_subcommunities_pull.py` | `data/osm_subcommunities.json` |
-
-**TODO — currently inlined directly into `index.html` with no source pull script:**
-- `METRO_STATIONS` — Dubai Metro Red/Green stations with lat/lon. Likely Overpass `railway=station` + manual line-color tagging. Need: `scripts/osm_metro_pull.py`.
-- `MOSQUES` — `amenity=place_of_worship religion=muslim`. Need: `scripts/osm_mosques_pull.py`.
+| Metro stations + lines | `railway=station` (Dubai Metro) | `scripts/osm_metro_pull.py` | `data/osm_metro_stations.json` + `data/osm_metro_lines.json` |
+| Mosques | `amenity=place_of_worship religion=muslim` | `scripts/osm_mosques_pull.py` | `data/osm_mosques.json` |
 
 ### Manually curated (no pull script — checked into the repo)
 
@@ -216,6 +214,14 @@ The iOS app (`~/SwfitProjects/DXBCompass`) reads ONLY `https://dxbcompass.com/ap
 - Files: `manifest.json` (sha256 per file), eager `map/polygons.geojson` + `map/masks.json` + `areas/index.json` (~2 MB raw), lazy `areas/<slug>.json` (~340 files, 7.6 MB total). Writes only changed files; manifest untouched when nothing changed.
 - **v1 is additive-only.** Old app versions live for months. Never rename/remove a field, change a type or unit, or drop a mask period inside v1 — breaking changes go to a new `/app/v2/` generated alongside v1. The script warns when an area key disappears (it's the favorites id) — handle via `aliases` in `areas/index.json`.
 - Site refactors that rename fields in `sales|rents/<slug>/data.json` or the `*_PERIODS` consts must keep `build_app_v1.py` emitting the same v1 shape.
+
+## Tests
+
+```bash
+/usr/bin/python3 -m pytest              # full suite (~5 s); real-data tests auto-skip without parquet / built pages
+/usr/bin/python3 -m pytest -m "not data"  # fast subset, also run by the pre-commit hook
+```
+Tests live in `tests/` and write only to `tmp_path` / `:memory:` DuckDB. `refresh_all.sh` phase 11d runs them after a rebuild. Legacy golden scripts (`scripts/test_*.py`) still run standalone and via `tests/test_golden_scripts.py`.
 
 ## Refresh playbook
 

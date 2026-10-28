@@ -128,7 +128,7 @@ def harvest() -> list:
 
         name_en  = tags.get('name:en') or tags.get('official_name')
         name_raw = tags.get('name', '')
-        name_ar  = tags.get('name:ar') or (name_raw if not name_en and is_arabic(name_raw) else '')
+        name_ar  = tags.get('name:ar') or (name_raw if is_arabic(name_raw) else '')
         name     = name_en or name_raw or name_ar
 
         if not name:

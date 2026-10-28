@@ -112,7 +112,7 @@ for const, target, path in (
         target.update(json.loads(mc.group(1)).keys())
 print(f'AGGREGATES keys: {len(agg_keys)}; RENT_AGGREGATES keys: {len(rent_keys)}', file=sys.stderr)
 
-# Mirror the ROLLUP_SQL in build_sale_aggregates.py so sub-master polygons
+# Mirror the ROLLUP_SQL in _aggregates_common.py so sub-master polygons
 # (e.g. 'Lakes - Maeen') resolve to the parent community key ('emirates living').
 def rollup_master(mp):
     if not mp: return mp
