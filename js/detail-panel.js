@@ -478,7 +478,6 @@
   }
 
   function renderRoomChips(a) {
-    const tbr = a.timeline_by_rooms || {};
     const bu  = a.by_rooms_unit || {};
     return ROOM_ORDER.map(k => {
       if (!_roomAvailable(a, k)) return '';
@@ -930,41 +929,6 @@
       },
     });
     S.activeCharts.push(ch);
-  }
-  function _vintageTimelineSeries(a) {
-    const vt = a.vintage_timeline;
-    if (!vt) return null;
-    const room = vt[S.roomFilter] ? S.roomFilter : 'all';
-    const byB = vt[room];
-    if (!byB) return null;
-    const sliced = {};
-    const months = new Set();
-    for (const b of VINTAGE_ORDER) {
-      const s = periodSlice(byB[b] || []);
-      if (s.length) {
-        sliced[b] = new Map(s.map(p => [p.d, p]));
-        s.forEach(p => months.add(p.d));
-      }
-    }
-    const keys = VINTAGE_ORDER.filter(b => sliced[b]);
-    if (keys.length < 2) return null;
-    const ref = [...months].sort();
-    const bs = ref.length <= 24 ? 1 : ref.length <= 48 ? 3 : ref.length <= 96 ? 6 : 12;
-    const labels = [];
-    const data = {};
-    keys.forEach(b => { data[b] = []; });
-    for (const { slab, label } of _calendarBuckets(ref, bs)) {
-      labels.push(label);
-      for (const b of keys) {
-        let n = 0, wsum = 0;
-        for (const m of slab) {
-          const p = sliced[b].get(m);
-          if (p) { n += p.n; wsum += p.med * p.n; }
-        }
-        data[b].push(n ? Math.round(wsum / n) : null);
-      }
-    }
-    return { labels, data, keys };
   }
   function renderVintageChart(rec, kind) {
     const ctx = document.getElementById('ch-vintage-' + kind);
@@ -1552,7 +1516,6 @@
     const w = 50;
     const ma = ma50;
     const trend = linearTrend(data);
-    const trendLine = trend ? data.map((_, i) => trend.intercept + trend.slope * i) : null;
     const median = (() => {
       const arr = data.filter(v => Number.isFinite(v) && v > 0).sort((a,b)=>a-b);
       if (!arr.length) return null;
