@@ -20,7 +20,7 @@ ZSTD-9 compressed, Parquet. Read with DuckDB / Polars / pyarrow. All columns are
 
 ## Critical facts about the data — learned the hard way, don't repeat the investigation
 
-1. **Each DLD snapshot is a complete cumulative superset of all earlier snapshots.** Verified: every (contract_id, contract_start_date) and (transaction_id, instance_date) in older snapshots is 100% present in the latest. **Therefore only the latest snapshot matters.** Older ones can be deleted with zero data loss. `dld_to_parquet.sh` always uses only the lexicographically newest `*.csv.gz`.
+1. **Each DLD snapshot is a complete cumulative superset of all earlier snapshots.** Verified: every (contract_id, contract_start_date) and (transaction_id, instance_date) in older snapshots is 100% present in the latest. **Therefore only the latest snapshot matters.** Exception seen 2026-10-28: 446 tx ids (0.02%, mostly off-plan `Delayed Sell` / `Sell - Pre registration` from the prior 2 months) vanished — ~80% reappear as the same deal under a new `transaction_id`, so DLD re-issues ids; not data loss. Older ones can be deleted with zero data loss. `dld_to_parquet.sh` always uses only the lexicographically newest `*.csv.gz`.
 
 2. **Raw CSVs have massive duplicate-row redundancy** — same logical record repeated 3–7× with different `load_timestamp` (DLD's internal audit field). Rows are byte-identical except for that column. `SELECT DISTINCT * EXCLUDE load_timestamp` collapses everything cleanly.
    - TX raw: 12M rows → 1.72M unique transactions (~7× factor)

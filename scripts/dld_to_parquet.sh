@@ -22,7 +22,7 @@ set -euo pipefail
 IN_DIR="${1:?usage: $0 <input_dir> <output.parquet>}"
 OUT="${2:?usage: $0 <input_dir> <output.parquet>}"
 
-LATEST=$(find "$IN_DIR" -name '*.csv.gz' | sort -r | head -1)
+LATEST=$(find "$IN_DIR" -name '*.csv.gz' | sort | tail -1)  # not head: SIGPIPE under pipefail
 [ -n "$LATEST" ] || { echo "no *.csv.gz under $IN_DIR" >&2; exit 1; }
 
 # DLD splits snapshots into numbered parts (_0001, _0002, …). Match all parts
