@@ -12,7 +12,8 @@ Output: 7 categories × 4 languages = 28 pages.
   /malls/                          …
 
 Each page lists every entry of that category. Each row links to the enclosing
-district page (resolved by point-in-polygon against data/dld_communities_osm.geojson).
+district page (point-in-polygon against data/curated_polygons.geojson — same keys as the
+district pages; links go to the sales page, else rents, else plain text).
 A "Show on map" CTA deep-links to /<lang>/sales/?layers=<key> so the matching
 layer activates immediately when the visitor hits the map.
 
@@ -26,7 +27,8 @@ import sys
 
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 SRC = os.path.join(ROOT, 'pois', 'all.js')
-GEO = os.path.join(ROOT, 'data', 'dld_communities_osm.geojson')
+GEO = os.path.join(ROOT, 'data', 'curated_polygons.geojson')
+AGG_DIR = os.path.join(ROOT, 'data', 'aggregates_intermediate')
 
 # Single source of truth for BASE_URL (env-overridable for dev builds).
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
@@ -331,9 +333,36 @@ def _feature_contains(feature, lon, lat):
     return False
 
 
-def _build_district_locator(features):
-    """Return locate(lon, lat) → {'key', 'name'} or None.
-    Caches a bbox per feature for an early-reject."""
+def _district_pages():
+    """key → (name, slug, mode) of its district page, named as build_district_pages does."""
+    agg = {}
+    for mode in ('sale', 'rent'):
+        with open(os.path.join(AGG_DIR, mode + '.json'), encoding='utf-8') as f:
+            agg[mode] = json.load(f)
+    out = {}
+    for k in set(agg['sale']) | set(agg['rent']):
+        sale, rent = agg['sale'].get(k) or {}, agg['rent'].get(k) or {}
+        if k.startswith('_') or not (sale or rent):
+            continue
+        name = sale.get('name') or rent.get('name') or k.title()
+        out[k] = (name, slugify(name), 'sale' if sale else 'rent')
+    return out
+
+
+def _area(feature):
+    g = feature.get('geometry') or {}
+    polys = [g['coordinates']] if g.get('type') == 'Polygon' else g.get('coordinates') or []
+    total = 0.0
+    for poly in polys:
+        ring = poly[0] if poly else []
+        total += abs(sum(x0 * y1 - x1 * y0 for (x0, y0, *_), (x1, y1, *_) in zip(ring, ring[1:] + ring[:1]))) / 2
+    return total
+
+
+def _build_district_locator(features, pages):
+    """Return locate(lon, lat) → {'key', 'name', 'slug', 'mode'} or None.
+    Smallest polygon first, so a sub-zone (Jebel Ali Village) beats its parent; bbox early-reject."""
+    features = sorted(features, key=_area)
     bboxes = []
     for f in features:
         g = f.get('geometry') or {}
@@ -360,11 +389,10 @@ def _build_district_locator(features):
             if lon < bb[0] or lon > bb[2] or lat < bb[1] or lat > bb[3]:
                 continue
             if _feature_contains(f, lon, lat):
-                p = f.get('properties') or {}
-                key = p.get('real_area_key')
-                name = p.get('name')
-                if key and name:
-                    return {'key': key, 'name': name}
+                key = (f.get('properties') or {}).get('key')
+                if key in pages:
+                    name, slug, mode = pages[key]
+                    return {'key': key, 'name': name, 'slug': slug, 'mode': mode}
         return None
 
     return locate
@@ -454,8 +482,8 @@ def lang_switcher_html(slug, lang):
 def build_district_link(lang, district):
     if not district:
         return COPY[lang]['no_district']
-    slug = slugify(district['name'])
-    href = f'{BASE_URL}{lang_prefix(lang)}/sales/{slug}/'
+    prefix = 'sales' if district['mode'] == 'sale' else 'rents'
+    href = f"{BASE_URL}{lang_prefix(lang)}/{prefix}/{district['slug']}/"
     return f'<a href="{href}">{html_escape(district["name"])}</a>'
 
 
@@ -693,7 +721,7 @@ def main():
     with open(GEO, encoding='utf-8') as f:
         geo = json.load(f)
     features = geo['features']
-    locate = _build_district_locator(features)
+    locate = _build_district_locator(features, _district_pages())
 
     summary = []
     for cat in CATS:

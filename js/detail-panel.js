@@ -74,12 +74,16 @@
     vals.forEach((v, i) => { if (v > cap) last = i; });
     return last >= 0 && last < series.length / 2 ? series.slice(last + 1) : series;
   }
-  // Axis cap for outliers left mid-series (they clip off the top)
-  function _robustMax(vals) {
+  // Axis cap for thin-month spikes left mid-series (they clip off the top); months with typical deal counts always fit
+  function _robustMax(vals, ns) {
     const cap = _priceCap(vals);
     if (!cap) return undefined;
-    const e = 10 ** Math.floor(Math.log10(cap));
-    return Math.ceil(cap / e * 2) / 2 * e;
+    const sn = (ns || []).filter(Number.isFinite).sort((a, b) => a - b);
+    const medN = sn.length ? sn[Math.floor(sn.length / 2)] : Infinity;
+    const top = Math.max(cap, ...vals.filter((v, i) => Number.isFinite(v) && ns && ns[i] >= medN));
+    if (top >= Math.max(...vals.filter(Number.isFinite))) return undefined;
+    const e = 10 ** Math.floor(Math.log10(top));
+    return Math.ceil(top / e * 2) / 2 * e;
   }
   function medPrice(p, monthly) {
     return monthly ? Math.round((p.med || 0) / 12) : (p.med || 0);
@@ -331,12 +335,15 @@
     }
     S.timelineCharts = [];
   }
+  // Every chart in the rent pane: renderRentCharts redraws rooms, vintage and donuts too, not just timelines
   function destroyRentCharts() {
-    for (const c of S.rentTimelineCharts) {
+    const pane = S.container && S.container.querySelector('#dp-pane-rent');
+    S.activeCharts = S.activeCharts.filter(c => {
+      if (!S.rentTimelineCharts.includes(c) && !(pane && c.canvas && pane.contains(c.canvas))) return true;
+      if (c === S.roomBreakdownChart) S.roomBreakdownChart = null;
       c.destroy();
-      const i = S.activeCharts.indexOf(c);
-      if (i >= 0) S.activeCharts.splice(i, 1);
-    }
+      return false;
+    });
     S.rentTimelineCharts = [];
   }
 

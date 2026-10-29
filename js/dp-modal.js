@@ -211,7 +211,7 @@
       const still = document.getElementById('dp-chart-modal');
       if (!still || !still.classList.contains('open') || S.modalEngine !== engine || still.dataset.metric !== metric || (still.dataset.source || 'sale') !== source) return;
       target.innerHTML = '';
-      const yCap = metric === 'avg' && source === 'sale' ? _robustMax(data) : undefined;
+      const yCap = metric === 'avg' && source === 'sale' ? _robustMax(data, secondary && secondary.values) : undefined;
       if (useEc) _renderModalECharts({ el: echartsEl, labels, data, ma, ma50, ma200, median, color, m, secondary, est: cd.est, yCap });
       else _renderModalLwc({ el: lwcEl, dates: cd.fullLabels, data, ma50, ma200, median, color, m, secondary, cross, est: cd.est, yCap });
     }).catch(err => {

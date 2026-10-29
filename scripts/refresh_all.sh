@@ -67,6 +67,9 @@ $PY scripts/merge_curated_polygons_into_viewer.py
 phase "8. Per-district SEO pages (read index.html as template)"
 $PY scripts/build_district_pages.py
 
+phase "8. POI category pages (link each POI to its district page)"
+$PY scripts/build_poi_pages.py
+
 phase "8a. Redirect stubs for retired/renamed area slugs"
 $PY scripts/build_renamed_area_redirects.py
 

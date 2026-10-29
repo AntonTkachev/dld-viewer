@@ -240,7 +240,7 @@ def main():
                     os.makedirs(out_dir, exist_ok=True)
 
                     copy_now = period_copy[period_code]
-                    mode_switcher = build_mode_switcher(slug, mode, lang)
+                    mode_switcher = build_mode_switcher(slug, mode, lang, bool(sale_rec and rent_rec))
 
                     def period_url_for_lang(l, pc=period_code):
                         u = base_url(mode, slug, l)
@@ -302,7 +302,7 @@ def main():
                     if lt[0] != mode:
                         continue
                     build_list_page(template_list, name, slug, mode, prefix,
-                                    lt, base_rec, about_html, lang)
+                                    lt, base_rec, about_html, lang, bool(sale_rec and rent_rec))
                     list_count += 1
                     built += 1
 

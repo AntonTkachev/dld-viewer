@@ -456,17 +456,18 @@ def build_lang_switcher(make_url_for, current_lang):
     return ''.join(items)
 
 
-def build_mode_switcher(slug, mode, lang):
+def build_mode_switcher(slug, mode, lang, has_other=True):
+    """Sales/Rents toggle; the other mode is left out when the district has no page for it."""
     c = COPY[lang]
-    sales_url = base_url('sale', slug, lang)
-    rents_url = base_url('rent', slug, lang)
-    sales_cls = ' class="active"' if mode == 'sale' else ''
-    rents_cls = ' class="active"' if mode == 'rent' else ''
-    return (f'<a href="{sales_url}"{sales_cls}>{html_escape(c["mode_sales"])}</a>'
-            f'<a href="{rents_url}"{rents_cls}>{html_escape(c["mode_rents"])}</a>')
+    out = []
+    for m, label in (('sale', c['mode_sales']), ('rent', c['mode_rents'])):
+        if m == mode or has_other:
+            cls = ' class="active"' if m == mode else ''
+            out.append(f'<a href="{base_url(m, slug, lang)}"{cls}>{html_escape(label)}</a>')
+    return ''.join(out)
 
 
-def build_list_page(template, name, slug, mode, prefix, list_type, rec, about_html, lang):
+def build_list_page(template, name, slug, mode, prefix, list_type, rec, about_html, lang, has_other=True):
     """Render and write one list sub-page. Returns (html_path, html_size_kb)."""
     c = COPY[lang]
     (lt_mode, frag, field, breadcrumb_key, h1_key, lede_key, columns) = list_type
@@ -479,7 +480,7 @@ def build_list_page(template, name, slug, mode, prefix, list_type, rec, about_ht
         else f'<p style="color:#94a3b8;padding:20px 0">{html_escape(c["list_no_data"])}</p>'
     itemlist_ld = build_itemlist_ld(h1, rows, columns) if rows else ''
     crosslinks = build_list_crosslinks(slug, mode, frag, lang)
-    mode_switcher = build_mode_switcher(slug, mode, lang)
+    mode_switcher = build_mode_switcher(slug, mode, lang, has_other)
     lang_switcher = build_lang_switcher(lambda l: f'{base_url(mode, slug, l)}{frag}/', lang)
     back_label = c['list_back'].format(name=name)
     bread_district = c['breadcrumb_dubai']

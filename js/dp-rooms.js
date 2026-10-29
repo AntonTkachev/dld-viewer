@@ -46,6 +46,7 @@
       for (const row of slice) labelSet.add(row.d);
     }
     const sparseLabels = Array.from(labelSet).sort();
+    if (!sparseLabels.length) return null;
 
     function indexToYM(idx) {
       return `${Math.floor(idx / 12)}-${String((idx % 12) + 1).padStart(2,'0')}`;

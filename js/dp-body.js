@@ -254,7 +254,7 @@
         spanGaps: true,
         segment: { borderDash: c => c.p1DataIndex === estIdx ? [4, 3] : undefined } });
       const scales = {
-        y: _yAxis(fmtY, { beginAtZero: true, grace: '12%', max: secondary ? _robustMax(data) : undefined }),
+        y: _yAxis(fmtY, { beginAtZero: true, grace: '12%', max: secondary ? _robustMax(data, secondary.values) : undefined }),
         x: _xAxis(),
       };
       if (secondary) scales.y1 = { display: false, min: 0, max: datasets[0]._secMax };
