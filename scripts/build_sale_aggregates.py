@@ -634,7 +634,7 @@ def period_summaries(dfrom, src, kx):
         res[r['k']]['offplan'][r['op']] = int(r['n'])
     for _, r in q(f"""SELECT {kx} AS k, rooms_seg AS ru, COUNT(*) AS n, ROUND(SUM(val)) AS vol,
           ROUND(MEDIAN(val)) AS med, ROUND(MEDIAN(val/sqm) FILTER (WHERE sqm > 0)) AS ppsqm
-          {wa} AND val > 0 GROUP BY GROUPING SETS ((k, rooms_seg), (k))""").iterrows():
+          {wa} AND val > 0 GROUP BY GROUPING SETS (({kx}, rooms_seg), ({kx}))""").iterrows():
         if r['k'] not in res: continue
         res[r['k']]['by_rooms_unit'][r['ru'] if isinstance(r['ru'], str) else 'all'] = {'n': int(r['n']), 'vol': safe_int(r['vol']),
                                                  'med': safe_int(r['med']), 'ppsqm': safe_int(r['ppsqm'])}

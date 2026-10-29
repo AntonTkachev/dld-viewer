@@ -550,7 +550,7 @@ def period_summaries(dfrom, src, kx):
     for _, row in q(f"""SELECT {kx} AS k, rooms, COUNT(*) AS n, ROUND(MEDIAN(amt) FILTER (WHERE amt > 0)) AS med,
           ROUND(MEDIAN(sqm) FILTER (WHERE sqm > 0), 1) AS med_sqm,
           ROUND(MEDIAN(amt/sqm) FILTER (WHERE amt > 0 AND sqm > 0)) AS med_ppsqm {w}
-          GROUP BY GROUPING SETS ((k, rooms), (k))""").iterrows():
+          GROUP BY GROUPING SETS (({kx}, rooms), ({kx}))""").iterrows():
         if row['k'] not in res: continue
         res[row['k']]['by_rooms_unit'][room_key(row['rooms'])] = {'n': int(row['n']), 'med': safe_int(row['med']),
                                                         'med_sqm': safe_float(row['med_sqm']), 'med_ppsqm': safe_int(row['med_ppsqm'])}
