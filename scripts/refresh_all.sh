@@ -49,6 +49,9 @@ $PY scripts/build_investor_map.py
 phase "4c. Off-plan premium vs fresh ready (offplan mask)"
 $PY scripts/build_offplan_premium_map.py
 
+phase "4d. Construction markers (PROJECTS const in pois/all.js, RERA + Ejari-derived status)"
+$PY scripts/dld_projects_merge_into_viewer.py
+
 phase "5. Inline period consts (TX/RENTS/GROWTH/PAYBACK_PERIODS)"
 $PY scripts/inline_periods.py
 

@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-Patch the `const PROJECTS = [...]` line in index.html with district-level
+Patch the `const PROJECTS = [...]` in pois/all.js with district-level
 aggregates of the RERA Real Estate Projects register
 (data/dld_projects.csv.gz, fetched by dld_projects_pull.py).
 
@@ -47,7 +47,7 @@ MASTER_ALIASES = {
 }
 # Prefix rollups for fragmented master_project values that DLD splits
 # across many siblings. Same problem as the ROLLUP_SQL CASE in
-# build_{sale,rent}_aggregates.py — Dubai Hills is recorded as
+# _aggregates_common.py — Dubai Hills is recorded as
 # 'DUBAI HILLS - SIDRA 1/2/3', 'MAPLE 3', 'GOLF PLACE', etc. (13 variants
 # at the time of writing), and they all belong to the same Dubai Hills
 # polygon. Match by normalized prefix; first hit wins.

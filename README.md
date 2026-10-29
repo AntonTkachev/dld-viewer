@@ -1,37 +1,39 @@
-# DLD Viewer — Dubai districts × transactions × infrastructure
+# DXB Compass — Dubai real-estate map from DLD open data
 
-Single-file HTML viewer (Leaflet + Chart.js + OSM tiles) for Dubai real estate.
+Interactive map + ~22K static SEO pages for Dubai property prices, rents, yields and growth, built from Dubai Land Department transactions and Ejari rent contracts.
 
-**Live:** [antontkachev.github.io/dld-viewer](https://antontkachev.github.io/dld-viewer/)
+**Live:** [dxbcompass.com](https://dxbcompass.com)
 
 ## What's inside
 
-- **421 district polygons** sourced from OpenStreetMap (admin_level=10 + place=suburb/neighbourhood + named landuse=residential), including the Hatta exclave
-- **Real DLD aggregates from Parquet (full history)** — sales 1995-2026 (1.72M transactions, 6.7 трлн AED), rents 2001-2030 (10.1M contracts), refreshed weekly from Dubai Pulse
-- **Drill-down panel** with Chart.js: monthly timeline (YoY trend), rooms breakdown, Off-Plan vs Ready, top projects, top deals, recent deals — clickable from any district
-- **Villa / Apartment / Rent filter** — split the choropleth by property type or switch to rental view
-- **Infrastructure layers** (OSM): Dubai Metro 3 lines (Red / Green / Blue under construction), 261 schools (KHDA-style placeholder fields), 45 universities, 83 hospitals, 643 mosques, 119 malls, 281 named construction projects
-- **i18n**: RU / EN / AR / HI switchable
+- **District choropleth** (Leaflet, OSM tiles) on curated DM admin polygons, split where DLD communities don't match admin boundaries (Marina, JVC, Sports City…)
+- **Masks:** sales, rents, growth, lifecycle, payback, investor, formula, income, off-plan premium, yearly sell/rent — each with 1y/3y/5y/10y/all periods, map + table view
+- **District pages** with charts (timeline, rooms, vintages, off-plan vs ready), FAQ, POIs and a PDF report
+- **Buildings:** per-building pages, directory and a map layer
+- **Infrastructure layers:** metro, schools (KHDA ratings), universities, medical, mosques, malls, construction projects (RERA)
+- **5 languages:** EN / RU / AR / HI / ZH
+- **iOS app feed** at `/app/v1/`
 
-## Data caveats
+## Data
 
-- Source: Dubai Pulse `dataset-download` API — DLD Transactions (`470061`) + Rent Contracts (`468586`). See [CLAUDE.md](CLAUDE.md) for refresh pipeline.
-- School / hospital / mall / project / mosque / university popup fields beyond OSM tags (curriculum, fees, DHA rating, anchor tenants, etc) are **synthetic placeholders** structured to match the eventual KHDA / DHA / DLD API schemas. Marked with `~` in popups.
-- Three parquet admin sectors (Marsa Dubai, Al Thanyah Fifth, Al Barsha South Fifth) are remapped at build time to community-style keys (Dubai Marina / JLT / JVC) so polygons find data.
+DLD transactions (~1.7M) and Ejari rents (~10M) from the Dubai Pulse open API, deduplicated into Parquet; RERA projects register, DM building completions and admin polygons; KHDA directories; OpenStreetMap POIs. Full source catalog, refresh playbook and data caveats: [CLAUDE.md](CLAUDE.md).
 
-## How it's built
+## Build & deploy
 
-The whole viewer is one self-contained `index.html` (~8.8 MB) with all data inlined as JSON consts. No backend, no build step. Just open in any browser.
+Static site, no backend. Python (`/usr/bin/python3` with duckdb + shapely) generates everything from `data/`:
 
-Source pipeline:
-- `data/tx.parquet`, `data/rents.parquet` — refreshed via `./scripts/dld_refresh.sh`
-- `data/dld_communities_osm.geojson` — legacy OSM polygons (Overpass + DLD `carea-lookup`) used as geometry source for sub-zones in `build_curated_polygons.py`
-- `data/aggregates_intermediate/{sale,rent}.json` — per-area aggregates built by `scripts/build_sale_aggregates.py` and `scripts/build_rent_aggregates.py` (gitignored intermediate)
-- Inlined into `index.html` by the rebuild scripts
+```bash
+./scripts/dld_refresh.sh     # pull new DLD snapshots → data/*.parquet
+./scripts/refresh_all.sh     # rebuild masks, bundles, all pages, sitemap; runs tests
+./scripts/deploy.sh          # generated pages → gh-pages branch, GitHub Pages deploy
+```
+
+Tests: `/usr/bin/python3 -m pytest` (see `tests/`).
+
+Layout: `template.html` + `js/` + `css/` (viewer), `templates/` (page templates), `scripts/build_*.py` (generators, helpers in `scripts/_*.py`), `periods/` `polygons/` `pois/` (cache-busted data bundles).
 
 ## Acknowledgments
 
-- Polygons & basemap: [OpenStreetMap](https://www.openstreetmap.org/) contributors
-- Transactions: [Dubai Land Department](https://dubailand.gov.ae/) Open Data
-- Map library: [Leaflet](https://leafletjs.com/)
-- Charts: [Chart.js](https://www.chartjs.org/)
+- Data: [Dubai Land Department](https://dubailand.gov.ae/) and [Dubai Pulse](https://data.dubai/) open data, [KHDA](https://web.khda.gov.ae/)
+- Map data: [OpenStreetMap](https://www.openstreetmap.org/) contributors
+- Libraries: [Leaflet](https://leafletjs.com/), [Chart.js](https://www.chartjs.org/)
