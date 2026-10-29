@@ -154,7 +154,7 @@ def data_url(mode, slug):
 # Free fields stay visible forever for SEO. Premium fields are emitted into a
 # parallel `*_premium` block under the same data.json so a future auth gate
 # can drop them with one line (no rebuild of 20K pages).
-PREMIUM_FIELDS = ('top_deals', 'recent', 'top_projects', 'timeline_by_rooms')
+PREMIUM_FIELDS = ('top_deals', 'recent', 'top_projects', 'timeline_by_rooms', 'mix')
 
 
 def split_tiers(rec):

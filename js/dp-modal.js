@@ -3,12 +3,12 @@
   const {
     S, _chartFont, _disposeLwc, _ensureECharts, _ensureLwc, _h, _maWindow, _modalDOM, _pct,
     _renderModalECharts, _renderModalLwc, _robustMax, _useCanvasPane, _vintageCohorts, alignedMA,
-    crossState, fmtInt, linearTrend, renderPeriodChips, renderRoomChips, t, yoyPercent
+    crossState, fmtInt, linearTrend, renderPeriodChips, renderRoomChips, roomView, t, yoyPercent
   } = window._dp;
 
   function openVintagePathsModal(source) {
     source = source || 'sale';
-    const rec = source === 'rent' ? S.rent : S.sale;
+    const rec = roomView(source === 'rent' ? S.rent : S.sale);
     const vc = _vintageCohorts(rec);
     if (!vc) return;
     const { monthly, cohorts } = vc;

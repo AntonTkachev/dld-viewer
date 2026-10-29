@@ -3,8 +3,8 @@
   const {
     ROOM_COLORS, ROOM_ORDER, S, _areaFill, _donutCenter, _h, _lastValueTag, _modalDOM, _tints,
     _useCanvasPane, _xAxis, _yAxis, fmtAedDP, fmtAxisAed, fmtInt, medPrice, periodSlice,
-    renderRoomBreakdownChart, renderTimelineCharts, renderVintageChart, renderVintagePaths,
-    roomLabel, roomTimelineFor, t, tVal
+    refreshVintage, renderRoomBreakdownChart, renderTimelineCharts, roomLabel, roomTimelineFor, roomView,
+    t, tVal
   } = window._dp;
 
   const OP_COLORS = { 'Off-Plan': '#f59e0b', 'Ready': '#4f46e5' };
@@ -30,11 +30,11 @@
     return values.map((_, i) => i < m ? steps[i] : '#cbd5e1');
   }
 
-  // Period totals from the monthly timeline; 'all' keeps the all-time fields
+  // Period totals from the active room chip's monthly timeline; 'all' keeps the all-time fields
   function _periodCounts(a) {
     if (S.period === 'all') return null;
     let n = 0, op = 0, mort = 0;
-    for (const p of periodSlice(a.timeline || [])) { n += p.n || 0; op += p.op || 0; mort += p.mort || 0; }
+    for (const p of periodSlice(roomTimelineFor(a))) { n += p.n || 0; op += p.op || 0; mort += p.mort || 0; }
     return { n, op, mort };
   }
   function _offplanData(a) {
@@ -50,8 +50,11 @@
     };
   }
 
+  const HOME_SEGS = ['studio', '1br', '2br', '3br', '4br+', 'villa'];
+  const _segIn = (seg, k) => k === 'all' || (k === 'homes' ? HOME_SEGS.includes(seg)
+    : k === 'apartments' ? HOME_SEGS.includes(seg) && seg !== 'villa' : seg === k);
   function _dealsByYearData(a) {
-    const list = (a.top_deals || []).filter(d => d.val > 0 && d.d);
+    const list = (a.top_deals || []).filter(d => d.val > 0 && d.d && (!d.seg || _segIn(d.seg, S.roomFilter)));
     if (!list.length) return null;
     const byYear = new Map();
     for (const d of list) {
@@ -139,11 +142,12 @@
       const i = S.activeCharts.indexOf(c);
       if (i >= 0) S.activeCharts.splice(i, 1);
     }
+    const v = roomView(a);
     S.donutData = {
-      offplan:  _offplanData(a),
-      deals:    _dealsByYearData(a),
-      recent:   _recentByRoomData(a),
-      payment:  _paymentData(a),
+      offplan:  _offplanData(v),
+      deals:    _dealsByYearData(v),
+      recent:   _recentByRoomData(v),
+      payment:  _paymentData(v),
     };
     S.donutCharts = [
       _renderDonut('ch-offplan',           S.donutData.offplan),
@@ -205,8 +209,7 @@
   function renderSaleCharts(a) {
     renderTimelineCharts(a);
     try { renderRoomBreakdownChart(a); } catch(e) { console.error('rooms chart:', e); }
-    try { renderVintageChart(a, 'sale'); } catch(e) { console.error('vintage chart:', e); }
-    try { renderVintagePaths(a, 'sale'); } catch(e) { console.error('vintage paths:', e); }
+    try { refreshVintage(roomView(a), 'sale'); } catch(e) { console.error('vintage:', e); }
     try { renderInsightDonuts(a);    } catch(e) { console.error('donuts:', e); }
   }
 
@@ -315,18 +318,18 @@
     if (r.by_rooms_unit && Object.keys(r.by_rooms_unit).length) {
       try { renderRoomBreakdownChart(r); } catch(e) { console.error('rent rooms chart:', e); }
     }
-    try { renderVintageChart(r, 'rent'); } catch(e) { console.error('rent vintage chart:', e); }
-    try { renderVintagePaths(r, 'rent'); } catch(e) { console.error('rent vintage paths:', e); }
-    
+    const rv = roomView(r);
+    try { refreshVintage(rv, 'rent'); } catch(e) { console.error('rent vintage:', e); }
+
     try {
-      _renderDonut('ch-rent-donut-subtype',  _rentSubtypeDonutData(r));
-      _renderDonut('ch-rent-donut-usage',    _rentUsageDonutData(r));
-      const tenant = _rentTenantDonutData(r);
+      _renderDonut('ch-rent-donut-subtype',  _rentSubtypeDonutData(rv));
+      _renderDonut('ch-rent-donut-usage',    _rentUsageDonutData(rv));
+      const tenant = _rentTenantDonutData(rv);
       // 64 districts (and the Dubai total) ship no tenant split — hide the card instead of an empty ring
       const tenantCard = document.getElementById('dp-rent-tenant-card');
       if (tenantCard) tenantCard.style.display = tenant ? '' : 'none';
       if (tenant) _renderDonut('ch-rent-donut-tenant', tenant);
-      _renderDonut('ch-rent-donut-newrenew', _rentNewRenewDonutData(r));
+      _renderDonut('ch-rent-donut-newrenew', _rentNewRenewDonutData(rv));
     } catch(e) { console.error('rent donuts:', e); }
   }
 

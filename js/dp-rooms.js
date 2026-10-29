@@ -2,7 +2,7 @@
 (function () {
   const {
     PERIODS, ROOM_BREAKDOWN, ROOM_COLORS, S, _chartFont, _estNote, _modalDOM, _roomsRec,
-    _stackTotals, _useCanvasPane, _workdays, _xAxis, _yAxis, fmtAxisAed, fmtInt, linearTrend,
+    _stackTotals, _useCanvasPane, _workdays, _xAxis, _yAxis, destroyChartsIn, fmtAxisAed, fmtInt, linearTrend,
     periodSlice, renderRoomBreakdown, rgba, roomLabel, t
   } = window._dp;
 
@@ -362,7 +362,19 @@
       c.restore();
     },
   };
+  // Wrapper stays even when empty, so refreshVintage can swap it for another room chip
   function renderVintageSection(rec, kind) {
+    return `<div id="dp-vintage-${kind}">${_vintageInner(rec, kind)}</div>`;
+  }
+  function refreshVintage(rec, kind) {
+    const wrap = document.getElementById('dp-vintage-' + kind);
+    if (!wrap) return;
+    destroyChartsIn(wrap);
+    wrap.innerHTML = _vintageInner(rec, kind);
+    renderVintageChart(rec, kind);
+    renderVintagePaths(rec, kind);
+  }
+  function _vintageInner(rec, kind) {
     if (!_vintageBuckets(rec)) return '';
     const paths = (rec.vintage_paths && Object.keys(rec.vintage_paths).length >= 2) ? `
         <div style="margin-top:10px">
@@ -471,7 +483,7 @@
   }
 
   Object.assign(window._dp, {
-    _pct, _vintageCohorts, openRoomChartModal, refreshRoomBreakdown, renderRoomBreakdownChart,
+    _pct, _vintageCohorts, openRoomChartModal, refreshRoomBreakdown, refreshVintage, renderRoomBreakdownChart,
     renderVintageChart, renderVintagePaths, renderVintageSection
   });
 })();

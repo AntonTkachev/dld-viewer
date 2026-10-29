@@ -5,7 +5,7 @@
     destroyCharts, destroyRentCharts, destroyTimelineCharts, openChartModal, openDonutModal,
     openRoomChartModal, openVintagePathsModal, refreshRoomBreakdown, renderBody, renderInsightDonuts,
     renderPeriodChips, renderPeriodChipsRent, renderRentCharts, renderRoomChips, renderSaleCharts,
-    renderStatsRent, renderStatsSale, renderTimelineCharts
+    refreshVintage, renderStatsRent, renderStatsSale, renderTimelineCharts, roomView
   } = window._dp;
 
   function bindDelegates() {
@@ -142,6 +142,7 @@
     renderTimelineCharts(S.sale);
     refreshRoomBreakdown();
     try { renderInsightDonuts(S.sale); } catch(e) { console.error('donuts:', e); }
+    try { refreshVintage(roomView(S.sale), 'sale'); } catch(e) { console.error('vintage:', e); }
 
     const modalEl = document.getElementById('dp-chart-modal');
     if (modalEl && modalEl.classList.contains('open') && modalEl.dataset.metric && (modalEl.dataset.source || 'sale') === 'sale') {

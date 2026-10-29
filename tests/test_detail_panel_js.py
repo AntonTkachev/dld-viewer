@@ -48,3 +48,19 @@ def test_room_breakdown_empty_period_no_crash():
     snippet = '''(dp, ctx) => { ctx.document.getElementById = () => ({}); dp.S.period = '1y';
         dp.renderRoomBreakdownChart({ timeline_by_rooms: { land: [{ d: '2001-05', n: 2 }] } }); return dp.S.roomChartData || 'ok'; }'''
     assert run(snippet) == 'ok'
+
+
+def test_room_view_follows_chip():
+    rec = {'scope': 'home', 'by_tenant': {'Person': 9}, 'by_subtype': {'Office': {'n': 5}, 'Flat': {'n': 4}},
+           'vintage': {'v0_1': {'n': 30, 'ppsqm': 900}},
+           'mix': {'homes': {'by_tenant': {'Person': 9}, 'by_subtype': {'Flat': {'n': 4}}},
+                   '1br': {'by_tenant': {'Person': 2}, 'vintage': {'v0_1': {'n': 21, 'ppsqm': 1000}}},
+                   'apartments': {'by_tenant': {'Person': 4}}}}
+    snippet = f'''dp => {{ const rec = {json.dumps(rec)}, out = {{}};
+        for (const k of ['homes', '1br', 'apartments', 'villa']) {{ dp.S.roomFilter = k; out[k] = dp.roomView(rec); }}
+        return out; }}'''
+    out = run(snippet)
+    assert out['homes']['by_subtype'] == {'Flat': {'n': 4}}             # homes chip: no offices in the type donut
+    assert out['1br']['by_tenant'] == {'Person': 2} and out['1br']['vintage']['v0_1']['ppsqm'] == 1000
+    assert out['apartments']['vintage'] == rec['vintage']                 # vintage rows are apartments already
+    assert out['villa'].get('by_tenant') is None and out['villa'].get('vintage') is None  # nothing borrowed

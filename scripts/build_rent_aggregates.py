@@ -29,8 +29,8 @@ TODAY     = date.today().isoformat()
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 from _curated_sql import hierarchy_select, hierarchy_views
 from _segments import APARTMENT_SQL, HOME_SQL, RENT_ROOMS_SQL
-from _aggregates_common import (PERIOD_YEARS, ROLLUP_SQL, panel_stats, patch_choropleth_tag, room_key,
-                                safe_float, safe_int, write_choropleth)
+from _aggregates_common import (PERIOD_YEARS, ROLLUP_SQL, mix_view, panel_stats, patch_choropleth_tag, put_mix,
+                                room_key, safe_float, safe_int, vintage_by_room, write_choropleth)
 con = duckdb.connect()
 print(f'period: {DATE_FROM} → {DATE_TO} (today={TODAY})', file=sys.stderr)
 
@@ -402,6 +402,31 @@ dubai_paths   = _bake_paths('vintage_paths', 'YEAR(d::DATE)', '', 20)
 dubai_paths_m = _bake_paths('vintage_paths_m', "strftime(d::DATE, '%Y-%m')",
                             'AND y % 2 = 0', 10)
 
+# ─── Mix per room chip: donut + vintage inputs, so the panel follows the room filter ───
+print('mix per room chip...', file=sys.stderr)
+mix_view(con, 'r', 'r_mix')
+mix_view(con, 'r_p', 'r_p_mix')
+mix = {}
+for src, keyed in (('r_mix', True), ('r_p_mix', False)):
+    kc = 'k, ' if keyed else ''
+    key = (lambda r: r.k) if keyed else (lambda r: None)
+    for r in q(f"""SELECT {kc} mk, COUNT(*) FILTER (WHERE rt = 'New') AS new,
+                   COUNT(*) FILTER (WHERE rt = 'Renew') AS renewed FROM {src} GROUP BY ALL""").itertuples():
+        put_mix(mix, key(r), room_key(r.mk), 'new', safe_int(r.new))
+        put_mix(mix, key(r), room_key(r.mk), 'renewed', safe_int(r.renewed))
+    for col, field in (('tenant', 'by_tenant'), ('sub', 'by_subtype'), ('usage', 'by_usage')):
+        for r in q(f"SELECT {kc} mk, {col} AS v, COUNT(*) AS n FROM {src} GROUP BY ALL").itertuples():
+            e = mix.setdefault(key(r), {}).setdefault(room_key(r.mk), {}).setdefault(field, {})
+            e[r.v] = {'n': safe_int(r.n)} if field == 'by_subtype' else safe_int(r.n)
+_RENT_VIN_WHERE = ("TRIM(sub) IN ('Flat','Studio') AND proj != '' AND sqm BETWEEN 10 AND 1000 "
+                   "AND amt > 0 AND d::DATE <= current_date")
+for src, keyed in (('r', True), ('r_p', False)):
+    vintage_by_room(q, mix, src, keyed, unit='proj', rooms='rooms', ppsqm='amt/sqm', where=_RENT_VIN_WHERE,
+                    vin_min=20, path_min=20, seed_from=2010)
+for k, m in mix.items():
+    if k in out:
+        out[k]['mix'] = m
+
 # ─── __dubai__ overview ──────────────────────────────────────────
 print('__dubai__...', file=sys.stderr)
 d_tot = con.execute("""
@@ -521,6 +546,7 @@ for _, row in d_tl_rooms.iterrows():
         'ppsqm': safe_int(row['ppsqm']),
     })
 
+dubai['mix'] = mix.get(None, {})
 out['__dubai__']  = dubai
 
 # ─── Per-period summaries: the single source for map periods, period pages and the app ─

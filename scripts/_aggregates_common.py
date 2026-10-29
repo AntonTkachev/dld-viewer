@@ -104,3 +104,53 @@ def patch_choropleth_tag(const, src_path, h):
     if state != 'already-current':
         with open(HTML, 'w', encoding='utf-8') as f:
             f.writelines(lines)
+
+
+# ─── Per room-chip breakdowns ("mix"): donut + vintage inputs that follow the panel's room filter ───
+MIX_GROUPS = ('all', 'homes', 'apartments')
+_APT_ROOMS = "('studio','1br','2br','3br','4br+')"
+
+
+def mix_view(con, src, dst, room_col='rooms'):
+    """`src` rows once per room chip they fall under (column mk): own bucket, all, homes, apartments."""
+    con.execute(f"""CREATE OR REPLACE TEMP VIEW {dst} AS
+    SELECT *, {room_col} AS mk FROM {src}
+    UNION ALL SELECT *, 'all' FROM {src}
+    UNION ALL SELECT *, 'homes' FROM {src} WHERE {room_col} IN ('studio','1br','2br','3br','4br+','villa')
+    UNION ALL SELECT *, 'apartments' FROM {src} WHERE {room_col} IN {_APT_ROOMS}""")
+
+
+def put_mix(mix, key, mk, field, value):
+    mix.setdefault(key, {}).setdefault(mk, {})[field] = value
+
+
+def vintage_by_room(q, mix, src, keyed, unit, rooms, ppsqm, where, vin_min, path_min, seed_from):
+    """Age cohorts (last 365d) and yearly purchase-year paths per apartment room bucket into
+    mix[key][room]. Building birth and path seeds come from every room, as in the district-wide
+    version; only the measured rows are split by room."""
+    kc, skc, jc = ('k, ', 's.k, ', 'seed.k = s.k AND') if keyed else ('', '', '')
+    base = f"""s AS (
+  SELECT {kc} {unit} AS u, {rooms} AS room, YEAR(d::DATE) AS y, d::DATE AS dd, {ppsqm} AS pp
+  FROM {src} WHERE {where})"""
+    vin = q(f"""WITH {base},
+birth AS (SELECT {kc} u, MIN(y) AS birth_y FROM s GROUP BY ALL),
+cur AS (
+  SELECT {skc} s.room, CASE WHEN s.y - birth.birth_y <= 1 THEN 'v0_1' WHEN s.y - birth.birth_y <= 4 THEN 'v2_4'
+                            WHEN s.y - birth.birth_y <= 10 THEN 'v5_10' ELSE 'v11p' END AS b, s.pp
+  FROM s JOIN birth USING ({kc} u)
+  WHERE s.dd >= current_date - INTERVAL 365 DAY AND s.room IN {_APT_ROOMS}
+)
+SELECT {kc} room, b, COUNT(*) AS n, ROUND(MEDIAN(pp)) AS med FROM cur GROUP BY ALL HAVING COUNT(*) >= {vin_min}""")
+    for r in vin.itertuples():
+        e = mix.setdefault(r.k if keyed else None, {}).setdefault(r.room, {})
+        e.setdefault('vintage', {})[r.b] = {'n': safe_int(r.n), 'ppsqm': safe_int(r.med)}
+    paths = q(f"""WITH {base},
+seed AS (SELECT DISTINCT {kc} u, y AS cy FROM s WHERE y BETWEEN {seed_from} AND YEAR(current_date) - 1)
+SELECT {skc} s.room, seed.cy, s.y, COUNT(*) AS n, ROUND(MEDIAN(s.pp)) AS med
+FROM s JOIN seed ON {jc} seed.u = s.u AND s.y >= seed.cy
+WHERE s.room IN {_APT_ROOMS}
+GROUP BY ALL HAVING COUNT(*) >= {path_min} ORDER BY ALL""")
+    for r in paths.itertuples():
+        e = mix.setdefault(r.k if keyed else None, {}).setdefault(r.room, {})
+        e.setdefault('vintage_paths', {}).setdefault(str(int(r.cy)), []).append(
+            {'d': str(int(r.y)), 'n': safe_int(r.n), 'med': safe_int(r.med)})

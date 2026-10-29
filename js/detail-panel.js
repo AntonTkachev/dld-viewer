@@ -277,9 +277,11 @@
       for (const room of APARTMENT_ROOMS) {
         for (const p of (tbr[room] || [])) {
           let e = byDate.get(p.d);
-          if (!e) { e = { d: p.d, n: 0, vol: 0, medSum: 0, ppsqmSum: 0 }; byDate.set(p.d, e); }
+          if (!e) { e = { d: p.d, n: 0, vol: 0, medSum: 0, ppsqmSum: 0, op: 0, mort: 0 }; byDate.set(p.d, e); }
           e.n   += p.n || 0;
           e.vol += p.vol || 0;
+          e.op  += p.op || 0;
+          e.mort += p.mort || 0;
           e.medSum   += (p.med   || 0) * (p.n || 0);
           e.ppsqmSum += (p.ppsqm || 0) * (p.n || 0);
         }
@@ -290,6 +292,7 @@
           d: e.d, n: e.n, vol: Math.round(e.vol),
           med:   e.n ? Math.round(e.medSum / e.n)   : 0,
           ppsqm: e.n ? Math.round(e.ppsqmSum / e.n) : 0,
+          ...(e.op ? { op: e.op } : {}), ...(e.mort ? { mort: e.mort } : {}),
         }));
     }
     if (bu && !bu.apartments) {
@@ -335,15 +338,17 @@
     }
     S.timelineCharts = [];
   }
-  // Every chart in the rent pane: renderRentCharts redraws rooms, vintage and donuts too, not just timelines
-  function destroyRentCharts() {
-    const pane = S.container && S.container.querySelector('#dp-pane-rent');
+  function destroyChartsIn(el, also) {
     S.activeCharts = S.activeCharts.filter(c => {
-      if (!S.rentTimelineCharts.includes(c) && !(pane && c.canvas && pane.contains(c.canvas))) return true;
+      if (!(also && also.includes(c)) && !(el && c.canvas && el.contains(c.canvas))) return true;
       if (c === S.roomBreakdownChart) S.roomBreakdownChart = null;
       c.destroy();
       return false;
     });
+  }
+  // Every chart in the rent pane: renderRentCharts redraws rooms, vintage and donuts too, not just timelines
+  function destroyRentCharts() {
+    destroyChartsIn(S.container && S.container.querySelector('#dp-pane-rent'), S.rentTimelineCharts);
     S.rentTimelineCharts = [];
   }
 
@@ -390,6 +395,24 @@
   }
   function _estNote(est) {
     return t('ch_est').replace('{a}', est.a).replace('{b}', est.b);
+  }
+  // The record through the active room chip: donut + vintage fields come from its mix entry (nothing
+  // borrowed from other rooms); the record's default chip keeps the top-level fields
+  const MIX_FIELDS = ['offplan', 'payment', 'new', 'renewed', 'by_tenant', 'by_subtype', 'by_usage'];
+  const VIN_FIELDS = ['vintage', 'vintage_paths', 'vintage_paths_m'];
+  function roomView(a) {
+    const k = S.roomFilter;
+    if (!a || !a.mix) return a;
+    const m = a.mix[k] || {}, v = Object.assign({}, a);
+    // Top-level rent subtype / usage count every contract, even on the homes chip
+    if (k === (a.scope === 'home' ? 'homes' : 'all')) {
+      for (const f of ['by_subtype', 'by_usage']) if (m[f]) v[f] = m[f];
+      return v;
+    }
+    for (const f of MIX_FIELDS) v[f] = m[f];
+    // Vintage rows are apartments only, so all / homes / apartments chips see the same set
+    if (!['all', 'homes', 'apartments'].includes(k)) for (const f of VIN_FIELDS) v[f] = m[f];
+    return v;
   }
   function roomTimelineFor(a) {
     const tbr = a.timeline_by_rooms || {};
@@ -674,9 +697,9 @@
     _chartTheme, _closeChartModal, _disposeLwc, _donutCenter, _estNote, _h, _lastValueTag, _maWindow,
     _modalDOM, _projectedPoint, _robustMax, _roomsRec, _stackTotals, _stripKnownBadFromRecord,
     _tints, _trimLeadOutliers, _useCanvasPane, _workdays, _xAxis, _yAxis, alignedMA, avgPrice,
-    crossState, destroyCharts, destroyRentCharts, destroyTimelineCharts, fmtAedDP, fmtAxisAed,
+    crossState, destroyCharts, destroyChartsIn, destroyRentCharts, destroyTimelineCharts, fmtAedDP, fmtAxisAed,
     fmtInt, linearTrend, medPrice, periodSlice, projName, renderPeriodChips, renderPeriodChipsRent,
     renderRoomBreakdown, renderRoomChips, renderStatsRent, renderStatsSale, rgba, roomLabel,
-    roomTimelineFor, t, tVal, yoyPercent
+    roomTimelineFor, roomView, t, tVal, yoyPercent
   };
 })();

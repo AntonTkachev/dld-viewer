@@ -19,8 +19,8 @@ DATE_TO   = '2026-12-31'
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 from _curated_sql import hierarchy_select, hierarchy_views
 from _segments import APARTMENT_SQL, HOME_SQL, SALE_BUCKET_SQL, SALE_ROOMS_SQL, SALE_VILLA_PLOT_SQL
-from _aggregates_common import (PERIOD_YEARS, ROLLUP_SQL, panel_stats, patch_choropleth_tag, safe_float,
-                                safe_int, write_choropleth)
+from _aggregates_common import (PERIOD_YEARS, ROLLUP_SQL, mix_view, panel_stats, patch_choropleth_tag, put_mix,
+                                safe_float, safe_int, vintage_by_room, write_choropleth)
 from _sale_vintage import add_vintage
 
 con = duckdb.connect()
@@ -208,25 +208,33 @@ for _, r in op_df.iterrows():
 # market grows). Cap mort_n at n to keep cash≥0 when timing skews push
 # mortgages above sales in a quiet area.
 print('payment split (cash vs financed)...', file=sys.stderr)
-mort_df = q(f"""
+con.execute(f"""
+CREATE TEMP TABLE mort_seg AS
 WITH m AS (
-  SELECT {HSEL}, substr(instance_date, 1, 7) AS d
+  SELECT {HSEL}, substr(instance_date, 1, 7) AS d,
+         CASE WHEN {SALE_VILLA_PLOT_SQL} THEN 'Villa' ELSE property_type_en END AS pt,
+         CASE WHEN {SALE_VILLA_PLOT_SQL} THEN 'Villa'
+              ELSE COALESCE(property_sub_type_en, CASE WHEN property_type_en = 'Villa' THEN 'Villa' END) END AS sbt,
+         rooms_en AS rooms
   FROM '{TX}'
   WHERE trans_group_en   = 'Mortgages'
     AND procedure_name_en = 'Mortgage Registration'
     AND area_name_en IS NOT NULL
     AND instance_date BETWEEN '{DATE_FROM}' AND '{DATE_TO}'
-)
-SELECT k, d, COUNT(*) AS mort_n FROM (
-  SELECT k_a AS k, d FROM m
-  UNION ALL SELECT k_s, d FROM m WHERE k_s IS NOT NULL
-  UNION ALL SELECT k_m, d FROM m WHERE k_s IS NULL AND k_m IN (SELECT k FROM tx_base_proj)
-) GROUP BY k, d
+),
+ms AS (SELECT *, {SALE_ROOMS_SQL} AS rooms_seg FROM m)
+SELECT k_a AS k, 0 AS lvl, d, rooms_seg FROM ms
+UNION ALL SELECT k_s, 1, d, rooms_seg FROM ms WHERE k_s IS NOT NULL
+UNION ALL SELECT k_m, 2, d, rooms_seg FROM ms WHERE k_s IS NULL AND k_m IN (SELECT k FROM tx_base_proj)
 """)
+mort_df = q("SELECT k, d, COUNT(*) AS mort_n FROM mort_seg GROUP BY k, d")
 mort_n_by_k, mort_by_km = defaultdict(int), {}
 for _, r in mort_df.iterrows():
     mort_n_by_k[r['k']] += int(r['mort_n'])
     mort_by_km[(r['k'], r['d'])] = int(r['mort_n'])
+# Per room bucket and month (mortgages without a room/type land in 'other')
+mort_by_kmr = {(r.k, r.rooms_seg, r.d): int(r.n) for r in q(
+    "SELECT k, rooms_seg, d, COUNT(*) AS n FROM mort_seg GROUP BY ALL").itertuples()}
 payment = {}
 for _, r in totals.iterrows():
     k = r['k']
@@ -264,18 +272,19 @@ for _, r in tl_df.iterrows():
 
 # ─── Q6: by_rooms_unit + timeline_by_rooms ─────────────────────
 print('by_rooms_unit + timeline_by_rooms (monthly w/ med, ppsqm)...', file=sys.stderr)
-br_df = q("SELECT k, substr(d,1,7) AS d, rooms_seg, val, sqm FROM tx_all WHERE val > 0")
+br_df = q("SELECT k, substr(d,1,7) AS d, rooms_seg, val, sqm, reg LIKE 'Off-Plan%' AS op FROM tx_all WHERE val > 0")
 by_unit = defaultdict(lambda: defaultdict(lambda: {'n':0,'vol':0.0,'vals':[],'ppsqm':[]}))
 by_day_rooms = defaultdict(
     lambda: defaultdict(
         lambda: defaultdict(
-            lambda: {'n':0, 'vol':0.0, 'vals':[], 'ppsqm':[]})))
+            lambda: {'n':0, 'vol':0.0, 'vals':[], 'ppsqm':[], 'op':0})))
 ROOM_ORDER = ['studio','1br','2br','3br','4br+','villa','land','commercial','other','all']
 for _, r in br_df.iterrows():
     for ru in (r['rooms_seg'], 'all'):   # 'all' = every deal, the headline may be homes only
         for rec in (by_unit[r['k']][ru], by_day_rooms[r['k']][ru][r['d']]):
             rec['n']   += 1
             rec['vol'] += float(r['val'])
+            if r['op']: rec['op'] = rec.get('op', 0) + 1
             rec['vals'].append(float(r['val']))
             if r['sqm'] and r['sqm'] > 0:
                 rec['ppsqm'].append(float(r['val']) / float(r['sqm']))
@@ -415,8 +424,12 @@ for _, r in totals.iterrows():
             vals = sorted(cell['vals']); pps = sorted(cell['ppsqm'])
             med   = round(vals[len(vals)//2]) if vals else 0
             ppsqm = round(pps[len(pps)//2])   if pps  else 0
-            rows.append({'d': d, 'n': cell['n'], 'vol': round(cell['vol']),
-                         'med': med, 'ppsqm': ppsqm})
+            row = {'d': d, 'n': cell['n'], 'vol': round(cell['vol']), 'med': med, 'ppsqm': ppsqm}
+            # Off-plan sales and mortgage filings that month, so the donuts follow period + room chip
+            mort = mort_by_km.get((k, d), 0) if ru == 'all' else mort_by_kmr.get((k, ru, d), 0)
+            if cell['op']: row['op'] = cell['op']
+            if mort: row['mort'] = mort
+            rows.append(row)
         tbr[ru] = rows
     entry['timeline_by_rooms'] = tbr
     # Per-subtype median sqm/ppsqm fill-ins from raw lists
@@ -462,6 +475,34 @@ for _, r in q(f"SELECT k, MEDIAN(r) AS r FROM trend_cells GROUP BY k HAVING SUM(
         out[r['k']]['trend_pct'] = round(float(r['r']) * 100, 1)
 
 dubai_vintage, dubai_paths, dubai_paths_m = add_vintage(q, out)
+
+# ─── Mix per room chip: donut + vintage inputs, so the panel follows the room filter ───
+print('mix per room chip...', file=sys.stderr)
+mix_view(con, 'tx_all', 'tx_mix', 'rooms_seg')
+mix_view(con, 'tx_all_p', 'tx_p_mix', 'rooms_seg')
+mix_view(con, 'mort_seg', 'mort_mix', 'rooms_seg')
+mix = {}
+for src, msrc, keyed in (('tx_mix', 'mort_mix', True), ('tx_p_mix', 'mort_mix WHERE lvl = 0', False)):
+    kc = 'k, ' if keyed else ''
+    key = (lambda r: r.k) if keyed else (lambda r: None)
+    for r in q(f"""SELECT {kc} mk, CASE WHEN reg LIKE '%Existing%' THEN 'Ready'
+                          WHEN reg LIKE '%Off-Plan%' OR reg LIKE '%Off Plan%' THEN 'Off-Plan' ELSE reg END AS op,
+                   COUNT(*) AS n FROM {src} WHERE reg IS NOT NULL GROUP BY ALL""").itertuples():
+        e = mix.setdefault(key(r), {}).setdefault(r.mk, {}).setdefault('offplan', {})
+        e[r.op] = e.get(r.op, 0) + int(r.n)
+    morts = {(key(r), r.mk): int(r.n) for r in q(f"SELECT {kc} mk, COUNT(*) AS n FROM {msrc} GROUP BY ALL").itertuples()}
+    for r in q(f"SELECT {kc} mk, COUNT(*) AS n FROM {src} GROUP BY ALL").itertuples():
+        financed = min(morts.get((key(r), r.mk), 0), int(r.n))
+        put_mix(mix, key(r), r.mk, 'payment', {'financed': financed, 'cash': int(r.n) - financed})
+_SALE_VIN_WHERE = ("pt = 'Unit' AND reg = 'Existing Properties' AND bn IS NOT NULL "
+                   "AND rooms IN ('Studio','1 B/R','2 B/R','3 B/R','4 B/R','PENTHOUSE') "
+                   "AND sqm BETWEEN 10 AND 1000 AND val/sqm BETWEEN 2000 AND 100000")
+for src, keyed in (('tx', True), ('tx_p', False)):
+    vintage_by_room(q, mix, src, keyed, unit='bn', rooms='rooms_seg', ppsqm='val/sqm', where=_SALE_VIN_WHERE,
+                    vin_min=8, path_min=5, seed_from=2008)
+for k, m in mix.items():
+    if k in out:
+        out[k]['mix'] = m
 
 
 # ─── __dubai__ ────────────────────────────────────────────────
@@ -547,11 +588,13 @@ dubai['timeline'] = [{
 } for d in sorted(day_n)]
 # __dubai__ timeline_by_rooms — also carry med + ppsqm forward
 for ru in ROOM_ORDER:
-    day_buckets = defaultdict(lambda: {'n':0,'vol':0,'meds':[],'pps':[]})
+    day_buckets = defaultdict(lambda: {'n':0,'vol':0,'meds':[],'pps':[],'op':0,'mort':0})
     for k, e in prim.items():
         for p in e['timeline_by_rooms'].get(ru, []):
             day_buckets[p['d']]['n']   += p['n']
             day_buckets[p['d']]['vol'] += p['vol']
+            day_buckets[p['d']]['op']   += p.get('op', 0)
+            day_buckets[p['d']]['mort'] += p.get('mort', 0)
             if p.get('med'):   day_buckets[p['d']]['meds'].append(p['med'])
             if p.get('ppsqm'): day_buckets[p['d']]['pps'].append(p['ppsqm'])
     dubai['timeline_by_rooms'][ru] = [{
@@ -560,6 +603,8 @@ for ru in ROOM_ORDER:
         'vol': day_buckets[d]['vol'],
         'med':   sorted(day_buckets[d]['meds'])[len(day_buckets[d]['meds'])//2] if day_buckets[d]['meds'] else 0,
         'ppsqm': sorted(day_buckets[d]['pps'])[len(day_buckets[d]['pps'])//2]  if day_buckets[d]['pps']  else 0,
+        **({'op': day_buckets[d]['op']} if day_buckets[d]['op'] else {}),
+        **({'mort': day_buckets[d]['mort']} if day_buckets[d]['mort'] else {}),
     } for d in sorted(day_buckets)]
 
 # __dubai__ top_projects: roll up all per-area top projects + track dominant area
@@ -593,6 +638,7 @@ dubai['recent'] = all_recent[:20]
 # __dubai__ trend_pct (YoY, like-for-like across all areas)
 dubai['trend_pct'] = round(float(q("SELECT MEDIAN(r) AS r FROM trend_cells WHERE k IN (SELECT k FROM key_lvl WHERE lvl = 0)").iloc[0]['r']) * 100, 1)
 
+dubai['mix'] = mix.get(None, {})
 out['__dubai__'] = dubai
 
 # ─── Per-period summaries: the single source for map periods, period pages and the app ─
