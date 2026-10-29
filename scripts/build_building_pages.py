@@ -20,12 +20,11 @@ sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 from _curated_sql import hierarchy_select  # noqa: E402
 from _html_common import write_if_changed  # noqa: E402
 from _yield_cells import MIN_MATCHED_SHARE, CELL, cell_yields, room_case  # noqa: E402
+from _building_pages import (  # noqa: E402
+    MIN_SALES, _cell, _parse_int, _rcell, assign_slugs, dumps, kept_entities, norm, page_flags,
+    pick_yields, rent_key, rent_rows, room_rows, rera_entry, sales_rows, split_entities)
 
 OUT_DIR = 'buildings'
-MIN_SALES = 5   # min sales transactions to include a building
-PAGE_MIN_SALES = 20     # /{lang}/buildings/<slug>/ page generated
-INDEX_MIN_SALES = 30    # …and indexable when also INDEX_MIN_RECENT sales in the last 2 years
-INDEX_MIN_RECENT = 5
 YIELD_DAYS = 365 * 2
 # Same room classes as build_payback_map.py
 YIELD_CLASSES = {
@@ -151,70 +150,6 @@ BRAND_MAP = {k.strip(): v for k, v in BRAND_MAP.items()}
 
 THIS_YEAR = date.today().year
 
-
-def _year(s):
-    s = (s or '').strip()
-    try:
-        y = int(s[:4])
-    except ValueError:
-        return None
-    return y if 1990 <= y <= 2040 else None
-
-
-# ── Load RERA: project_number → (completion_year, english_dev, is_zone,
-#    percent_complete, unit_count, derived delivery status) ──────────────────
-# Uses the shared enricher (same module /construction reads) so a building's
-# "delivered?" flag agrees with what the construction landing page says.
-rera_meta = {}  # int(project_number) → {yr, yre, dev, dz, pct, u, st}
-if os.path.exists('data/dld_projects.csv.gz'):
-    from _rera_enrich import load_enriched_rows
-
-    def _parse_int(s):
-        try:
-            return int(float(s))
-        except (TypeError, ValueError):
-            return None
-
-    for row in load_enriched_rows():
-        pno = _parse_int(row.get('project_number', '').strip())
-        if pno is None:
-            continue
-        dev_ar = (row.get('developer_name') or '').strip()
-        eng, dz = BRAND_MAP.get(dev_ar, (None, False))
-        derived_st = row['__derived_status']
-        yr, yre = _year(row.get('completion_date')), False
-        # Delivered without completion_date: planned end date matches it in ~86% of projects
-        if yr is None and derived_st == 'FINISHED':
-            end = _year(row.get('project_end_date'))
-            if end is not None and end <= THIS_YEAR:
-                yr, yre = end, True
-        pct = 100 if derived_st == 'FINISHED' else _parse_int(row.get('percent_completed'))
-        rera_meta[pno] = {
-            'yr': yr, 'yre': yre, 'dev': eng, 'dz': dz if eng else False,
-            'pct': pct,
-            'u':   _parse_int(row.get('no_of_units')),
-            'st':  derived_st,
-        }
-    print(f"  Loaded {len(rera_meta):,} RERA projects", flush=True)
-
-
-def slugify(name):
-    s = name.lower().strip()
-    s = re.sub(r'[^a-z0-9]+', '-', s)
-    return s.strip('-')
-
-
-def norm(s):
-    """Strip all non-alphanumeric for fuzzy project-name matching."""
-    if not s: return ''
-    return re.sub(r'[^a-z0-9]', '', s.lower())
-
-
-def dumps(obj):
-    return json.dumps(obj, ensure_ascii=False, separators=(',', ':'))
-
-
-ROOM_ORDER = ['studio', '1br', '2br', '3br', '4br+', 'villa', 'other']
 TX_ROOM_SQL = """CASE
     WHEN property_type_en = 'Villa' THEN 'villa'
     WHEN rooms_en = 'Studio'        THEN 'studio'
@@ -240,58 +175,26 @@ RENT_MED_SQL = """COUNT(*) AS n,
     ROUND(PERCENTILE_CONT(0.5) WITHIN GROUP (ORDER BY amt)) AS med_rent,
     ROUND(PERCENTILE_CONT(0.5) WITHIN GROUP (ORDER BY CASE WHEN sqm > 0 THEN amt / sqm END)) AS med_rent_sqm"""
 SALES_WIN = f'YEAR(dt) BETWEEN 2008 AND {THIS_YEAR}'
+# Capped per project: master projects (e.g. REMRAAM) span 80+ buildings
+RENT_TX_CAP = 300
 
-os.makedirs(OUT_DIR, exist_ok=True)
-con = duckdb.connect()
 
-# ── 0. Sales base table: one row per sale, with the site's public area name ──
-print("Query 0: sales base table…", flush=True)
-HSEL = hierarchy_select('master_project_en')
-con.execute(f"""
-    CREATE TEMP TABLE s AS
-    SELECT TRIM(building_name_en) AS bname,
-           TRIM(COALESCE(building_name_ar, '')) AS bname_ar,
-           COALESCE(area_name_en, '') AS area,
-           COALESCE(TRY_CAST(TRY_CAST(project_number AS DOUBLE) AS INTEGER), -1) AS pno,
-           TRIM(COALESCE(project_name_en, '')) AS proj,
-           COALESCE(name_s, name_a, area_name_en, '') AS area_d,
-           instance_date AS d,
-           CAST(instance_date AS DATE) AS dt,
-           CAST(actual_worth AS DOUBLE) AS price,
-           TRY_CAST(procedure_area AS DOUBLE) AS sqm,
-           {TX_ROOM_SQL} AS room,
-           CASE WHEN reg_type_en = 'Off-Plan Properties' THEN 'offplan' ELSE 'ready' END AS reg
-    FROM (SELECT *, {HSEL} FROM read_parquet('data/tx.parquet')
-          WHERE trans_group_en = 'Sales'
-            AND TRIM(COALESCE(building_name_en, '')) != ''
-            AND CAST(actual_worth AS DOUBLE) > 10000)
-""")
+def load_rera_meta():
+    """int(project_number) → {yr, yre, dev, dz, pct, u, st} via the shared enricher (same as /construction)."""
+    rera_meta = {}
+    if not os.path.exists('data/dld_projects.csv.gz'):
+        return rera_meta
+    from _rera_enrich import load_enriched_rows
+    for row in load_enriched_rows():
+        pno = _parse_int(row.get('project_number', '').strip())
+        if pno is None:
+            continue
+        rera_meta[pno] = rera_entry(row, BRAND_MAP, THIS_YEAR)
+    print(f"  Loaded {len(rera_meta):,} RERA projects", flush=True)
+    return rera_meta
 
-# ── 0b. Entities: (name, area) split further by project_number when two
-#    projects each carry MIN_SALES+ sales (Capria East/West both have "CAPRIA 4")
-groups = {}
-for bname, area, pno, n in con.execute(
-        "SELECT bname, area, pno, COUNT(*) FROM s GROUP BY ALL ORDER BY ALL").fetchall():
-    groups.setdefault((bname, area), []).append((pno, n))
 
-ent_rows, ent_pno = [], {}
-for (bname, area), lst in sorted(groups.items()):
-    lst.sort(key=lambda t: (-t[1], t[0]))
-    real = [(p, n) for p, n in lst if p != -1]
-    split = [p for p, n in real if n >= MIN_SALES]
-    owners = split or ([real[0][0]] if real else [-1])
-    first_eid = len(ent_pno)
-    for p in owners:
-        ent_pno[len(ent_pno)] = p
-    for p, _ in lst:
-        eid = first_eid + owners.index(p) if p in owners else first_eid
-        ent_rows.append((bname, area, p, eid))
-con.execute("CREATE TEMP TABLE ent (bname VARCHAR, area VARCHAR, pno INTEGER, eid INTEGER)")
-con.executemany("INSERT INTO ent VALUES (?, ?, ?, ?)", ent_rows)
-con.execute("CREATE TEMP TABLE t AS SELECT e.eid, s.* FROM s JOIN ent e USING (bname, area, pno)")
-print(f"  {len(ent_pno):,} building entities", flush=True)
-
-def _dominant(col):
+def _dominant(con, col):
     out = {}
     for eid, v, _ in con.execute(f"""
         SELECT eid, {col} AS v, COUNT(*) AS n FROM t WHERE {col} != ''
@@ -299,70 +202,8 @@ def _dominant(col):
         out.setdefault(eid, v)
     return out
 
-ent = {}  # eid → {bname, area, pno, proj, area_d}
-dom_proj, dom_area_d = _dominant('proj'), _dominant('area_d')
-# Arabic name for /ar/ pages; DLD mangles some to '?', and codes like P-01 transliterate to noise
-dom_ar = _dominant("CASE WHEN regexp_matches(bname_ar, '[ء-ي]') AND NOT regexp_matches(bname_ar, '[?\ufffd]') THEN bname_ar ELSE '' END")
-for eid, bname, area in con.execute("SELECT eid, ANY_VALUE(bname), ANY_VALUE(area) FROM t GROUP BY eid").fetchall():
-    p = ent_pno[eid]
-    ent[eid] = {'bname': bname, 'area': area, 'pno': p if p != -1 else None,
-                'proj': dom_proj.get(eid, ''), 'area_d': dom_area_d.get(eid, area),
-                'ar': dom_ar.get(eid) if len(re.findall('[A-Za-z]', bname)) >= 3 else None}
 
-# ── 1. Sales: year + reg_type ─────────────────────────────────────────────
-print("Query 1: sales by (building, year, reg_type)…", flush=True)
-q1 = con.execute(f"""
-    SELECT eid, YEAR(dt) AS yr, reg, {MED_SQL}
-    FROM t WHERE {SALES_WIN} GROUP BY eid, yr, reg ORDER BY eid, yr, reg
-""").fetchall()
-
-# ── 2. Sales: year + room + reg_type ──────────────────────────────────────
-print("Query 2: sales by (building, year, room, reg_type)…", flush=True)
-q2 = con.execute(f"""
-    SELECT eid, YEAR(dt) AS yr, room, reg, {MED_SQL}
-    FROM t WHERE {SALES_WIN} GROUP BY eid, yr, room, reg ORDER BY eid, yr, room, reg
-""").fetchall()
-
-# ── 4. All individual sales per building ──────────────────────────────────
-print("Query 4: all transactions per building…", flush=True)
-q4 = con.execute("""
-    SELECT eid, d, ROUND(price), ROUND(sqm, 1), room,
-           CASE WHEN reg = 'offplan' THEN 1 ELSE 0 END
-    FROM t ORDER BY eid, dt DESC, price DESC, sqm DESC NULLS LAST, room, reg
-""").fetchall()
-
-# ── 6/7. Sales by month (+ room) ──────────────────────────────────────────
-print("Query 6/7: sales by month…", flush=True)
-q6 = con.execute(f"""
-    SELECT eid, STRFTIME(dt, '%Y-%m') AS ym, reg, {MED_SQL}
-    FROM t WHERE {SALES_WIN} GROUP BY eid, ym, reg ORDER BY eid, ym, reg
-""").fetchall()
-q7 = con.execute(f"""
-    SELECT eid, STRFTIME(dt, '%Y-%m') AS ym, room, reg, {MED_SQL}
-    FROM t WHERE {SALES_WIN} GROUP BY eid, ym, room, reg ORDER BY eid, ym, room, reg
-""").fetchall()
-
-# ── Like-for-like gross yield (_yield_cells, as on the payback/investor masks):
-#    this building's ready sales vs Ejari rents of its project × room class ──
-print("Query Y: like-for-like yield…", flush=True)
-as_of = con.execute("SELECT MAX(dt) FROM s").fetchone()[0]
-y_from, y_to = (as_of - timedelta(days=YIELD_DAYS)).isoformat(), as_of.isoformat()
-con.execute(f"""
-    CREATE TEMP TABLE txk AS
-    SELECT e.eid AS k, x.* FROM read_parquet('data/tx.parquet') x
-    JOIN ent e ON e.bname = TRIM(x.building_name_en) AND e.area = COALESCE(x.area_name_en, '')
-              AND e.pno = COALESCE(TRY_CAST(TRY_CAST(x.project_number AS DOUBLE) AS INTEGER), -1)
-    WHERE x.trans_group_en = 'Sales' AND x.instance_date BETWEEN '{y_from}' AND '{y_to}'
-""")
-con.execute(f"CREATE TEMP TABLE kc AS SELECT DISTINCT k, {CELL} AS cell FROM txk")
-con.execute(f"""
-    CREATE TEMP TABLE rk AS
-    SELECT kc.k, r.* FROM read_parquet('data/rents.parquet') r JOIN kc ON kc.cell = {CELL}
-    WHERE r.contract_start_date BETWEEN '{y_from}' AND '{y_to}'
-""")
-
-
-def _yields(classes):
+def _yields(con, classes):
     tx_in = '(' + ','.join(v[0][1:-1] for v in classes.values()) + ')'
     rent_in = '(' + ','.join(v[1][1:-1] for v in classes.values()) + ')'
     return cell_yields(
@@ -373,339 +214,311 @@ def _yields(classes):
         room_case('ejari_property_sub_type_en', {c: v[1] for c, v in classes.items()}))
 
 
-def _ycell(v):
-    y, n, n_all, sp, rp = v
-    return {'y': round(y, 1), 'n': n, 'sp': round(sp), 'rp': round(rp)}
+def main():
+    rera_meta = load_rera_meta()
+
+    os.makedirs(OUT_DIR, exist_ok=True)
+    con = duckdb.connect()
+
+    # ── 0. Sales base table: one row per sale, with the site's public area name ──
+    print("Query 0: sales base table…", flush=True)
+    HSEL = hierarchy_select('master_project_en')
+    con.execute(f"""
+        CREATE TEMP TABLE s AS
+        SELECT TRIM(building_name_en) AS bname,
+               TRIM(COALESCE(building_name_ar, '')) AS bname_ar,
+               COALESCE(area_name_en, '') AS area,
+               COALESCE(TRY_CAST(TRY_CAST(project_number AS DOUBLE) AS INTEGER), -1) AS pno,
+               TRIM(COALESCE(project_name_en, '')) AS proj,
+               COALESCE(name_s, name_a, area_name_en, '') AS area_d,
+               instance_date AS d,
+               CAST(instance_date AS DATE) AS dt,
+               CAST(actual_worth AS DOUBLE) AS price,
+               TRY_CAST(procedure_area AS DOUBLE) AS sqm,
+               {TX_ROOM_SQL} AS room,
+               CASE WHEN reg_type_en = 'Off-Plan Properties' THEN 'offplan' ELSE 'ready' END AS reg
+        FROM (SELECT *, {HSEL} FROM read_parquet('data/tx.parquet')
+              WHERE trans_group_en = 'Sales'
+                AND TRIM(COALESCE(building_name_en, '')) != ''
+                AND CAST(actual_worth AS DOUBLE) > 10000)
+    """)
+
+    # ── 0b. Entities: (name, area) split further by project_number (Capria East/West "CAPRIA 4")
+    ent_rows, ent_pno = split_entities(con.execute(
+        "SELECT bname, area, pno, COUNT(*) FROM s GROUP BY ALL ORDER BY ALL").fetchall())
+    con.execute("CREATE TEMP TABLE ent (bname VARCHAR, area VARCHAR, pno INTEGER, eid INTEGER)")
+    con.executemany("INSERT INTO ent VALUES (?, ?, ?, ?)", ent_rows)
+    con.execute("CREATE TEMP TABLE t AS SELECT e.eid, s.* FROM s JOIN ent e USING (bname, area, pno)")
+    print(f"  {len(ent_pno):,} building entities", flush=True)
+
+    ent = {}  # eid → {bname, area, pno, proj, area_d}
+    dom_proj, dom_area_d = _dominant(con, 'proj'), _dominant(con, 'area_d')
+    # Arabic name for /ar/ pages; DLD mangles some to '?', and codes like P-01 transliterate to noise
+    dom_ar = _dominant(con, "CASE WHEN regexp_matches(bname_ar, '[ء-ي]') AND NOT regexp_matches(bname_ar, '[?\ufffd]') THEN bname_ar ELSE '' END")
+    for eid, bname, area in con.execute("SELECT eid, ANY_VALUE(bname), ANY_VALUE(area) FROM t GROUP BY eid").fetchall():
+        p = ent_pno[eid]
+        ent[eid] = {'bname': bname, 'area': area, 'pno': p if p != -1 else None,
+                    'proj': dom_proj.get(eid, ''), 'area_d': dom_area_d.get(eid, area),
+                    'ar': dom_ar.get(eid) if len(re.findall('[A-Za-z]', bname)) >= 3 else None}
+
+    # ── 1. Sales: year + reg_type ─────────────────────────────────────────────
+    print("Query 1: sales by (building, year, reg_type)…", flush=True)
+    q1 = con.execute(f"""
+        SELECT eid, YEAR(dt) AS yr, reg, {MED_SQL}
+        FROM t WHERE {SALES_WIN} GROUP BY eid, yr, reg ORDER BY eid, yr, reg
+    """).fetchall()
+
+    # ── 2. Sales: year + room + reg_type ──────────────────────────────────────
+    print("Query 2: sales by (building, year, room, reg_type)…", flush=True)
+    q2 = con.execute(f"""
+        SELECT eid, YEAR(dt) AS yr, room, reg, {MED_SQL}
+        FROM t WHERE {SALES_WIN} GROUP BY eid, yr, room, reg ORDER BY eid, yr, room, reg
+    """).fetchall()
+
+    # ── 4. All individual sales per building ──────────────────────────────────
+    print("Query 4: all transactions per building…", flush=True)
+    q4 = con.execute("""
+        SELECT eid, d, ROUND(price), ROUND(sqm, 1), room,
+               CASE WHEN reg = 'offplan' THEN 1 ELSE 0 END
+        FROM t ORDER BY eid, dt DESC, price DESC, sqm DESC NULLS LAST, room, reg
+    """).fetchall()
+
+    # ── 6/7. Sales by month (+ room) ──────────────────────────────────────────
+    print("Query 6/7: sales by month…", flush=True)
+    q6 = con.execute(f"""
+        SELECT eid, STRFTIME(dt, '%Y-%m') AS ym, reg, {MED_SQL}
+        FROM t WHERE {SALES_WIN} GROUP BY eid, ym, reg ORDER BY eid, ym, reg
+    """).fetchall()
+    q7 = con.execute(f"""
+        SELECT eid, STRFTIME(dt, '%Y-%m') AS ym, room, reg, {MED_SQL}
+        FROM t WHERE {SALES_WIN} GROUP BY eid, ym, room, reg ORDER BY eid, ym, room, reg
+    """).fetchall()
+
+    # ── Like-for-like gross yield (_yield_cells, as on the payback/investor masks):
+    #    this building's ready sales vs Ejari rents of its project × room class ──
+    print("Query Y: like-for-like yield…", flush=True)
+    as_of = con.execute("SELECT MAX(dt) FROM s").fetchone()[0]
+    y_from, y_to = (as_of - timedelta(days=YIELD_DAYS)).isoformat(), as_of.isoformat()
+    con.execute(f"""
+        CREATE TEMP TABLE txk AS
+        SELECT e.eid AS k, x.* FROM read_parquet('data/tx.parquet') x
+        JOIN ent e ON e.bname = TRIM(x.building_name_en) AND e.area = COALESCE(x.area_name_en, '')
+                  AND e.pno = COALESCE(TRY_CAST(TRY_CAST(x.project_number AS DOUBLE) AS INTEGER), -1)
+        WHERE x.trans_group_en = 'Sales' AND x.instance_date BETWEEN '{y_from}' AND '{y_to}'
+    """)
+    con.execute(f"CREATE TEMP TABLE kc AS SELECT DISTINCT k, {CELL} AS cell FROM txk")
+    con.execute(f"""
+        CREATE TEMP TABLE rk AS
+        SELECT kc.k, r.* FROM read_parquet('data/rents.parquet') r JOIN kc ON kc.cell = {CELL}
+        WHERE r.contract_start_date BETWEEN '{y_from}' AND '{y_to}'
+    """)
+    gross_yield = pick_yields(  # eid → {'all': cell, room: cell}
+        _yields(con, YIELD_CLASSES),
+        {code: _yields(con, {code: YIELD_CLASSES[code]}) for code in YIELD_CLASSES},
+        MIN_MATCHED_SHARE)
+    print(f"  yield for {len(gross_yield):,} buildings ({y_from} … {y_to})", flush=True)
+
+    # ── Rents: Ejari tags project_number + project_name on ~16% of contracts and
+    #    nothing building-level, so rents are per project (joined on project_number)
+    print("Query 3/5/8: rents by project…", flush=True)
+    con.execute(f"""
+        CREATE TEMP TABLE r AS
+        SELECT TRY_CAST(TRY_CAST(project_number AS DOUBLE) AS INTEGER) AS pno,
+               TRIM(project_name_en) AS proj,
+               contract_start_date AS d,
+               CAST(contract_start_date AS DATE) AS dt,
+               CAST(contract_amount AS DOUBLE) AS amt,
+               TRY_CAST(actual_area AS DOUBLE) AS sqm,
+               {RENT_ROOM_SQL} AS room,
+               CASE WHEN contract_reg_type_en = 'New' THEN 1 ELSE 0 END AS is_new
+        FROM read_parquet('data/rents.parquet')
+        WHERE project_name_en IS NOT NULL AND TRIM(project_name_en) != ''
+          AND ejari_property_type_en IN ('Flat', 'Villa', 'Studio')
+          AND CAST(contract_amount AS DOUBLE) > 1000
+          AND YEAR(CAST(contract_start_date AS DATE)) BETWEEN 2010 AND {THIS_YEAR}
+    """)
+    rent_name_pno = {}
+    for proj, pno in con.execute("""
+        SELECT proj, pno FROM r WHERE pno IS NOT NULL
+        GROUP BY proj, pno ORDER BY proj, COUNT(*) DESC, pno""").fetchall():
+        rent_name_pno.setdefault(norm(proj), pno)
+    q3 = con.execute(f"""
+        SELECT pno, YEAR(dt) AS yr, room, {RENT_MED_SQL}
+        FROM r WHERE pno IS NOT NULL GROUP BY pno, yr, room ORDER BY pno, yr, room
+    """).fetchall()
+    q8 = con.execute(f"""
+        SELECT pno, STRFTIME(dt, '%Y-%m') AS ym, room, {RENT_MED_SQL}
+        FROM r WHERE pno IS NOT NULL GROUP BY pno, ym, room ORDER BY pno, ym, room
+    """).fetchall()
+    q5 = con.execute(f"""
+        SELECT pno, d, ROUND(amt), ROUND(sqm, 1), room, is_new FROM (
+            SELECT *, ROW_NUMBER() OVER (PARTITION BY pno
+                      ORDER BY dt DESC, amt DESC, sqm DESC NULLS LAST, room, is_new) AS rk
+            FROM r WHERE pno IS NOT NULL)
+        WHERE rk <= {RENT_TX_CAP} ORDER BY pno, rk
+    """).fetchall()
+
+    tx_data = {}
+    for eid, d, price, sqm, room, op in q4:
+        tx_data.setdefault(eid, []).append({
+            'd': d, 'p': int(price) if price else None,
+            'sqm': float(sqm) if sqm else None,
+            'r': room, 'op': op,
+        })
+
+    rent_tx_data = {}
+    for pno, d, amt, sqm, room, is_new in q5:
+        rent_tx_data.setdefault(pno, []).append({
+            'd': d, 'amt': int(amt) if amt else None,
+            'sqm': float(sqm) if sqm else None,
+            'r': room, 'new': is_new,
+        })
+
+    bld = {}  # eid → {yr: {reg: cell}}
+    for eid, yr, reg, n, mp, mq in q1:
+        bld.setdefault(eid, {}).setdefault(yr, {})[reg] = _cell(n, mp, mq)
+    bld_rooms = {}
+    for eid, yr, room, reg, n, mp, mq in q2:
+        bld_rooms.setdefault(eid, {}).setdefault(room, {}).setdefault(yr, {})[reg] = _cell(n, mp, mq)
+    bld_m = {}
+    for eid, ym, reg, n, mp, mq in q6:
+        bld_m.setdefault(eid, {}).setdefault(ym, {})[reg] = _cell(n, mp, mq)
+    bld_rooms_m = {}
+    for eid, ym, room, reg, n, mp, mq in q7:
+        bld_rooms_m.setdefault(eid, {}).setdefault(room, {}).setdefault(ym, {})[reg] = _cell(n, mp, mq)
+    rent_data = {}
+    for pno, yr, room, n, mr, ms in q3:
+        rent_data.setdefault(pno, {}).setdefault(room, {})[yr] = _rcell(n, mr, ms)
+    rent_data_m = {}
+    for pno, ym, room, n, mr, ms in q8:
+        rent_data_m.setdefault(pno, {}).setdefault(room, {})[ym] = _rcell(n, mr, ms)
+
+    # ── Map layer membership: buildings/data.js rows keyed by (name, admin area) ──
+    on_map = set()
+    if os.path.exists(os.path.join(OUT_DIR, 'data.js')):
+        raw = open(os.path.join(OUT_DIR, 'data.js'), encoding='utf-8').read().strip()
+        for r_ in json.loads(raw[len('const BUILDINGS = '):].rstrip(';')):
+            on_map.add((r_['n'].strip(), r_['a']))
+
+    # ── Stable slugs: base slug for the busiest building with that name ──
+    n_sales = {eid: sum(c['n'] for regs in yrs.values() for c in regs.values()) for eid, yrs in bld.items()}
+    kept = kept_entities(n_sales, ent)
+    slug_of = assign_slugs(kept, ent)
+
+    name_count = {}
+    for eid in kept:
+        k = ent[eid]['bname'].lower()
+        name_count[k] = name_count.get(k, 0) + 1
+    map_owner = {}  # (name, area) → eid with most sales — the one the map popup points to
+    for eid in kept:
+        map_owner.setdefault((ent[eid]['bname'], ent[eid]['area']), eid)
+
+    rent_share = {}
+    for eid in kept:
+        rk = rent_key(ent[eid], rent_data, rent_name_pno)
+        if rk is not None:
+            rent_share[rk] = rent_share.get(rk, 0) + 1
+
+    # ── Generate output files ────────────────────────────────────────────────
+    print("Writing output files…", flush=True)
+    search_index, project_slugs = [], {}
+    changed = 0
+    for eid in kept:
+        e, slug = ent[eid], slug_of[eid]
+        rk = rent_key(e, rent_data, rent_name_pno)
+        ry, rr, rents_total_n = rent_rows(rent_data.get(rk, {}), 'y')
+        rm, rmr, _ = rent_rows(rent_data_m.get(rk, {}), 'ym')
+        pno = e['pno']
+        meta = rera_meta.get(pno, {}) if pno is not None else {}
+        if pno is not None:
+            project_slugs.setdefault(str(pno), []).append(slug)
+
+        out = {
+            'name': e['bname'],
+            'area': e['area'],
+            'proj': e['proj'],
+            'sn': n_sales[eid],
+            'rn': rents_total_n,
+            'sy': sales_rows(bld[eid], 'y'),
+            'sr': room_rows(bld_rooms.get(eid, {}), 'y'),
+            'ry': ry,
+            'rr': rr,
+            'sm': sales_rows(bld_m.get(eid, {}), 'ym'),
+            'smr': room_rows(bld_rooms_m.get(eid, {}), 'ym'),
+            'rm': rm,
+            'rmr': rmr,
+            'txs': tx_data.get(eid, []),
+            'rnts': rent_tx_data.get(rk, []),  # project-level, capped
+        }
+        if e['area_d'] != e['area']:
+            out['ad'] = e['area_d']
+        if rent_share.get(rk, 0) > 1:
+            out['rs'] = rent_share[rk]
+        if eid in gross_yield:
+            # 'p': rents of this building's own project; 'm': master-community rents (sales lack project_number)
+            gross_yield[eid]['all']['lvl'] = 'p' if rk is not None and rk == pno else 'm'
+            out['gy'] = gross_yield[eid]
+            out['gyw'] = [y_from, y_to]
+        if meta.get('pct') is not None:
+            out['rera_pct'] = meta['pct']
+        if meta.get('u') is not None:
+            out['rera_units'] = meta['u']
+        if meta.get('st'):
+            out['rera_status'] = meta['st']
+        changed += write_if_changed(os.path.join(OUT_DIR, slug, 'data.json'), dumps(out))
+
+        idx_entry = {'n': e['bname'], 's': slug, 'a': e['area'], 'tx': n_sales[eid], 'rn': rents_total_n}
+        if e['area_d'] != e['area']:
+            idx_entry['ad'] = e['area_d']
+        if e['ar']:
+            idx_entry['na'] = e['ar']
+        if name_count[e['bname'].lower()] > 1 and e['proj'] and norm(e['proj']) != norm(e['bname']):
+            idx_entry['pj'] = e['proj']
+        if rent_share.get(rk, 0) > 1:
+            idx_entry['rs'] = rent_share[rk]
+        if meta.get('yr'):
+            idx_entry['yr'] = meta['yr']
+            if meta.get('yre'):
+                idx_entry['yre'] = True
+            if meta.get('st') != 'FINISHED' or meta['yr'] > THIS_YEAR:
+                idx_entry['yp'] = True  # planned completion, not built yet
+        if meta.get('dev'):
+            idx_entry['dev'] = meta['dev']
+            if meta.get('dz'):
+                idx_entry['dz'] = True
+        if meta.get('pct') is not None:
+            idx_entry['pct'] = meta['pct']
+        if meta.get('st'):
+            idx_entry['st'] = meta['st']
+        if (e['bname'], e['area']) in on_map and map_owner[(e['bname'], e['area'])] == eid:
+            idx_entry['m'] = 1
+        if eid in gross_yield:
+            idx_entry['gy'] = gross_yield[eid]['all']['y']
+        idx_entry.update(page_flags(n_sales[eid], sum(1 for x in tx_data.get(eid, []) if x['d'] >= y_from)))
+        search_index.append(idx_entry)
+
+    # Drop directories of buildings that fell out of the index
+    live = {x['s'] for x in search_index}
+    pruned = 0
+    for d in sorted(os.listdir(OUT_DIR)):
+        p = os.path.join(OUT_DIR, d)
+        if os.path.isdir(p) and d not in live and set(os.listdir(p)) <= {'data.json', '.DS_Store'}:
+            shutil.rmtree(p)
+            pruned += 1
+
+    print(f"  Written: {len(kept):,} ({changed:,} changed, {pruned} stale dirs pruned)  |  "
+          f"Skipped (< {MIN_SALES} sales): {len(bld) - len(kept):,}", flush=True)
+
+    search_index.sort(key=lambda x: (-x['tx'], x['s']))
+    idx_path = os.path.join(OUT_DIR, 'search-index.json')
+    write_if_changed(idx_path, dumps(search_index))
+    print(f"  search-index.json  →  {len(search_index):,} buildings  ({os.path.getsize(idx_path)//1024} KB)")
+
+    proj_idx_path = os.path.join(OUT_DIR, 'project-index.json')
+    write_if_changed(proj_idx_path, dumps({k: project_slugs[k] for k in sorted(project_slugs, key=int)}))
+    print(f"  project-index.json  →  {len(project_slugs):,} project_numbers  ({os.path.getsize(proj_idx_path)//1024} KB)")
+    print("Done!")
 
 
-YIELD_SANE = (1.5, 15)  # outside: Ejari area/amount errors (GOLDEN HOMES JVC came out at 85%)
-gross_yield = {}  # eid → {'all': cell, room: cell}
-for eid, v in _yields(YIELD_CLASSES).items():
-    if v[1] >= 3 and v[1] / v[2] >= MIN_MATCHED_SHARE and YIELD_SANE[0] <= v[0] <= YIELD_SANE[1]:
-        gross_yield[eid] = {'all': _ycell(v)}
-for code in YIELD_CLASSES:
-    for eid, v in _yields({code: YIELD_CLASSES[code]}).items():
-        if eid in gross_yield and YIELD_SANE[0] <= v[0] <= YIELD_SANE[1]:
-            gross_yield[eid][code] = _ycell(v)
-print(f"  yield for {len(gross_yield):,} buildings ({y_from} … {y_to})", flush=True)
-
-# ── Rents: Ejari tags project_number + project_name on ~16% of contracts and
-#    nothing building-level, so rents are per project (joined on project_number)
-print("Query 3/5/8: rents by project…", flush=True)
-con.execute(f"""
-    CREATE TEMP TABLE r AS
-    SELECT TRY_CAST(TRY_CAST(project_number AS DOUBLE) AS INTEGER) AS pno,
-           TRIM(project_name_en) AS proj,
-           contract_start_date AS d,
-           CAST(contract_start_date AS DATE) AS dt,
-           CAST(contract_amount AS DOUBLE) AS amt,
-           TRY_CAST(actual_area AS DOUBLE) AS sqm,
-           {RENT_ROOM_SQL} AS room,
-           CASE WHEN contract_reg_type_en = 'New' THEN 1 ELSE 0 END AS is_new
-    FROM read_parquet('data/rents.parquet')
-    WHERE project_name_en IS NOT NULL AND TRIM(project_name_en) != ''
-      AND ejari_property_type_en IN ('Flat', 'Villa', 'Studio')
-      AND CAST(contract_amount AS DOUBLE) > 1000
-      AND YEAR(CAST(contract_start_date AS DATE)) BETWEEN 2010 AND {THIS_YEAR}
-""")
-rent_name_pno = {}
-for proj, pno in con.execute("""
-    SELECT proj, pno FROM r WHERE pno IS NOT NULL
-    GROUP BY proj, pno ORDER BY proj, COUNT(*) DESC, pno""").fetchall():
-    rent_name_pno.setdefault(norm(proj), pno)
-q3 = con.execute(f"""
-    SELECT pno, YEAR(dt) AS yr, room, {RENT_MED_SQL}
-    FROM r WHERE pno IS NOT NULL GROUP BY pno, yr, room ORDER BY pno, yr, room
-""").fetchall()
-q8 = con.execute(f"""
-    SELECT pno, STRFTIME(dt, '%Y-%m') AS ym, room, {RENT_MED_SQL}
-    FROM r WHERE pno IS NOT NULL GROUP BY pno, ym, room ORDER BY pno, ym, room
-""").fetchall()
-# Capped per project: master projects (e.g. REMRAAM) span 80+ buildings
-RENT_TX_CAP = 300
-q5 = con.execute(f"""
-    SELECT pno, d, ROUND(amt), ROUND(sqm, 1), room, is_new FROM (
-        SELECT *, ROW_NUMBER() OVER (PARTITION BY pno
-                  ORDER BY dt DESC, amt DESC, sqm DESC NULLS LAST, room, is_new) AS rk
-        FROM r WHERE pno IS NOT NULL)
-    WHERE rk <= {RENT_TX_CAP} ORDER BY pno, rk
-""").fetchall()
-
-tx_data = {}
-for eid, d, price, sqm, room, op in q4:
-    tx_data.setdefault(eid, []).append({
-        'd': d, 'p': int(price) if price else None,
-        'sqm': float(sqm) if sqm else None,
-        'r': room, 'op': op,
-    })
-
-rent_tx_data = {}
-for pno, d, amt, sqm, room, is_new in q5:
-    rent_tx_data.setdefault(pno, []).append({
-        'd': d, 'amt': int(amt) if amt else None,
-        'sqm': float(sqm) if sqm else None,
-        'r': room, 'new': is_new,
-    })
-
-
-def _cell(n, med_price, med_ppsqm):
-    return {'n': n,
-            'med_price': int(med_price) if med_price else None,
-            'med_ppsqm': int(med_ppsqm) if med_ppsqm else None}
-
-
-def _rcell(n, med_rent, med_rent_sqm):
-    return {'n': n,
-            'med_rent': int(med_rent) if med_rent else None,
-            'med_rent_sqm': int(med_rent_sqm) if med_rent_sqm else None}
-
-
-bld = {}  # eid → {yr: {reg: cell}}
-for eid, yr, reg, n, mp, mq in q1:
-    bld.setdefault(eid, {}).setdefault(yr, {})[reg] = _cell(n, mp, mq)
-bld_rooms = {}
-for eid, yr, room, reg, n, mp, mq in q2:
-    bld_rooms.setdefault(eid, {}).setdefault(room, {}).setdefault(yr, {})[reg] = _cell(n, mp, mq)
-bld_m = {}
-for eid, ym, reg, n, mp, mq in q6:
-    bld_m.setdefault(eid, {}).setdefault(ym, {})[reg] = _cell(n, mp, mq)
-bld_rooms_m = {}
-for eid, ym, room, reg, n, mp, mq in q7:
-    bld_rooms_m.setdefault(eid, {}).setdefault(room, {}).setdefault(ym, {})[reg] = _cell(n, mp, mq)
-rent_data = {}
-for pno, yr, room, n, mr, ms in q3:
-    rent_data.setdefault(pno, {}).setdefault(room, {})[yr] = _rcell(n, mr, ms)
-rent_data_m = {}
-for pno, ym, room, n, mr, ms in q8:
-    rent_data_m.setdefault(pno, {}).setdefault(room, {})[ym] = _rcell(n, mr, ms)
-
-
-def wavg(vals_weights):
-    pairs = [(v, w) for v, w in vals_weights if v is not None]
-    if not pairs: return None
-    tw = sum(w for _, w in pairs)
-    return round(sum(v * w for v, w in pairs) / tw) if tw else None
-
-
-def split_rows(periods, key):
-    """{period: {reg: cell}} → rows with off-plan/ready split + combined medians."""
-    rows = []
-    for per in sorted(periods):
-        op, rd = periods[per].get('offplan', {}), periods[per].get('ready', {})
-        n_op, n_rd = op.get('n', 0), rd.get('n', 0)
-        row = {key: per, 'n': n_op + n_rd}
-        med_ppsqm = wavg([(op.get('med_ppsqm'), n_op), (rd.get('med_ppsqm'), n_rd)])
-        med_price = wavg([(op.get('med_price'), n_op), (rd.get('med_price'), n_rd)])
-        rows.append((row, op, rd, n_op, n_rd, med_ppsqm, med_price))
-    return rows
-
-
-def sales_rows(periods, key):
-    out = []
-    for row, op, rd, n_op, n_rd, med_ppsqm, med_price in split_rows(periods, key):
-        if n_op:                row['op']       = n_op
-        if n_rd:                row['rd']       = n_rd
-        if med_ppsqm:           row['ppsqm']    = med_ppsqm
-        if med_price:           row['price']    = med_price
-        if op.get('med_ppsqm'): row['op_ppsqm'] = op['med_ppsqm']
-        if rd.get('med_ppsqm'): row['rd_ppsqm'] = rd['med_ppsqm']
-        out.append(row)
-    return out
-
-
-def room_rows(by_room, key):
-    out = {}
-    for room in ROOM_ORDER:
-        if room not in by_room: continue
-        rows = []
-        for row, op, rd, n_op, n_rd, med_ppsqm, med_price in split_rows(by_room[room], key):
-            if med_ppsqm:           row['ppsqm']    = med_ppsqm
-            if med_price:           row['price']    = med_price
-            if n_op:                row['op_n']     = n_op
-            if n_rd:                row['rd_n']     = n_rd
-            if op.get('med_ppsqm'): row['op_ppsqm'] = op['med_ppsqm']
-            if rd.get('med_ppsqm'): row['rd_ppsqm'] = rd['med_ppsqm']
-            rows.append(row)
-        if rows:
-            out[room] = rows
-    return out
-
-
-def rent_rows(proj_rents, key):
-    by_room, totals = {}, {}
-    total_n = 0
-    for room in ROOM_ORDER:
-        if room not in proj_rents: continue
-        rows = []
-        for per in sorted(proj_rents[room]):
-            d = proj_rents[room][per]
-            total_n += d['n']
-            totals.setdefault(per, []).append((d.get('med_rent'), d['n']))
-            row = {key: per, 'n': d['n']}
-            if d['med_rent']:     row['rent']     = d['med_rent']
-            if d['med_rent_sqm']: row['rent_sqm'] = d['med_rent_sqm']
-            rows.append(row)
-        if rows:
-            by_room[room] = rows
-    overall = []
-    for per in sorted(totals):
-        pairs = totals[per]
-        row = {key: per, 'n': sum(w for _, w in pairs)}
-        wsum = sum(w for v, w in pairs if v)
-        if wsum:
-            row['rent'] = round(sum(v * w for v, w in pairs if v) / wsum)
-        overall.append(row)
-    return overall, by_room, total_n
-
-
-# ── Map layer membership: buildings/data.js rows keyed by (name, admin area) ──
-on_map = set()
-if os.path.exists(os.path.join(OUT_DIR, 'data.js')):
-    raw = open(os.path.join(OUT_DIR, 'data.js'), encoding='utf-8').read().strip()
-    for r_ in json.loads(raw[len('const BUILDINGS = '):].rstrip(';')):
-        on_map.add((r_['n'].strip(), r_['a']))
-
-# ── Stable slugs: base slug for the busiest building with that name, the rest
-#    get an area (then project, then project_number) suffix ──────────────────
-n_sales = {eid: sum(c['n'] for regs in yrs.values() for c in regs.values()) for eid, yrs in bld.items()}
-kept = sorted((eid for eid in bld if n_sales[eid] >= MIN_SALES and slugify(ent[eid]['bname'])),
-              key=lambda e: (-n_sales[e], ent[e]['bname'], ent[e]['area'], ent[e]['pno'] or -1))
-slug_of, taken = {}, set()
-for eid in kept:
-    base = slugify(ent[eid]['bname'])
-    if base not in taken:
-        slug_of[eid] = base
-        taken.add(base)
-for eid in kept:
-    if eid in slug_of: continue
-    e = ent[eid]
-    base = slugify(e['bname'])
-    cands = [f"{base}-{slugify(e['area_d'])}", f"{base}-{slugify(e['area_d'])}-{slugify(e['proj'])}",
-             f"{base}-{e['pno']}"]
-    slug_of[eid] = next((c for c in cands if c not in taken and not c.endswith('-')), f'{base}-e{eid}')
-    taken.add(slug_of[eid])
-
-name_count = {}
-for eid in kept:
-    k = ent[eid]['bname'].lower()
-    name_count[k] = name_count.get(k, 0) + 1
-map_owner = {}  # (name, area) → eid with most sales — the one the map popup points to
-for eid in kept:
-    map_owner.setdefault((ent[eid]['bname'], ent[eid]['area']), eid)
-
-
-def rent_key(e):
-    if e['pno'] is not None and e['pno'] in rent_data:
-        return e['pno']
-    return rent_name_pno.get(norm(e['proj']))
-
-
-rent_share = {}
-for eid in kept:
-    rk = rent_key(ent[eid])
-    if rk is not None:
-        rent_share[rk] = rent_share.get(rk, 0) + 1
-
-# ── Generate output files ────────────────────────────────────────────────
-print("Writing output files…", flush=True)
-search_index, project_slugs = [], {}
-changed = 0
-for eid in kept:
-    e, slug = ent[eid], slug_of[eid]
-    rk = rent_key(e)
-    ry, rr, rents_total_n = rent_rows(rent_data.get(rk, {}), 'y')
-    rm, rmr, _ = rent_rows(rent_data_m.get(rk, {}), 'ym')
-    pno = e['pno']
-    meta = rera_meta.get(pno, {}) if pno is not None else {}
-    if pno is not None:
-        project_slugs.setdefault(str(pno), []).append(slug)
-
-    out = {
-        'name': e['bname'],
-        'area': e['area'],
-        'proj': e['proj'],
-        'sn': n_sales[eid],
-        'rn': rents_total_n,
-        'sy': sales_rows(bld[eid], 'y'),
-        'sr': room_rows(bld_rooms.get(eid, {}), 'y'),
-        'ry': ry,
-        'rr': rr,
-        'sm': sales_rows(bld_m.get(eid, {}), 'ym'),
-        'smr': room_rows(bld_rooms_m.get(eid, {}), 'ym'),
-        'rm': rm,
-        'rmr': rmr,
-        'txs': tx_data.get(eid, []),
-        'rnts': rent_tx_data.get(rk, []),  # project-level, capped
-    }
-    if e['area_d'] != e['area']:
-        out['ad'] = e['area_d']
-    if rent_share.get(rk, 0) > 1:
-        out['rs'] = rent_share[rk]
-    if eid in gross_yield:
-        # 'p': rents of this building's own project; 'm': master-community rents (sales lack project_number)
-        gross_yield[eid]['all']['lvl'] = 'p' if rk is not None and rk == pno else 'm'
-        out['gy'] = gross_yield[eid]
-        out['gyw'] = [y_from, y_to]
-    if meta.get('pct') is not None:
-        out['rera_pct'] = meta['pct']
-    if meta.get('u') is not None:
-        out['rera_units'] = meta['u']
-    if meta.get('st'):
-        out['rera_status'] = meta['st']
-    changed += write_if_changed(os.path.join(OUT_DIR, slug, 'data.json'), dumps(out))
-
-    idx_entry = {'n': e['bname'], 's': slug, 'a': e['area'], 'tx': n_sales[eid], 'rn': rents_total_n}
-    if e['area_d'] != e['area']:
-        idx_entry['ad'] = e['area_d']
-    if e['ar']:
-        idx_entry['na'] = e['ar']
-    if name_count[e['bname'].lower()] > 1 and e['proj'] and norm(e['proj']) != norm(e['bname']):
-        idx_entry['pj'] = e['proj']
-    if rent_share.get(rk, 0) > 1:
-        idx_entry['rs'] = rent_share[rk]
-    if meta.get('yr'):
-        idx_entry['yr'] = meta['yr']
-        if meta.get('yre'):
-            idx_entry['yre'] = True
-        if meta.get('st') != 'FINISHED' or meta['yr'] > THIS_YEAR:
-            idx_entry['yp'] = True  # planned completion, not built yet
-    if meta.get('dev'):
-        idx_entry['dev'] = meta['dev']
-        if meta.get('dz'):
-            idx_entry['dz'] = True
-    if meta.get('pct') is not None:
-        idx_entry['pct'] = meta['pct']
-    if meta.get('st'):
-        idx_entry['st'] = meta['st']
-    if (e['bname'], e['area']) in on_map and map_owner[(e['bname'], e['area'])] == eid:
-        idx_entry['m'] = 1
-    if eid in gross_yield:
-        idx_entry['gy'] = gross_yield[eid]['all']['y']
-    if n_sales[eid] >= PAGE_MIN_SALES:
-        idx_entry['pg'] = 1
-        recent = sum(1 for x in tx_data.get(eid, []) if x['d'] >= y_from)
-        if n_sales[eid] < INDEX_MIN_SALES or recent < INDEX_MIN_RECENT:
-            idx_entry['ni'] = 1
-    search_index.append(idx_entry)
-
-# Drop directories of buildings that fell out of the index
-live = {x['s'] for x in search_index}
-pruned = 0
-for d in sorted(os.listdir(OUT_DIR)):
-    p = os.path.join(OUT_DIR, d)
-    if os.path.isdir(p) and d not in live and set(os.listdir(p)) <= {'data.json', '.DS_Store'}:
-        shutil.rmtree(p)
-        pruned += 1
-
-print(f"  Written: {len(kept):,} ({changed:,} changed, {pruned} stale dirs pruned)  |  "
-      f"Skipped (< {MIN_SALES} sales): {len(bld) - len(kept):,}", flush=True)
-
-search_index.sort(key=lambda x: (-x['tx'], x['s']))
-idx_path = os.path.join(OUT_DIR, 'search-index.json')
-write_if_changed(idx_path, dumps(search_index))
-print(f"  search-index.json  →  {len(search_index):,} buildings  ({os.path.getsize(idx_path)//1024} KB)")
-
-proj_idx_path = os.path.join(OUT_DIR, 'project-index.json')
-write_if_changed(proj_idx_path, dumps({k: project_slugs[k] for k in sorted(project_slugs, key=int)}))
-print(f"  project-index.json  →  {len(project_slugs):,} project_numbers  ({os.path.getsize(proj_idx_path)//1024} KB)")
-print("Done!")
+if __name__ == '__main__':
+    main()
