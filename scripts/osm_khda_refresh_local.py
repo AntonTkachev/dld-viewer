@@ -35,9 +35,6 @@ STATE_DIR  = Path.home() / '.config' / 'dxbcompass'
 STATE_PATH = STATE_DIR / 'osm_khda_seen.json'
 
 # Each entry: (script to run, list of files it produces).
-# osm_subcommunities_pull.py needs the `shapely` package and lives outside
-# this auto-refresh — run it manually when residential sub-community
-# polygons need updating.
 PIPELINE = [
     ('khda_scrape.py',          ['khda_schools.csv', 'khda_universities.csv']),
     ('osm_schools_pull.py',     ['osm_schools.json', 'osm_universities.json']),
@@ -46,12 +43,13 @@ PIPELINE = [
     ('osm_mosques_pull.py',     ['osm_mosques.json']),
     ('osm_metro_pull.py',       ['osm_metro_stations.json',
                                  'osm_metro_lines.json']),
+    ('osm_subcommunities_pull.py', ['osm_subcommunities.json']),
 ]
 
 # Sleep between successive Overpass calls. The public instance enforces
 # rough per-minute slot limits — back-to-back queries trip an HTML rate-
 # limit page that comes back as a JSON-decode error in the pull scripts.
-OVERPASS_BACKOFF = 8
+OVERPASS_BACKOFF = 30
 
 
 def sha(path: Path) -> str:
@@ -65,7 +63,7 @@ def sha(path: Path) -> str:
 def run_pull(script: str) -> bool:
     print(f'--- running {script} ---', file=sys.stderr)
     try:
-        subprocess.run(['python3', str(SCRIPTS / script)],
+        subprocess.run([sys.executable, str(SCRIPTS / script)],
                        check=True, cwd=str(ROOT))
         return True
     except subprocess.CalledProcessError as e:
@@ -96,11 +94,13 @@ def main(argv) -> int:
     first_run = not state and not seed_only
 
     any_failed = False
+    failed = []
     for i, (script, _) in enumerate(PIPELINE):
         if i > 0 and script.startswith('osm_'):
             time.sleep(OVERPASS_BACKOFF)
         if not run_pull(script):
             any_failed = True
+            failed.append(script)
             # Keep going — we still want to hash whatever already exists
             # on disk from prior runs, so a single failed pull doesn't
             # silence the change-detection for the others.
@@ -137,6 +137,7 @@ def main(argv) -> int:
             print(f'  ? {f}')
 
     if any_failed:
+        print(f'\nFAILED ({len(failed)}): {", ".join(failed)}')
         return 2
     if changed:
         return 1

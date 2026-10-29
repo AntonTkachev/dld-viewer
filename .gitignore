@@ -13,6 +13,7 @@ data/aggregates_intermediate/
 
 # Python / OS junk
 __pycache__/
+.venv/
 .DS_Store
 
 # khda_refresh.sh log (cron-friendly target inside data/)

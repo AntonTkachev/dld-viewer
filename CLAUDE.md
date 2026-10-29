@@ -229,11 +229,23 @@ The iOS app (`~/SwfitProjects/DXBCompass`) reads ONLY `https://dxbcompass.com/ap
 - **v1 is additive-only.** Old app versions live for months. Never rename/remove a field, change a type or unit, or drop a mask period inside v1 — breaking changes go to a new `/app/v2/` generated alongside v1. The script warns when an area key disappears (it's the favorites id) — handle via `aliases` in `areas/index.json`.
 - Site refactors that rename fields in `sales|rents/<slug>/data.json` or the `*_PERIODS` consts must keep `build_app_v1.py` emitting the same v1 shape.
 
+## Python environment
+
+One interpreter for everything: `.venv` (gitignored) built from `requirements.txt` on the Python pinned in `.python-version`. `uv` downloads that Python itself, so brew/Xcode upgrades can't break builds.
+
+```bash
+uv venv && uv pip install -r requirements.txt   # one-time, or after editing requirements.txt
+scripts/py scripts/<anything>.py                # launcher used by every .sh, the pre-commit hook and the launchd job
+```
+Don't call `python3` / `/usr/bin/python3` / Homebrew python directly; a script that spawns another Python script uses `sys.executable`. CI installs the same `requirements.txt`. New third-party import → add a pinned line to `requirements.txt`.
+
+Weekly launchd job `com.dxbcompass.dld-check` (Mondays 10:00) → `scripts/dld_check_local.sh`: DLD snapshot check + KHDA/OSM POI re-pull (`osm_khda_refresh_local.py`). Log `~/Library/Logs/dld_check.log`; macOS notification on new data and on any failure. Overpass calls go through `scripts/_overpass.py` (retries, backoff, mirror).
+
 ## Tests
 
 ```bash
-/usr/bin/python3 -m pytest              # full suite (~5 s); real-data tests auto-skip without parquet / built pages
-/usr/bin/python3 -m pytest -m "not data"  # fast subset, also run by the pre-commit hook
+scripts/py -m pytest              # full suite (~5 s); real-data tests auto-skip without parquet / built pages
+scripts/py -m pytest -m "not data"  # fast subset, also run by the pre-commit hook
 ```
 Tests live in `tests/` and write only to `tmp_path` / `:memory:` DuckDB. `refresh_all.sh` phase 11d runs them after a rebuild. Legacy golden scripts (`scripts/test_*.py`) still run standalone and via `tests/test_golden_scripts.py`.
 
@@ -243,14 +255,14 @@ Per-source manual refresh:
 ```bash
 ./scripts/dld_check_new.sh        # checks tx + rents — prints "Up to date" or "NEWER"
 ./scripts/dld_refresh.sh          # downloads + parquetizes tx + rents if newer
-python3 scripts/dld_projects_pull.py   # RERA register
-./scripts/dld_buildings_pull.sh && python3 scripts/dld_buildings_to_signal.py   # DM Buildings
-./scripts/dld_communities_pull.sh && python3 scripts/dld_communities_to_geojson.py   # DM admin polygons
+scripts/py scripts/dld_projects_pull.py   # RERA register
+./scripts/dld_buildings_pull.sh && scripts/py scripts/dld_buildings_to_signal.py   # DM Buildings
+./scripts/dld_communities_pull.sh && scripts/py scripts/dld_communities_to_geojson.py   # DM admin polygons
 ./scripts/khda_refresh.sh         # KHDA schools + universities
-python3 scripts/osm_schools_pull.py
-python3 scripts/osm_medical_pull.py
-python3 scripts/osm_malls_pull.py
-python3 scripts/osm_subcommunities_pull.py
+scripts/py scripts/osm_schools_pull.py
+scripts/py scripts/osm_medical_pull.py
+scripts/py scripts/osm_malls_pull.py
+scripts/py scripts/osm_subcommunities_pull.py
 ```
 
 After any of those (or after editing `polygon_overrides.json` / `dm_to_dld_aliases.json`), run:

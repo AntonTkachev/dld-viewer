@@ -12,15 +12,12 @@ Run from repo root:
     python3 scripts/osm_mosques_pull.py
 """
 import json
-import subprocess
 import sys
-import time
 from pathlib import Path
+import _overpass as overpass
 
 ROOT = Path(__file__).resolve().parent.parent
 OUT  = ROOT / 'data' / 'osm_mosques.json'
-URL  = 'https://overpass-api.de/api/interpreter'
-UA   = 'dld-viewer/1'
 BBOX = '24.95,55.05,25.50,55.65'
 
 QUERY = (
@@ -46,20 +43,7 @@ def is_arabic(s: str) -> bool:
 
 
 def fetch() -> dict:
-    last_err = None
-    for attempt in (1, 2):
-        p = subprocess.run(
-            ['curl', '-sS', '--max-time', '120', '-A', UA,
-             '--data-urlencode', f'data={QUERY}', URL],
-            check=True, capture_output=True, text=True,
-        )
-        try:
-            return json.loads(p.stdout)
-        except json.JSONDecodeError as e:
-            last_err = e
-            if attempt == 1:
-                time.sleep(5)
-    raise last_err
+    return overpass.query(QUERY, max_time=120)
 
 
 def harvest() -> list:

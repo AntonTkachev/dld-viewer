@@ -1,0 +1,8 @@
+#!/usr/bin/env bash
+# Project interpreter (.venv from requirements.txt); every script runs through it
+PY="$(cd "$(dirname "$0")/.." && pwd)/.venv/bin/python"
+if [ ! -x "$PY" ]; then
+  echo "scripts/py: no .venv — run: uv venv && uv pip install -r requirements.txt" >&2
+  exit 127
+fi
+exec "$PY" "$@"

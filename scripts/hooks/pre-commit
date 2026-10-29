@@ -18,14 +18,14 @@ cd "$REPO_ROOT"
 # Otherwise the hook adds nothing and slows down doc/css/js-only commits.
 if git diff --cached --name-only | grep -qE '^(index\.html|data/(curated_polygons\.geojson|polygon_overrides\.json|dm_to_dld_aliases\.json|tx\.parquet|rents\.parquet)|scripts/(build_(sale|rent|transactions|rents|growth|payback)_(map|aggregates)|inline_periods|_curated_sql|build_curated_polygons|test_masks)\.py|transactions/data/.*\.(json|js)|rents/data/.*\.(json|js)|growth/data/.*\.json|payback/data/.*\.json)$'; then
     echo "==> pre-commit: running mask smoke tests..."
-    /usr/bin/python3 scripts/test_masks.py
+    scripts/py scripts/test_masks.py
 else
     echo "==> pre-commit: no mask-relevant files staged, skipping smoke tests"
 fi
 
 # Unit tests (tests/, no parquet): only when code/templates/tests are staged
 if git diff --cached --name-only | grep -qE '^(scripts/.*\.py|js/.*\.js|template\.html|templates/.*\.html|tests/.*|pytest\.ini)$' \
-        && /usr/bin/python3 -c 'import pytest' 2>/dev/null; then
+        && scripts/py -c 'import pytest' 2>/dev/null; then
     echo "==> pre-commit: running unit tests (pytest -m 'not data')..."
-    /usr/bin/python3 -m pytest -q --no-header -m 'not data' tests
+    scripts/py -m pytest -q --no-header -m 'not data' tests
 fi

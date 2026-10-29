@@ -6,6 +6,7 @@
 # publishes a new one, the oldest disappears from the listing. So "missing from
 # API but present locally" is normal and not flagged.
 set -euo pipefail
+PY="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)/py"
 
 API_BASE="https://data.dubai/o/dda/data-services/dataset-download"
 UA="Mozilla/5.0 (Macintosh; Intel Mac OS X 14_5) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/17.5 Safari/605.1.15"
@@ -14,7 +15,7 @@ list_api() {
   local id="$1"
   curl -fsS -A "$UA" --max-time 30 \
        "${API_BASE}?datasetId=${id}&page=1&pageSize=200&sortDir=desc" \
-    | python3 -c 'import json,sys
+    | "$PY" -c 'import json,sys
 d=json.load(sys.stdin)
 for f in d["data"]["metadata"]:
     print(f["file_folder"])' | sort

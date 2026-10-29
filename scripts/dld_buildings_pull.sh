@@ -8,6 +8,7 @@
 # Snapshots refresh monthly on the DLD portal. Re-run periodically; the
 # downstream signal-precompute (dld_buildings_to_signal.py) is fast.
 set -euo pipefail
+PY="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)/py"
 
 DEST="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")/.." && pwd)/data/raw/dld_buildings"
 DATASET_ID=459523
@@ -20,7 +21,7 @@ echo "Fetching listing for datasetId=${DATASET_ID} ..."
 RESP=$(curl -fsS "$LIST_API")
 
 # Pluck the latest snapshot's csv.gz file URL.
-URL=$(printf '%s' "$RESP" | python3 -c "
+URL=$(printf '%s' "$RESP" | "$PY" -c "
 import json, sys
 d = json.load(sys.stdin)
 md = d['data']['metadata'][0]
@@ -28,7 +29,7 @@ for f in md['files']:
   if f['file_name'].endswith('.csv.gz'):
     print(f['file_url']); break
 ")
-FILE_NAME=$(printf '%s' "$RESP" | python3 -c "
+FILE_NAME=$(printf '%s' "$RESP" | "$PY" -c "
 import json, sys
 d = json.load(sys.stdin)
 md = d['data']['metadata'][0]

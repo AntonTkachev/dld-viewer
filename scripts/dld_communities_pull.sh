@@ -15,6 +15,7 @@
 # unlike dld_download.sh which handles multi-GB tx/rent dumps.
 
 set -euo pipefail
+PY="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)/py"
 
 DATASET_ID=461494
 ROOT="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")/.." && pwd)"
@@ -32,7 +33,7 @@ LISTING=$(curl -fsS -A "$UA" --max-time 30 "$API_URL")
 # Pick the latest snapshot (highest timestamp in folder name).
 # The API sorts ascending by snapshot date — last entry is the newest.
 read -r LATEST_FOLDER LATEST_URL <<<"$(
-  printf '%s' "$LISTING" | python3 -c '
+  printf '%s' "$LISTING" | "$PY" -c '
 import json, sys
 d = json.load(sys.stdin)
 mds = d["data"]["metadata"]

@@ -19,14 +19,12 @@ Run from repo root:
     python3 scripts/osm_schools_pull.py
 """
 import json
-import subprocess
 import sys
 import time
 from pathlib import Path
+import _overpass as overpass
 
 DATA = Path(__file__).resolve().parent.parent / 'data'
-URL  = 'https://overpass-api.de/api/interpreter'
-UA   = 'dld-viewer/1'
 BBOX = '24.95,55.05,25.50,55.65'
 
 # (amenity_regex, output_path, label, extra_keep_keys)
@@ -50,9 +48,6 @@ def is_arabic(s: str) -> bool:
 
 
 def fetch(amenity_re: str) -> dict:
-    # Python's urllib gets HTTP 406 from Overpass; curl-with-form works reliably.
-    # Two attempts: Overpass rate-limits back-to-back requests with a brief
-    # empty body, so a single retry after a polite pause is enough.
     query = (
         '[out:json][timeout:60];'
         '('
@@ -62,20 +57,7 @@ def fetch(amenity_re: str) -> dict:
         ');'
         'out center tags;'
     )
-    last_err = None
-    for attempt in (1, 2):
-        p = subprocess.run(
-            ['curl', '-sS', '--max-time', '120', '-A', UA,
-             '--data-urlencode', f'data={query}', URL],
-            check=True, capture_output=True, text=True,
-        )
-        try:
-            return json.loads(p.stdout)
-        except json.JSONDecodeError as e:
-            last_err = e
-            if attempt == 1:
-                time.sleep(5)
-    raise last_err
+    return overpass.query(query, max_time=120)
 
 
 def harvest(amenity_re: str, keep_keys: tuple) -> list[dict]:

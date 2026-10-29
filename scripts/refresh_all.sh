@@ -13,9 +13,6 @@
 #
 # Order matters — see comments. Each phase has been bitten by a skipped step
 # before (see memory feedback_alias_full_rebuild.md).
-#
-# Uses /usr/bin/python3 — the system interpreter has duckdb + shapely.
-# Homebrew /opt/homebrew/bin/python3 does NOT and will ModuleNotFoundError.
 
 set -euo pipefail
 
@@ -23,7 +20,7 @@ HERE="$(cd "$(dirname "$0")" && pwd)"
 REPO="$(cd "$HERE/.." && pwd)"
 cd "$REPO"
 
-PY=/usr/bin/python3
+PY="$REPO/scripts/py"
 ts() { date +'%Y-%m-%d %H:%M:%S'; }
 phase() { echo; echo "[$(ts)] === $* ==="; }
 

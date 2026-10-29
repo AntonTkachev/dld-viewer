@@ -23,7 +23,12 @@ jobs:
 
       - uses: actions/setup-python@v5
         with:
-          python-version: '3.11'
+          python-version-file: .python-version
+          cache: pip
+          cache-dependency-path: requirements.txt
+
+      - name: Python deps (requirements.txt)
+        run: pip install -q -r requirements.txt
 
       - uses: actions/setup-node@v4
         with:
@@ -58,7 +63,6 @@ jobs:
 
       - name: Unit tests (pytest, no parquet)
         run: |
-          pip install -q pytest duckdb pandas shapely lxml
           python3 -m pytest -m "not data"
 
   build:

@@ -23,6 +23,7 @@
 #   MAX_BACKOFFS=5      how many times to back off on a hard error per file
 
 set -euo pipefail
+PY="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)/py"
 
 DATASET_ID="${1:-}"
 [ -z "$DATASET_ID" ] && { echo "usage: $0 <datasetId> [outDir]" >&2; exit 2; }
@@ -55,7 +56,7 @@ api_url() {
 # this initial listing.
 fetch_listing() {
   curl -fsS -A "$UA" --max-time 30 "$(api_url)" \
-    | python3 -c '
+    | "$PY" -c '
 import json, sys
 d = json.load(sys.stdin)
 for folder in d["data"]["metadata"]:
@@ -70,7 +71,7 @@ for folder in d["data"]["metadata"]:
 fresh_url_for() {
   local folder="$1" name="$2"
   curl -fsS -A "$UA" --max-time 30 "$(api_url)" \
-    | python3 -c "
+    | "$PY" -c "
 import json, sys
 folder, name = '$folder', '$name'
 d = json.load(sys.stdin)

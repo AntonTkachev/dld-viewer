@@ -139,7 +139,7 @@ text = script_tag_re.sub('', text)
 # clone too. Fall back to const RENT_AGGREGATES anchor for very-pre-sharding
 # layouts.
 anchor_re = re.compile(
-    r'(^<script src="/rents/data/choropleth\.js(?:\?v=[a-f0-9]{8})?"></script>\s*$|'
+    r'(^<script src="/rents/data/choropleth\.js(?:\?v=[a-f0-9]{8})?"></script>[ \t]*$|'
     r'^const RENT_AGGREGATES.*$)',
     re.MULTILINE,
 )
@@ -148,7 +148,8 @@ if not m:
     print('FAIL: no anchor found in template.html (rents choropleth tag '
           'nor RENT_AGGREGATES line).', file=sys.stderr)
     sys.exit(1)
-text = text[:m.end()] + '\n' + tag_line + text[m.end():]
+# [ \t]* + lstrip: a greedy \s* used to stack blank lines above the tag on every re-run
+text = text[:m.end()] + '\n' + tag_line + text[m.end():].lstrip('\n')
 
 with open(HTML, 'w', encoding='utf-8') as f:
     f.write(text)

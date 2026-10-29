@@ -18,20 +18,23 @@ mkdir -p "$(dirname "$LOG")"
 } >> "$LOG"
 
 # 1. data.dubai snapshot poll (5 datasets)
-DLD_OUT=$(/opt/homebrew/bin/python3 "$ROOT/scripts/dld_check_local.py" 2>&1)
+DLD_OUT=$("$ROOT/scripts/py" "$ROOT/scripts/dld_check_local.py" 2>&1)
 DLD_RC=$?
 { echo; echo '### dld_check_local.py ###'; echo "$DLD_OUT"; } >> "$LOG"
 
 # 2. KHDA + OSM re-pull, hash-compare against last run
-OSM_OUT=$(/opt/homebrew/bin/python3 "$ROOT/scripts/osm_khda_refresh_local.py" 2>&1)
+OSM_OUT=$("$ROOT/scripts/py" "$ROOT/scripts/osm_khda_refresh_local.py" 2>&1)
 OSM_RC=$?
 { echo; echo '### osm_khda_refresh_local.py ###'; echo "$OSM_OUT"; } >> "$LOG"
 
 if [ "$DLD_RC" -eq 1 ]; then
   osascript -e 'display notification "DLD published a new snapshot — run ./scripts/dld_refresh.sh" with title "DXBCompass" sound name "Glass"'
 fi
-if [ "$OSM_RC" -eq 1 ]; then
+if [ "$OSM_RC" -eq 1 ] || { [ "$OSM_RC" -eq 2 ] && grep -q '^CHANGED (' <<<"$OSM_OUT"; }; then
   osascript -e 'display notification "KHDA / OSM source changed — review data/ diff" with title "DXBCompass" sound name "Glass"'
+fi
+if [ "$DLD_RC" -ge 2 ] || [ "$OSM_RC" -ge 2 ]; then
+  osascript -e 'display notification "Weekly refresh failed — see ~/Library/Logs/dld_check.log" with title "DXBCompass" sound name "Basso"'
 fi
 
 # Worst-case exit (2 > 1 > 0) so the launchd "last exit code" reflects the
