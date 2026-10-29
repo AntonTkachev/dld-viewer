@@ -175,21 +175,34 @@ def match_polygon(uni, district_name, khda):
         return None
     return cand[0][1]
 
-def main():
-    khda = []
-    with KHDA.open(encoding='utf-8') as f:
-        for r in csv.DictReader(f):
-            r['_toks']  = tokens(r['name'])
-            r['_alpha'] = alpha(r['name'])
-            khda.append(r)
+def poly_centroid(geom):
+    ring = geom['coordinates'][0] if geom['type'] == 'Polygon' else geom['coordinates'][0][0]
+    xs = [p[0] for p in ring]
+    ys = [p[1] for p in ring]
+    return (sum(ys) / len(ys), sum(xs) / len(xs))
+
+# KHDA `area` strings don't line up with polygon names — DLD uses
+# admin-level community names ("AL ROWAIYAH FIRST"), KHDA uses marketing
+# / free-zone labels ("Dubai Knowledge Park", "DIFC"). This alias table
+# covers the gaps; substring fallback handles the rest.
+AREA_ALIASES = {
+    'difc':                 'dubai international financial centre',
+    'trade center first':   'trade centre',
+    'dubai knowledge park': 'al sufouh 1',
+    'dubai internet city':  'dubai internet city',
+    'dubai media city':     'al sufouh 1',
+    'al rowaiyah first':    'al rowaiyah first',
+    'academic city':        'academic city',
+    'dubai silicon oasis':  'dubai silicon oasis',
+}
+
+def merge(osm_rows, khda_rows, features):
+    """OSM uni dicts + KHDA HE CSV rows + polygon features -> (unis, stats). No file I/O."""
+    khda = [dict(r, _toks=tokens(r['name']), _alpha=alpha(r['name'])) for r in khda_rows]
     khda_by_norm = {norm_key(k['name']): k for k in khda}
 
-    with OSM.open(encoding='utf-8') as f:
-        osm = json.load(f)
-    polygons = load_polygons()
-
     unis = []
-    for o in osm:
+    for o in osm_rows:
         u = {'name': o.get('name', '(unnamed)'), 'lat': o['lat'], 'lon': o['lon']}
         if o.get('name_ar') and o['name_ar'] != u['name']:
             u['name_ar'] = o['name_ar']
@@ -256,8 +269,8 @@ def main():
     # Pass 4: polygon proximity.
     still = []
     for u in remaining:
-        if polygons:
-            district = find_district(polygons, u['lat'], u['lon'])
+        if features:
+            district = find_district(features, u['lat'], u['lon'])
             k = match_polygon(u, district, khda)
             if k and k['university_id'] not in used:
                 assign(u, k, 'polygon')
@@ -270,32 +283,8 @@ def main():
         u['in_khda'] = False
         stats['none'] += 1
 
-    # ------------------------------------------------------------------
-    # KHDA-only entries: drop them in at the centroid of their `area`
-    # polygon so the map shows every KHDA institution, not just the
-    # OSM-discoverable ones. Marked source='khda' for the popup template.
-    # ------------------------------------------------------------------
-    def poly_centroid(geom):
-        ring = geom['coordinates'][0] if geom['type'] == 'Polygon' else geom['coordinates'][0][0]
-        xs = [p[0] for p in ring]
-        ys = [p[1] for p in ring]
-        return (sum(ys) / len(ys), sum(xs) / len(xs))
-
-    # KHDA `area` strings don't line up with polygon names — DLD uses
-    # admin-level community names ("AL ROWAIYAH FIRST"), KHDA uses marketing
-    # / free-zone labels ("Dubai Knowledge Park", "DIFC"). This alias table
-    # covers the gaps; substring fallback handles the rest.
-    AREA_ALIASES = {
-        'difc':                 'dubai international financial centre',
-        'trade center first':   'trade centre',
-        'dubai knowledge park': 'al sufouh 1',
-        'dubai internet city':  'dubai internet city',
-        'dubai media city':     'al sufouh 1',
-        'al rowaiyah first':    'al rowaiyah first',
-        'academic city':        'academic city',
-        'dubai silicon oasis':  'dubai silicon oasis',
-    }
-    poly_by_name = {f['properties'].get('name', '').lower(): f for f in polygons}
+    # KHDA-only entries go at their `area` polygon centroid, marked source='khda'.
+    poly_by_name = {f['properties'].get('name', '').lower(): f for f in features}
     khda_only_added = 0
     for k in khda:
         if k['university_id'] in used:
@@ -306,8 +295,7 @@ def main():
         area_l = area.lower()
         feat = poly_by_name.get(AREA_ALIASES.get(area_l, area_l))
         if not feat:
-            # Substring fallback: e.g. KHDA "Dubai Internet City" vs polygon
-            # "Dubai Internet City" (already exact). Lasts for typos.
+            # Substring fallback for near-miss spellings.
             for n, f in poly_by_name.items():
                 if n and (area_l in n or n in area_l) and len(n) > 3 and len(area_l) > 3:
                     feat = f
@@ -331,6 +319,14 @@ def main():
         used.add(k['university_id'])
 
     stats['khda_only'] = khda_only_added
+    return unis, stats
+
+def main():
+    with KHDA.open(encoding='utf-8') as f:
+        khda = list(csv.DictReader(f))
+    with OSM.open(encoding='utf-8') as f:
+        osm = json.load(f)
+    unis, stats = merge(osm, khda, load_polygons())
 
     matched = stats['exact'] + stats['jaccard'] + stats['seqratio'] + stats['polygon']
     print(f'OSM universities/colleges: {len(unis) - stats.get("khda_only", 0)}')

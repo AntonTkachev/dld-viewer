@@ -305,31 +305,38 @@ def match_polygon(osm, district_name, khda):
         return None  # still ambiguous
     return cand[0][1]
 
-def main():
-    khda = []
-    with KHDA.open(encoding='utf-8') as f:
-        for r in csv.DictReader(f):
-            r['_toks']  = tokens(r['name'])
-            r['_alpha'] = alpha(r['name'])
-            khda.append(r)
+# OSM `amenity=school` includes things KHDA doesn't cover (universities,
+# driving institutes, music/arts centres, accommodation). Drop them up
+# front so they don't pollute the unmatched count or the map.
+NOT_SCHOOLS = (
+    'university', 'institute of', 'driving institute', 'driving center',
+    'driving centre', 'musical arts', 'music academy', 'accommodation',
+    'sports academy', 'football academy', 'tennis academy',
+    'كلية',  # college (AR)
+)
+
+def _khda_fields(k):
+    return {
+        'khda_id':     k['school_id'],
+        'center_id':   k['center_id'],
+        'curriculum':  k['curriculum'],
+        'rating':      k['overall_rating'],
+        'wellbeing':   k['wellbeing_rating'],
+        'inclusion':   k['inclusion_rating'],
+        'area':        k['area'],
+        'phone':       k['phone'],
+        'grade_range': k['grade_range'],
+        'in_khda':     True,
+    }
+
+def merge(osm_rows, khda_rows, features, manual_coords=MANUAL_COORDS):
+    """OSM school dicts + KHDA CSV rows + polygon features -> (schools, stats). No file I/O."""
+    khda = [dict(r, _toks=tokens(r['name']), _alpha=alpha(r['name'])) for r in khda_rows]
     khda_by_norm = {norm_key(k['name']): k for k in khda}
-    polygons = load_geojson_polygons()
-    polygon_lookup = build_polygon_lookup(polygons)
+    polygon_lookup = build_polygon_lookup(features)
 
-    with OSM.open(encoding='utf-8') as f:
-        osm_schools = json.load(f)
-
-    # OSM `amenity=school` includes things KHDA doesn't cover (universities,
-    # driving institutes, music/arts centres, accommodation). Drop them up
-    # front so they don't pollute the unmatched count or the map.
-    NOT_SCHOOLS = (
-        'university', 'institute of', 'driving institute', 'driving center',
-        'driving centre', 'musical arts', 'music academy', 'accommodation',
-        'sports academy', 'football academy', 'tennis academy',
-        'كلية',  # college (AR)
-    )
     schools = []
-    for o in osm_schools:
+    for o in osm_rows:
         nm = o.get('name', '')
         lower = nm.lower()
         if any(s in lower for s in NOT_SCHOOLS):
@@ -345,9 +352,8 @@ def main():
 
     stats = {'exact': 0, 'jaccard': 0, 'seqratio': 0, 'proximity': 0, 'polygon': 0,
              'none': 0, 'unnamed': 0, 'geo_rejected': 0, 'manual': 0}
-    # Pre-claim every MANUAL_COORDS id so the OSM loop can't steal one of these
-    # via a near-by but wrong marker. The manual record below is authoritative.
-    used = {kid for kid in MANUAL_COORDS}
+    # Pre-claim every manual id so the OSM loop can't steal one via a near-by but wrong marker.
+    used = {kid for kid in manual_coords}
 
     def _accept(k):
         """Geo-sanity wrapper: returns the winner if it passes the distance
@@ -387,10 +393,9 @@ def main():
             if k:
                 winner, stage = k, 'seqratio'
 
-        # Final stage: polygon-based proximity. Already location-aware, so no
-        # extra geo guard needed (it's defined as the matched district).
-        if not winner and polygons:
-            district = find_district(polygons, s['lat'], s['lon'])
+        # Polygon stage is already location-aware, so no extra geo guard.
+        if not winner and features:
+            district = find_district(features, s['lat'], s['lon'])
             k = match_polygon(s, district, khda)
             if k and k['school_id'] not in used:
                 winner, stage = k, 'polygon'
@@ -402,44 +407,27 @@ def main():
 
         used.add(winner['school_id'])
         stats[stage] += 1
-        s.update({
-            'khda_id':     winner['school_id'],
-            'center_id':   winner['center_id'],
-            'curriculum':  winner['curriculum'],
-            'rating':      winner['overall_rating'],
-            'wellbeing':   winner['wellbeing_rating'],
-            'inclusion':   winner['inclusion_rating'],
-            'area':        winner['area'],
-            'phone':       winner['phone'],
-            'grade_range': winner['grade_range'],
-            'in_khda':     True,
-        })
+        s.update(_khda_fields(winner))
 
-    # MANUAL_COORDS — handcrafted location for KHDA-only schools missing from
-    # OSM but known to exist. Pre-claimed at the top so no OSM marker could
-    # have stolen the id.
-    for khda_id, (lat, lon) in MANUAL_COORDS.items():
+    # KHDA-only schools missing from OSM, placed by hand-picked coords.
+    for khda_id, (lat, lon) in manual_coords.items():
         k = next((x for x in khda if x['school_id'] == khda_id), None)
         if not k:
             print(f'  manual: KHDA id={khda_id} not in CSV — skipping', file=sys.stderr)
             continue
-        schools.append({
-            'name': k['name'],
-            'lat': lat, 'lon': lon,
-            'khda_id':     k['school_id'],
-            'center_id':   k['center_id'],
-            'curriculum':  k['curriculum'],
-            'rating':      k['overall_rating'],
-            'wellbeing':   k['wellbeing_rating'],
-            'inclusion':   k['inclusion_rating'],
-            'area':        k['area'],
-            'phone':       k['phone'],
-            'grade_range': k['grade_range'],
-            'in_khda':     True,
-            'manual_coords': True,
-        })
+        schools.append({'name': k['name'], 'lat': lat, 'lon': lon,
+                        **_khda_fields(k), 'manual_coords': True})
         used.add(khda_id)
         stats['manual'] += 1
+
+    return schools, stats
+
+def main():
+    with KHDA.open(encoding='utf-8') as f:
+        khda = list(csv.DictReader(f))
+    with OSM.open(encoding='utf-8') as f:
+        osm_schools = json.load(f)
+    schools, stats = merge(osm_schools, khda, load_geojson_polygons())
 
     named = sum(1 for s in schools if s['name'] != '(unnamed school)')
     matched = stats['exact'] + stats['jaccard'] + stats['seqratio'] + stats['proximity'] + stats['polygon'] + stats['manual']
