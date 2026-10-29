@@ -46,3 +46,6 @@ data/.linkedin_agent_leads/
 !/sales/data/
 /rents/*/
 !/rents/data/
+
+# Full OSM footprint dump (osm_all_footprints_pull.py, ~50-100 MB)
+data/osm_all_footprints.json

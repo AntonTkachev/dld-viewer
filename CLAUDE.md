@@ -167,6 +167,20 @@ POI seeds for the map's layers (schools / universities / medical / mosques / met
 | Metro stations + lines | `railway=station` (Dubai Metro) | `scripts/osm_metro_pull.py` | `data/osm_metro_stations.json` + `data/osm_metro_lines.json` |
 | Mosques | `amenity=place_of_worship religion=muslim` | `scripts/osm_mosques_pull.py` | `data/osm_mosques.json` |
 
+### Building geocoding (manual, one-off-ish — not in any orchestrator)
+
+Puts DLD buildings (`area_name_en`, `building_name_en`) on the map. Only needed when rebuilding the buildings layer from scratch; `refresh_all.sh` runs `build_buildings_map.py --relink`, which reuses `data/buildings_geo.json` and only relinks slug/rn/yr/dev from `buildings/search-index.json`.
+
+| Step | Script | Output | Notes |
+|---|---|---|---|
+| 1 | `scripts/osm_buildings_pull.py` | `data/osm_buildings.json` (gitignored) | named OSM buildings + footprints, Overpass |
+| 2 | `scripts/wikidata_buildings_pull.py` | `data/wikidata_buildings.json` | QLever SPARQL mirror of Wikidata |
+| 3 | `scripts/nominatim_buildings_pull.py` | `data/nominatim_buildings.json` | per-building geocode from `buildings/search-index.json`, 1 req/s, resumable (`--status`) |
+| 4 | `scripts/merge_building_coords.py` | `data/building_coords.json` | priority Wikidata > OSM > Nominatim, fuzzy one-to-one name match |
+| 5 | `scripts/google_buildings_pull.py --key AIza…` | `data/google_buildings.json` | paid Google Geocoding fallback, resumable cache; work list `data/google_buildings_todo.json` is a hand-made 2026-07 snapshot of still-unmatched buildings — regenerate before a new run |
+| 6 | `scripts/osm_all_footprints_pull.py [--resume]` | `data/osm_all_footprints.json` (gitignored, ~50–100 MB) | all ~366K footprints for point-in-polygon; if present, `build_buildings_map.py` uses it instead of `osm_buildings.json` + `data/osm_unnamed_footprints.json` |
+| 7 | `scripts/build_buildings_map.py` (no flag) | `data/buildings_geo.json` (gitignored) + `buildings/data.js` | full match: staged name matcher (`_bmap_match.py`) + PIP + geo-sanity vs curated polygons; manual fixes in `data/building_osm_overrides.json`; golden test `scripts/test_buildings_match.py` |
+
 ### Manually curated (no pull script — checked into the repo)
 
 | File | Purpose | Edit notes |

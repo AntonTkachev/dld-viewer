@@ -56,6 +56,11 @@ jobs:
       - name: Mask data coverage + golden districts
         run: python3 scripts/test_masks.py
 
+      - name: Unit tests (pytest, no parquet)
+        run: |
+          pip install -q pytest duckdb pandas shapely lxml
+          python3 -m pytest -m "not data"
+
   build:
     needs: validate
     if: github.event_name != 'pull_request'
