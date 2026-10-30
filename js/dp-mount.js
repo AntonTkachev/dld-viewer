@@ -8,6 +8,10 @@
     refreshVintage, renderStatsRent, renderStatsSale, renderTimelineCharts, roomView
   } = window._dp;
 
+  function track(type, id) {
+    if (typeof gtag === 'function') gtag('event', 'select_content', {content_type: type, item_id: String(id)});
+  }
+
   function bindDelegates() {
     if (S._bound) return;
     S._bound = true;
@@ -25,6 +29,7 @@
           destroyRentCharts();
           renderRentCharts(S.rent);
         }
+        track('dp_tab', which);
         return;
       }
       
@@ -45,6 +50,7 @@
           refreshSale();
           refreshRent();
           if (S.onPeriodChange) S.onPeriodChange(p);
+          track('dp_period', p);
         }
         return;
       }
@@ -73,6 +79,7 @@
           S.roomFilter = k;
           if (S.sale) refreshSale();
           if (S.rent) refreshRent();
+          track('dp_room', k);
         }
         return;
       }

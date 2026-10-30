@@ -59,6 +59,12 @@ setTimeout(() => {
     });
   });
   document.addEventListener('click', e => {
+    const ppBtn = e.target.closest('.leaflet-popup .pp-btn');
+    if (ppBtn && typeof gtag === 'function') {
+      const href = ppBtn.getAttribute('href') || '';
+      const isBld = /\/buildings\/|\/search\/#/.test(href);
+      gtag('event', 'select_content', {content_type: isBld ? 'building_page' : 'district_page', item_id: href});
+    }
     if (!e.target.closest('#mp-panel')) {
       document.querySelectorAll('#mp-panel .mp-item').forEach(it => it.classList.remove('open'));
     }
@@ -74,7 +80,19 @@ setTimeout(() => {
   const searchInp = document.getElementById('search-input');
   if (searchInp) {
     searchInp.placeholder = t('search_placeholder');
-    searchInp.addEventListener('input', e => _renderSearchResults(e.target.value));
+    let _searchGaTimer = null;
+    searchInp.addEventListener('input', e => {
+      _renderSearchResults(e.target.value);
+      clearTimeout(_searchGaTimer);
+      const q = e.target.value.trim();
+      if (q.length < 2) return;
+      // fire once typing pauses, so each keystroke isn't an event
+      _searchGaTimer = setTimeout(() => {
+        if (typeof gtag !== 'function') return;
+        const empty = !document.querySelector('#search-results .sr-item');
+        gtag('event', 'select_content', {content_type: empty ? 'search_empty' : 'search', item_id: q.toLowerCase()});
+      }, 1500);
+    });
     searchInp.addEventListener('keydown', e => {
       if (e.key === 'Escape') {
         document.getElementById('mp-search').classList.remove('open');

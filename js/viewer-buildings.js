@@ -88,6 +88,11 @@ function _initBuildingShapes() {
       : vis === 'synthetic'
       ? '<div class="muted" style="font-size:11px;color:#888;margin-top:6px">⌐ no OSM footprint yet — outline is a fixed-size stand-in, not the real shape</div>'
       : ''));
+    shape.on('popupopen', () => {
+      if (typeof gtag === 'function') {
+        gtag('event', 'select_content', {content_type: 'building', item_id: b.s || b.n});
+      }
+    });
     shape.addTo(buildingLayer);
     if (b.s) _bldShapes.set(b.s, {shape, b});
   }

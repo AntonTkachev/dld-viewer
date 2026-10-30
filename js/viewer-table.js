@@ -482,6 +482,12 @@ function _buildMaskRow(id, mask) {
       if (p) { applyMask(id, p); renderMaskList(); }
     });
     slider.addEventListener('click', e => e.stopPropagation());
+    slider.addEventListener('change', () => {
+      const p = mask.periods[parseInt(slider.value, 10)];
+      if (p && typeof gtag === 'function') {
+        gtag('event', 'select_content', {content_type: 'period', item_id: id + ':' + p});
+      }
+    });
   }
   row.querySelectorAll('.period-tick').forEach(tick => {
     tick.addEventListener('click', e => {
@@ -489,6 +495,9 @@ function _buildMaskRow(id, mask) {
       const i = parseInt(tick.dataset.idx, 10);
       const p = mask.periods[i];
       if (p) { applyMask(id, p); renderMaskList(); }
+      if (p && typeof gtag === 'function') {
+        gtag('event', 'select_content', {content_type: 'period', item_id: id + ':' + p});
+      }
     });
   });
   return row;
