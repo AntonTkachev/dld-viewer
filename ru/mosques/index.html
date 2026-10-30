@@ -1,0 +1,753 @@
+<!DOCTYPE html>
+<html lang="ru" dir="ltr">
+<head>
+<script>/* gh-redirect */if(location.hostname.endsWith('.github.io')){location.replace('https://dxbcompass.com'+(location.pathname.replace(/^\/dld-viewer/,'')||'/')+location.search+location.hash);}</script>
+<meta charset="UTF-8">
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net https://unpkg.com https://dxbcompass.com https://www.googletagmanager.com; style-src 'self' 'unsafe-inline' https://unpkg.com https://dxbcompass.com; img-src 'self' data: https://*.tile.openstreetmap.org https://dxbcompass.com https://*.google-analytics.com https://*.analytics.google.com https://*.g.doubleclick.net; connect-src 'self' https://dxbcompass.com https://*.google-analytics.com https://*.analytics.google.com https://*.g.doubleclick.net; font-src 'self' data:; frame-ancestors 'none'; base-uri 'self'; form-action 'self'">
+<script async src="https://www.googletagmanager.com/gtag/js?id=G-5G3EY3Y2KG"></script>
+<script>window.dataLayer=window.dataLayer||[];function gtag(){dataLayer.push(arguments);}gtag('js',new Date());if(!/^(localhost|127\.0\.0\.1|0\.0\.0\.0)$/.test(location.hostname)){gtag('config','G-5G3EY3Y2KG');}</script>
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<link rel="icon" type="image/svg+xml" href="https://dxbcompass.com/favicon.svg">
+<title>Мечети Дубая</title>
+<meta name="description" content="643 мечетей Дубая с указанием района, улицы и (где доступно) языка хутбы и капасити. Источник — OpenStreetMap.">
+<meta name="robots" content="index,follow">
+<link rel="canonical" href="https://dxbcompass.com/ru/mosques/">
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="DXBCompass">
+<meta property="og:url" content="https://dxbcompass.com/ru/mosques/">
+<meta property="og:title" content="Мечети Дубая">
+<meta property="og:description" content="643 мечетей Дубая с указанием района, улицы и (где доступно) языка хутбы и капасити. Источник — OpenStreetMap.">
+<meta property="og:image" content="https://dxbcompass.com/og/cover.png">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta property="og:image:alt" content="DXBCompass — Dubai real estate data">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:image" content="https://dxbcompass.com/og/cover.png">
+<meta name="twitter:title" content="Мечети Дубая">
+<meta name="twitter:description" content="643 мечетей Дубая с указанием района, улицы и (где доступно) языка хутбы и капасити. Источник — OpenStreetMap.">
+<link rel="alternate" hreflang="ru" href="https://dxbcompass.com/ru/mosques/">
+<link rel="alternate" hreflang="en" href="https://dxbcompass.com/en/mosques/">
+<link rel="alternate" hreflang="ar" href="https://dxbcompass.com/ar/mosques/">
+<link rel="alternate" hreflang="hi" href="https://dxbcompass.com/hi/mosques/">
+<link rel="alternate" hreflang="zh" href="https://dxbcompass.com/zh/mosques/">
+<link rel="alternate" hreflang="x-default" href="https://dxbcompass.com/en/mosques/">
+<script type="application/ld+json">{"@context": "https://schema.org", "@type": "CollectionPage", "name": "Мечети Дубая", "description": "643 мечетей Дубая с указанием района, улицы и (где доступно) языка хутбы и капасити. Источник — OpenStreetMap.", "inLanguage": "ru", "url": "https://dxbcompass.com/ru/mosques/", "about": {"@type": "Place", "name": "Dubai, UAE"}, "isPartOf": {"@type": "WebSite", "name": "DXBCompass", "url": "https://dxbcompass.com/"}, "mainEntity": {"@type": "ItemList", "name": "Мечети Дубая", "numberOfItems": 643}}</script>
+<script type="application/ld+json">{"@context": "https://schema.org", "@type": "BreadcrumbList", "itemListElement": [{"@type": "ListItem", "position": 1, "name": "Дубай", "item": "https://dxbcompass.com/ru/"}, {"@type": "ListItem", "position": 2, "name": "Мечети Дубая", "item": "https://dxbcompass.com/ru/mosques/"}]}</script>
+<link rel="stylesheet" href="https://dxbcompass.com/css/viewer.css">
+<style>
+  html, body { background:#f8fafc; min-height:100%; }
+  .wrap { max-width:1080px; margin:0 auto; padding:18px 20px 64px; }
+  .breadcrumb { font-size:13px; color:#6b7280; margin-bottom:10px; }
+  .breadcrumb a { color:#1d4ed8; text-decoration:none; }
+  .breadcrumb a:hover { text-decoration:underline; }
+  .topbar { display:flex; align-items:baseline; justify-content:space-between; gap:16px; margin-bottom:14px; flex-wrap:wrap; }
+  h1 { font-size:24px; margin:0; line-height:1.25; }
+  .topbar-controls { display:flex; gap:10px; align-items:center; flex-wrap:wrap; }
+  .langswitch-dd { position:relative; }
+  .langswitch-dd > summary { list-style:none; cursor:pointer; display:inline-flex; align-items:center; gap:6px; padding:6px 10px; background:#f1f5f9; border-radius:8px; font-size:12px; font-weight:600; color:#6b7280; user-select:none; }
+  .langswitch-dd > summary::-webkit-details-marker { display:none; }
+  .langswitch-dd > summary::marker { content:""; }
+  .langswitch-dd > summary .globe { font-size:14px; }
+  .langswitch-dd > summary .lang-current { color:#1d4ed8; }
+  .langswitch-dd > summary .caret { font-size:10px; opacity:.6; }
+  .langswitch-dd[open] > summary { background:#e2e8f0; }
+  .langswitch-dd .lang-menu { position:absolute; top:calc(100% + 4px); inset-inline-end:0; background:#fff; border:1px solid #e5e7eb; border-radius:8px; padding:4px; min-width:140px; box-shadow:0 6px 16px rgba(15,23,42,0.08); display:flex; flex-direction:column; z-index:10; }
+  .langswitch-dd .lang-menu a { padding:7px 10px; border-radius:6px; font-size:13px; text-decoration:none; color:#374151; }
+  .langswitch-dd .lang-menu a:hover { background:#f3f4f6; }
+  .langswitch-dd .lang-menu a.active { background:#1d4ed8; color:#fff; font-weight:600; }
+  html[dir="rtl"] .langswitch-dd .lang-menu { inset-inline-end:auto; inset-inline-start:0; }
+  .lede { font-size:15px; color:#374151; margin:6px 0 16px; max-width:760px; line-height:1.55; }
+  .cta { margin-bottom:20px; }
+  .cta a { display:inline-block; padding:9px 16px; background:#1d4ed8; color:#fff; border-radius:8px; text-decoration:none; font-size:14px; font-weight:600; }
+  .panel { background:#fff; border:1px solid #e5e7eb; border-radius:12px; padding:6px 20px 18px; }
+  table { width:100%; border-collapse:collapse; font-size:13px; }
+  th, td { padding:8px 12px; text-align:start; border-bottom:1px solid #f3f4f6; }
+  th { font-weight:600; color:#6b7280; font-size:11px; text-transform:uppercase; letter-spacing:0.04em; background:#f8fafc; position:sticky; top:0; }
+  td a { color:#1d4ed8; text-decoration:none; }
+  td a:hover { text-decoration:underline; }
+  td.num, th.num { text-align:end; font-variant-numeric:tabular-nums; }
+  .nav { margin-top:24px; padding-top:18px; border-top:1px solid #e5e7eb; font-size:14px; }
+  .nav a { color:#1d4ed8; text-decoration:none; margin-inline-end:18px; }
+  @media (max-width:760px) {
+    .panel { overflow-x:auto; padding-left:12px; padding-right:12px; }
+    th, td { padding:8px 6px; }
+  }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div class="breadcrumb">
+    <a href="https://dxbcompass.com/ru/">Дубай</a> ›
+    <span>Мечети Дубая</span>
+  </div>
+
+  <div class="topbar">
+    <h1>🕌 Мечети Дубая</h1>
+    <div class="topbar-controls">
+      <details class="langswitch-dd"><summary><span class="globe" aria-hidden="true">🌐</span><span class="lang-current">RU</span><span class="caret" aria-hidden="true">▾</span></summary><div class="lang-menu"><a class="active" href="https://dxbcompass.com/ru/mosques/" lang="ru">RU</a><a href="https://dxbcompass.com/en/mosques/" lang="en">EN</a><a href="https://dxbcompass.com/ar/mosques/" lang="ar">AR</a><a href="https://dxbcompass.com/hi/mosques/" lang="hi">HI</a><a href="https://dxbcompass.com/zh/mosques/" lang="zh">ZH</a></div></details>
+    </div>
+  </div>
+
+  <p class="lede">643 мечетей Дубая с указанием района, улицы и (где доступно) языка хутбы и капасити. Источник — OpenStreetMap.</p>
+
+  <div class="cta">
+    <a href="https://dxbcompass.com/ru/sales/?layers=mosques">Показать на карте →</a>
+  </div>
+
+  <div class="panel">
+    <table>
+<thead><tr><th>Название</th><th>Улица</th><th>Район</th></tr></thead>
+<tbody>
+<tr><td></td><td></td><td><a href="https://dxbcompass.com/ru/sales/al-mizhar-fourth/">AL MIZHAR FOURTH</a></td></tr>
+<tr><td></td><td></td><td><a href="https://dxbcompass.com/ru/sales/al-mizhar-fourth/">AL MIZHAR FOURTH</a></td></tr>
+<tr><td></td><td>125 Street</td><td><a href="https://dxbcompass.com/ru/sales/al-mizhar-fourth/">AL MIZHAR FOURTH</a></td></tr>
+<tr><td></td><td></td><td><a href="https://dxbcompass.com/ru/sales/al-mizhar-fourth/">AL MIZHAR FOURTH</a></td></tr>
+<tr><td>Juma Mosque</td><td></td><td><a href="https://dxbcompass.com/ru/sales/al-mizhar-fourth/">AL MIZHAR FOURTH</a></td></tr>
+<tr><td>Local Mosque</td><td></td><td><a href="https://dxbcompass.com/ru/sales/al-mizhar-fourth/">AL MIZHAR FOURTH</a></td></tr>
+<tr><td></td><td></td><td><a href="https://dxbcompass.com/ru/sales/al-qusais/">AL QUSAIS</a></td></tr>
+<tr><td></td><td></td><td><a href="https://dxbcompass.com/ru/sales/al-qusais/">AL QUSAIS</a></td></tr>
+<tr><td></td><td></td><td><a href="https://dxbcompass.com/ru/sales/al-qusais/">AL QUSAIS</a></td></tr>
+<tr><td></td><td></td><td><a href="https://dxbcompass.com/ru/sales/al-qusais/">AL QUSAIS</a></td></tr>
+<tr><td>Burhani / Bohri Masjid</td><td>دبي</td><td><a href="https://dxbcompass.com/ru/sales/al-qusais/">AL QUSAIS</a></td></tr>
+<tr><td></td><td></td><td><a href="https://dxbcompass.com/ru/sales/al-twar-fifth/">AL TWAR FIFTH</a></td></tr>
+<tr><td></td><td></td><td><a href="https://dxbcompass.com/ru/sales/al-twar-fifth/">AL TWAR FIFTH</a></td></tr>
+<tr><td></td><td></td><td><a href="https://dxbcompass.com/ru/sales/al-twar-fifth/">AL TWAR FIFTH</a></td></tr>
+<tr><td></td><td></td><td><a href="https://dxbcompass.com/ru/sales/al-twar-fifth/">AL TWAR FIFTH</a></td></tr>
+<tr><td></td><td></td><td><a href="https://dxbcompass.com/ru/sales/al-twar-fifth/">AL TWAR FIFTH</a></td></tr>
+<tr><td></td><td></td><td><a href="https://dxbcompass.com/ru/sales/al-twar-fifth/">AL TWAR FIFTH</a></td></tr>
+<tr><td></td><td></td><td><a href="https://dxbcompass.com/ru/sales/abu-hail/">Abu Hail</a></td></tr>
+<tr><td></td><td>36A Street</td><td><a href="https://dxbcompass.com/ru/sales/abu-hail/">Abu Hail</a></td></tr>
+<tr><td></td><td></td><td><a href="https://dxbcompass.com/ru/sales/abu-hail/">Abu Hail</a></td></tr>
+<tr><td></td><td></td><td><a href="https://dxbcompass.com/ru/sales/abu-hail/">Abu Hail</a></td></tr>
+<tr><td></td><td></td><td><a href="https://dxbcompass.com/ru/sales/abu-hail/">Abu Hail</a></td></tr>
+<tr><td></td><td></td><td><a href="https://dxbcompass.com/ru/sales/abu-hail/">Abu Hail</a></td></tr>
+<tr><td></td><td></td><td><a href="https://dxbcompass.com/ru/sales/abu-hail/">Abu Hail</a></td></tr>
+<tr><td>الحاجة موزة</td><td></td><td><a href="https://dxbcompass.com/ru/sales/abu-hail/">Abu Hail</a></td></tr>
+<tr><td>المقداد بن عمرو</td><td>Al Hamriyah Street</td><td><a href="https://dxbcompass.com/ru/sales/abu-hail/">Abu Hail</a></td></tr>
+<tr><td>حمد بن سلطن</td><td></td><td><a href="https://dxbcompass.com/ru/sales/abu-hail/">Abu Hail</a></td></tr>
+<tr><td></td><td></td><td><a href="https://dxbcompass.com/ru/sales/al-aweer-first/">Al Aweer First</a></td></tr>
+<tr><td></td><td></td><td><a href="https://dxbcompass.com/ru/sales/al-aweer-first/">Al Aweer First</a></td></tr>
+<tr><td></td><td></td><td><a href="https://dxbcompass.com/ru/sales/al-aweer-first/">Al Aweer First</a></td></tr>
+<tr><td></td><td></td><td><a href="https://dxbcompass.com/ru/sales/al-aweer-second/">Al Aweer Second</a></td></tr>
+<tr><td></td><td></td><td><a href="https://dxbcompass.com/ru/sales/al-bada/">Al Bada</a></td></tr>
+<tr><td></td><td>2a Street</td><td><a href="https://dxbcompass.com/ru/sales/al-bada/">Al Bada</a></td></tr>
+<tr><td>Al Satwa Mosque</td><td></td><td><a href="https://dxbcompass.com/ru/sales/al-bada/">Al Bada</a></td></tr>
+<tr><td></td><td>Al Rasheed road</td><td><a href="https://dxbcompass.com/ru/sales/al-baraha/">Al Baraha</a></td></tr>
+<tr><td></td><td></td><td><a href="https://dxbcompass.com/ru/sales/al-baraha/">Al Baraha</a></td></tr>
+<tr><td></td><td></td><td><a href="https://dxbcompass.com/ru/sales/al-baraha/">Al Baraha</a></td></tr>
+<tr><td></td><td></td><td><a href="https://dxbcompass.com/ru/sales/al-baraha/">Al Baraha</a></td></tr>
+<tr><td></td><td></td><td><a href="https://dxbcompass.com/ru/sales/al-baraha/">Al Baraha</a></td></tr>
+<tr><td>Rashid Abdullah Hamd Al Futtaim Masjid (204)</td><td></td><td><a href="https://dxbcompass.com/ru/sales/al-baraha/">Al Baraha</a></td></tr>
+<tr><td>مسجد رحمة الشمسي</td><td></td><td><a href="https://dxbcompass.com/ru/sales/al-baraha/">Al Baraha</a></td></tr>
+<tr><td></td><td></td><td><a href="https://dxbcompass.com/ru/sales/al-barsha-first/">Al Barsha First</a></td></tr>
+<tr><td></td><td></td><td><a href="https://dxbcompass.com/ru/sales/al-barsha-first/">Al Barsha First</a></td></tr>
+<tr><td></td><td></td><td><a href="https://dxbcompass.com/ru/sales/al-barsha-first/">Al Barsha First</a></td></tr>
+<tr><td>Fatima Abdullah Mohammad Roshid Mosque</td><td>Al Barsha 1 Street</td><td><a href="https://dxbcompass.com/ru/sales/al-barsha-first/">Al Barsha First</a></td></tr>
+<tr><td></td><td></td><td><a href="https://dxbcompass.com/ru/sales/al-barsha-second/">Al Barsha Second</a></td></tr>
+<tr><td></td><td></td><td><a href="https://dxbcompass.com/ru/sales/al-barsha-second/">Al Barsha Second</a></td></tr>
+<tr><td></td><td></td><td><a href="https://dxbcompass.com/ru/sales/al-barsha-second/">Al Barsha Second</a></td></tr>
+<tr><td></td><td></td><td><a href="https://dxbcompass.com/ru/sales/al-barsha-second/">Al Barsha Second</a></td></tr>
+<tr><td></td><td></td><td><a href="https://dxbcompass.com/ru/sales/al-barsha-second/">Al Barsha Second</a></td></tr>
+<tr><td>Prayer Ground</td><td></td><td><a href="https://dxbcompass.com/ru/sales/al-barsha-second/">Al Barsha Second</a></td></tr>
+<tr><td></td><td></td><td><a href="https://dxbcompass.com/ru/sales/al-barsha-third/">Al Barsha Third</a></td></tr>
+<tr><td></td><td></td><td><a href="https://dxbcompass.com/ru/sales/al-barsha-third/">Al Barsha Third</a></td></tr>
+<tr><td></td><td></td><td><a href="https://dxbcompass.com/ru/sales/al-barsha-third/">Al Barsha Third</a></td></tr>
+<tr><td></td><td></td><td><a href="https://dxbcompass.com/ru/sales/al-barsha-third/">Al Barsha Third</a></td></tr>
+<tr><td></td><td></td><td><a href="https://dxbcompass.com/ru/sales/al-barsha-third/">Al Barsha Third</a></td></tr>
+<tr><td>Mariam Mosque</td><td></td><td><a href="https://dxbcompass.com/ru/sales/al-barsha-third/">Al Barsha Third</a></td></tr>
+<tr><td></td><td></td><td><a href="https://dxbcompass.com/ru/sales/al-barshaa-south-first/">Al Barshaa South First</a></td></tr>
+<tr><td></td><td></td><td><a href="https://dxbcompass.com/ru/sales/al-barshaa-south-first/">Al Barshaa South First</a></td></tr>
+<tr><td></td><td></td><td><a href="https://dxbcompass.com/ru/sales/al-barshaa-south-first/">Al Barshaa South First</a></td></tr>
+<tr><td></td><td></td><td><a href="https://dxbcompass.com/ru/sales/al-barshaa-south-first/">Al Barshaa South First</a></td></tr>
+<tr><td></td><td></td><td><a href="https://dxbcompass.com/ru/sales/al-barshaa-south-first/">Al Barshaa South First</a></td></tr>
+<tr><td>Hussain Ali Yateem Mosque</td><td></td><td><a href="https://dxbcompass.com/ru/sales/al-barshaa-south-first/">Al Barshaa South First</a></td></tr>
+<tr><td></td><td>12 Street</td><td><a href="https://dxbcompass.com/ru/sales/al-buteen/">Al Buteen</a></td></tr>
+<tr><td>Masjid Al Iman</td><td></td><td><a href="https://dxbcompass.com/ru/sales/al-buteen/">Al Buteen</a></td></tr>
+<tr><td></td><td></td><td><a href="https://dxbcompass.com/ru/sales/al-dhagaya/">Al Dhagaya</a></td></tr>
+<tr><td></td><td></td><td><a href="https://dxbcompass.com/ru/sales/al-eyas/">Al Eyas</a></td></tr>
+<tr><td></td><td></td><td><a href="https://dxbcompass.com/ru/sales/al-faga-a/">Al Faga'A</a></td></tr>
+<tr><td>Masjid Marqab Al Kabir</td><td></td><td><a href="https://dxbcompass.com/ru/sales/al-faga-a/">Al Faga'A</a></td></tr>
+<tr><td></td><td></td><td><a href="https://dxbcompass.com/ru/sales/al-garhoud/">Al Garhoud</a></td></tr>
+<tr><td></td><td></td><td><a href="https://dxbcompass.com/ru/sales/al-garhoud/">Al Garhoud</a></td></tr>
+<tr><td></td><td></td><td><a href="https://dxbcompass.com/ru/sales/al-garhoud/">Al Garhoud</a></td></tr>
+<tr><td></td><td></td><td><a href="https://dxbcompass.com/ru/sales/al-garhoud/">Al Garhoud</a></td></tr>
+<tr><td>Masjid Bin Darrai</td><td>27a Street</td><td><a href="https://dxbcompass.com/ru/sales/al-garhoud/">Al Garhoud</a></td></tr>
+<tr><td>Sheikh Hamdan Bin Rashid Masjid</td><td></td><td><a href="https://dxbcompass.com/ru/sales/al-garhoud/">Al Garhoud</a></td></tr>
+<tr><td></td><td></td><td><a href="https://dxbcompass.com/ru/sales/al-goze-first/">Al Goze First</a></td></tr>
+<tr><td></td><td>4 Street</td><td><a href="https://dxbcompass.com/ru/sales/al-goze-first/">Al Goze First</a></td></tr>
+<tr><td></td><td></td><td><a href="https://dxbcompass.com/ru/sales/al-goze-fourth/">Al Goze Fourth</a></td></tr>
+<tr><td>Masjid Aysha</td><td></td><td><a href="https://dxbcompass.com/ru/sales/al-goze-fourth/">Al Goze Fourth</a></td></tr>
+<tr><td>abdillah kutait masjid</td><td></td><td><a href="https://dxbcompass.com/ru/sales/al-goze-fourth/">Al Goze Fourth</a></td></tr>
+<tr><td></td><td></td><td><a href="https://dxbcompass.com/ru/sales/al-goze-industrial-first/">Al Goze Industrial First</a></td></tr>
+<tr><td></td><td></td><td><a href="https://dxbcompass.com/ru/sales/al-goze-industrial-fourth/">Al Goze Industrial Fourth</a></td></tr>
+<tr><td></td><td></td><td><a href="https://dxbcompass.com/ru/sales/al-goze-industrial-second/">Al Goze Industrial Second</a></td></tr>
+<tr><td></td><td></td><td><a href="https://dxbcompass.com/ru/sales/al-goze-industrial-second/">Al Goze Industrial Second</a></td></tr>
+<tr><td>Al Khail Gate Mosque</td><td>Al Quoz Industrial Area 2</td><td><a href="https://dxbcompass.com/ru/sales/al-goze-industrial-second/">Al Goze Industrial Second</a></td></tr>
+<tr><td>Al Khail Mosque at Phase 1</td><td></td><td><a href="https://dxbcompass.com/ru/sales/al-goze-industrial-second/">Al Goze Industrial Second</a></td></tr>
+<tr><td>Al Qouz Mini Mosque</td><td>Al Quoz Industrial Area 2</td><td><a href="https://dxbcompass.com/ru/sales/al-goze-industrial-second/">Al Goze Industrial Second</a></td></tr>
+<tr><td>Avis Mosque</td><td>Al Quoz Industrial Area 2</td><td><a href="https://dxbcompass.com/ru/sales/al-goze-industrial-second/">Al Goze Industrial Second</a></td></tr>
+<tr><td></td><td></td><td><a href="https://dxbcompass.com/ru/sales/al-goze-industrial-third/">Al Goze Industrial Third</a></td></tr>
+<tr><td></td><td></td><td><a href="https://dxbcompass.com/ru/sales/al-goze-third/">Al Goze Third</a></td></tr>
+<tr><td></td><td></td><td><a href="https://dxbcompass.com/ru/sales/al-hamriya/">Al Hamriya</a></td></tr>
+<tr><td></td><td>دبي</td><td><a href="https://dxbcompass.com/ru/sales/al-hamriya/">Al Hamriya</a></td></tr>
+<tr><td></td><td></td><td><a href="https://dxbcompass.com/ru/rents/al-hamriya-port/">Al Hamriya Port</a></td></tr>
+<tr><td></td><td></td><td><a href="https://dxbcompass.com/ru/rents/al-hamriya-port/">Al Hamriya Port</a></td></tr>
+<tr><td></td><td>Al Khaleej Street</td><td><a href="https://dxbcompass.com/ru/rents/al-hamriya-port/">Al Hamriya Port</a></td></tr>
+<tr><td></td><td></td><td><a href="https://dxbcompass.com/ru/rents/al-hamriya-port/">Al Hamriya Port</a></td></tr>
+<tr><td></td><td></td><td><a href="https://dxbcompass.com/ru/rents/al-hamriya-port/">Al Hamriya Port</a></td></tr>
+<tr><td></td><td></td><td><a href="https://dxbcompass.com/ru/sales/al-hudaiba/">Al Hudaiba</a></td></tr>
+<tr><td></td><td></td><td><a href="https://dxbcompass.com/ru/sales/al-hudaiba/">Al Hudaiba</a></td></tr>
+<tr><td></td><td></td><td><a href="https://dxbcompass.com/ru/sales/al-hudaiba/">Al Hudaiba</a></td></tr>
+<tr><td></td><td></td><td><a href="https://dxbcompass.com/ru/sales/al-jadaf/">Al Jadaf</a></td></tr>
+<tr><td></td><td></td><td><a href="https://dxbcompass.com/ru/sales/al-jadaf/">Al Jadaf</a></td></tr>
+<tr><td></td><td></td><td><a href="https://dxbcompass.com/ru/sales/al-jadaf/">Al Jadaf</a></td></tr>
+<tr><td></td><td></td><td><a href="https://dxbcompass.com/ru/sales/al-jadaf/">Al Jadaf</a></td></tr>
+<tr><td></td><td></td><td><a href="https://dxbcompass.com/ru/sales/al-jadaf/">Al Jadaf</a></td></tr>
+<tr><td></td><td></td><td><a href="https://dxbcompass.com/ru/sales/al-jadaf/">Al Jadaf</a></td></tr>
+<tr><td></td><td></td><td><a href="https://dxbcompass.com/ru/sales/al-jadaf/">Al Jadaf</a></td></tr>
+<tr><td></td><td></td><td><a href="https://dxbcompass.com/ru/sales/al-jadaf/">Al Jadaf</a></td></tr>
+<tr><td>Al Majeed Mosque</td><td></td><td><a href="https://dxbcompass.com/ru/sales/al-jadaf/">Al Jadaf</a></td></tr>
+<tr><td></td><td></td><td><a href="https://dxbcompass.com/ru/sales/al-jafliya/">Al Jafliya</a></td></tr>
+<tr><td></td><td></td><td><a href="https://dxbcompass.com/ru/sales/al-jafliya/">Al Jafliya</a></td></tr>
+<tr><td></td><td></td><td><a href="https://dxbcompass.com/ru/sales/al-jafliya/">Al Jafliya</a></td></tr>
+<tr><td></td><td></td><td><a href="https://dxbcompass.com/ru/sales/al-jafliya/">Al Jafliya</a></td></tr>
+<tr><td></td><td></td><td><a href="https://dxbcompass.com/ru/sales/al-jafliya/">Al Jafliya</a></td></tr>
+<tr><td></td><td>25a Street</td><td><a href="https://dxbcompass.com/ru/sales/al-jafliya/">Al Jafliya</a></td></tr>
+<tr><td></td><td></td><td><a href="https://dxbcompass.com/ru/sales/al-jafliya/">Al Jafliya</a></td></tr>
+<tr><td></td><td></td><td><a href="https://dxbcompass.com/ru/sales/al-karama/">Al Karama</a></td></tr>
+<tr><td></td><td>Za'abeel Street</td><td><a href="https://dxbcompass.com/ru/sales/al-karama/">Al Karama</a></td></tr>
+<tr><td></td><td></td><td><a href="https://dxbcompass.com/ru/sales/al-karama/">Al Karama</a></td></tr>
+<tr><td></td><td>دبي</td><td><a href="https://dxbcompass.com/ru/sales/al-karama/">Al Karama</a></td></tr>
+<tr><td></td><td></td><td><a href="https://dxbcompass.com/ru/sales/al-karama/">Al Karama</a></td></tr>
+<tr><td>Hamad Dhaein Al Huwaidi masjid</td><td></td><td><a href="https://dxbcompass.com/ru/sales/al-karama/">Al Karama</a></td></tr>
+<tr><td></td><td></td><td><a href="https://dxbcompass.com/ru/sales/al-khabeesi/">Al Khabeesi</a></td></tr>
+<tr><td></td><td>34 Street</td><td><a href="https://dxbcompass.com/ru/sales/al-khawaneej-first/">Al Khawaneej First</a></td></tr>
+<tr><td></td><td></td><td><a href="https://dxbcompass.com/ru/sales/al-khawaneej-first/">Al Khawaneej First</a></td></tr>
+<tr><td></td><td></td><td><a href="https://dxbcompass.com/ru/sales/al-khawaneej-first/">Al Khawaneej First</a></td></tr>
+<tr><td></td><td></td><td><a href="https://dxbcompass.com/ru/sales/al-khawaneej-first/">Al Khawaneej First</a></td></tr>
+<tr><td></td><td></td><td><a href="https://dxbcompass.com/ru/sales/al-khawaneej-first/">Al Khawaneej First</a></td></tr>
+<tr><td></td><td></td><td><a href="https://dxbcompass.com/ru/sales/al-khawaneej-first/">Al Khawaneej First</a></td></tr>
+<tr><td></td><td>129 Street</td><td><a href="https://dxbcompass.com/ru/sales/al-khawaneej-first/">Al Khawaneej First</a></td></tr>
+<tr><td></td><td></td><td><a href="https://dxbcompass.com/ru/sales/al-khawaneej-first/">Al Khawaneej First</a></td></tr>
+<tr><td></td><td></td><td><a href="https://dxbcompass.com/ru/sales/al-khawaneej-first/">Al Khawaneej First</a></td></tr>
+<tr><td></td><td></td><td><a href="https://dxbcompass.com/ru/sales/al-khawaneej-first/">Al Khawaneej First</a></td></tr>
+<tr><td></td><td></td><td><a href="https://dxbcompass.com/ru/sales/al-khawaneej-first/">Al Khawaneej First</a></td></tr>
+<tr><td></td><td></td><td><a href="https://dxbcompass.com/ru/sales/al-khawaneej-second/">Al Khawaneej Second</a></td></tr>
+<tr><td></td><td></td><td><a href="https://dxbcompass.com/ru/sales/al-mamzer/">Al Mamzer</a></td></tr>
+<tr><td></td><td></td><td><a href="https://dxbcompass.com/ru/sales/al-mamzer/">Al Mamzer</a></td></tr>
+<tr><td></td><td></td><td><a href="https://dxbcompass.com/ru/sales/al-mamzer/">Al Mamzer</a></td></tr>
+<tr><td></td><td>3C Street</td><td><a href="https://dxbcompass.com/ru/sales/al-mamzer/">Al Mamzer</a></td></tr>
+<tr><td></td><td></td><td><a href="https://dxbcompass.com/ru/sales/al-mamzer/">Al Mamzer</a></td></tr>
+<tr><td></td><td></td><td><a href="https://dxbcompass.com/ru/sales/al-mamzer/">Al Mamzer</a></td></tr>
+<tr><td></td><td></td><td><a href="https://dxbcompass.com/ru/sales/al-mamzer/">Al Mamzer</a></td></tr>
+<tr><td></td><td>1c Street</td><td><a href="https://dxbcompass.com/ru/sales/al-mamzer/">Al Mamzer</a></td></tr>
+<tr><td></td><td>46 Street</td><td><a href="https://dxbcompass.com/ru/sales/al-mamzer/">Al Mamzer</a></td></tr>
+<tr><td></td><td>7c Street</td><td><a href="https://dxbcompass.com/ru/sales/al-mamzer/">Al Mamzer</a></td></tr>
+<tr><td></td><td></td><td><a href="https://dxbcompass.com/ru/sales/al-mamzer/">Al Mamzer</a></td></tr>
+<tr><td></td><td></td><td><a href="https://dxbcompass.com/ru/sales/al-mamzer/">Al Mamzer</a></td></tr>
+<tr><td>Al Mamzar Masjid</td><td></td><td><a href="https://dxbcompass.com/ru/sales/al-mamzer/">Al Mamzer</a></td></tr>
+<tr><td></td><td></td><td><a href="https://dxbcompass.com/ru/sales/al-manara/">Al Manara</a></td></tr>
+<tr><td></td><td></td><td><a href="https://dxbcompass.com/ru/sales/al-manara/">Al Manara</a></td></tr>
+<tr><td></td><td></td><td><a href="https://dxbcompass.com/ru/sales/al-manara/">Al Manara</a></td></tr>
+<tr><td></td><td></td><td><a href="https://dxbcompass.com/ru/sales/al-mararr/">Al Mararr</a></td></tr>
+<tr><td></td><td>14a Street</td><td><a href="https://dxbcompass.com/ru/sales/al-mararr/">Al Mararr</a></td></tr>
+<tr><td>Al Futtaim Masjid</td><td></td><td><a href="https://dxbcompass.com/ru/sales/al-mararr/">Al Mararr</a></td></tr>
+<tr><td>Somali Masjid</td><td></td><td><a href="https://dxbcompass.com/ru/sales/al-mararr/">Al Mararr</a></td></tr>
+<tr><td>khalid Masjid</td><td>21c Street</td><td><a href="https://dxbcompass.com/ru/sales/al-mararr/">Al Mararr</a></td></tr>
+<tr><td></td><td>دبي</td><td><a href="https://dxbcompass.com/ru/rents/al-marmoom/">Al Marmoom</a></td></tr>
+<tr><td></td><td></td><td><a href="https://dxbcompass.com/ru/sales/al-mizhar-first/">Al Mizhar First</a></td></tr>
+<tr><td></td><td></td><td><a href="https://dxbcompass.com/ru/sales/al-mizhar-first/">Al Mizhar First</a></td></tr>
+<tr><td></td><td>49a Street</td><td><a href="https://dxbcompass.com/ru/sales/al-mizhar-first/">Al Mizhar First</a></td></tr>
+<tr><td></td><td>24d Street</td><td><a href="https://dxbcompass.com/ru/sales/al-mizhar-first/">Al Mizhar First</a></td></tr>
+<tr><td></td><td>37a Street</td><td><a href="https://dxbcompass.com/ru/sales/al-mizhar-first/">Al Mizhar First</a></td></tr>
+<tr><td></td><td></td><td><a href="https://dxbcompass.com/ru/sales/al-mizhar-first/">Al Mizhar First</a></td></tr>
+<tr><td></td><td></td><td><a href="https://dxbcompass.com/ru/sales/al-mizhar-first/">Al Mizhar First</a></td></tr>
+<tr><td></td><td>14b Street</td><td><a href="https://dxbcompass.com/ru/sales/al-mizhar-first/">Al Mizhar First</a></td></tr>
+<tr><td></td><td>24b Street</td><td><a href="https://dxbcompass.com/ru/sales/al-mizhar-first/">Al Mizhar First</a></td></tr>
+<tr><td></td><td></td><td><a href="https://dxbcompass.com/ru/sales/al-mizhar-first/">Al Mizhar First</a></td></tr>
+<tr><td></td><td>6a Street</td><td><a href="https://dxbcompass.com/ru/sales/al-mizhar-first/">Al Mizhar First</a></td></tr>
+<tr><td></td><td>42a Street</td><td><a href="https://dxbcompass.com/ru/sales/al-mizhar-first/">Al Mizhar First</a></td></tr>
+<tr><td></td><td></td><td><a href="https://dxbcompass.com/ru/sales/al-mizhar-first/">Al Mizhar First</a></td></tr>
+<tr><td></td><td></td><td><a href="https://dxbcompass.com/ru/sales/al-mizhar-first/">Al Mizhar First</a></td></tr>
+<tr><td></td><td>12b Street</td><td><a href="https://dxbcompass.com/ru/sales/al-mizhar-first/">Al Mizhar First</a></td></tr>
+<tr><td></td><td>46a Street</td><td><a href="https://dxbcompass.com/ru/sales/al-mizhar-first/">Al Mizhar First</a></td></tr>
+<tr><td></td><td></td><td><a href="https://dxbcompass.com/ru/sales/al-mizhar-first/">Al Mizhar First</a></td></tr>
+<tr><td>Masjed Al-Fatih</td><td></td><td><a href="https://dxbcompass.com/ru/sales/al-mizhar-first/">Al Mizhar First</a></td></tr>
+<tr><td>Masjid Salim Bin Bakheet</td><td>34th Street from Al Khawaneej Road</td><td><a href="https://dxbcompass.com/ru/sales/al-mizhar-first/">Al Mizhar First</a></td></tr>
+<tr><td>مسجد الفتح</td><td></td><td><a href="https://dxbcompass.com/ru/sales/al-mizhar-first/">Al Mizhar First</a></td></tr>
+<tr><td></td><td></td><td><a href="https://dxbcompass.com/ru/sales/al-mizhar-second/">Al Mizhar Second</a></td></tr>
+<tr><td></td><td></td><td><a href="https://dxbcompass.com/ru/sales/al-mizhar-second/">Al Mizhar Second</a></td></tr>
+<tr><td></td><td></td><td><a href="https://dxbcompass.com/ru/sales/al-mizhar-second/">Al Mizhar Second</a></td></tr>
+<tr><td></td><td></td><td><a href="https://dxbcompass.com/ru/sales/al-mizhar-second/">Al Mizhar Second</a></td></tr>
+<tr><td></td><td></td><td><a href="https://dxbcompass.com/ru/sales/al-mizhar-second/">Al Mizhar Second</a></td></tr>
+<tr><td></td><td></td><td><a href="https://dxbcompass.com/ru/sales/al-mizhar-third/">Al Mizhar Third</a></td></tr>
+<tr><td></td><td>33 Street</td><td><a href="https://dxbcompass.com/ru/sales/al-mizhar-third/">Al Mizhar Third</a></td></tr>
+<tr><td></td><td></td><td><a href="https://dxbcompass.com/ru/sales/al-mizhar-third/">Al Mizhar Third</a></td></tr>
+<tr><td></td><td></td><td><a href="https://dxbcompass.com/ru/sales/al-murqabat/">Al Murqabat</a></td></tr>
+<tr><td>Al Ghurair Mosque</td><td></td><td><a href="https://dxbcompass.com/ru/sales/al-murqabat/">Al Murqabat</a></td></tr>
+<tr><td>Al Khabeesi Mosque</td><td>39b شارع</td><td><a href="https://dxbcompass.com/ru/sales/al-murqabat/">Al Murqabat</a></td></tr>
+<tr><td>Al Rigga Mosque</td><td>دبي</td><td><a href="https://dxbcompass.com/ru/sales/al-murqabat/">Al Murqabat</a></td></tr>
+<tr><td>Gargash Mosque</td><td></td><td><a href="https://dxbcompass.com/ru/sales/al-murqabat/">Al Murqabat</a></td></tr>
+<tr><td>Khubaise Small Mosque</td><td></td><td><a href="https://dxbcompass.com/ru/sales/al-murqabat/">Al Murqabat</a></td></tr>
+<tr><td>Masjid Mona Bint Sultan Al-Otaiba</td><td></td><td><a href="https://dxbcompass.com/ru/sales/al-murqabat/">Al Murqabat</a></td></tr>
+<tr><td></td><td></td><td><a href="https://dxbcompass.com/ru/sales/al-muteena/">Al Muteena</a></td></tr>
+<tr><td></td><td></td><td><a href="https://dxbcompass.com/ru/sales/al-muteena/">Al Muteena</a></td></tr>
+<tr><td></td><td></td><td><a href="https://dxbcompass.com/ru/sales/al-muteena/">Al Muteena</a></td></tr>
+<tr><td>Ahmed bin Sultan bin Saleem Mosque</td><td></td><td><a href="https://dxbcompass.com/ru/sales/al-muteena/">Al Muteena</a></td></tr>
+<tr><td>Al Zahra Mosque</td><td></td><td><a href="https://dxbcompass.com/ru/sales/al-muteena/">Al Muteena</a></td></tr>
+<tr><td>Bilal bin Rabah Mosque</td><td></td><td><a href="https://dxbcompass.com/ru/sales/al-muteena/">Al Muteena</a></td></tr>
+<tr><td>Hamda bint Mohammed Mosque</td><td>22a Street</td><td><a href="https://dxbcompass.com/ru/sales/al-muteena/">Al Muteena</a></td></tr>
+<tr><td>Hashimi Masjid</td><td></td><td><a href="https://dxbcompass.com/ru/sales/al-muteena/">Al Muteena</a></td></tr>
+<tr><td>Masjid Salman Al Farsi</td><td></td><td><a href="https://dxbcompass.com/ru/sales/al-muteena/">Al Muteena</a></td></tr>
+<tr><td></td><td></td><td><a href="https://dxbcompass.com/ru/sales/al-nahda-first/">Al Nahda First</a></td></tr>
+<tr><td></td><td></td><td><a href="https://dxbcompass.com/ru/sales/al-nahda-first/">Al Nahda First</a></td></tr>
+<tr><td></td><td></td><td><a href="https://dxbcompass.com/ru/sales/al-nahda-second/">Al Nahda Second</a></td></tr>
+<tr><td></td><td>Nahda park jogging track</td><td><a href="https://dxbcompass.com/ru/sales/al-nahda-second/">Al Nahda Second</a></td></tr>
+<tr><td>AbdulRahman Mohd Taher Masjid</td><td></td><td><a href="https://dxbcompass.com/ru/sales/al-nahda-second/">Al Nahda Second</a></td></tr>
+<tr><td>Masjid Khadija Mosque</td><td></td><td><a href="https://dxbcompass.com/ru/sales/al-nahda-second/">Al Nahda Second</a></td></tr>
+<tr><td>Masjid Nahda</td><td></td><td><a href="https://dxbcompass.com/ru/sales/al-nahda-second/">Al Nahda Second</a></td></tr>
+<tr><td>Wasl Village Mosque</td><td></td><td><a href="https://dxbcompass.com/ru/sales/al-qusais-industrial-fifth/">Al Qusais Industrial Fifth</a></td></tr>
+<tr><td></td><td></td><td><a href="https://dxbcompass.com/ru/sales/al-qusais-industrial-first/">Al Qusais Industrial First</a></td></tr>
+<tr><td>Masjid al Khamis</td><td></td><td><a href="https://dxbcompass.com/ru/sales/al-qusais-industrial-fourth/">Al Qusais Industrial Fourth</a></td></tr>
+<tr><td></td><td></td><td><a href="https://dxbcompass.com/ru/sales/al-qusais-industrial-second/">Al Qusais Industrial Second</a></td></tr>
+<tr><td>Masjid al Muthaqeen</td><td></td><td><a href="https://dxbcompass.com/ru/sales/al-qusais-industrial-third/">Al Qusais Industrial Third</a></td></tr>
+<tr><td></td><td></td><td><a href="https://dxbcompass.com/ru/sales/al-raffa/">Al Raffa</a></td></tr>
+<tr><td>Sultan Hassan Belshalat Mosque</td><td></td><td><a href="https://dxbcompass.com/ru/sales/al-raffa/">Al Raffa</a></td></tr>
+<tr><td></td><td></td><td><a href="https://dxbcompass.com/ru/sales/al-ras/">Al Ras</a></td></tr>
+<tr><td></td><td></td><td><a href="https://dxbcompass.com/ru/sales/al-ras/">Al Ras</a></td></tr>
+<tr><td></td><td></td><td><a href="https://dxbcompass.com/ru/sales/al-ras/">Al Ras</a></td></tr>
+<tr><td></td><td></td><td><a href="https://dxbcompass.com/ru/sales/al-rashidiya/">Al Rashidiya</a></td></tr>
+<tr><td></td><td>51a Street</td><td><a href="https://dxbcompass.com/ru/sales/al-rashidiya/">Al Rashidiya</a></td></tr>
+<tr><td></td><td>15a Street</td><td><a href="https://dxbcompass.com/ru/sales/al-rashidiya/">Al Rashidiya</a></td></tr>
+<tr><td></td><td>11 Street</td><td><a href="https://dxbcompass.com/ru/sales/al-rashidiya/">Al Rashidiya</a></td></tr>
+<tr><td></td><td>58a Street</td><td><a href="https://dxbcompass.com/ru/sales/al-rashidiya/">Al Rashidiya</a></td></tr>
+<tr><td></td><td>30 Street</td><td><a href="https://dxbcompass.com/ru/sales/al-rashidiya/">Al Rashidiya</a></td></tr>
+<tr><td></td><td>16a Street</td><td><a href="https://dxbcompass.com/ru/sales/al-rashidiya/">Al Rashidiya</a></td></tr>
+<tr><td></td><td></td><td><a href="https://dxbcompass.com/ru/sales/al-rashidiya/">Al Rashidiya</a></td></tr>
+<tr><td>Aisha Al Faheem Mosque</td><td>35b</td><td><a href="https://dxbcompass.com/ru/sales/al-rashidiya/">Al Rashidiya</a></td></tr>
+<tr><td>Grand Mosque Rashidiya</td><td>51a Street</td><td><a href="https://dxbcompass.com/ru/sales/al-rashidiya/">Al Rashidiya</a></td></tr>
+<tr><td>Jassmi Masjid</td><td>38th Street</td><td><a href="https://dxbcompass.com/ru/sales/al-rashidiya/">Al Rashidiya</a></td></tr>
+<tr><td></td><td>19a Street</td><td><a href="https://dxbcompass.com/ru/sales/al-rega-al-rigga/">Al Rega (Al Rigga)</a></td></tr>
+<tr><td></td><td></td><td><a href="https://dxbcompass.com/ru/sales/al-rega-al-rigga/">Al Rega (Al Rigga)</a></td></tr>
+<tr><td></td><td></td><td><a href="https://dxbcompass.com/ru/sales/al-rowaiyah-third/">Al Rowaiyah Third</a></td></tr>
+<tr><td></td><td></td><td><a href="https://dxbcompass.com/ru/sales/al-rowaiyah-third/">Al Rowaiyah Third</a></td></tr>
+<tr><td></td><td></td><td><a href="https://dxbcompass.com/ru/sales/al-saffa-first/">Al Saffa First</a></td></tr>
+<tr><td></td><td>Street 18c</td><td><a href="https://dxbcompass.com/ru/sales/al-saffa-first/">Al Saffa First</a></td></tr>
+<tr><td>Al Farooq Omar Bin Al Khattab</td><td>Street 6d</td><td><a href="https://dxbcompass.com/ru/sales/al-saffa-first/">Al Saffa First</a></td></tr>
+<tr><td>masjid Aisha</td><td>Al Wasl Road</td><td><a href="https://dxbcompass.com/ru/sales/al-saffa-first/">Al Saffa First</a></td></tr>
+<tr><td></td><td></td><td><a href="https://dxbcompass.com/ru/sales/al-saffa-second/">Al Saffa Second</a></td></tr>
+<tr><td></td><td></td><td><a href="https://dxbcompass.com/ru/sales/al-saffa-second/">Al Saffa Second</a></td></tr>
+<tr><td></td><td></td><td><a href="https://dxbcompass.com/ru/sales/al-saffa-second/">Al Saffa Second</a></td></tr>
+<tr><td>Jummah Mosque</td><td>10c شارع</td><td><a href="https://dxbcompass.com/ru/sales/al-saffa-second/">Al Saffa Second</a></td></tr>
+<tr><td>Mohammad Khamis Bin Hendi Almheiri Mosque</td><td>18c شارع</td><td><a href="https://dxbcompass.com/ru/sales/al-saffa-second/">Al Saffa Second</a></td></tr>
+<tr><td></td><td>Abdullah Omran Taryam Street</td><td><a href="https://dxbcompass.com/ru/sales/al-safouh-first/">Al Safouh First</a></td></tr>
+<tr><td></td><td>Al Balda Street</td><td><a href="https://dxbcompass.com/ru/sales/al-safouh-first/">Al Safouh First</a></td></tr>
+<tr><td>Tecom Masjid</td><td></td><td><a href="https://dxbcompass.com/ru/sales/al-safouh-second/">Al Safouh Second</a></td></tr>
+<tr><td></td><td></td><td><a href="https://dxbcompass.com/ru/sales/al-satwa/">Al Satwa</a></td></tr>
+<tr><td></td><td>71a Street</td><td><a href="https://dxbcompass.com/ru/sales/al-satwa/">Al Satwa</a></td></tr>
+<tr><td></td><td>Street 91a</td><td><a href="https://dxbcompass.com/ru/sales/al-satwa/">Al Satwa</a></td></tr>
+<tr><td>Khadri Masjid</td><td>شارع السطوة</td><td><a href="https://dxbcompass.com/ru/sales/al-satwa/">Al Satwa</a></td></tr>
+<tr><td>Obai Bin Kaab</td><td>45b Street</td><td><a href="https://dxbcompass.com/ru/sales/al-satwa/">Al Satwa</a></td></tr>
+<tr><td></td><td></td><td><a href="https://dxbcompass.com/ru/sales/al-suq-al-kabeer/">Al Suq Al Kabeer</a></td></tr>
+<tr><td></td><td>دبي</td><td><a href="https://dxbcompass.com/ru/sales/al-suq-al-kabeer/">Al Suq Al Kabeer</a></td></tr>
+<tr><td>Al Bastakiya Mosque</td><td></td><td><a href="https://dxbcompass.com/ru/sales/al-suq-al-kabeer/">Al Suq Al Kabeer</a></td></tr>
+<tr><td>Ali ibn Abi Talib Iranian Mosque</td><td>دبي</td><td><a href="https://dxbcompass.com/ru/sales/al-suq-al-kabeer/">Al Suq Al Kabeer</a></td></tr>
+<tr><td>Dubai Grand Mosque</td><td></td><td><a href="https://dxbcompass.com/ru/sales/al-suq-al-kabeer/">Al Suq Al Kabeer</a></td></tr>
+<tr><td>Fatma Hassan Mohamed Yousef Bastaki Mosque</td><td>21a شارع</td><td><a href="https://dxbcompass.com/ru/sales/al-suq-al-kabeer/">Al Suq Al Kabeer</a></td></tr>
+<tr><td></td><td>19c Street</td><td><a href="https://dxbcompass.com/ru/sales/al-twar-first/">Al Twar First</a></td></tr>
+<tr><td></td><td></td><td><a href="https://dxbcompass.com/ru/sales/al-twar-first/">Al Twar First</a></td></tr>
+<tr><td></td><td></td><td><a href="https://dxbcompass.com/ru/sales/al-twar-first/">Al Twar First</a></td></tr>
+<tr><td></td><td></td><td><a href="https://dxbcompass.com/ru/sales/al-twar-first/">Al Twar First</a></td></tr>
+<tr><td></td><td></td><td><a href="https://dxbcompass.com/ru/sales/al-twar-first/">Al Twar First</a></td></tr>
+<tr><td></td><td></td><td><a href="https://dxbcompass.com/ru/sales/al-twar-first/">Al Twar First</a></td></tr>
+<tr><td></td><td></td><td><a href="https://dxbcompass.com/ru/sales/al-twar-first/">Al Twar First</a></td></tr>
+<tr><td></td><td></td><td><a href="https://dxbcompass.com/ru/sales/al-twar-first/">Al Twar First</a></td></tr>
+<tr><td></td><td></td><td><a href="https://dxbcompass.com/ru/sales/al-twar-fourth/">Al Twar Fourth</a></td></tr>
+<tr><td></td><td>14a Street</td><td><a href="https://dxbcompass.com/ru/sales/al-twar-fourth/">Al Twar Fourth</a></td></tr>
+<tr><td></td><td></td><td><a href="https://dxbcompass.com/ru/sales/al-twar-fourth/">Al Twar Fourth</a></td></tr>
+<tr><td></td><td>24c Street</td><td><a href="https://dxbcompass.com/ru/sales/al-twar-fourth/">Al Twar Fourth</a></td></tr>
+<tr><td></td><td>20a Street</td><td><a href="https://dxbcompass.com/ru/sales/al-twar-fourth/">Al Twar Fourth</a></td></tr>
+<tr><td></td><td></td><td><a href="https://dxbcompass.com/ru/sales/al-twar-fourth/">Al Twar Fourth</a></td></tr>
+<tr><td></td><td></td><td><a href="https://dxbcompass.com/ru/sales/al-twar-fourth/">Al Twar Fourth</a></td></tr>
+<tr><td></td><td></td><td><a href="https://dxbcompass.com/ru/sales/al-twar-fourth/">Al Twar Fourth</a></td></tr>
+<tr><td></td><td></td><td><a href="https://dxbcompass.com/ru/sales/al-twar-fourth/">Al Twar Fourth</a></td></tr>
+<tr><td></td><td></td><td><a href="https://dxbcompass.com/ru/sales/al-twar-fourth/">Al Twar Fourth</a></td></tr>
+<tr><td></td><td></td><td><a href="https://dxbcompass.com/ru/sales/al-twar-second/">Al Twar Second</a></td></tr>
+<tr><td></td><td></td><td><a href="https://dxbcompass.com/ru/sales/al-twar-second/">Al Twar Second</a></td></tr>
+<tr><td></td><td></td><td><a href="https://dxbcompass.com/ru/sales/al-twar-second/">Al Twar Second</a></td></tr>
+<tr><td></td><td></td><td><a href="https://dxbcompass.com/ru/sales/al-twar-second/">Al Twar Second</a></td></tr>
+<tr><td>Masjed Abullah Bin Omar</td><td></td><td><a href="https://dxbcompass.com/ru/sales/al-twar-second/">Al Twar Second</a></td></tr>
+<tr><td>Masjed Omar Bin Khattab</td><td></td><td><a href="https://dxbcompass.com/ru/sales/al-twar-second/">Al Twar Second</a></td></tr>
+<tr><td></td><td></td><td><a href="https://dxbcompass.com/ru/sales/al-twar-third/">Al Twar Third</a></td></tr>
+<tr><td></td><td></td><td><a href="https://dxbcompass.com/ru/sales/al-twar-third/">Al Twar Third</a></td></tr>
+<tr><td></td><td></td><td><a href="https://dxbcompass.com/ru/sales/al-twar-third/">Al Twar Third</a></td></tr>
+<tr><td></td><td></td><td><a href="https://dxbcompass.com/ru/sales/al-twar-third/">Al Twar Third</a></td></tr>
+<tr><td></td><td></td><td><a href="https://dxbcompass.com/ru/sales/al-twar-third/">Al Twar Third</a></td></tr>
+<tr><td></td><td></td><td><a href="https://dxbcompass.com/ru/sales/al-twar-third/">Al Twar Third</a></td></tr>
+<tr><td></td><td></td><td><a href="https://dxbcompass.com/ru/sales/al-twar-third/">Al Twar Third</a></td></tr>
+<tr><td></td><td></td><td><a href="https://dxbcompass.com/ru/sales/al-twar-third/">Al Twar Third</a></td></tr>
+<tr><td></td><td></td><td><a href="https://dxbcompass.com/ru/sales/al-waheda/">Al Waheda</a></td></tr>
+<tr><td></td><td></td><td><a href="https://dxbcompass.com/ru/sales/al-waheda/">Al Waheda</a></td></tr>
+<tr><td></td><td>7b</td><td><a href="https://dxbcompass.com/ru/sales/al-waheda/">Al Waheda</a></td></tr>
+<tr><td></td><td></td><td><a href="https://dxbcompass.com/ru/sales/al-waheda/">Al Waheda</a></td></tr>
+<tr><td></td><td>Al Wuheida Street</td><td><a href="https://dxbcompass.com/ru/sales/al-waheda/">Al Waheda</a></td></tr>
+<tr><td>Al Badoor Masjid</td><td>3 Street</td><td><a href="https://dxbcompass.com/ru/sales/al-waheda/">Al Waheda</a></td></tr>
+<tr><td>Imam Malik Masjid</td><td>Al Hamriyah Street</td><td><a href="https://dxbcompass.com/ru/sales/al-waheda/">Al Waheda</a></td></tr>
+<tr><td>Masjid Abu Hail</td><td></td><td><a href="https://dxbcompass.com/ru/sales/al-waheda/">Al Waheda</a></td></tr>
+<tr><td></td><td></td><td><a href="https://dxbcompass.com/ru/sales/al-warqa-first/">Al Warqa First</a></td></tr>
+<tr><td></td><td></td><td><a href="https://dxbcompass.com/ru/sales/al-warqa-first/">Al Warqa First</a></td></tr>
+<tr><td></td><td></td><td><a href="https://dxbcompass.com/ru/sales/al-warqa-fourth/">Al Warqa Fourth</a></td></tr>
+<tr><td></td><td>12 Street</td><td><a href="https://dxbcompass.com/ru/sales/al-warqa-fourth/">Al Warqa Fourth</a></td></tr>
+<tr><td></td><td>42b Street</td><td><a href="https://dxbcompass.com/ru/sales/al-warqa-fourth/">Al Warqa Fourth</a></td></tr>
+<tr><td></td><td></td><td><a href="https://dxbcompass.com/ru/sales/al-warqa-fourth/">Al Warqa Fourth</a></td></tr>
+<tr><td>Masjid Aisha</td><td></td><td><a href="https://dxbcompass.com/ru/sales/al-warqa-fourth/">Al Warqa Fourth</a></td></tr>
+<tr><td>Jamigha al warqaa al kabir mosque</td><td>414 Street</td><td><a href="https://dxbcompass.com/ru/sales/al-warqa-second/">Al Warqa Second</a></td></tr>
+<tr><td></td><td></td><td><a href="https://dxbcompass.com/ru/sales/al-warqa-third/">Al Warqa Third</a></td></tr>
+<tr><td></td><td></td><td><a href="https://dxbcompass.com/ru/sales/al-warqa-third/">Al Warqa Third</a></td></tr>
+<tr><td></td><td></td><td><a href="https://dxbcompass.com/ru/sales/al-warqa-third/">Al Warqa Third</a></td></tr>
+<tr><td></td><td>8c Street</td><td><a href="https://dxbcompass.com/ru/sales/al-warqa-third/">Al Warqa Third</a></td></tr>
+<tr><td></td><td>79 Street</td><td><a href="https://dxbcompass.com/ru/sales/al-warqa-third/">Al Warqa Third</a></td></tr>
+<tr><td></td><td>11 Street</td><td><a href="https://dxbcompass.com/ru/sales/al-warqa-third/">Al Warqa Third</a></td></tr>
+<tr><td></td><td></td><td><a href="https://dxbcompass.com/ru/sales/al-warqa-third/">Al Warqa Third</a></td></tr>
+<tr><td></td><td></td><td><a href="https://dxbcompass.com/ru/sales/al-warqa-third/">Al Warqa Third</a></td></tr>
+<tr><td></td><td></td><td><a href="https://dxbcompass.com/ru/sales/al-warqa-third/">Al Warqa Third</a></td></tr>
+<tr><td>Nafa' belshalat Mosque</td><td></td><td><a href="https://dxbcompass.com/ru/sales/al-warqa-third/">Al Warqa Third</a></td></tr>
+<tr><td></td><td></td><td><a href="https://dxbcompass.com/ru/sales/al-wasl/">Al Wasl</a></td></tr>
+<tr><td></td><td></td><td><a href="https://dxbcompass.com/ru/sales/al-wasl/">Al Wasl</a></td></tr>
+<tr><td></td><td>24b Street</td><td><a href="https://dxbcompass.com/ru/sales/al-wasl/">Al Wasl</a></td></tr>
+<tr><td></td><td>2b شارع</td><td><a href="https://dxbcompass.com/ru/sales/al-wasl/">Al Wasl</a></td></tr>
+<tr><td></td><td>2a شارع</td><td><a href="https://dxbcompass.com/ru/sales/al-wasl/">Al Wasl</a></td></tr>
+<tr><td></td><td></td><td><a href="https://dxbcompass.com/ru/sales/al-wasl/">Al Wasl</a></td></tr>
+<tr><td>Al Qasimi Mosque</td><td></td><td><a href="https://dxbcompass.com/ru/sales/al-wasl/">Al Wasl</a></td></tr>
+<tr><td>Al Safa Mosque</td><td></td><td><a href="https://dxbcompass.com/ru/sales/al-wasl/">Al Wasl</a></td></tr>
+<tr><td></td><td></td><td><a href="https://dxbcompass.com/ru/sales/al-yelayiss-1/">Al Yelayiss 1</a></td></tr>
+<tr><td></td><td></td><td><a href="https://dxbcompass.com/ru/sales/al-yelayiss-5/">Al Yelayiss 5</a></td></tr>
+<tr><td></td><td></td><td><a href="https://dxbcompass.com/ru/sales/arabian-ranches-1/">Arabian Ranches 1</a></td></tr>
+<tr><td>Al Rahman</td><td></td><td><a href="https://dxbcompass.com/ru/sales/arabian-ranches-1/">Arabian Ranches 1</a></td></tr>
+<tr><td>Al Zarooni Mosque</td><td></td><td><a href="https://dxbcompass.com/ru/sales/ayal-nasir/">Ayal Nasir</a></td></tr>
+<tr><td>Saifee Masjid</td><td></td><td><a href="https://dxbcompass.com/ru/sales/ayal-nasir/">Ayal Nasir</a></td></tr>
+<tr><td></td><td></td><td><a href="https://dxbcompass.com/ru/sales/barsha-heights/">Barsha Heights</a></td></tr>
+<tr><td>Hamel Al Ghaith Mosque</td><td>Barsha Heights</td><td><a href="https://dxbcompass.com/ru/sales/barsha-heights/">Barsha Heights</a></td></tr>
+<tr><td>Al Tasamuh Mosque</td><td></td><td><a href="https://dxbcompass.com/ru/sales/bluewaters-island/">Bluewaters Island</a></td></tr>
+<tr><td></td><td></td><td><a href="https://dxbcompass.com/ru/sales/bukadra/">Bukadra</a></td></tr>
+<tr><td></td><td></td><td><a href="https://dxbcompass.com/ru/sales/city-walk/">City Walk</a></td></tr>
+<tr><td>City walk 2 mosque</td><td></td><td><a href="https://dxbcompass.com/ru/sales/city-walk/">City Walk</a></td></tr>
+<tr><td></td><td></td><td><a href="https://dxbcompass.com/ru/rents/cornich-deira/">Cornich Deira</a></td></tr>
+<tr><td></td><td></td><td><a href="https://dxbcompass.com/ru/sales/damac-hills-2/">DAMAC Hills 2</a></td></tr>
+<tr><td></td><td>دبي</td><td><a href="https://dxbcompass.com/ru/sales/discovery-gardens/">Discovery Gardens</a></td></tr>
+<tr><td></td><td></td><td><a href="https://dxbcompass.com/ru/sales/discovery-gardens/">Discovery Gardens</a></td></tr>
+<tr><td>Masjid Abdullah Ali Al-Chaafar</td><td></td><td><a href="https://dxbcompass.com/ru/sales/discovery-gardens/">Discovery Gardens</a></td></tr>
+<tr><td></td><td></td><td><a href="https://dxbcompass.com/ru/sales/downtown-dubai/">Downtown Dubai</a></td></tr>
+<tr><td>Masjid Al Ghafoor</td><td></td><td><a href="https://dxbcompass.com/ru/sales/downtown-dubai/">Downtown Dubai</a></td></tr>
+<tr><td>Shaikha Abdulla Salem</td><td>Al Yamamah street</td><td><a href="https://dxbcompass.com/ru/sales/downtown-dubai/">Downtown Dubai</a></td></tr>
+<tr><td>Gents Prayer Room</td><td></td><td><a href="https://dxbcompass.com/ru/sales/downtown-jebel-ali/">Downtown Jebel Ali</a></td></tr>
+<tr><td>Ladies Prayer Room</td><td></td><td><a href="https://dxbcompass.com/ru/sales/downtown-jebel-ali/">Downtown Jebel Ali</a></td></tr>
+<tr><td>Mosque Sheikh Rashid bin Mohammed</td><td></td><td><a href="https://dxbcompass.com/ru/sales/dubai-harbour/">Dubai Harbour</a></td></tr>
+<tr><td></td><td></td><td><a href="https://dxbcompass.com/ru/sales/dubai-industrial-city/">Dubai Industrial City</a></td></tr>
+<tr><td></td><td></td><td><a href="https://dxbcompass.com/ru/sales/dubai-international-airport/">Dubai International Airport</a></td></tr>
+<tr><td></td><td></td><td><a href="https://dxbcompass.com/ru/sales/dubai-international-airport/">Dubai International Airport</a></td></tr>
+<tr><td></td><td></td><td><a href="https://dxbcompass.com/ru/sales/dubai-international-airport/">Dubai International Airport</a></td></tr>
+<tr><td></td><td></td><td><a href="https://dxbcompass.com/ru/sales/dubai-investment-park-first/">Dubai Investment Park First</a></td></tr>
+<tr><td></td><td></td><td><a href="https://dxbcompass.com/ru/sales/dubai-investment-park-first/">Dubai Investment Park First</a></td></tr>
+<tr><td>DIP Mosque</td><td></td><td><a href="https://dxbcompass.com/ru/sales/dubai-investment-park-first/">Dubai Investment Park First</a></td></tr>
+<tr><td></td><td>Street 53</td><td><a href="https://dxbcompass.com/ru/sales/dubai-investment-park-second/">Dubai Investment Park Second</a></td></tr>
+<tr><td></td><td></td><td><a href="https://dxbcompass.com/ru/sales/dubai-marina/">Dubai Marina</a></td></tr>
+<tr><td>Al Rahim Mosque</td><td></td><td><a href="https://dxbcompass.com/ru/sales/dubai-marina/">Dubai Marina</a></td></tr>
+<tr><td></td><td></td><td><a href="https://dxbcompass.com/ru/sales/dubai-science-park/">Dubai Science Park</a></td></tr>
+<tr><td></td><td></td><td><a href="https://dxbcompass.com/ru/sales/dubai-science-park/">Dubai Science Park</a></td></tr>
+<tr><td></td><td></td><td><a href="https://dxbcompass.com/ru/sales/dubai-south/">Dubai South</a></td></tr>
+<tr><td></td><td></td><td><a href="https://dxbcompass.com/ru/sales/dubai-sports-city/">Dubai Sports City</a></td></tr>
+<tr><td></td><td></td><td><a href="https://dxbcompass.com/ru/sales/dubai-sports-city/">Dubai Sports City</a></td></tr>
+<tr><td></td><td></td><td><a href="https://dxbcompass.com/ru/sales/dubai-studio-city/">Dubai Studio City</a></td></tr>
+<tr><td></td><td></td><td><a href="https://dxbcompass.com/ru/sales/dubai-studio-city/">Dubai Studio City</a></td></tr>
+<tr><td></td><td></td><td><a href="https://dxbcompass.com/ru/sales/emirates-living/">Emirates Living</a></td></tr>
+<tr><td></td><td></td><td><a href="https://dxbcompass.com/ru/sales/ghadeer-al-tair/">Ghadeer Al tair</a></td></tr>
+<tr><td></td><td></td><td><a href="https://dxbcompass.com/ru/sales/ghadeer-al-tair/">Ghadeer Al tair</a></td></tr>
+<tr><td></td><td></td><td><a href="https://dxbcompass.com/ru/sales/ghadeer-al-tair/">Ghadeer Al tair</a></td></tr>
+<tr><td>Masjid Khadija Al Kubra</td><td></td><td><a href="https://dxbcompass.com/ru/sales/ghadeer-al-tair/">Ghadeer Al tair</a></td></tr>
+<tr><td>مسجد خديجة الكبرى</td><td></td><td><a href="https://dxbcompass.com/ru/sales/ghadeer-al-tair/">Ghadeer Al tair</a></td></tr>
+<tr><td>The Endurance Masjid</td><td></td><td><a href="https://dxbcompass.com/ru/sales/ghadeer-barashy/">Ghadeer Barashy</a></td></tr>
+<tr><td></td><td></td><td><a href="https://dxbcompass.com/ru/sales/grayteesah/">Grayteesah</a></td></tr>
+<tr><td></td><td></td><td><a href="https://dxbcompass.com/ru/sales/hatta/">Hatta</a></td></tr>
+<tr><td></td><td></td><td><a href="https://dxbcompass.com/ru/sales/hatta/">Hatta</a></td></tr>
+<tr><td></td><td></td><td><a href="https://dxbcompass.com/ru/sales/hatta/">Hatta</a></td></tr>
+<tr><td></td><td></td><td><a href="https://dxbcompass.com/ru/sales/hatta/">Hatta</a></td></tr>
+<tr><td></td><td></td><td><a href="https://dxbcompass.com/ru/sales/hatta/">Hatta</a></td></tr>
+<tr><td></td><td></td><td><a href="https://dxbcompass.com/ru/sales/hatta/">Hatta</a></td></tr>
+<tr><td></td><td></td><td><a href="https://dxbcompass.com/ru/sales/hatta/">Hatta</a></td></tr>
+<tr><td></td><td></td><td><a href="https://dxbcompass.com/ru/sales/hatta/">Hatta</a></td></tr>
+<tr><td></td><td></td><td><a href="https://dxbcompass.com/ru/sales/hatta/">Hatta</a></td></tr>
+<tr><td></td><td></td><td><a href="https://dxbcompass.com/ru/sales/hatta/">Hatta</a></td></tr>
+<tr><td></td><td></td><td><a href="https://dxbcompass.com/ru/sales/hatta/">Hatta</a></td></tr>
+<tr><td></td><td></td><td><a href="https://dxbcompass.com/ru/sales/hatta/">Hatta</a></td></tr>
+<tr><td></td><td></td><td><a href="https://dxbcompass.com/ru/sales/hatta/">Hatta</a></td></tr>
+<tr><td></td><td></td><td><a href="https://dxbcompass.com/ru/sales/hatta/">Hatta</a></td></tr>
+<tr><td></td><td></td><td><a href="https://dxbcompass.com/ru/sales/hatta/">Hatta</a></td></tr>
+<tr><td></td><td></td><td><a href="https://dxbcompass.com/ru/sales/hatta/">Hatta</a></td></tr>
+<tr><td></td><td></td><td><a href="https://dxbcompass.com/ru/sales/hatta/">Hatta</a></td></tr>
+<tr><td></td><td></td><td><a href="https://dxbcompass.com/ru/sales/hatta/">Hatta</a></td></tr>
+<tr><td></td><td></td><td><a href="https://dxbcompass.com/ru/sales/hatta/">Hatta</a></td></tr>
+<tr><td></td><td></td><td><a href="https://dxbcompass.com/ru/sales/hatta/">Hatta</a></td></tr>
+<tr><td></td><td></td><td><a href="https://dxbcompass.com/ru/sales/hatta/">Hatta</a></td></tr>
+<tr><td></td><td></td><td><a href="https://dxbcompass.com/ru/sales/hatta/">Hatta</a></td></tr>
+<tr><td></td><td></td><td><a href="https://dxbcompass.com/ru/sales/hatta/">Hatta</a></td></tr>
+<tr><td></td><td></td><td><a href="https://dxbcompass.com/ru/sales/hatta/">Hatta</a></td></tr>
+<tr><td></td><td></td><td><a href="https://dxbcompass.com/ru/sales/hatta/">Hatta</a></td></tr>
+<tr><td></td><td></td><td><a href="https://dxbcompass.com/ru/sales/hatta/">Hatta</a></td></tr>
+<tr><td></td><td></td><td><a href="https://dxbcompass.com/ru/sales/hatta/">Hatta</a></td></tr>
+<tr><td></td><td></td><td><a href="https://dxbcompass.com/ru/sales/hatta/">Hatta</a></td></tr>
+<tr><td></td><td></td><td><a href="https://dxbcompass.com/ru/sales/hatta/">Hatta</a></td></tr>
+<tr><td></td><td></td><td><a href="https://dxbcompass.com/ru/sales/hatta/">Hatta</a></td></tr>
+<tr><td>مسجد سهيلة</td><td></td><td><a href="https://dxbcompass.com/ru/sales/hatta/">Hatta</a></td></tr>
+<tr><td></td><td></td><td><a href="https://dxbcompass.com/ru/sales/hor-al-anz/">Hor Al Anz</a></td></tr>
+<tr><td></td><td></td><td><a href="https://dxbcompass.com/ru/sales/hor-al-anz/">Hor Al Anz</a></td></tr>
+<tr><td></td><td></td><td><a href="https://dxbcompass.com/ru/sales/hor-al-anz/">Hor Al Anz</a></td></tr>
+<tr><td></td><td></td><td><a href="https://dxbcompass.com/ru/sales/hor-al-anz/">Hor Al Anz</a></td></tr>
+<tr><td></td><td></td><td><a href="https://dxbcompass.com/ru/sales/hor-al-anz/">Hor Al Anz</a></td></tr>
+<tr><td></td><td></td><td><a href="https://dxbcompass.com/ru/sales/hor-al-anz/">Hor Al Anz</a></td></tr>
+<tr><td></td><td></td><td><a href="https://dxbcompass.com/ru/sales/hor-al-anz/">Hor Al Anz</a></td></tr>
+<tr><td></td><td>13a Street</td><td><a href="https://dxbcompass.com/ru/sales/hor-al-anz/">Hor Al Anz</a></td></tr>
+<tr><td>مسجد سلامة صالح بن لوتاه رمز 222</td><td>طريق صلاح الدين</td><td><a href="https://dxbcompass.com/ru/sales/hor-al-anz/">Hor Al Anz</a></td></tr>
+<tr><td></td><td>شارع 24</td><td><a href="https://dxbcompass.com/ru/sales/hor-al-anz-east/">Hor Al Anz East</a></td></tr>
+<tr><td></td><td></td><td><a href="https://dxbcompass.com/ru/sales/hor-al-anz-east/">Hor Al Anz East</a></td></tr>
+<tr><td></td><td></td><td><a href="https://dxbcompass.com/ru/sales/hor-al-anz-east/">Hor Al Anz East</a></td></tr>
+<tr><td>Fathima Al Zarouni Masjid</td><td></td><td><a href="https://dxbcompass.com/ru/sales/hor-al-anz-east/">Hor Al Anz East</a></td></tr>
+<tr><td>Masjid Khalifa bin Sultan Mosque</td><td></td><td><a href="https://dxbcompass.com/ru/sales/hor-al-anz-east/">Hor Al Anz East</a></td></tr>
+<tr><td></td><td></td><td><a href="https://dxbcompass.com/ru/sales/impz-international-media-production-zone/">IMPZ (International Media Production Zone)</a></td></tr>
+<tr><td></td><td></td><td><a href="https://dxbcompass.com/ru/sales/impz-international-media-production-zone/">IMPZ (International Media Production Zone)</a></td></tr>
+<tr><td></td><td>building=yes name=恒信会计事务公司 name:en=Heng Xin Accounting and bookkeeping source=Kaart Ground Survey 2017</td><td><a href="https://dxbcompass.com/ru/sales/international-city-phase-1/">International City Phase 1</a></td></tr>
+<tr><td></td><td></td><td><a href="https://dxbcompass.com/ru/sales/international-city-phase-1/">International City Phase 1</a></td></tr>
+<tr><td></td><td></td><td><a href="https://dxbcompass.com/ru/sales/international-city-phase-1/">International City Phase 1</a></td></tr>
+<tr><td></td><td></td><td><a href="https://dxbcompass.com/ru/sales/international-city-phase-1/">International City Phase 1</a></td></tr>
+<tr><td></td><td></td><td><a href="https://dxbcompass.com/ru/sales/international-city-phase-1/">International City Phase 1</a></td></tr>
+<tr><td></td><td></td><td><a href="https://dxbcompass.com/ru/sales/international-city-phase-1/">International City Phase 1</a></td></tr>
+<tr><td>Rashed Ahmad Lootah</td><td></td><td><a href="https://dxbcompass.com/ru/sales/international-city-phase-1/">International City Phase 1</a></td></tr>
+<tr><td>shalila W/H</td><td></td><td><a href="https://dxbcompass.com/ru/sales/international-city-phase-1/">International City Phase 1</a></td></tr>
+<tr><td>مسجد</td><td></td><td><a href="https://dxbcompass.com/ru/sales/international-city-phase-1/">International City Phase 1</a></td></tr>
+<tr><td></td><td></td><td><a href="https://dxbcompass.com/ru/sales/international-city-phase-3/">International City Phase 3</a></td></tr>
+<tr><td></td><td></td><td><a href="https://dxbcompass.com/ru/sales/international-city-phase-3/">International City Phase 3</a></td></tr>
+<tr><td></td><td></td><td><a href="https://dxbcompass.com/ru/sales/jlt-jumeirah-lake-towers/">JLT (Jumeirah Lake Towers)</a></td></tr>
+<tr><td></td><td></td><td><a href="https://dxbcompass.com/ru/sales/jlt-jumeirah-lake-towers/">JLT (Jumeirah Lake Towers)</a></td></tr>
+<tr><td></td><td>Gardens Boulevard</td><td><a href="https://dxbcompass.com/ru/sales/jabal-ali-first/">Jabal Ali First</a></td></tr>
+<tr><td></td><td></td><td><a href="https://dxbcompass.com/ru/sales/jabal-ali-first/">Jabal Ali First</a></td></tr>
+<tr><td></td><td></td><td><a href="https://dxbcompass.com/ru/sales/jabal-ali-industrial-first/">Jabal Ali Industrial First</a></td></tr>
+<tr><td></td><td></td><td><a href="https://dxbcompass.com/ru/sales/jabal-ali-industrial-first/">Jabal Ali Industrial First</a></td></tr>
+<tr><td></td><td></td><td><a href="https://dxbcompass.com/ru/sales/jabal-ali-industrial-first/">Jabal Ali Industrial First</a></td></tr>
+<tr><td></td><td></td><td><a href="https://dxbcompass.com/ru/sales/jabal-ali-industrial-second/">Jabal Ali Industrial Second</a></td></tr>
+<tr><td></td><td></td><td><a href="https://dxbcompass.com/ru/rents/jabal-ali-second/">Jabal Ali Second</a></td></tr>
+<tr><td></td><td></td><td><a href="https://dxbcompass.com/ru/sales/jebel-ali-hills/">Jebel Ali Hills</a></td></tr>
+<tr><td></td><td></td><td><a href="https://dxbcompass.com/ru/sales/jebel-ali-hills/">Jebel Ali Hills</a></td></tr>
+<tr><td></td><td></td><td><a href="https://dxbcompass.com/ru/sales/jebel-ali-hills/">Jebel Ali Hills</a></td></tr>
+<tr><td></td><td></td><td><a href="https://dxbcompass.com/ru/sales/jebel-ali-hills/">Jebel Ali Hills</a></td></tr>
+<tr><td></td><td></td><td><a href="https://dxbcompass.com/ru/sales/jebel-ali-hills/">Jebel Ali Hills</a></td></tr>
+<tr><td></td><td></td><td><a href="https://dxbcompass.com/ru/sales/jebel-ali-hills/">Jebel Ali Hills</a></td></tr>
+<tr><td></td><td></td><td><a href="https://dxbcompass.com/ru/sales/jebel-ali-hills/">Jebel Ali Hills</a></td></tr>
+<tr><td>Motiongate mosque</td><td></td><td><a href="https://dxbcompass.com/ru/sales/jebel-ali-hills/">Jebel Ali Hills</a></td></tr>
+<tr><td></td><td>Jumeira Street</td><td><a href="https://dxbcompass.com/ru/sales/jumeirah-first/">Jumeirah First</a></td></tr>
+<tr><td></td><td>91a شارع</td><td><a href="https://dxbcompass.com/ru/sales/jumeirah-first/">Jumeirah First</a></td></tr>
+<tr><td></td><td></td><td><a href="https://dxbcompass.com/ru/sales/jumeirah-first/">Jumeirah First</a></td></tr>
+<tr><td></td><td>22b Street</td><td><a href="https://dxbcompass.com/ru/sales/jumeirah-first/">Jumeirah First</a></td></tr>
+<tr><td></td><td></td><td><a href="https://dxbcompass.com/ru/sales/jumeirah-first/">Jumeirah First</a></td></tr>
+<tr><td>Jumeirah Mosque</td><td></td><td><a href="https://dxbcompass.com/ru/sales/jumeirah-first/">Jumeirah First</a></td></tr>
+<tr><td>المسجد الإيراني</td><td></td><td><a href="https://dxbcompass.com/ru/sales/jumeirah-first/">Jumeirah First</a></td></tr>
+<tr><td>مسجد الإمام الحسين الإيراني</td><td></td><td><a href="https://dxbcompass.com/ru/sales/jumeirah-first/">Jumeirah First</a></td></tr>
+<tr><td></td><td></td><td><a href="https://dxbcompass.com/ru/sales/jumeirah-park/">Jumeirah Park</a></td></tr>
+<tr><td>Jumeirah Park</td><td></td><td><a href="https://dxbcompass.com/ru/sales/jumeirah-park/">Jumeirah Park</a></td></tr>
+<tr><td></td><td></td><td><a href="https://dxbcompass.com/ru/sales/jumeirah-second/">Jumeirah Second</a></td></tr>
+<tr><td></td><td>Jumeira Street</td><td><a href="https://dxbcompass.com/ru/sales/jumeirah-second/">Jumeirah Second</a></td></tr>
+<tr><td></td><td>16th Street</td><td><a href="https://dxbcompass.com/ru/sales/jumeirah-second/">Jumeirah Second</a></td></tr>
+<tr><td></td><td></td><td><a href="https://dxbcompass.com/ru/sales/jumeirah-second/">Jumeirah Second</a></td></tr>
+<tr><td></td><td></td><td><a href="https://dxbcompass.com/ru/sales/jumeirah-third/">Jumeirah Third</a></td></tr>
+<tr><td></td><td></td><td><a href="https://dxbcompass.com/ru/sales/jumeirah-third/">Jumeirah Third</a></td></tr>
+<tr><td></td><td></td><td><a href="https://dxbcompass.com/ru/sales/jumeirah-third/">Jumeirah Third</a></td></tr>
+<tr><td></td><td></td><td><a href="https://dxbcompass.com/ru/sales/jumeirah-third/">Jumeirah Third</a></td></tr>
+<tr><td></td><td>شارع جميرا</td><td><a href="https://dxbcompass.com/ru/sales/jumeirah-third/">Jumeirah Third</a></td></tr>
+<tr><td></td><td></td><td><a href="https://dxbcompass.com/ru/sales/jumeirah-third/">Jumeirah Third</a></td></tr>
+<tr><td></td><td>Jumeira Street</td><td><a href="https://dxbcompass.com/ru/sales/jumeirah-third/">Jumeirah Third</a></td></tr>
+<tr><td></td><td>Jumeira Street</td><td><a href="https://dxbcompass.com/ru/sales/jumeirah-third/">Jumeirah Third</a></td></tr>
+<tr><td></td><td>Al Jesh Street</td><td><a href="https://dxbcompass.com/ru/sales/jumeirah-third/">Jumeirah Third</a></td></tr>
+<tr><td></td><td></td><td><a href="https://dxbcompass.com/ru/sales/jumeirah-third/">Jumeirah Third</a></td></tr>
+<tr><td>Al Safa Mosque</td><td></td><td><a href="https://dxbcompass.com/ru/sales/jumeirah-third/">Jumeirah Third</a></td></tr>
+<tr><td></td><td>Street 12</td><td><a href="https://dxbcompass.com/ru/sales/jumeirah-village-circle/">Jumeirah Village Circle</a></td></tr>
+<tr><td></td><td></td><td><a href="https://dxbcompass.com/ru/sales/jumeirah-village-triangle/">Jumeirah Village Triangle</a></td></tr>
+<tr><td></td><td></td><td><a href="https://dxbcompass.com/ru/sales/mbr-city-district-1/">MBR City District 1</a></td></tr>
+<tr><td></td><td></td><td><a href="https://dxbcompass.com/ru/sales/madinat-dubai-almelaheyah/">Madinat Dubai Almelaheyah</a></td></tr>
+<tr><td></td><td></td><td><a href="https://dxbcompass.com/ru/sales/madinat-dubai-almelaheyah/">Madinat Dubai Almelaheyah</a></td></tr>
+<tr><td></td><td></td><td><a href="https://dxbcompass.com/ru/sales/madinat-dubai-almelaheyah/">Madinat Dubai Almelaheyah</a></td></tr>
+<tr><td>Al Ettihad</td><td></td><td><a href="https://dxbcompass.com/ru/sales/madinat-dubai-almelaheyah/">Madinat Dubai Almelaheyah</a></td></tr>
+<tr><td></td><td>شارع الشيخ محمد بن زايد</td><td><a href="https://dxbcompass.com/ru/sales/madinat-hind-3/">Madinat Hind 3</a></td></tr>
+<tr><td></td><td></td><td><a href="https://dxbcompass.com/ru/sales/mankhool/">Mankhool</a></td></tr>
+<tr><td></td><td></td><td><a href="https://dxbcompass.com/ru/sales/mankhool/">Mankhool</a></td></tr>
+<tr><td></td><td></td><td><a href="https://dxbcompass.com/ru/sales/mankhool/">Mankhool</a></td></tr>
+<tr><td></td><td></td><td><a href="https://dxbcompass.com/ru/sales/mankhool/">Mankhool</a></td></tr>
+<tr><td>Musallah Al Eid</td><td></td><td><a href="https://dxbcompass.com/ru/sales/mankhool/">Mankhool</a></td></tr>
+<tr><td>Prayer Room</td><td></td><td><a href="https://dxbcompass.com/ru/sales/mankhool/">Mankhool</a></td></tr>
+<tr><td></td><td></td><td><a href="https://dxbcompass.com/ru/sales/margham/">Margham</a></td></tr>
+<tr><td></td><td></td><td><a href="https://dxbcompass.com/ru/sales/mena-jabal-ali/">Mena Jabal Ali</a></td></tr>
+<tr><td></td><td></td><td><a href="https://dxbcompass.com/ru/sales/mena-jabal-ali/">Mena Jabal Ali</a></td></tr>
+<tr><td></td><td></td><td><a href="https://dxbcompass.com/ru/sales/mena-jabal-ali/">Mena Jabal Ali</a></td></tr>
+<tr><td></td><td></td><td><a href="https://dxbcompass.com/ru/sales/mena-jabal-ali/">Mena Jabal Ali</a></td></tr>
+<tr><td></td><td></td><td><a href="https://dxbcompass.com/ru/sales/mena-jabal-ali/">Mena Jabal Ali</a></td></tr>
+<tr><td></td><td></td><td><a href="https://dxbcompass.com/ru/sales/mena-jabal-ali/">Mena Jabal Ali</a></td></tr>
+<tr><td></td><td></td><td><a href="https://dxbcompass.com/ru/sales/mena-jabal-ali/">Mena Jabal Ali</a></td></tr>
+<tr><td></td><td></td><td><a href="https://dxbcompass.com/ru/sales/mena-jabal-ali/">Mena Jabal Ali</a></td></tr>
+<tr><td></td><td></td><td><a href="https://dxbcompass.com/ru/sales/mena-jabal-ali/">Mena Jabal Ali</a></td></tr>
+<tr><td>East Mosque</td><td></td><td><a href="https://dxbcompass.com/ru/sales/mena-jabal-ali/">Mena Jabal Ali</a></td></tr>
+<tr><td></td><td></td><td><a href="https://dxbcompass.com/ru/sales/meydan/">Meydan</a></td></tr>
+<tr><td></td><td></td><td><a href="https://dxbcompass.com/ru/sales/meydan/">Meydan</a></td></tr>
+<tr><td></td><td></td><td><a href="https://dxbcompass.com/ru/sales/meydan/">Meydan</a></td></tr>
+<tr><td></td><td></td><td><a href="https://dxbcompass.com/ru/sales/meydan/">Meydan</a></td></tr>
+<tr><td></td><td></td><td><a href="https://dxbcompass.com/ru/sales/meydan/">Meydan</a></td></tr>
+<tr><td></td><td></td><td><a href="https://dxbcompass.com/ru/sales/meydan/">Meydan</a></td></tr>
+<tr><td></td><td></td><td><a href="https://dxbcompass.com/ru/sales/meydan/">Meydan</a></td></tr>
+<tr><td></td><td></td><td><a href="https://dxbcompass.com/ru/sales/meydan/">Meydan</a></td></tr>
+<tr><td></td><td></td><td><a href="https://dxbcompass.com/ru/sales/mirdif/">Mirdif</a></td></tr>
+<tr><td></td><td></td><td><a href="https://dxbcompass.com/ru/sales/mirdif/">Mirdif</a></td></tr>
+<tr><td></td><td></td><td><a href="https://dxbcompass.com/ru/sales/mirdif/">Mirdif</a></td></tr>
+<tr><td></td><td></td><td><a href="https://dxbcompass.com/ru/sales/mirdif/">Mirdif</a></td></tr>
+<tr><td>Bilal Mosque</td><td></td><td><a href="https://dxbcompass.com/ru/sales/mirdif/">Mirdif</a></td></tr>
+<tr><td>جامع مردف الكبير</td><td></td><td><a href="https://dxbcompass.com/ru/sales/mirdif/">Mirdif</a></td></tr>
+<tr><td></td><td></td><td><a href="https://dxbcompass.com/ru/sales/motor-city/">Motor City</a></td></tr>
+<tr><td></td><td></td><td><a href="https://dxbcompass.com/ru/sales/muhaisanah-first/">Muhaisanah First</a></td></tr>
+<tr><td></td><td></td><td><a href="https://dxbcompass.com/ru/sales/muhaisanah-first/">Muhaisanah First</a></td></tr>
+<tr><td></td><td>9c Street</td><td><a href="https://dxbcompass.com/ru/sales/muhaisanah-first/">Muhaisanah First</a></td></tr>
+<tr><td></td><td>40c Street</td><td><a href="https://dxbcompass.com/ru/sales/muhaisanah-first/">Muhaisanah First</a></td></tr>
+<tr><td></td><td></td><td><a href="https://dxbcompass.com/ru/sales/muhaisanah-first/">Muhaisanah First</a></td></tr>
+<tr><td>Mohammed bin Nasser Mosque</td><td></td><td><a href="https://dxbcompass.com/ru/sales/muhaisanah-first/">Muhaisanah First</a></td></tr>
+<tr><td></td><td></td><td><a href="https://dxbcompass.com/ru/sales/muhaisanah-fourth/">Muhaisanah Fourth</a></td></tr>
+<tr><td></td><td></td><td><a href="https://dxbcompass.com/ru/sales/muhaisanah-fourth/">Muhaisanah Fourth</a></td></tr>
+<tr><td>Al Markaz Al Osmani</td><td></td><td><a href="https://dxbcompass.com/ru/sales/muhaisanah-fourth/">Muhaisanah Fourth</a></td></tr>
+<tr><td>Ali Al-Shanqeeti Mosque</td><td></td><td><a href="https://dxbcompass.com/ru/sales/muhaisanah-fourth/">Muhaisanah Fourth</a></td></tr>
+<tr><td>Ali Al-Shanqeeti Mosque</td><td></td><td><a href="https://dxbcompass.com/ru/sales/muhaisanah-fourth/">Muhaisanah Fourth</a></td></tr>
+<tr><td>Masjid Abdul Rehman Al Khateet</td><td></td><td><a href="https://dxbcompass.com/ru/sales/muhaisanah-fourth/">Muhaisanah Fourth</a></td></tr>
+<tr><td>Masjid Abdul Rehman Al Khateet</td><td></td><td><a href="https://dxbcompass.com/ru/sales/muhaisanah-fourth/">Muhaisanah Fourth</a></td></tr>
+<tr><td>Masjid Mosque</td><td></td><td><a href="https://dxbcompass.com/ru/sales/muhaisanah-fourth/">Muhaisanah Fourth</a></td></tr>
+<tr><td>Masjid Muhaisnah 4</td><td>دبي</td><td><a href="https://dxbcompass.com/ru/sales/muhaisanah-fourth/">Muhaisanah Fourth</a></td></tr>
+<tr><td></td><td></td><td><a href="https://dxbcompass.com/ru/sales/muhaisanah-second/">Muhaisanah Second</a></td></tr>
+<tr><td></td><td></td><td><a href="https://dxbcompass.com/ru/sales/muhaisanah-second/">Muhaisanah Second</a></td></tr>
+<tr><td>Masjid Abu Dhar Al Ghifari</td><td></td><td><a href="https://dxbcompass.com/ru/sales/muhaisanah-second/">Muhaisanah Second</a></td></tr>
+<tr><td></td><td></td><td><a href="https://dxbcompass.com/ru/sales/muhaisanah-third/">Muhaisanah Third</a></td></tr>
+<tr><td></td><td></td><td><a href="https://dxbcompass.com/ru/sales/muhaisanah-third/">Muhaisanah Third</a></td></tr>
+<tr><td></td><td></td><td><a href="https://dxbcompass.com/ru/sales/muhaisanah-third/">Muhaisanah Third</a></td></tr>
+<tr><td>Masjid Fatima Al Zahra</td><td></td><td><a href="https://dxbcompass.com/ru/sales/muhaisanah-third/">Muhaisanah Third</a></td></tr>
+<tr><td></td><td></td><td><a href="https://dxbcompass.com/ru/sales/mushrif/">Mushrif</a></td></tr>
+<tr><td></td><td></td><td><a href="https://dxbcompass.com/ru/sales/mushrif/">Mushrif</a></td></tr>
+<tr><td></td><td></td><td><a href="https://dxbcompass.com/ru/sales/nad-al-hamar/">Nad Al Hamar</a></td></tr>
+<tr><td></td><td></td><td><a href="https://dxbcompass.com/ru/sales/nad-al-hamar/">Nad Al Hamar</a></td></tr>
+<tr><td></td><td></td><td><a href="https://dxbcompass.com/ru/sales/nad-al-hamar/">Nad Al Hamar</a></td></tr>
+<tr><td></td><td></td><td><a href="https://dxbcompass.com/ru/sales/nad-al-hamar/">Nad Al Hamar</a></td></tr>
+<tr><td></td><td></td><td><a href="https://dxbcompass.com/ru/sales/nad-al-hamar/">Nad Al Hamar</a></td></tr>
+<tr><td></td><td></td><td><a href="https://dxbcompass.com/ru/sales/nad-al-hamar/">Nad Al Hamar</a></td></tr>
+<tr><td></td><td>33 Street</td><td><a href="https://dxbcompass.com/ru/sales/nad-al-hamar/">Nad Al Hamar</a></td></tr>
+<tr><td></td><td>57b Street</td><td><a href="https://dxbcompass.com/ru/sales/nad-al-hamar/">Nad Al Hamar</a></td></tr>
+<tr><td></td><td>65a Street</td><td><a href="https://dxbcompass.com/ru/sales/nad-al-hamar/">Nad Al Hamar</a></td></tr>
+<tr><td></td><td>10d Street</td><td><a href="https://dxbcompass.com/ru/sales/nad-al-hamar/">Nad Al Hamar</a></td></tr>
+<tr><td></td><td>57b Street</td><td><a href="https://dxbcompass.com/ru/sales/nad-al-hamar/">Nad Al Hamar</a></td></tr>
+<tr><td></td><td>34b Street</td><td><a href="https://dxbcompass.com/ru/sales/nad-al-hamar/">Nad Al Hamar</a></td></tr>
+<tr><td></td><td></td><td><a href="https://dxbcompass.com/ru/sales/nad-al-hamar/">Nad Al Hamar</a></td></tr>
+<tr><td>Eid Prayer Area</td><td></td><td><a href="https://dxbcompass.com/ru/sales/nad-al-hamar/">Nad Al Hamar</a></td></tr>
+<tr><td></td><td></td><td><a href="https://dxbcompass.com/ru/sales/nad-al-shiba-fourth/">Nad Al Shiba Fourth</a></td></tr>
+<tr><td></td><td></td><td><a href="https://dxbcompass.com/ru/sales/nad-al-shiba-fourth/">Nad Al Shiba Fourth</a></td></tr>
+<tr><td></td><td></td><td><a href="https://dxbcompass.com/ru/sales/nad-al-shiba-fourth/">Nad Al Shiba Fourth</a></td></tr>
+<tr><td></td><td></td><td><a href="https://dxbcompass.com/ru/sales/nad-al-shiba-second/">Nad Al Shiba Second</a></td></tr>
+<tr><td></td><td></td><td><a href="https://dxbcompass.com/ru/sales/nad-al-shiba-second/">Nad Al Shiba Second</a></td></tr>
+<tr><td></td><td></td><td><a href="https://dxbcompass.com/ru/sales/nad-al-shiba-second/">Nad Al Shiba Second</a></td></tr>
+<tr><td></td><td></td><td><a href="https://dxbcompass.com/ru/sales/nad-al-shiba-second/">Nad Al Shiba Second</a></td></tr>
+<tr><td></td><td>9b Street</td><td><a href="https://dxbcompass.com/ru/sales/nad-shamma/">Nad Shamma</a></td></tr>
+<tr><td></td><td></td><td><a href="https://dxbcompass.com/ru/sales/naif/">Naif</a></td></tr>
+<tr><td>Al Futtaim Mosque</td><td></td><td><a href="https://dxbcompass.com/ru/sales/naif/">Naif</a></td></tr>
+<tr><td></td><td></td><td><a href="https://dxbcompass.com/ru/sales/oud-metha/">Oud Metha</a></td></tr>
+<tr><td></td><td></td><td><a href="https://dxbcompass.com/ru/sales/oud-metha/">Oud Metha</a></td></tr>
+<tr><td></td><td></td><td><a href="https://dxbcompass.com/ru/sales/oud-metha/">Oud Metha</a></td></tr>
+<tr><td></td><td></td><td><a href="https://dxbcompass.com/ru/sales/oud-metha/">Oud Metha</a></td></tr>
+<tr><td>Abdulrahman Siddik Mosque</td><td></td><td><a href="https://dxbcompass.com/ru/sales/palm-jumeirah/">Palm Jumeirah</a></td></tr>
+<tr><td></td><td></td><td><a href="https://dxbcompass.com/ru/sales/port-saeed/">Port Saeed</a></td></tr>
+<tr><td>Por Saeed Al Sharqy Masjid</td><td></td><td><a href="https://dxbcompass.com/ru/sales/port-saeed/">Port Saeed</a></td></tr>
+<tr><td>Port Saeed Mosque</td><td></td><td><a href="https://dxbcompass.com/ru/sales/port-saeed/">Port Saeed</a></td></tr>
+<tr><td>Sheikh Hamdan Mosque</td><td></td><td><a href="https://dxbcompass.com/ru/sales/port-saeed/">Port Saeed</a></td></tr>
+<tr><td></td><td></td><td><a href="https://dxbcompass.com/ru/sales/ras-al-khor-industrial-third/">Ras Al Khor Industrial Third</a></td></tr>
+<tr><td></td><td></td><td><a href="https://dxbcompass.com/ru/sales/ras-al-khor-industrial-third/">Ras Al Khor Industrial Third</a></td></tr>
+<tr><td></td><td></td><td><a href="https://dxbcompass.com/ru/sales/ras-al-khor-industrial-third/">Ras Al Khor Industrial Third</a></td></tr>
+<tr><td></td><td></td><td><a href="https://dxbcompass.com/ru/sales/ras-al-khor-industrial-third/">Ras Al Khor Industrial Third</a></td></tr>
+<tr><td></td><td></td><td><a href="https://dxbcompass.com/ru/sales/ras-al-khor-industrial-third/">Ras Al Khor Industrial Third</a></td></tr>
+<tr><td></td><td></td><td><a href="https://dxbcompass.com/ru/sales/ras-al-khor-industrial-third/">Ras Al Khor Industrial Third</a></td></tr>
+<tr><td></td><td></td><td><a href="https://dxbcompass.com/ru/sales/ras-al-khor-industrial-third/">Ras Al Khor Industrial Third</a></td></tr>
+<tr><td></td><td></td><td><a href="https://dxbcompass.com/ru/sales/ras-al-khor-industrial-third/">Ras Al Khor Industrial Third</a></td></tr>
+<tr><td>Abdul Rahman Mohammed Kiteet Mosque</td><td></td><td><a href="https://dxbcompass.com/ru/sales/ras-al-khor-industrial-third/">Ras Al Khor Industrial Third</a></td></tr>
+<tr><td>Al Samari Masjid</td><td></td><td><a href="https://dxbcompass.com/ru/sales/ras-al-khor-industrial-third/">Ras Al Khor Industrial Third</a></td></tr>
+<tr><td></td><td></td><td><a href="https://dxbcompass.com/ru/sales/rega-al-buteen/">Rega Al Buteen</a></td></tr>
+<tr><td></td><td></td><td><a href="https://dxbcompass.com/ru/sales/remraam/">Remraam</a></td></tr>
+<tr><td></td><td></td><td><a href="https://dxbcompass.com/ru/sales/saih-aldahal/">Saih Aldahal</a></td></tr>
+<tr><td></td><td></td><td><a href="https://dxbcompass.com/ru/sales/saih-shuaib-2/">Saih Shuaib 2</a></td></tr>
+<tr><td></td><td></td><td><a href="https://dxbcompass.com/ru/sales/silicon-oasis/">Silicon Oasis</a></td></tr>
+<tr><td></td><td></td><td><a href="https://dxbcompass.com/ru/sales/silicon-oasis/">Silicon Oasis</a></td></tr>
+<tr><td></td><td>Sheikh Mohammed bin Zayed Road</td><td><a href="https://dxbcompass.com/ru/sales/silicon-oasis/">Silicon Oasis</a></td></tr>
+<tr><td>Al Waha 2</td><td></td><td><a href="https://dxbcompass.com/ru/sales/silicon-oasis/">Silicon Oasis</a></td></tr>
+<tr><td>Al Waha Masjid</td><td></td><td><a href="https://dxbcompass.com/ru/sales/silicon-oasis/">Silicon Oasis</a></td></tr>
+<tr><td>Shaikha Ali Mosque</td><td>54 Street</td><td><a href="https://dxbcompass.com/ru/sales/silicon-oasis/">Silicon Oasis</a></td></tr>
+<tr><td>Souq Extra Mosque</td><td></td><td><a href="https://dxbcompass.com/ru/sales/silicon-oasis/">Silicon Oasis</a></td></tr>
+<tr><td>Al Madinah Al Mustadama</td><td></td><td><a href="https://dxbcompass.com/ru/sales/sustainable-city/">Sustainable City</a></td></tr>
+<tr><td></td><td></td><td><a href="https://dxbcompass.com/ru/sales/the-greens/">The Greens</a></td></tr>
+<tr><td>Mosque</td><td></td><td><a href="https://dxbcompass.com/ru/sales/the-greens/">The Greens</a></td></tr>
+<tr><td>Aysha Um Almommineen</td><td></td><td><a href="https://dxbcompass.com/ru/sales/the-villa/">The Villa</a></td></tr>
+<tr><td></td><td></td><td><a href="https://dxbcompass.com/ru/sales/um-al-sheif/">Um Al Sheif</a></td></tr>
+<tr><td></td><td></td><td><a href="https://dxbcompass.com/ru/sales/um-al-sheif/">Um Al Sheif</a></td></tr>
+<tr><td>jibreel</td><td></td><td><a href="https://dxbcompass.com/ru/sales/um-al-sheif/">Um Al Sheif</a></td></tr>
+<tr><td></td><td>دبي</td><td><a href="https://dxbcompass.com/ru/sales/um-hurair-first/">Um Hurair First</a></td></tr>
+<tr><td></td><td></td><td><a href="https://dxbcompass.com/ru/sales/um-hurair-second/">Um Hurair Second</a></td></tr>
+<tr><td></td><td></td><td><a href="https://dxbcompass.com/ru/sales/um-hurair-second/">Um Hurair Second</a></td></tr>
+<tr><td></td><td></td><td><a href="https://dxbcompass.com/ru/sales/um-hurair-second/">Um Hurair Second</a></td></tr>
+<tr><td></td><td></td><td><a href="https://dxbcompass.com/ru/sales/um-hurair-second/">Um Hurair Second</a></td></tr>
+<tr><td></td><td></td><td><a href="https://dxbcompass.com/ru/sales/um-hurair-second/">Um Hurair Second</a></td></tr>
+<tr><td></td><td></td><td><a href="https://dxbcompass.com/ru/sales/um-hurair-second/">Um Hurair Second</a></td></tr>
+<tr><td></td><td></td><td><a href="https://dxbcompass.com/ru/sales/um-ramool/">Um Ramool</a></td></tr>
+<tr><td></td><td></td><td><a href="https://dxbcompass.com/ru/sales/um-suqaim-first/">Um Suqaim First</a></td></tr>
+<tr><td></td><td>Al Ragay Street</td><td><a href="https://dxbcompass.com/ru/sales/um-suqaim-first/">Um Suqaim First</a></td></tr>
+<tr><td>Ahmed AlTayer Mosque</td><td>Jumeira Street</td><td><a href="https://dxbcompass.com/ru/sales/um-suqaim-first/">Um Suqaim First</a></td></tr>
+<tr><td></td><td></td><td><a href="https://dxbcompass.com/ru/sales/um-suqaim-second/">Um Suqaim Second</a></td></tr>
+<tr><td></td><td></td><td><a href="https://dxbcompass.com/ru/sales/um-suqaim-second/">Um Suqaim Second</a></td></tr>
+<tr><td></td><td></td><td><a href="https://dxbcompass.com/ru/sales/um-suqaim-third/">Um Suqaim Third</a></td></tr>
+<tr><td></td><td></td><td><a href="https://dxbcompass.com/ru/sales/um-suqaim-third/">Um Suqaim Third</a></td></tr>
+<tr><td></td><td></td><td><a href="https://dxbcompass.com/ru/sales/um-suqaim-third/">Um Suqaim Third</a></td></tr>
+<tr><td></td><td></td><td><a href="https://dxbcompass.com/ru/sales/wadi-al-amardi/">Wadi Al Amardi</a></td></tr>
+<tr><td></td><td></td><td><a href="https://dxbcompass.com/ru/sales/wadi-al-amardi/">Wadi Al Amardi</a></td></tr>
+<tr><td></td><td></td><td><a href="https://dxbcompass.com/ru/sales/wadi-al-safa-2/">Wadi Al Safa 2</a></td></tr>
+<tr><td></td><td></td><td><a href="https://dxbcompass.com/ru/sales/wadi-al-safa-3/">Wadi Al Safa 3</a></td></tr>
+<tr><td>Men's prayer room</td><td></td><td><a href="https://dxbcompass.com/ru/sales/wadi-al-safa-4/">Wadi Al Safa 4</a></td></tr>
+<tr><td></td><td></td><td><a href="https://dxbcompass.com/ru/sales/wadi-al-safa-5/">Wadi Al Safa 5</a></td></tr>
+<tr><td>Layan Mosque</td><td></td><td><a href="https://dxbcompass.com/ru/sales/wadi-al-safa-7/">Wadi Al Safa 7</a></td></tr>
+<tr><td>Al Muhsineen</td><td></td><td><a href="https://dxbcompass.com/ru/sales/warsan-fourth/">Warsan Fourth</a></td></tr>
+<tr><td></td><td></td><td><a href="https://dxbcompass.com/ru/sales/wasl-1/">Wasl 1</a></td></tr>
+<tr><td></td><td></td><td><a href="https://dxbcompass.com/ru/sales/wasl-gate/">Wasl Gate</a></td></tr>
+<tr><td></td><td></td><td><a href="https://dxbcompass.com/ru/sales/yaraah/">Yaraah</a></td></tr>
+<tr><td></td><td></td><td><a href="https://dxbcompass.com/ru/sales/za-abeel/">Za'abeel</a></td></tr>
+<tr><td></td><td></td><td><a href="https://dxbcompass.com/ru/sales/za-abeel/">Za'abeel</a></td></tr>
+<tr><td></td><td></td><td><a href="https://dxbcompass.com/ru/sales/za-abeel/">Za'abeel</a></td></tr>
+<tr><td></td><td></td><td><a href="https://dxbcompass.com/ru/sales/za-abeel/">Za'abeel</a></td></tr>
+<tr><td></td><td></td><td><a href="https://dxbcompass.com/ru/sales/za-abeel/">Za'abeel</a></td></tr>
+<tr><td>Burj Daman Masjid</td><td></td><td><a href="https://dxbcompass.com/ru/sales/za-abeel/">Za'abeel</a></td></tr>
+<tr><td></td><td></td><td><a href="https://dxbcompass.com/ru/sales/zaabeel-first/">Zaabeel First</a></td></tr>
+<tr><td></td><td></td><td><a href="https://dxbcompass.com/ru/sales/zaabeel-first/">Zaabeel First</a></td></tr>
+<tr><td></td><td></td><td><a href="https://dxbcompass.com/ru/sales/zaabeel-first/">Zaabeel First</a></td></tr>
+<tr><td></td><td></td><td><a href="https://dxbcompass.com/ru/sales/zaabeel-first/">Zaabeel First</a></td></tr>
+<tr><td></td><td></td><td>—</td></tr>
+<tr><td></td><td></td><td>—</td></tr>
+<tr><td></td><td></td><td>—</td></tr>
+<tr><td></td><td></td><td>—</td></tr>
+<tr><td></td><td></td><td>—</td></tr>
+<tr><td></td><td></td><td>—</td></tr>
+<tr><td></td><td></td><td>—</td></tr>
+<tr><td></td><td></td><td>—</td></tr>
+<tr><td></td><td></td><td>—</td></tr>
+<tr><td></td><td></td><td>—</td></tr>
+<tr><td></td><td></td><td>—</td></tr>
+</tbody>
+</table>
+  </div>
+
+  <div class="nav">
+    <a href="https://dxbcompass.com/ru/sales/?layers=mosques">← К карте</a>
+  </div>
+</div>
+</body>
+</html>

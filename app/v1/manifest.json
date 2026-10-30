@@ -1,0 +1,1386 @@
+{
+ "schema_version": "1.0",
+ "generated_at": "2026-10-29T17:42:46Z",
+ "data_as_of": "2026-10-27",
+ "files": {
+  "areas/abu-hail.json": {
+   "sha256": "d139d649dee0d7506d3d8462824c0d3eb8eaa6b25285a03de69f595b523110d4",
+   "bytes": 33763
+  },
+  "areas/al-asbaq.json": {
+   "sha256": "ac97f06d869011ea4ede7b38dc49cb883bada622ffeb78b7ca76c61001ff7ba2",
+   "bytes": 1935
+  },
+  "areas/al-athbah.json": {
+   "sha256": "0f4f30a4ead476d6405df8260c6c703007ad2cc1ca88b835e57de0877bb2318a",
+   "bytes": 5739
+  },
+  "areas/al-aweer-first.json": {
+   "sha256": "783a32fdafe6d2abb40dad417b5467a5d22b8eefed7142a5dbe8d6a502de20af",
+   "bytes": 15530
+  },
+  "areas/al-aweer-second.json": {
+   "sha256": "36a3b7d4b59e4acc15983159cf3ce19176d6c15774d9acfebfbe15c0b806c878",
+   "bytes": 12743
+  },
+  "areas/al-aweer.json": {
+   "sha256": "97507dcf6cdd795387eda4f8f67e744c06235fae4790c917bca3a0d36b707354",
+   "bytes": 2760
+  },
+  "areas/al-bada.json": {
+   "sha256": "83a2d69836c216aee70a362a01420904c7f49c754054d83d138f293b89ed14c0",
+   "bytes": 34630
+  },
+  "areas/al-baharna.json": {
+   "sha256": "5c87e5e6e0bf9ab15fd964c94ab796684cdab7a0bbd5d0b8773f5618a529c525",
+   "bytes": 1486
+  },
+  "areas/al-baraha.json": {
+   "sha256": "df8a8ea8161fb23d4596c38537d6c3bf82d67d72e220c8bc2f4f7529ca93f6f4",
+   "bytes": 19843
+  },
+  "areas/al-barari.json": {
+   "sha256": "bac2ff7cf0b7bd81bda47979ed7f1f9f87e168143a3f536aee4fe18360b9a048",
+   "bytes": 28364
+  },
+  "areas/al-barsha-first.json": {
+   "sha256": "4f595028c8bdc005cc1d75904586a53e6e0a8534a45aa96d1f0b939611cc7223",
+   "bytes": 26046
+  },
+  "areas/al-barsha-second.json": {
+   "sha256": "98879713819e6f9b6276866a4f9c65bae1c85ba2e5b4d11d9ca6a81e72c016ef",
+   "bytes": 31455
+  },
+  "areas/al-barsha-third.json": {
+   "sha256": "40da4b9bff44e771682a1cba51627829134285b5d07932a07a9398f5c6d9a84e",
+   "bytes": 30560
+  },
+  "areas/al-barsha.json": {
+   "sha256": "fe06dd73946b93df93424881a03912b2b5e4acf49a88bb2dbb47350d1881b3b0",
+   "bytes": 3911
+  },
+  "areas/al-barshaa-south-first.json": {
+   "sha256": "ceea9007bd8c35600c10fcb18607bda1e6fc775df5972a0bc988cf8981bda499",
+   "bytes": 16124
+  },
+  "areas/al-bastakiyah.json": {
+   "sha256": "2a3d755692285a4d00fbd1715bd2e6e73f7d3bd7f0e2656293e135504e530d0d",
+   "bytes": 1745
+  },
+  "areas/al-buteen.json": {
+   "sha256": "9e005df537457c569f5bf41e0a20dac14d0b06a4025eb8f97a4b571a9849b70e",
+   "bytes": 21704
+  },
+  "areas/al-cornich.json": {
+   "sha256": "a16e6133882e6d9321d067afbd643225207ca2b899a84eb015e13d273a37fe29",
+   "bytes": 9376
+  },
+  "areas/al-dhagaya.json": {
+   "sha256": "db31b61b887f3d41eab99c9f42cd95768dd887233c3d5f7185ac1193db38a68f",
+   "bytes": 16649
+  },
+  "areas/al-eyas.json": {
+   "sha256": "394c5c13793fe7058b85557528c2f9d2968bc457c523b9529eca9b0f0fe493af",
+   "bytes": 5661
+  },
+  "areas/al-faga-a.json": {
+   "sha256": "6e6741bc8a6d6b4de6de597cf936b91a06cb69ab1c1eabecddd17b1cb33838e0",
+   "bytes": 6028
+  },
+  "areas/al-fahidi.json": {
+   "sha256": "72a025492d50b2a187484acf597c0281e7b97c5eb4c12d4ec3ca6c7b399909af",
+   "bytes": 1418
+  },
+  "areas/al-furjan.json": {
+   "sha256": "57e28e0a6a2c48dc9a88b604837326ffca17bdfcff102b21eaddd9cbed9a61a1",
+   "bytes": 30256
+  },
+  "areas/al-garhoud.json": {
+   "sha256": "56aca95307730043335e51ceba954c9501926333a6298dd082bc6aacd474f62b",
+   "bytes": 21507
+  },
+  "areas/al-goze-first.json": {
+   "sha256": "d0f6b12ce00384749a784ebbe80ed029d4de12bb07508dcafd8ee17b35ecf760",
+   "bytes": 27250
+  },
+  "areas/al-goze-fourth.json": {
+   "sha256": "3c2a60cbd5eab5e686f9a6ca7ab1b02c69a729e1bdfac8bf41f0d9b62271b14f",
+   "bytes": 26035
+  },
+  "areas/al-goze-industrial-first.json": {
+   "sha256": "cb76511892771a7af340d09c8c58f2653c2235f8793d3b90991cc07537fd0b4f",
+   "bytes": 9792
+  },
+  "areas/al-goze-industrial-fourth.json": {
+   "sha256": "c3831765d87fdd08ea46d5d7a4420bd0197af3f30c96e8f4cab41004fbc059c9",
+   "bytes": 17227
+  },
+  "areas/al-goze-industrial-second.json": {
+   "sha256": "48d3c6603474ce8ebbfb7aa0819b4bac7f6a6337876effef66dd0d2dfd5193ca",
+   "bytes": 17930
+  },
+  "areas/al-goze-industrial-third.json": {
+   "sha256": "7d0bbc1f8db80efa998f086da0d9add4ad8ddbf91a0b4c48452d81566ba783ba",
+   "bytes": 11384
+  },
+  "areas/al-goze-third.json": {
+   "sha256": "9d955891f7880c7e8dadad3766c23f7c154e1408751ab5d722d36ffa4b3ca1bc",
+   "bytes": 14383
+  },
+  "areas/al-hamriya-port.json": {
+   "sha256": "074780b296f92773db19fc6ddb397c852ddae7eb15a8435d4586ec525cbb58e8",
+   "bytes": 9575
+  },
+  "areas/al-hamriya.json": {
+   "sha256": "a5a27a9f4cd361a0ec12a8fc32d418a256bfa0daf61cc61ca3ee732c16ba4136",
+   "bytes": 17677
+  },
+  "areas/al-hebiah-fifth.json": {
+   "sha256": "d30578967b8ef67563dc61e55a1e8310e51ad13d13615a1ca0e9319f9db4b446",
+   "bytes": 29262
+  },
+  "areas/al-hebiah-fourth.json": {
+   "sha256": "7b69489818e4e8c8abd2b9a2b21c4fe7a9c5f7c8848d43e34e41a4f8b719a4d9",
+   "bytes": 33908
+  },
+  "areas/al-hebiah-third.json": {
+   "sha256": "a9d397ee9cba29ac135c04e99876440b813fcb99fe384c2bfb03669add13324a",
+   "bytes": 24761
+  },
+  "areas/al-hudaiba.json": {
+   "sha256": "a06678a8f64fe0c3aa2ed1cf817a62d572d838af37f3278f4d774cc7f4618d22",
+   "bytes": 17554
+  },
+  "areas/al-jadaf.json": {
+   "sha256": "3429b4bff23d3009ff83f4e6235157aa9a39c81ae61675e4fecd466a7be6f91a",
+   "bytes": 31264
+  },
+  "areas/al-jafliya.json": {
+   "sha256": "2ee719bdb869a815bc3adbebf81d16540963d66d58e191b19a9498ebe92e57d6",
+   "bytes": 25257
+  },
+  "areas/al-karama.json": {
+   "sha256": "90e022a74d11092195eef24c43a4ae7cdc664670b786cfbe084ef22b43e142b3",
+   "bytes": 32685
+  },
+  "areas/al-khabeesi.json": {
+   "sha256": "1cf65265a7f10649d41b6b14bc193ff401afb158225d754f1094c4ca42f54e8d",
+   "bytes": 14873
+  },
+  "areas/al-khail-towers.json": {
+   "sha256": "ac511e4c264c56f65f21e76f775b5c967b6c39ed4f2a2fdd83d0ff8cbf84c69f",
+   "bytes": 6755
+  },
+  "areas/al-khairan-second.json": {
+   "sha256": "cad22981e1154ff27e46e59fd73f6cd7593ddfb26f19a9217922949584273b0b",
+   "bytes": 1559
+  },
+  "areas/al-khawaneej-district.json": {
+   "sha256": "179d5888f4c2935aa8f7075e82343c26f46cf5d1d764094aa7e51876e5a73af3",
+   "bytes": 8742
+  },
+  "areas/al-khawaneej-first.json": {
+   "sha256": "374c5cbb982553e761b2ed48ea9eb8c7a0419d00458e89c48feca76b2177aac9",
+   "bytes": 18882
+  },
+  "areas/al-khawaneej-labour-city.json": {
+   "sha256": "f90ccbc88cba21956579ee06eccaa0261c128a365cad015d0c97add5c01f69c9",
+   "bytes": 4271
+  },
+  "areas/al-khawaneej-second.json": {
+   "sha256": "556edd0a52dd9c4749c38c9555700d4f5d0f0b1e9a7f83ee7282a7953a1ca89a",
+   "bytes": 12739
+  },
+  "areas/al-khawaneej.json": {
+   "sha256": "a7bc7752df2356db0ec34fcfd9c4d5b440b4693ec0881b5dc5ce53adb47e965d",
+   "bytes": 4278
+  },
+  "areas/al-kheeran.json": {
+   "sha256": "9d719f774ff3c8ecb77399d85560534d4b63116d85d782f56e0da59e93cc57a3",
+   "bytes": 27707
+  },
+  "areas/al-layan1.json": {
+   "sha256": "d5346484c044a9a4defd061022b06ca0742fc55d3ffbf15b8cc7ebbc0b0b5f2c",
+   "bytes": 5539
+  },
+  "areas/al-lusaily.json": {
+   "sha256": "6a8a8a0ec89588b8e94f69548a6daa8b1a51c3e78d3b30c9f698d34d710d704d",
+   "bytes": 11393
+  },
+  "areas/al-maha.json": {
+   "sha256": "fe91e21dd0c2fd806600afc33bf51b437f6d3c4cef56213508df5f41b076f215",
+   "bytes": 3849
+  },
+  "areas/al-mamzer.json": {
+   "sha256": "8af92e8f7f86753ff22bf8a58c4eba72b0a410ca680888a99fa555d6811455f3",
+   "bytes": 23007
+  },
+  "areas/al-manara.json": {
+   "sha256": "b8777a43645e538e3363e50497d6223a439fbcafbdfc54f80fc40e7d2ee37a5c",
+   "bytes": 28173
+  },
+  "areas/al-mararr.json": {
+   "sha256": "3a2ea56a4c13ad43781a5720bea58c308707f0ce16765c7b3e7a3ed4ed9d1713",
+   "bytes": 17855
+  },
+  "areas/al-marmoom.json": {
+   "sha256": "2217e3342153e0e8b5702f3c68478c81cfc7488adc7c29e2a9cfa40934f08295",
+   "bytes": 3110
+  },
+  "areas/al-merkadh.json": {
+   "sha256": "433634b6320196d6a294827aa5e79324b3ab3df615150511ba952be120da3a1a",
+   "bytes": 22576
+  },
+  "areas/al-mizhar-first.json": {
+   "sha256": "ead873987113fdd55843de5d8bbb03d3aefc68d14df92bf3dcc0edab54178c4b",
+   "bytes": 29082
+  },
+  "areas/al-mizhar-fourth.json": {
+   "sha256": "8a0be579ddc3c31702adbef0cfbb3071f2b576ab435d03de09e4a319f8021d7f",
+   "bytes": 7598
+  },
+  "areas/al-mizhar-second.json": {
+   "sha256": "1f52b62b9a0b2c6c6e5a8be61c3e511bc8e4deebf00469acb7b90a0de03571d1",
+   "bytes": 24160
+  },
+  "areas/al-mizhar-third.json": {
+   "sha256": "1cdc6ee57d0b990e8abd3ee9b9a7a773dd51ce16224f0ca31e9543bf09818d46",
+   "bytes": 12759
+  },
+  "areas/al-mizhar.json": {
+   "sha256": "d9851f275beb0298fb232fb2686c3a747092201f24c4066b555acd39f5b826c2",
+   "bytes": 3187
+  },
+  "areas/al-muhaisnah-north.json": {
+   "sha256": "e51be06d093c23c63bece8e0627b17c19de3c5be87bd973f657d3da31c8eedaa",
+   "bytes": 1858
+  },
+  "areas/al-murar-jadeed.json": {
+   "sha256": "0d5da3c649ea5bf2b564bd269a18f280b226494222ecea75c8f8786494779777",
+   "bytes": 2625
+  },
+  "areas/al-murar-qadeem.json": {
+   "sha256": "ac40b690ee2fc48b3087e1e501dfaaf23c92b7adc70fde3f6264a5b075869746",
+   "bytes": 2774
+  },
+  "areas/al-murqabat.json": {
+   "sha256": "fee0fd80889a5337b7a5e247d0932697095a00889d855ac9921a884b06371657",
+   "bytes": 18305
+  },
+  "areas/al-musalla-deira.json": {
+   "sha256": "a59e43c86642d8d1f235399f8d2351044a6c169f53115f268951be8f17479db1",
+   "bytes": 1455
+  },
+  "areas/al-musalla-dubai.json": {
+   "sha256": "de71c2abd45d4b1a6fdccc6a0879b358bbf5fc796b57976497cd7dbeb00751b8",
+   "bytes": 2287
+  },
+  "areas/al-mustashfa-west.json": {
+   "sha256": "c8bf3fd7cd48fee75e5251ff5203325eff1c375958197d71f53de030167d34dc",
+   "bytes": 1529
+  },
+  "areas/al-muteena.json": {
+   "sha256": "f0fc7ddf602b622446048ce330182260f8e3006b2e92585f4434ea6786f38f71",
+   "bytes": 24828
+  },
+  "areas/al-nahda-first.json": {
+   "sha256": "44a7533319c9dbe3f2963507003d550e059f44dd08415656ade13698c8a04140",
+   "bytes": 21128
+  },
+  "areas/al-nahda-second.json": {
+   "sha256": "f5860f5a902b53f20e2f4e1837ce3b74a0442da04bcc360093e76993ae7f47fb",
+   "bytes": 29142
+  },
+  "areas/al-nahdah.json": {
+   "sha256": "4d04e654a7597caa549f5c1858a22da24a6836acb8dea74468c0641eed88afe7",
+   "bytes": 1437
+  },
+  "areas/al-nakhal.json": {
+   "sha256": "4c7b934799336e77fa013980cbeba8653bd2003e44d9ac5f14dc963af0f5f6cf",
+   "bytes": 1928
+  },
+  "areas/al-qoaz.json": {
+   "sha256": "6549911dc29ba50e1c7327372263cc40ef0cbb8360135c22441dfa9f68129a9f",
+   "bytes": 8060
+  },
+  "areas/al-qusais-industrial-fifth.json": {
+   "sha256": "96bb736e396cd5211f8383eee3b8a9cc4848b6f753464f214c39fecab14f0715",
+   "bytes": 13144
+  },
+  "areas/al-qusais-industrial-first.json": {
+   "sha256": "c481efec567b978c5299adc7c4ef0185a3ccb7bd1875333076c0cff86b8bf454",
+   "bytes": 18221
+  },
+  "areas/al-qusais-industrial-fourth.json": {
+   "sha256": "f4c023af74532581b60379c6911b164b8c18040fc42d7d654f2cd68e1d541fbf",
+   "bytes": 18107
+  },
+  "areas/al-qusais-industrial-second.json": {
+   "sha256": "ede3317b3d18a016cded382b7f2710555d9b1a627077415877468c0d4aa36425",
+   "bytes": 17586
+  },
+  "areas/al-qusais-industrial-third.json": {
+   "sha256": "e0cdcef4b855b4b08c345002edf2eed75780c0350dd6da90446b3ef14250f7a6",
+   "bytes": 16118
+  },
+  "areas/al-qusais-old.json": {
+   "sha256": "42610aaa9ee31ef9197fd120037cd106642f9408693844349e6341c2b755002e",
+   "bytes": 4468
+  },
+  "areas/al-qusais.json": {
+   "sha256": "9fd17788224e6a868b2c48400ea331d3e734ac622c2421fa724251fcf2c2d2be",
+   "bytes": 23192
+  },
+  "areas/al-raffa.json": {
+   "sha256": "37c3fb52a229e0a57505f0b9cb382aea01c8c740540438aefb247e8369150464",
+   "bytes": 18019
+  },
+  "areas/al-ras.json": {
+   "sha256": "53260f37b5bacd03af73f138c7c0f3bb8db8132ff5acfafcd7b2c7bf4bf5875b",
+   "bytes": 25894
+  },
+  "areas/al-rashidiya.json": {
+   "sha256": "750e25eb384b402cb3e8ca9526fe5dd1edd793c673309629a84a2db56215964d",
+   "bytes": 36043
+  },
+  "areas/al-raulah.json": {
+   "sha256": "9ca1f2bcada053123f7e22697686ea02e05ff06f306b1df263b6a35ad986e846",
+   "bytes": 2692
+  },
+  "areas/al-rega-al-rigga.json": {
+   "sha256": "902fdeff5ffbef2cbb2f4d27a2a1b10d2264f836c381a44a1a9d7054712c4b89",
+   "bytes": 19295
+  },
+  "areas/al-riqqa-east.json": {
+   "sha256": "617416f4809b4db0180ef38d7a6b31244ac18294c7b5fc080c938b77fbdbdd48",
+   "bytes": 2347
+  },
+  "areas/al-riqqa-west.json": {
+   "sha256": "fb55da0b7daa2bc0277d573c4dc9209d537efd81deb5a46b396a7e110feba8ca",
+   "bytes": 1836
+  },
+  "areas/al-rowaiyah-first.json": {
+   "sha256": "20d54acf34e0923b123b2f194f383047607c261163011f9173dbf676d186da07",
+   "bytes": 11304
+  },
+  "areas/al-rowaiyah-second.json": {
+   "sha256": "1dcc83fce58261e7001644aa6495751b337f2923007e8577f69a7cf9dc854c94",
+   "bytes": 3723
+  },
+  "areas/al-rowaiyah-third.json": {
+   "sha256": "76f6d5ab226d965d3f905762de06237cdd5211805c22e170b6aaaf40e6bbb902",
+   "bytes": 9512
+  },
+  "areas/al-ruwayyah.json": {
+   "sha256": "6aa055aeadc1ddacc82fe782cd4875f5decf61eed74e607032fb60d1ba98a146",
+   "bytes": 6623
+  },
+  "areas/al-sabkha.json": {
+   "sha256": "013ab9b507663bbbf1db6bd2600b8ef7c14ad2e417f117431381534e09651073",
+   "bytes": 17905
+  },
+  "areas/al-safaa.json": {
+   "sha256": "ac79e3f4f8b49a7dca571892537d1b9fcd044565ec910e6db964115fa537c4a9",
+   "bytes": 2871
+  },
+  "areas/al-saffa-first.json": {
+   "sha256": "fcf95a780f93ec121c4ea0d59c442853c69f61f1a1f8bbeb014e97d509b07c0a",
+   "bytes": 19383
+  },
+  "areas/al-saffa-second.json": {
+   "sha256": "eca9a014f6b4fedbf353bc54b34036a634e3dc8cc1d1aa1969a4c9ef8bed566e",
+   "bytes": 24655
+  },
+  "areas/al-safiyyah.json": {
+   "sha256": "008edd7f9e5458f7bacd1b882c5170a273af2a033044b7f00324633af22997a7",
+   "bytes": 2197
+  },
+  "areas/al-safouh-first.json": {
+   "sha256": "ddb5860feae1a3e5b91f6dad4eb69720c0a9840ada1739dd79b6ad1803e818d2",
+   "bytes": 27700
+  },
+  "areas/al-safouh-second.json": {
+   "sha256": "ef6bb3633932c15d39e5731251e12e85e4902f5595641ee3257e905ab7e73f70",
+   "bytes": 21116
+  },
+  "areas/al-satwa.json": {
+   "sha256": "8f5dc3317430dde5171794aee2f2d6acaf8a831ce880389403859e816a2d9962",
+   "bytes": 32277
+  },
+  "areas/al-shumaal.json": {
+   "sha256": "94f4a15a859d8651af721f36a848fa7f7bba78017a31acd757197768d57ce6a7",
+   "bytes": 1738
+  },
+  "areas/al-souq-al-kabeer-deira.json": {
+   "sha256": "ca701d9e10971a21937265e72b94ac778fb5a5b684f65aa3320e452bcc3b7691",
+   "bytes": 1665
+  },
+  "areas/al-suq-al-kabeer.json": {
+   "sha256": "2d0fbd0f0b6cee442541e931f4f841ed433bdf4c55fa243c5e6708989085401c",
+   "bytes": 17652
+  },
+  "areas/al-tawar.json": {
+   "sha256": "4da0e568ed24317f440f3089dbdc9a98b6e85b439e0dccabc31e7cd979d49b64",
+   "bytes": 2903
+  },
+  "areas/al-thanyah-fifth.json": {
+   "sha256": "16969a7c57e01b8a333460609592311c67da280afda999b5cc2d88c6be4445cb",
+   "bytes": 38544
+  },
+  "areas/al-thanyah-second.json": {
+   "sha256": "8934dd8841595b8657a9e814f56035dbf33c5063603126ceda23809614cb208f",
+   "bytes": 1710
+  },
+  "areas/al-thanyah-third.json": {
+   "sha256": "bbbb10ddd01aac6f0bfd4531607644789ed1a7dc01063150b222e2c5ec20b2fe",
+   "bytes": 35513
+  },
+  "areas/al-ttay.json": {
+   "sha256": "fa29095af530d7bc4c0de20e2c148d4da828c4b0131c3ed8754a31d9f115081e",
+   "bytes": 9463
+  },
+  "areas/al-twar-fifth.json": {
+   "sha256": "8691bf0dfcba0d4c86221a3eb8090450ed119164fe30aa0600bf6761e6e290c4",
+   "bytes": 19889
+  },
+  "areas/al-twar-first.json": {
+   "sha256": "7a9bed0c157f020d9d381b2578367e685ecad72a76ebee06b6f52ecba1a2e51c",
+   "bytes": 24988
+  },
+  "areas/al-twar-fourth.json": {
+   "sha256": "540c0afec478e8564155bc61fd1fd22b9331387b34a8368a3e1b77771804b1af",
+   "bytes": 23859
+  },
+  "areas/al-twar-second.json": {
+   "sha256": "dc98417fc15ace11d377e199afc474e3220b32819455d57ce591dc9e4d683f3e",
+   "bytes": 18221
+  },
+  "areas/al-twar-third.json": {
+   "sha256": "2b7f6df1887f4158d88b36969fed20b1e4eea17cfa055ed8bfc283fdf592cc35",
+   "bytes": 23447
+  },
+  "areas/al-waha-villas.json": {
+   "sha256": "e9f268165ee3adf90e95ee258a3f3fe214222663a5c63199e15109e5842aea03",
+   "bytes": 23797
+  },
+  "areas/al-waheda.json": {
+   "sha256": "b93d8359a8e32037a151b94264dce92d5285875576438a55b3aeab9512bbc1de",
+   "bytes": 30688
+  },
+  "areas/al-warqa-first.json": {
+   "sha256": "ded58050637a77ff784b8c8af03693dbb3bc6852548165a3dc656ba4c2adc4fe",
+   "bytes": 29110
+  },
+  "areas/al-warqa-fourth.json": {
+   "sha256": "121b48fc465a6fb33ef6bf50fe9779998c101ca5b0f535eb3090d9d642d26b14",
+   "bytes": 16241
+  },
+  "areas/al-warqa-second.json": {
+   "sha256": "822806f5943a9053b5d3ee9935c9922d0e768ded19a5e2c22b23ac827370e174",
+   "bytes": 18498
+  },
+  "areas/al-warqa-third.json": {
+   "sha256": "188e5fcae805a5e971dae0764601bbe1b1011d7512e0f68c9e66f183768aba17",
+   "bytes": 25418
+  },
+  "areas/al-wasl.json": {
+   "sha256": "d91ab7625b7f56f41b65d5d686f3f78130563d6e71978ff5fb5d45a48d3f22bc",
+   "bytes": 31438
+  },
+  "areas/al-yelayiss-1.json": {
+   "sha256": "77ad7ad3504e7f03512743b90ee309ab0f314a4c06f962726c1ab05b3574a23b",
+   "bytes": 23121
+  },
+  "areas/al-yelayiss-3.json": {
+   "sha256": "c0db9bb827f7803d7f26faec1ba734ca0844bc2a8e31adbf0aa1eadae251548a",
+   "bytes": 96
+  },
+  "areas/al-yelayiss-4.json": {
+   "sha256": "0346f2f4d546554ab7d8af8dd83f15cc21ffd3e9573c5a8c084f1fcc1199c27c",
+   "bytes": 1697
+  },
+  "areas/al-yelayiss-5.json": {
+   "sha256": "4c3fd9274ffe3f79e29314188902995d739d4a0c4e3257aae18a88a34d071512",
+   "bytes": 2358
+  },
+  "areas/al-yufrah-3.json": {
+   "sha256": "2081125852af51c60f27ffd072c0ceeb88e556acf67ca057461519d265b3c03c",
+   "bytes": 8177
+  },
+  "areas/al-yufrah-4.json": {
+   "sha256": "c9c163613e953ef34850622110f07ce7a4bb50567a24390f47a5012d6c74f2eb",
+   "bytes": 1546
+  },
+  "areas/al-zarouniyyah.json": {
+   "sha256": "0da995020f387e5d394fa2178c63d284bd2ddc4c855da3d1115c483d41d39775",
+   "bytes": 1503
+  },
+  "areas/arabian-ranches-1.json": {
+   "sha256": "37e1f65626ee07049748effdfd7f83143e6527cc5ddd06144106d9aebad88035",
+   "bytes": 32885
+  },
+  "areas/arabian-ranches-2.json": {
+   "sha256": "6dfafd8a974533fd8a88d106c3c6604ec499e579ebdda81829e95bc40f567664",
+   "bytes": 23581
+  },
+  "areas/arabian-ranches-3.json": {
+   "sha256": "b316244b8136df32d9e866dee7bba63754077acbaefe7568e80d8753862f9d22",
+   "bytes": 12851
+  },
+  "areas/arjan.json": {
+   "sha256": "f4a9423d4b7d876f230cf4f1c822853a6f85c5030636e78993b2dc78fa77c604",
+   "bytes": 29820
+  },
+  "areas/ayal-nasir.json": {
+   "sha256": "9d5621510b55d30343cc5cc2fb70963361915f4d1d51b8c35d12e0605d8f5633",
+   "bytes": 25731
+  },
+  "areas/badra.json": {
+   "sha256": "fb49cedd3be8bff25c434de2a4808bc12aa04eb6338b42b1821ba89b739d73c9",
+   "bytes": 19830
+  },
+  "areas/barsha-heights.json": {
+   "sha256": "7ba7f2146ddf62b7191dfca6f3221de302dde2aab294446644e0a15de51df32f",
+   "bytes": 31441
+  },
+  "areas/bluewaters-island.json": {
+   "sha256": "43d1890d85c9240f4ef8d20e0921063b5c58abc9af4bdf840cc88fac202018e4",
+   "bytes": 16978
+  },
+  "areas/bukadra.json": {
+   "sha256": "f6e2a5c3a8c2737038ae01fd2a69a0060b0dfe6a53c461bea16b6f7a4476ef7a",
+   "bytes": 9805
+  },
+  "areas/bur-dubai.json": {
+   "sha256": "35512dab070a590b37a514b602845ddbce868bc4dc244a46e51e1314470fca63",
+   "bytes": 4856
+  },
+  "areas/burj-nahar.json": {
+   "sha256": "9b65a3b32af4aa631d30b25bf1dcd79e63410b29b8b7fef2a287fa2967cabeca",
+   "bytes": 2383
+  },
+  "areas/business-bay.json": {
+   "sha256": "004097ba273095ac7be7a1d6f3b66adf4965ad8d78aa0a368dab52ed147a979c",
+   "bytes": 35901
+  },
+  "areas/cherrywoods.json": {
+   "sha256": "edadd54db54f6d2b7a16ed2126e28dd57a29f3705269196358d1f825da98f4b7",
+   "bytes": 10309
+  },
+  "areas/city-of-arabia.json": {
+   "sha256": "f626e6b99af25116244b6c7c52ebe843fb2e51699869377af816d1ce47cc7cee",
+   "bytes": 9104
+  },
+  "areas/city-walk.json": {
+   "sha256": "b963cdd2ae62cbbb0ca9e65ce139ff1076f241d4a2991c4ec49887c1ed5f29e8",
+   "bytes": 20917
+  },
+  "areas/cornich-deira.json": {
+   "sha256": "13a0303776727576510d2c11610ece5da0c912202602ae8c4f9672a283e49ce1",
+   "bytes": 8826
+  },
+  "areas/damac-hills-2.json": {
+   "sha256": "1f08a0a0ad20cbc18d921f1187a39025afeaa9fbaa484060e4c70097d098024f",
+   "bytes": 20307
+  },
+  "areas/damac-hills.json": {
+   "sha256": "eae42ca2b2a17397ba952a97b8ef818e633775d49855364207e0401b22368773",
+   "bytes": 24450
+  },
+  "areas/damac-lagoons.json": {
+   "sha256": "6ec91dbc70e58b8fd9bdcf8c9ef2bb8445b729b0a9eaeae1dd38874af3081807",
+   "bytes": 8323
+  },
+  "areas/discovery-gardens.json": {
+   "sha256": "cc12c52b43713cb6022af8eaf9ab56b35fe230f5ccc9c5d1204b31fc351debbf",
+   "bytes": 32165
+  },
+  "areas/dmcc-master-community.json": {
+   "sha256": "9ff0ea42bd71f76bfabfdae90ef4acc150794e633575aafdad49e826eefdab19",
+   "bytes": 1601
+  },
+  "areas/downtown-dubai.json": {
+   "sha256": "1bf3824ad3ccd11de047cf612dfed869639200b08c0dab3ff29fd3c5630868e4",
+   "bytes": 36767
+  },
+  "areas/downtown-jebel-ali.json": {
+   "sha256": "b33716584940ca1741925fe41a07f1a5029dc57afa3342f88b4155eaf24710d9",
+   "bytes": 25173
+  },
+  "areas/dubai-creek-harbour.json": {
+   "sha256": "e56b6a9293715829a1ab280574edf8a95c7b8642c04d6e3b2ef4e77c2c36fa94",
+   "bytes": 21030
+  },
+  "areas/dubai-design-district.json": {
+   "sha256": "a41811f967a66c89faf3da7143928eaf863e20686ee631d459bd75f3249b8aa0",
+   "bytes": 4794
+  },
+  "areas/dubai-festival-city.json": {
+   "sha256": "32b3ae48fc15ee77b25a7a1ec2843c7c8d07fef8e01a9be0e5ed9c51873fddbb",
+   "bytes": 24203
+  },
+  "areas/dubai-harbour.json": {
+   "sha256": "b9789d2deafcb10d58255f74ce92d28e374c69f67141f3deb8c237393db76549",
+   "bytes": 15260
+  },
+  "areas/dubai-health-care-city-phase-1.json": {
+   "sha256": "c99fc3df98b8e4772f64e679996eeac4a3d0945007e3bdc6959929fec66f0ca4",
+   "bytes": 16028
+  },
+  "areas/dubai-hills-estate.json": {
+   "sha256": "a137e087b0f5c075fe27adf7d19dfef754a5f6ef1a920298f88b866c40f600e1",
+   "bytes": 3721
+  },
+  "areas/dubai-hills.json": {
+   "sha256": "88548a4ce3b7fdb226fcc2c6d8d254813d8966ae52fcd854417171de8f24f640",
+   "bytes": 22053
+  },
+  "areas/dubai-industrial-city.json": {
+   "sha256": "45ca9c4b42774dbf872b38f6e07a3207ee6653987d8d904d48274ba0bda07bc0",
+   "bytes": 16176
+  },
+  "areas/dubai-international-academic-city.json": {
+   "sha256": "4cb6e23fdcceac432a6a1842f7e2289f564f7c5821c9cd3278687ee0a2aca648",
+   "bytes": 4093
+  },
+  "areas/dubai-international-airport.json": {
+   "sha256": "f003357acd285d87740f62e2a8aecfb32c543030e3c7b3a4b76ec5d5fb24e0f7",
+   "bytes": 16112
+  },
+  "areas/dubai-international-financial-center.json": {
+   "sha256": "6e35850afa4b15f87b4b787894e9acef6f18aef4bd9555fa5bd29d4f04747d37",
+   "bytes": 1611
+  },
+  "areas/dubai-investment-park-first.json": {
+   "sha256": "8d62875749daec957d26db439e02fd7ad2476a768e173f7a6e9d97c75e309eb7",
+   "bytes": 29666
+  },
+  "areas/dubai-investment-park-second.json": {
+   "sha256": "b9773e1fa00b345c7150c9054c9541bdc6b3d78ce45e71d89512c8b4b5f6b9ea",
+   "bytes": 25634
+  },
+  "areas/dubai-land-residence-complex.json": {
+   "sha256": "48ad1c4e8f185fde6be65e11670d880ff680d6d9e6a74e8a3075b222088a0f97",
+   "bytes": 30847
+  },
+  "areas/dubai-marina.json": {
+   "sha256": "4c55228728e9b710251f340a81258721dc55405d256dc841854fa39e4fa4eab1",
+   "bytes": 37993
+  },
+  "areas/dubai-maritime-city.json": {
+   "sha256": "20dfb2011f960a3537ad17e0fd04aa21633f4ef3f7e5d618cdd919b49b1ec9c6",
+   "bytes": 12114
+  },
+  "areas/dubai-outsource-city.json": {
+   "sha256": "eb3928e05fd87b3a42a635ae6cceda70dd5f63b1128829043e5b631e0cef2c9c",
+   "bytes": 3487
+  },
+  "areas/dubai-science-park.json": {
+   "sha256": "7c86b8e856c53fcd53c3223ef4db0e7f17e0f581d89f980bcfa3b557e8bb3dfe",
+   "bytes": 26331
+  },
+  "areas/dubai-south-residential.json": {
+   "sha256": "c295c5ad6fe9770b88a45b5138d047d15401665e1b542a6870f58b9e90af10e6",
+   "bytes": 23183
+  },
+  "areas/dubai-south.json": {
+   "sha256": "22520c53667f7bab84d316b5798fa6580bf2d814a08e1fe58a2690c12a9335d6",
+   "bytes": 17773
+  },
+  "areas/dubai-sports-city.json": {
+   "sha256": "0a0271c3796dcd71d11d2248dbfbeb4cd5854bf3c3eb27cbba220b6dbdff054e",
+   "bytes": 33490
+  },
+  "areas/dubai-studio-city.json": {
+   "sha256": "30ff4735273a4b9d7b154b4e51ef7018071460eedf2ce6d2bcf74e0f54cabb1d",
+   "bytes": 24409
+  },
+  "areas/dubai-water-canal.json": {
+   "sha256": "22b59e628af2d5251cf2672eda906eca6cbbb494ac202ccd042dd0af7e5c4df9",
+   "bytes": 9194
+  },
+  "areas/dubai-water-front.json": {
+   "sha256": "98c309fd09827e29987db9ae694dc5a442251dd2f4981c474d5533e508a7e125",
+   "bytes": 2101
+  },
+  "areas/dubai.json": {
+   "sha256": "53fc194b84d374ff1bbe1d601302a36a0835195746a8aff6a931db06d2f3023a",
+   "bytes": 52856
+  },
+  "areas/emirates-hills.json": {
+   "sha256": "fb30503b408f35ed3e2bd913e5de9cc566837dfc0ac887b02921a5e4937fed43",
+   "bytes": 28006
+  },
+  "areas/emirates-living.json": {
+   "sha256": "e5c61b1a7ce4bf9980ae2f20fbfdf81209485b78778aecb262a9926bcc5b90e9",
+   "bytes": 36087
+  },
+  "areas/expo-city-dubai.json": {
+   "sha256": "b935b14913b16e1a8058257340973bab65853bd47ecbaba9d1dd525332bb75bd",
+   "bytes": 9207
+  },
+  "areas/falcon-city.json": {
+   "sha256": "facccef01c624e92af1b207aa5a271c600ca7d47800a18d97bc2e3d522841ae0",
+   "bytes": 5101
+  },
+  "areas/ghadeer-al-tair.json": {
+   "sha256": "63abf3ff5219a57d94e225826e87c7f19b72594044a0267696010cd82cd45fca",
+   "bytes": 17830
+  },
+  "areas/ghadeer-barashy.json": {
+   "sha256": "d5212425b917beacef71d23155363e018efbd4f200504ce674c296c20ba4b811",
+   "bytes": 1521
+  },
+  "areas/global-village.json": {
+   "sha256": "b9938af827dc4c0828956cb5932e07918ffccd83c9053461be4d37be50d98629",
+   "bytes": 7376
+  },
+  "areas/grayteesah.json": {
+   "sha256": "468bbae807d1ef5e596e7ff1878fc5abf1d55041ea1b6fa75b0db67909ab13a7",
+   "bytes": 6955
+  },
+  "areas/hadaeq-smbr.json": {
+   "sha256": "d2624bd2c0b0da5584233d39ec79a592eaa3cb0610695413967399b9c019d74f",
+   "bytes": 22166
+  },
+  "areas/hatta.json": {
+   "sha256": "fb0392298a24ce73ca2e3230df7e9c604e2e1442adb072923625070589bfaac4",
+   "bytes": 8168
+  },
+  "areas/hessyan-second.json": {
+   "sha256": "814b3812f115a09df1ab844671fbeb49fffda95b9479a809ba969b4fc0252352",
+   "bytes": 8179
+  },
+  "areas/hor-al-anz-east.json": {
+   "sha256": "85f0397d605cd85d7b364b07de0441829705828f996f06e984d8e3efcdc075a1",
+   "bytes": 22967
+  },
+  "areas/hor-al-anz.json": {
+   "sha256": "712d42a7375890c4981174a5d0b950fcf423d0c65eb23cb1ff179583badf2cbc",
+   "bytes": 36144
+  },
+  "areas/impz-international-media-production-zone.json": {
+   "sha256": "6db98fc73128569013d33344c81d49bb8023de20071610cb29155d82c67fd99c",
+   "bytes": 32561
+  },
+  "areas/index.json": {
+   "sha256": "b37a3fc699bd8c5a6fda42afa18de2ea7728268f29cfe7c979e6b6e0996e91c9",
+   "bytes": 49991,
+   "eager": true
+  },
+  "areas/international-city-phase-1.json": {
+   "sha256": "9c482b4d53c0ba389415eaed5dd70080d1b76a53bf64f2caaa493d12bba551b8",
+   "bytes": 35601
+  },
+  "areas/international-city-phase-2.json": {
+   "sha256": "b52d05a35bdb35c186ab2bafbd90a66c23d6761e8a218e2c9bdc741c010e5d8e",
+   "bytes": 18583
+  },
+  "areas/international-city-phase-3.json": {
+   "sha256": "e0c609090f1fdedd9df00975781c81cc1c64dbebbc86dbfd42cc045dceb2662a",
+   "bytes": 7620
+  },
+  "areas/jabal-ali-first.json": {
+   "sha256": "3144ce62f5172a9b25fd234748d5d35b5a49101c3ea90e558be71f769ce2b3b4",
+   "bytes": 35448
+  },
+  "areas/jabal-ali-industrial-development.json": {
+   "sha256": "a5c02d3a8a045ee7a1ff88225746376dfb81b4bdbafbcf82e0f8279b5ca7e289",
+   "bytes": 16223
+  },
+  "areas/jabal-ali-industrial-first.json": {
+   "sha256": "c1055a741e697442d7ef2481b35bdf9689cd7a7ce22babccd47e8bfde57917df",
+   "bytes": 27474
+  },
+  "areas/jabal-ali-industrial-second.json": {
+   "sha256": "234c120508277b37d24d1e2c9cbe1a566d1d64838326fb3f9dc4ebf67d64edff",
+   "bytes": 25311
+  },
+  "areas/jabal-ali-industrial-third.json": {
+   "sha256": "8587416562147bf3344ac873828ea39e7ecf4ed63e75a8f161e5fd856ed4da72",
+   "bytes": 2781
+  },
+  "areas/jabal-ali-second.json": {
+   "sha256": "b670bcfe4d3bd0a90b8b26bd076c618e0c4c13f126fde5368463ad394540570d",
+   "bytes": 1738
+  },
+  "areas/jabal-ali-third.json": {
+   "sha256": "58b71b409986c0c3e394c43f1957c2adc40b25889ca60058ebb24d54b4b1b763",
+   "bytes": 1517
+  },
+  "areas/jabal-ali.json": {
+   "sha256": "514fa4eb37242d8eee79b7861104973818bf1ee2970bc32a7d12a8707cc32ac1",
+   "bytes": 9151
+  },
+  "areas/jaddaf-waterfront.json": {
+   "sha256": "8cbb5915137945b856b21becae9844abd40f4b48b094247a94c11afc213b8121",
+   "bytes": 27633
+  },
+  "areas/jbr-jumeirah-beach-residence.json": {
+   "sha256": "fe46e80da5b0e92154d6427e51f0cc878e88ae90161297f92cec158187a2af14",
+   "bytes": 34737
+  },
+  "areas/jebel-ali-hills.json": {
+   "sha256": "34281db10a5fa9ce286de14e2bb6ec72a64f095353a6819a4e5affcf724e65dd",
+   "bytes": 8694
+  },
+  "areas/jebel-ali-village.json": {
+   "sha256": "99873d273d2bc038c534b39a9aac5e923aca8bf82e7f369f762f18edfce68bc1",
+   "bytes": 13270
+  },
+  "areas/jlt-jumeirah-lake-towers.json": {
+   "sha256": "6468e204704f5fec4c6405b041ad573a15398a5c26ad5106073b23fc2eacca1e",
+   "bytes": 35843
+  },
+  "areas/jumeira-bay.json": {
+   "sha256": "df5f0974f7a65e2bc540f52faf785da2436767f9ac5cb975d2f07c135d241e08",
+   "bytes": 16230
+  },
+  "areas/jumeirah-first.json": {
+   "sha256": "458723011177ded472d8a6cf879a282c95bf31fb2b243737422bb84b3cdb9f93",
+   "bytes": 34381
+  },
+  "areas/jumeirah-garden-city.json": {
+   "sha256": "b26cf1d916e602a760021fad1b5136267929e0efd23d9954846b817b96b0d222",
+   "bytes": 13239
+  },
+  "areas/jumeirah-golf-estates.json": {
+   "sha256": "b25a1ad1de158a0fbcf78b99449db7c8550935223c463a7653804bd02d1b25dd",
+   "bytes": 27346
+  },
+  "areas/jumeirah-heights.json": {
+   "sha256": "407a86aa4cabbe6800d3168b9d78906a3fbcf3f946359b71486a689c6d3f835d",
+   "bytes": 24089
+  },
+  "areas/jumeirah-islands.json": {
+   "sha256": "5f4e0be5fa4a4cd9e28c4fb197cabe389bd593036fee5db82b448d6f2f0eee38",
+   "bytes": 32194
+  },
+  "areas/jumeirah-park.json": {
+   "sha256": "0eaeecd9eca4943dadaeafa38b584de8e63adc2006ae6c628e0029828bc854ff",
+   "bytes": 28384
+  },
+  "areas/jumeirah-second.json": {
+   "sha256": "125ca72fd6e53d62bfb9457883d23a0cbc4a7e4637447433ee5ab109385c7cc8",
+   "bytes": 27815
+  },
+  "areas/jumeirah-third.json": {
+   "sha256": "bd011568d84f3282214ba3821363f057a35226ef480072a119b1982b8cc900a4",
+   "bytes": 30504
+  },
+  "areas/jumeirah-village-circle.json": {
+   "sha256": "be6e0fa522864a31725a973b352d82ea98efe6815190c19978359e8afb98401a",
+   "bytes": 35294
+  },
+  "areas/jumeirah-village-triangle.json": {
+   "sha256": "32b1bfecf7a828560ea4409df7f1ce0e38b36db3c947ab545c9deaf9accc7d23",
+   "bytes": 32307
+  },
+  "areas/jumeirah.json": {
+   "sha256": "5494c456cfcf3c7946b566727fd3b067e15c50e7af6da1715b9d56f39a5a593e",
+   "bytes": 4127
+  },
+  "areas/la-mer.json": {
+   "sha256": "157b21ac6b26bab09548fe48a898305686050be4b02138136e456b5fd818557e",
+   "bytes": 14309
+  },
+  "areas/le-hemaira.json": {
+   "sha256": "39d43e5a296947708624a0a3744cae84edd23557eb977061e21279a77dc02b88",
+   "bytes": 85
+  },
+  "areas/lehbab-first.json": {
+   "sha256": "c34e417ba07a0fe3fccf08934f5ee51a484c356536b1d3c55f78d89d72e518dd",
+   "bytes": 9395
+  },
+  "areas/lehbab-second.json": {
+   "sha256": "270ecc069a962f80dc2d73914a24348965e39d127c81929b71bdf8dcf364e473",
+   "bytes": 7874
+  },
+  "areas/lehbab.json": {
+   "sha256": "a36948c0a3d20f730eb203d1b36bd7fd29eedc64e8c1837627f5c26526721add",
+   "bytes": 7495
+  },
+  "areas/living-legends.json": {
+   "sha256": "05168b2013e8fad255f3e0f8f3bc621230a4b520d3d067b0e33abe4f08091f74",
+   "bytes": 24444
+  },
+  "areas/liwan.json": {
+   "sha256": "caae03779000e16b0147be1bf48b9dd8102e1794efbb474023aaacefbe7fa8ba",
+   "bytes": 27962
+  },
+  "areas/madinat-al-mataar.json": {
+   "sha256": "94d7d235b56128095422f9d3a4b92f882d0b2b76563a95d1a3484bd897a0fbbd",
+   "bytes": 23884
+  },
+  "areas/madinat-badr.json": {
+   "sha256": "bd53f07b2f9b1a1848eee0bdf407ef536ae89e088b36db216ff61aba34e80869",
+   "bytes": 12645
+  },
+  "areas/madinat-dubai-almelaheyah.json": {
+   "sha256": "3f5ff3187b5c3a49cfef38fc7af2d2609d7c1e3dcb39d77fb5398d73983d74da",
+   "bytes": 22387
+  },
+  "areas/madinat-hind-1.json": {
+   "sha256": "a764f15e9153923cbe82de351df92f2400fb3e27e14e45c2d418989150242e6d",
+   "bytes": 15118
+  },
+  "areas/madinat-hind-2.json": {
+   "sha256": "838760d4499ee0745bbf8c9811fe04a23d748b5cacf2761ccbd18f8030c918d1",
+   "bytes": 3443
+  },
+  "areas/madinat-hind-3.json": {
+   "sha256": "2946bd11ee19ccc04c9beba9d5b5bfd17fbce0cd435aba7a9f46ae1cbb0771cd",
+   "bytes": 6295
+  },
+  "areas/madinat-latifa.json": {
+   "sha256": "fae8b71592480716286b91ee05558567134eeb351a67021305c5a4d528af2b06",
+   "bytes": 104
+  },
+  "areas/majan.json": {
+   "sha256": "02b8dd335b69183da4a3cb854db8cd2a8d530338ec2ac44bc5271fac1418a555",
+   "bytes": 23860
+  },
+  "areas/mankhool.json": {
+   "sha256": "60ea9e7d58aaaa17c91d0a83ca0d5da539f65c9166da6942e30c2f493f6b5008",
+   "bytes": 22711
+  },
+  "areas/margham.json": {
+   "sha256": "bc084376c236ab7dd39b711435ff494cf7aba4a2a35335572ef44acf8d033198",
+   "bytes": 7038
+  },
+  "areas/marsa-dubai.json": {
+   "sha256": "5f2d47fb5b4ee51a9a38b8da3832602a20586cfc2db6a907a95ff1f72fa3b32a",
+   "bytes": 39036
+  },
+  "areas/mbr-city-district-1.json": {
+   "sha256": "6073b1668798139c508b70339c232905e2d2594158e0971cb8afe92d11d6301f",
+   "bytes": 14332
+  },
+  "areas/mbr-city-district-11.json": {
+   "sha256": "87b6f32e72413a85fed5e21c5a6eddf99b251ab1e0b6a16da1de85c65a4dab9a",
+   "bytes": 13986
+  },
+  "areas/mbr-city-district-7.json": {
+   "sha256": "cbc3e5f3eec253dc66d2b6e1d9f7151db93090dd911a0cda3207341b0e05f264",
+   "bytes": 11827
+  },
+  "areas/me-aisem-first.json": {
+   "sha256": "3d7efd08e0d8ec9234a872963435da33d72a454bd21334fd9873bccb55aa9519",
+   "bytes": 33881
+  },
+  "areas/mena-jabal-ali.json": {
+   "sha256": "91148e0737c2daff6ccf8707cdaeea48361352f1a50a8421bf7c9cd4c8b801f9",
+   "bytes": 8669
+  },
+  "areas/meydan-one.json": {
+   "sha256": "6f56888b27d64a9b3c9fc17d15c7dcecd0d606c11459688a7aef89861ebd1d80",
+   "bytes": 14622
+  },
+  "areas/meydan.json": {
+   "sha256": "1d100f9a7ac2a543a0e5490a11cfecb686f63fb602be89176922f9e2fae1e4f7",
+   "bytes": 24390
+  },
+  "areas/mina-rashid.json": {
+   "sha256": "cc2adf88d67f90500154b1c0ff1b5f92ba3c3f48beef7491392475c3e4f4448d",
+   "bytes": 8264
+  },
+  "areas/mira-oasis.json": {
+   "sha256": "bf716bf68878c7682ebd491a1ba306ce814a8b488bef60cd961b96d2651ca78c",
+   "bytes": 22442
+  },
+  "areas/mirdif.json": {
+   "sha256": "cf2e3b826aba4361103a6a0d02641fcff5a124368036c05c6288b7ada85047d9",
+   "bytes": 43591
+  },
+  "areas/motor-city.json": {
+   "sha256": "4b754e68f887f075b7c86d794ba2430554a91ec4dcf1a3e746637ff3c151abb0",
+   "bytes": 32867
+  },
+  "areas/muashrah-al-bahraana.json": {
+   "sha256": "06f70dde693fd1d9e934b038acfc6dcda58a5ba3d3cee144b96d3c7537d93af5",
+   "bytes": 88
+  },
+  "areas/mudon.json": {
+   "sha256": "c8a2214e115f2015d4db815dc037331b981f86df9581352c251f095260e93a67",
+   "bytes": 20967
+  },
+  "areas/mugatrah.json": {
+   "sha256": "dae4e0ff968ef3f7ff04d2cf55784d4cee9c05b33fec6ef02b20a66c07612bb5",
+   "bytes": 4091
+  },
+  "areas/muhaisanah-fifth.json": {
+   "sha256": "7b026a5a813f0aa6f9331c008c955ec27f3226b999cd4e4f09d7e0e1a8f83532",
+   "bytes": 1292
+  },
+  "areas/muhaisanah-first.json": {
+   "sha256": "dc518d84583c4abf27786fd0954009320a0de7c67ba114bfab98200a26af157d",
+   "bytes": 24783
+  },
+  "areas/muhaisanah-fourth.json": {
+   "sha256": "d604daf5d56de4737e7c9b4712f3203d0159f4d0165c19638480ad01c32a975d",
+   "bytes": 20986
+  },
+  "areas/muhaisanah-second.json": {
+   "sha256": "01d3e637fffcdd5515f5a566274111f103a4983d49a89220f36e6a5c5d3d7f12",
+   "bytes": 13595
+  },
+  "areas/muhaisanah-third.json": {
+   "sha256": "7db63526d8a65f655ddd3b0e4201c0ffad32d418d3bd43e5f87bcda8d8b9d65f",
+   "bytes": 22194
+  },
+  "areas/muhaisna.json": {
+   "sha256": "94fccfc0f56948dbc03232863c097065527fcd618fbdc54d056b211567ad769e",
+   "bytes": 2028
+  },
+  "areas/muragab.json": {
+   "sha256": "aad06210d6a3c8d12ceadf76fb76b3104b9f3f2ecc162f55996443cd52b92b77",
+   "bytes": 5432
+  },
+  "areas/mushrif.json": {
+   "sha256": "148e16cd802e4e810b0e63ba745c5dca669f32363099217cf711e2d1f2bbc591",
+   "bytes": 4158
+  },
+  "areas/nad-al-hamar.json": {
+   "sha256": "703058bf6c2b7344e5c6b78e916609e1c2fe4841a8d67aa1233c31350fc942e3",
+   "bytes": 31335
+  },
+  "areas/nad-al-sheba.json": {
+   "sha256": "f9fd0e8f4560c4d1b9c75e18a7563837e06e8cae980640d8a34808639cca545d",
+   "bytes": 7244
+  },
+  "areas/nad-al-shiba-fourth.json": {
+   "sha256": "1f4448007aeffa257fa6405c1449e12ad518dad7403732eed06cf8be4f51eb2b",
+   "bytes": 13222
+  },
+  "areas/nad-al-shiba-second.json": {
+   "sha256": "c44f36f6d588f392019afb85770e07b900cf2f31f50fd1956b5e8d7f794ff662",
+   "bytes": 9167
+  },
+  "areas/nad-al-shiba-third.json": {
+   "sha256": "3af2bec661d46886354201293787bdfce9f9fb14c69d1097198dbf9d2281a7d4",
+   "bytes": 15883
+  },
+  "areas/nad-al-shiba.json": {
+   "sha256": "13fe3941f99ed44a93264cd7ddce93d37dbc22b6e6e41d75a774d1df8dd4e54e",
+   "bytes": 5196
+  },
+  "areas/nad-rashid.json": {
+   "sha256": "ae8023b05aab1e15c227b4c80fcf1462d1ecc12607fbf706518a2007735dae6b",
+   "bytes": 3189
+  },
+  "areas/nad-shamma.json": {
+   "sha256": "7d7d7f9f9bac1cee88ab2e0dd505439def996028a8adf442e9384c0dfd5f7b94",
+   "bytes": 10715
+  },
+  "areas/naif-north.json": {
+   "sha256": "a9660595dab76e741dc2a5a92c9dd48873629120d4e44531e1c728012a45fe68",
+   "bytes": 1558
+  },
+  "areas/naif-south.json": {
+   "sha256": "6e1bb4482f9b5208400d253b57df6e34df41a7ef251b8d6f6c31afd181e25b29",
+   "bytes": 1625
+  },
+  "areas/naif.json": {
+   "sha256": "9ad9843f8757de957a2916c7a8d7b7a6364ee2142966240dc3907bc11e5563f8",
+   "bytes": 18661
+  },
+  "areas/nazwah.json": {
+   "sha256": "32c3f88d57a53dd282849eb80523b3345782dd25c8659ab91cb815d33a202729",
+   "bytes": 2697
+  },
+  "areas/oud-al-muteena.json": {
+   "sha256": "307244c5caf332fc2efbc8647aa4f2c2a2af23a57d3ce798d99551dd835aca65",
+   "bytes": 5002
+  },
+  "areas/oud-metha.json": {
+   "sha256": "a87d5a0bff4064592a6dddc212710eaa3f69abf6bb8363cad56a8466ce92f665",
+   "bytes": 20328
+  },
+  "areas/palm-deira.json": {
+   "sha256": "d1419563a525e75e287a860e4adb5f2bbb7664aedeeb8527344fe2ff181bd467",
+   "bytes": 6159
+  },
+  "areas/palm-jabal-ali.json": {
+   "sha256": "9e79f8ca6df7dbe9dad93daaf9e13490781487a6713387d09670690dffee4b5d",
+   "bytes": 4621
+  },
+  "areas/palm-jumeirah.json": {
+   "sha256": "0b443ae66bea357b3872e3b7720b0dabcf29cc0ef757a9cc697639d253e4a2c9",
+   "bytes": 37306
+  },
+  "areas/pearl-jumeira.json": {
+   "sha256": "bb88328a5728e0d11e600eff9d2b95080a300911913f6968047c72c1542712cc",
+   "bytes": 11010
+  },
+  "areas/port-saeed.json": {
+   "sha256": "ab515c13ab350712a5fe3ea16a437201efa050b1b5a7662c4655d5e1d658d86e",
+   "bytes": 18534
+  },
+  "areas/ras-al-khor-industrial-first.json": {
+   "sha256": "d52bca6b54427551c851592f0558cee1d0bf053eeecff7f173bb9f00b1982e42",
+   "bytes": 14544
+  },
+  "areas/ras-al-khor-industrial-second.json": {
+   "sha256": "425de78ee71bb8c49f0e9fe899b0c5d081c6f32bcf15a9f940c996e39957e8cf",
+   "bytes": 16724
+  },
+  "areas/ras-al-khor-industrial-third.json": {
+   "sha256": "93f7be2aa26cd8df2421d45904142f9aa0916487f284522e98d47f405da291b9",
+   "bytes": 16589
+  },
+  "areas/ras-al-khor.json": {
+   "sha256": "74051f7a7150951617962d2c9ec40130ecf897d10b713858ddac223d2a619faa",
+   "bytes": 2384
+  },
+  "areas/rega-al-buteen.json": {
+   "sha256": "678a5e9d1dbca3f2f7b01f37093e3aaceae6bd8c833da412cf99b2b75e27d936",
+   "bytes": 24600
+  },
+  "areas/remah.json": {
+   "sha256": "a9c496738a47916a11740d80e9789468108d548d253df143fb8739f6d93f7e90",
+   "bytes": 64
+  },
+  "areas/remraam.json": {
+   "sha256": "f16f6e4bcd2975f3871208781c2cdc7fc8ab0089c04c1d4d13d2e8e7c8cbd165",
+   "bytes": 28096
+  },
+  "areas/residential-complex.json": {
+   "sha256": "c14a83b990308cea3041f41579aacdfc0103d8a7ce8a2cf5de51fd0738e11d06",
+   "bytes": 4002
+  },
+  "areas/rukan.json": {
+   "sha256": "8513518b4bb110b237ae422ca43af5dcf42057e3ce8532b5f6c33620a66c29b8",
+   "bytes": 11740
+  },
+  "areas/saih-aldahal.json": {
+   "sha256": "bd581f02e2cb2275b93fca8d69c0526e9d85522678707bd059c79057d2cf524d",
+   "bytes": 1837
+  },
+  "areas/saih-shuaib-2.json": {
+   "sha256": "668abbc5cc8281f5430866cdd85e9f10acaede6572da8519887b4419bde6936f",
+   "bytes": 21994
+  },
+  "areas/shandagha-east.json": {
+   "sha256": "5da32cc678dbbd7e3d1767bc6a62256642b684764e8cc278e87aa0ed32dc755f",
+   "bytes": 70
+  },
+  "areas/shandagha-west.json": {
+   "sha256": "e959fea31976ec7a08cac4ae78ca2843871c8c7708eaaf7eeb35b1492b6a6abe",
+   "bytes": 70
+  },
+  "areas/shandagha.json": {
+   "sha256": "1e0a193e0f8b1c2dc3216d50d07979445b60b3464353b0c339f67a72d35ac345",
+   "bytes": 8958
+  },
+  "areas/sikkat-al-khail-north.json": {
+   "sha256": "e66c9c8d517eb598bef69b2398a710b94efe242e9085453a839427ac3151f562",
+   "bytes": 1806
+  },
+  "areas/sikkat-al-khail-south.json": {
+   "sha256": "bbee8f3c6ae93393802dddc4f703f0d3d691131063027615404af1acbd7ea1a8",
+   "bytes": 1655
+  },
+  "areas/silicon-oasis.json": {
+   "sha256": "c2ec205f01e74b34d8d23c8daad7df1370b0b81f329f08fe045f2c860fb3cae7",
+   "bytes": 33861
+  },
+  "areas/site-a.json": {
+   "sha256": "bcf2d3c8cd992649f26dc95182a35406e98522bb0663bdcd7a5fd6ab65c410ea",
+   "bytes": 19981
+  },
+  "areas/sobha-hartland.json": {
+   "sha256": "07422353b283aabb7cae7b7465260290486329cfa060e480b94c64acda5c9ad9",
+   "bytes": 20122
+  },
+  "areas/sufouh-gardens.json": {
+   "sha256": "a03b9dceb6b78242c1cadcf2464691936b87e600bcd156a7ff1ff0ded07cd282",
+   "bytes": 25917
+  },
+  "areas/sustainable-city.json": {
+   "sha256": "6214a6a4edabb4a527bc23acedd3c961909e56439c9185b4cd89f6f30644acdc",
+   "bytes": 20929
+  },
+  "areas/tawaa-al-sayegh.json": {
+   "sha256": "53d615a4ef799dddba52104a1d9dc86f27d6e5a73635517a274e9c9e3b721dae",
+   "bytes": 2546
+  },
+  "areas/tawi-al-muraqqab.json": {
+   "sha256": "f7153b5e2f891342aeca10c8dfb52c2192f8d3199c2a680ed17d31b6f7ee998f",
+   "bytes": 2324
+  },
+  "areas/tecom-site-a.json": {
+   "sha256": "a7e1233bf2f63795286a768d030136a52820daa0e8966a5b41cca39fa3ad5126",
+   "bytes": 1579
+  },
+  "areas/the-gardens.json": {
+   "sha256": "440eab69da9113c317d7189ba3ba3cf0a8676ba294bee46cc6da1d10eec68da4",
+   "bytes": 14598
+  },
+  "areas/the-greens.json": {
+   "sha256": "47afe25ccf293b40894e52aaa555cee397ea26be8c3880146e50ffeb9f9d8d0f",
+   "bytes": 33918
+  },
+  "areas/the-lagoons.json": {
+   "sha256": "0e026bae27748b52c06c7a6ebe9a6ba3e26ab5b43cc8ca07ebf95c5efc2b638b",
+   "bytes": 1526
+  },
+  "areas/the-lakes.json": {
+   "sha256": "f99a24a855a75ec29b0b3fe81fe555e7aa822d83efd0f996d254c41caec9bd99",
+   "bytes": 31162
+  },
+  "areas/the-meadows.json": {
+   "sha256": "8b672e1e9b1b013ca07267518b0343a713c88e7745e5648b2708bf2ebaf46c61",
+   "bytes": 32395
+  },
+  "areas/the-oasis.json": {
+   "sha256": "5a875c9cd1694d1092299d59f26932b26b3f649d960ad048ba855d1d2f78e63a",
+   "bytes": 4475
+  },
+  "areas/the-springs.json": {
+   "sha256": "94d9db71b4e2397084af5cde5727c0efea48704efe1fa6aabaf741f266ade834",
+   "bytes": 32365
+  },
+  "areas/the-valley.json": {
+   "sha256": "fd5e67d13939ac8540b141a707462296edfc6b3ffdc2a3209a6a2caeace376cf",
+   "bytes": 10739
+  },
+  "areas/the-villa.json": {
+   "sha256": "bea2ce081e38641e7a3ef5b14876c2f29b22dbd9b3ad673db6535a632c92441d",
+   "bytes": 28139
+  },
+  "areas/the-world.json": {
+   "sha256": "25881631608d4c367f6eb175ee9fa74c6e35508537ad9f2e36cd52808aded8fd",
+   "bytes": 3717
+  },
+  "areas/tijara-town.json": {
+   "sha256": "7a04832d1fb8f214014bff991b08c4eed4c6924761ec802614113b717b63489d",
+   "bytes": 1308
+  },
+  "areas/tilal-al-ghaf.json": {
+   "sha256": "e532002c6a0b8cc048f85ddd1a705bfab01c5980dbf28b514bd94ca02e3179bb",
+   "bytes": 11621
+  },
+  "areas/town-square-dubai.json": {
+   "sha256": "b37e9ac19510501817a9d93e9c7f4c133d1a8383b71c5ee0a5d6cdc9cdd4752f",
+   "bytes": 22076
+  },
+  "areas/trade-center-first.json": {
+   "sha256": "ee7e9536e7fb643ea60872605fe0e01cec4b024a795ec8ebd93ac8a1d9c35302",
+   "bytes": 19055
+  },
+  "areas/trade-center-second.json": {
+   "sha256": "b404bf0f263dad4772b7197026fed8cb98bb3098d71877ad66c1652a144e8285",
+   "bytes": 28782
+  },
+  "areas/um-al-sheif.json": {
+   "sha256": "1528ab0e22819431f07f7193c306d1fb5cc78a2c24e2ec78bfee821b4bc9dff5",
+   "bytes": 26730
+  },
+  "areas/um-esalay.json": {
+   "sha256": "080ed5fcf666bdff7b8d57fc9fdbcd11f81649bdb1a80fb879cae396bf924c34",
+   "bytes": 55
+  },
+  "areas/um-hurair-first.json": {
+   "sha256": "e0c17f838a8e80ef369cc7ce4c7aedb60b0da058aade3a34dd0fab3f41940e58",
+   "bytes": 17460
+  },
+  "areas/um-hurair-second.json": {
+   "sha256": "fd1eb7fb3441b72a3449e65e8249f3d2c185431c34f3640ccb6f8d63fead7d31",
+   "bytes": 18882
+  },
+  "areas/um-ramool.json": {
+   "sha256": "8d63898f42521691868d0b8ceef4470fbf0e9ddb1f1fdcfcc279540dad534c30",
+   "bytes": 18182
+  },
+  "areas/um-suqaim-first.json": {
+   "sha256": "c4f6b1c94fddf9d2bee675de775d33804d0e1f13b3178a47a2d5583e5c67d13e",
+   "bytes": 30033
+  },
+  "areas/um-suqaim-second.json": {
+   "sha256": "c16c9b53beaae9aac536a7002a44e360554ee79eb1f817962f65ebcea9758a4f",
+   "bytes": 31035
+  },
+  "areas/um-suqaim-third.json": {
+   "sha256": "6a065a1d2e89406ca16489fe93750de029ce0e6a91c3cd298696f604ca48160b",
+   "bytes": 31254
+  },
+  "areas/um-suqaim.json": {
+   "sha256": "5d9f02a49fef57e6d7f46f531941984eb2a753e64f7cc41570480bdc9ca09ac5",
+   "bytes": 4906
+  },
+  "areas/umm-addamin.json": {
+   "sha256": "f5f4d521a622ef105c508bdbcd90ac2172747280f59524e9a4151478ebc5043e",
+   "bytes": 3402
+  },
+  "areas/uptown-mirdif.json": {
+   "sha256": "61e3a1f83a2b9bb02f518d197bd525c1e907c7aa68a245c6e629cb5acbae78e2",
+   "bytes": 21641
+  },
+  "areas/wadi-al-amardi.json": {
+   "sha256": "52f93c577bc95a5efda5f5ff0ce216955094ec49264744789aceeef19fdfdffc",
+   "bytes": 12082
+  },
+  "areas/wadi-al-safa-2.json": {
+   "sha256": "359396bc91446f1353b16998e90a7f0a20bacc0a608abf57600d955f4a4bf0c8",
+   "bytes": 31252
+  },
+  "areas/wadi-al-safa-3.json": {
+   "sha256": "e2505c0137d863db8524e47731d38646279d924678624ddbb9a6fe328b980160",
+   "bytes": 31549
+  },
+  "areas/wadi-al-safa-4.json": {
+   "sha256": "eadf3154574329a8a583b3b7c5ba44ea7123ce15ef271176b5498a6316183ee9",
+   "bytes": 10111
+  },
+  "areas/wadi-al-safa-5.json": {
+   "sha256": "0daf724a1776c7fc86d558b50c89af1cbcfaec825627509bb1cf585b28141c6c",
+   "bytes": 33432
+  },
+  "areas/wadi-al-safa-7.json": {
+   "sha256": "f704cde35c83baac1c4d9c7dda07d84db3264da78781392e3c5ecbcaebe78b89",
+   "bytes": 31400
+  },
+  "areas/warsan-fourth.json": {
+   "sha256": "ddd4afc04380aa8bd74ca7e54382aed65e94c429394c13e16a3551f650a14cb8",
+   "bytes": 27426
+  },
+  "areas/wasl-1.json": {
+   "sha256": "2e22dc8cf9a78656fb3c8aa4d79c0436e5c466c936706dc09a45ad31e870f5ec",
+   "bytes": 15902
+  },
+  "areas/wasl-gate.json": {
+   "sha256": "796fd8862cfc566b12b87bc52b7e9fc3b9cc644a7bae63c30268d7286d62dc0e",
+   "bytes": 14899
+  },
+  "areas/world-islands.json": {
+   "sha256": "a4227069d7df83959302a6ae4ef5d34a0d16c931f0e43818768a1ca09c1eae9d",
+   "bytes": 3764
+  },
+  "areas/yaraah.json": {
+   "sha256": "9582709fff6ef3ea62228a82a9c55cc7f1826cbaa427993e180bf183d5230298",
+   "bytes": 2410
+  },
+  "areas/za-abeel.json": {
+   "sha256": "2d4ab87c3f611797935538f15c20c8f68b437543e753397de6a4c20c1fc94f12",
+   "bytes": 19505
+  },
+  "areas/zaabeel-first.json": {
+   "sha256": "0b5a180e7c61d6262652af4e1fc0278b34a93f600bfef4a633a584cb974f2f2e",
+   "bytes": 9803
+  },
+  "areas/zareeba-duviya.json": {
+   "sha256": "9f33ba62469a54b46cc99acd41e92f1d974299e87197e4d8f592344313b40440",
+   "bytes": 4354
+  },
+  "map/masks.json": {
+   "sha256": "e2daaa6c30fda017b6329b1b14ce654d86c1a9130284030394c4efc95190a650",
+   "bytes": 834453,
+   "eager": true
+  },
+  "map/polygons.geojson": {
+   "sha256": "352059535f5e3ee0f592060d6d232808e01b0594736eb761c65bbb0286a86f4f",
+   "bytes": 1229913,
+   "eager": true
+  }
+ }
+}

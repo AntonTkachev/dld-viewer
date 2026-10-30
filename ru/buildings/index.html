@@ -1,0 +1,515 @@
+<!DOCTYPE html>
+<html lang="ru" dir="ltr">
+<head>
+<script>if(location.hostname.endsWith('.github.io')){location.replace('https://dxbcompass.com'+(location.pathname.replace(/^\/dld-viewer/,'')||'/')+location.search+location.hash);}</script>
+<meta charset="UTF-8">
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline' https://www.googletagmanager.com; style-src 'self' 'unsafe-inline'; img-src 'self' data: https://*.google-analytics.com https://www.googletagmanager.com; connect-src 'self' https://dxbcompass.com https://www.googletagmanager.com https://*.google-analytics.com https://*.analytics.google.com https://*.g.doubleclick.net; font-src 'self'; frame-ancestors 'none'; base-uri 'self'; form-action 'self'">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<link rel="icon" type="image/svg+xml" href="/favicon.svg">
+<link rel="icon" type="image/png" sizes="192x192" href="/icon-192.png">
+<link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png">
+<title>Здания Дубая — каталог с историей продаж и аренды | DXBCompass</title>
+<meta name="description" content="Каталог 4 850 жилых зданий Дубая по данным DLD: число сделок и договоров аренды, год постройки, застройщик и статус RERA. Фильтры по району, году и застройщику.">
+<link rel="canonical" href="https://dxbcompass.com/ru/buildings/">
+<link rel="alternate" hreflang="ru" href="https://dxbcompass.com/ru/buildings/">
+<link rel="alternate" hreflang="en" href="https://dxbcompass.com/en/buildings/">
+<link rel="alternate" hreflang="ar" href="https://dxbcompass.com/ar/buildings/">
+<link rel="alternate" hreflang="hi" href="https://dxbcompass.com/hi/buildings/">
+<link rel="alternate" hreflang="zh" href="https://dxbcompass.com/zh/buildings/">
+<link rel="alternate" hreflang="x-default" href="https://dxbcompass.com/en/buildings/">
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="DXBCompass">
+<meta property="og:locale" content="ru_RU">
+<meta property="og:url" content="https://dxbcompass.com/ru/buildings/">
+<meta property="og:title" content="Здания Дубая — каталог с историей продаж и аренды | DXBCompass">
+<meta property="og:description" content="Каталог 4 850 жилых зданий Дубая по данным DLD: число сделок и договоров аренды, год постройки, застройщик и статус RERA. Фильтры по району, году и застройщику.">
+<meta property="og:image" content="https://dxbcompass.com/og/cover.png">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta property="og:image:alt" content="DXBCompass — Dubai real estate data">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:image" content="https://dxbcompass.com/og/cover.png">
+<meta name="twitter:title" content="Здания Дубая — каталог с историей продаж и аренды | DXBCompass">
+<meta name="twitter:description" content="Каталог 4 850 жилых зданий Дубая по данным DLD: число сделок и договоров аренды, год постройки, застройщик и статус RERA. Фильтры по району, году и застройщику.">
+<meta name="robots" content="index,follow">
+<script type="application/ld+json">{"@context": "https://schema.org", "@type": "Dataset", "name": "Каталог зданий Дубая", "description": "Каталог 4 850 жилых зданий Дубая по данным DLD: число сделок и договоров аренды, год постройки, застройщик и статус RERA. Фильтры по району, году и застройщику.", "inLanguage": "ru", "url": "https://dxbcompass.com/ru/buildings/", "creator": {"@type": "Organization", "name": "DXBCompass"}, "license": "https://www.dubaipulse.gov.ae/terms", "isAccessibleForFree": true, "spatialCoverage": {"@type": "Place", "name": "Dubai, UAE"}, "variableMeasured": ["sale_transaction_count", "rental_contract_count", "completion_year", "developer", "rera_status", "percent_completed"], "distribution": {"@type": "DataDownload", "encodingFormat": "application/json", "contentUrl": "https://dxbcompass.com/buildings/search-index.json"}}</script>
+<script type="application/ld+json">{"@context": "https://schema.org", "@type": "BreadcrumbList", "itemListElement": [{"@type": "ListItem", "position": 1, "name": "Дубай", "item": "https://dxbcompass.com/ru/sales/"}, {"@type": "ListItem", "position": 2, "name": "Каталог зданий", "item": "https://dxbcompass.com/ru/buildings/"}]}</script>
+<script async src="https://www.googletagmanager.com/gtag/js?id=G-5G3EY3Y2KG"></script>
+<script>window.dataLayer=window.dataLayer||[];function gtag(){dataLayer.push(arguments);}gtag('js',new Date());if(!/^(localhost|127\.0\.0\.1|0\.0\.0\.0)$/.test(location.hostname)){gtag('config','G-5G3EY3Y2KG');}</script>
+<link rel="stylesheet" href="/css/viewer.css">
+<style>
+  html, body { background: #f8fafc; min-height: 100%; }
+  .wrap { max-width: 1100px; margin: 0 auto; padding: 18px 16px 64px; }
+  .breadcrumb { font-size: 13px; color: #6b7280; margin-bottom: 10px; }
+  .breadcrumb a { color: #1d4ed8; text-decoration: none; }
+  .breadcrumb a:hover { text-decoration: underline; }
+  .topbar { display: flex; align-items: baseline; justify-content: space-between; gap: 16px; flex-wrap: wrap; }
+  .topbar-controls { display: flex; gap: 10px; align-items: center; }
+  .faq-link { display: inline-flex; align-items: center; justify-content: center; width: 28px; height: 28px; background: #f1f5f9; border-radius: 8px; font-size: 14px; font-weight: 600; color: #6b7280; text-decoration: none; }
+  .blog-link { display: inline-flex; align-items: center; height: 28px; padding: 0 10px; background: #f1f5f9; border-radius: 8px; font-size: 12px; font-weight: 600; color: #6b7280; text-decoration: none; }
+  .faq-link:hover, .blog-link:hover { background: #e2e8f0; color: #1d4ed8; }
+  h1 { font-size: 24px; margin: 0 0 4px; line-height: 1.25; }
+  .lede { font-size: 14px; color: #6b7280; margin: 0 0 20px; }
+  .load-err { color: #b91c1c; font-size: 13px; margin: -10px 0 16px; }
+  .langswitch-dd { position: relative; }
+  .langswitch-dd > summary { list-style: none; cursor: pointer; display: inline-flex; align-items: center; gap: 6px; padding: 6px 10px; background: #f1f5f9; border-radius: 8px; font-size: 12px; font-weight: 600; color: #6b7280; user-select: none; }
+  .langswitch-dd > summary::-webkit-details-marker { display: none; }
+  .langswitch-dd > summary::marker { content: ""; }
+  .langswitch-dd > summary .globe { font-size: 14px; }
+  .langswitch-dd > summary .lang-current { color: #1d4ed8; }
+  .langswitch-dd > summary .caret { font-size: 10px; opacity: .6; }
+  .langswitch-dd[open] > summary { background: #e2e8f0; }
+  .langswitch-dd .lang-menu { position: absolute; top: calc(100% + 4px); inset-inline-end: 0; background: #fff; border: 1px solid #e5e7eb; border-radius: 8px; padding: 4px; min-width: 140px; box-shadow: 0 6px 16px rgba(15,23,42,0.08); display: flex; flex-direction: column; z-index: 500; }
+  .langswitch-dd .lang-menu a { padding: 7px 10px; border-radius: 6px; font-size: 13px; text-decoration: none; color: #374151; }
+  .langswitch-dd .lang-menu a:hover { background: #f3f4f6; }
+  .langswitch-dd .lang-menu a.active { background: #1d4ed8; color: #fff; font-weight: 600; }
+
+  .filters {
+    display: flex; flex-wrap: wrap; gap: 10px; align-items: flex-end;
+    background: #fff; border: 1px solid #e5e7eb; border-radius: 12px;
+    padding: 14px 16px; margin-bottom: 16px;
+  }
+  .fg { display: flex; flex-direction: column; gap: 3px; }
+  .fg label { font-size: 10.5px; color: #6b7280; text-transform: uppercase; letter-spacing: .05em; font-weight: 600; }
+  .fg input, .fg select {
+    height: 34px; padding: 0 10px; font-size: 13px; font-family: inherit;
+    border: 1px solid #d1d5db; border-radius: 8px; background: #fff;
+    color: #111; outline: none; transition: border-color .15s; box-sizing: border-box;
+  }
+  .fg input:focus, .fg select:focus { border-color: #1d4ed8; }
+  .fg-name input { width: 200px; }
+  .fg-area input { width: 180px; }
+  .yr-row { display: flex; align-items: center; gap: 5px; }
+  .yr-num { width: 74px; height: 34px; padding: 0 8px; font-size: 13px; font-family: inherit;
+            border: 1px solid #d1d5db; border-radius: 8px; background: #fff;
+            color: #111; outline: none; box-sizing: border-box; }
+  .yr-num:focus { border-color: #1d4ed8; }
+  .yr-sep { color: #94a3b8; font-size: 13px; flex-shrink: 0; }
+
+  .fg-dev { position: relative; }
+  .fg-dev input { width: 210px; padding-inline-end: 28px; cursor: default; }
+  .fg-dev input.has-selection { color: #111; font-weight: 500; }
+  .fg-dev input::placeholder { color: #94a3b8; font-weight: 400; }
+  .dev-arrow { position: absolute; inset-inline-end: 8px; bottom: 8px; pointer-events: none; color: #94a3b8; font-size: 11px; }
+  .dev-dropdown {
+    display: none; position: absolute; top: calc(100% + 4px); inset-inline-start: 0;
+    min-width: 260px; z-index: 400;
+    background: #fff; border: 1px solid #e5e7eb; border-radius: 10px;
+    box-shadow: 0 8px 28px rgba(0,0,0,.12); max-height: 320px;
+    overflow-y: auto; overflow-x: hidden;
+  }
+  .dev-dropdown.open { display: block; }
+  .dev-search-wrap { padding: 8px 10px 6px; border-bottom: 1px solid #f3f4f6; position: sticky; top: 0; background: #fff; z-index: 1; }
+  .dev-search {
+    width: 100%; box-sizing: border-box; height: 30px; padding: 0 9px;
+    font-size: 12.5px; font-family: inherit; border: 1px solid #e5e7eb;
+    border-radius: 6px; background: #f8fafc; outline: none; color: #111;
+  }
+  .dev-search:focus { border-color: #1d4ed8; background: #fff; }
+  .dev-chips { display: flex; flex-wrap: wrap; gap: 4px; padding: 7px 10px 4px; border-bottom: 1px solid #f3f4f6; }
+  .dev-chips:empty { display: none; }
+  .dev-chip {
+    display: inline-flex; align-items: center; gap: 3px;
+    padding: 2px 7px; border-radius: 5px;
+    font-size: 11.5px; font-weight: 500; white-space: nowrap;
+    background: #eff6ff; border: 1px solid #bfdbfe; color: #1d4ed8;
+  }
+  .dev-chip.zone { background: #ede9fe; border-color: #c4b5fd; color: #6d28d9; }
+  .chip-x { cursor: pointer; font-size: 13px; line-height: 1; opacity: .55; border: none; background: none; padding: 0; color: inherit; font-family: inherit; }
+  .chip-x:hover { opacity: 1; }
+  .dev-grp-label {
+    padding: 6px 11px 3px; font-size: 10px; font-weight: 700; color: #94a3b8;
+    text-transform: uppercase; letter-spacing: .06em;
+    position: sticky; top: 44px; background: #fff; z-index: 1;
+  }
+  .dev-opt {
+    display: flex; align-items: center; gap: 8px;
+    padding: 8px 12px; cursor: pointer; font-size: 13px; color: #111;
+    border-bottom: 1px solid #f9fafb; user-select: none;
+  }
+  .dev-opt:last-child { border-bottom: none; }
+  .dev-opt:hover { background: #f8fafc; }
+  .dev-opt.sel { background: #f0fdf4; }
+  .dev-opt-check { color: #16a34a; font-size: 12px; flex-shrink: 0; width: 14px; }
+  .dev-opt-name { flex: 1; }
+  .dev-opt-badge { font-size: 10px; font-weight: 600; padding: 1px 5px; border-radius: 4px; background: #ede9fe; color: #6d28d9; flex-shrink: 0; }
+  .dev-empty { padding: 12px; text-align: center; font-size: 13px; color: #94a3b8; }
+
+  .btn-reset {
+    height: 34px; padding: 0 14px; font-size: 13px; font-family: inherit;
+    border: 1px solid #e5e7eb; border-radius: 8px; background: #f9fafb;
+    color: #374151; cursor: pointer; transition: background .12s; flex-shrink: 0;
+  }
+  .btn-reset:hover { background: #f3f4f6; }
+
+  .results-bar { display: flex; justify-content: space-between; align-items: center; gap: 10px; flex-wrap: wrap; font-size: 13px; color: #6b7280; margin-bottom: 10px; }
+  .sort-wrap { display: flex; gap: 6px; align-items: center; }
+  .sort-wrap label { font-size: 12px; color: #6b7280; }
+  .sort-wrap select { height: 30px; padding: 0 8px; font-size: 12px; font-family: inherit; border: 1px solid #d1d5db; border-radius: 6px; background: #fff; }
+
+  .tbl-wrap { background: #fff; border: 1px solid #e5e7eb; border-radius: 12px; overflow: hidden; }
+  table { width: 100%; border-collapse: collapse; }
+  thead th {
+    padding: 10px 12px; font-size: 11px; text-transform: uppercase;
+    letter-spacing: .04em; color: #6b7280; font-weight: 600;
+    border-bottom: 1px solid #e5e7eb; text-align: start;
+    white-space: nowrap; background: #f8fafc;
+  }
+  th.num, td.num { text-align: end; font-variant-numeric: tabular-nums; }
+  thead th.sortable { cursor: pointer; user-select: none; }
+  thead th.sortable:hover { color: #374151; }
+  thead th.sort-active { color: #1d4ed8; }
+  .sort-icon { display: inline-block; margin-inline-start: 3px; font-size: 10px; opacity: .5; }
+  thead th.sort-active .sort-icon { opacity: 1; }
+  tbody tr { border-bottom: 1px solid #f3f4f6; transition: background .1s; cursor: pointer; }
+  tbody tr:last-child { border-bottom: none; }
+  tbody tr:hover { background: #eff6ff; }
+  tbody td { padding: 9px 12px; font-size: 13px; color: #111; vertical-align: middle; }
+  tbody td.num { color: #374151; }
+  .td-name { font-weight: 500; }
+  .td-name .bld-a { color: inherit; text-decoration: none; }
+  .td-area { color: #6b7280; font-size: 11.5px; margin-top: 2px; }
+  .td-area .area-a { color: inherit; text-decoration: none; border-bottom: 1px dotted #cbd5e1; }
+  .td-area .area-a:hover { color: #1d4ed8; }
+  .yr-plan, .yr-est, .rn-proj { cursor: help; }
+  .yr-plan { color: #92400e; font-size: 12px; white-space: nowrap; }
+  .rn-proj { border-bottom: 1px dotted #94a3b8; }
+  .proj-note { display: flex; align-items: center; gap: 8px; background: #eff6ff; border: 1px solid #bfdbfe; color: #1d4ed8; border-radius: 8px; padding: 6px 10px; font-size: 13px; margin-bottom: 12px; width: fit-content; }
+  .proj-note button { border: none; background: none; color: inherit; cursor: pointer; font-size: 15px; line-height: 1; padding: 0; }
+  .btn-map { display: inline-flex; align-items: center; font-size: 13px; font-weight: 600; color: #1d4ed8; text-decoration: none; margin-inline-start: 6px; opacity: .75; transition: opacity .12s; }
+  .proj-note[hidden] { display: none; }
+  .btn-map:hover { opacity: 1; }
+  .badge-zone {
+    display: inline-block; font-size: 10px; font-weight: 600;
+    padding: 1px 5px; border-radius: 4px; margin-inline-start: 5px;
+    background: #ede9fe; color: #6d28d9; vertical-align: middle; white-space: nowrap;
+  }
+  .stbadge { display: inline-block; padding: 2px 7px; border-radius: 12px; font-size: 11px; font-weight: 600; white-space: nowrap; }
+  .stbadge-FINISHED { background: #ecfdf5; color: #047857; }
+  .stbadge-ACTIVE { background: #dbeafe; color: #1d4ed8; }
+  .stbadge-NOT_STARTED { background: #fef3c7; color: #92400e; }
+  .stbadge-PENDING { background: #fff7ed; color: #c2410c; }
+  .stbadge-CONDITIONAL_ACTIVATING { background: #f1f5f9; color: #475569; }
+  .stbadge-FRIEZED { background: #fee2e2; color: #991b1b; }
+  .pct { margin-inline-start: 6px; font-size: 11.5px; color: #475569; font-variant-numeric: tabular-nums; }
+  .mute { color: #94a3b8; font-style: italic; }
+
+  .pager { display: flex; justify-content: center; align-items: center; gap: 8px; margin-top: 18px; font-size: 13px; }
+  .pager button {
+    padding: 6px 14px; border: 1px solid #d1d5db; border-radius: 7px;
+    background: #fff; color: #374151; cursor: pointer; font-size: 13px;
+    font-family: inherit; transition: background .12s;
+  }
+  .pager button:hover:not(:disabled) { background: #f3f4f6; }
+  .pager button:disabled { opacity: .4; cursor: default; }
+  .pager .pi { color: #6b7280; }
+  .empty { padding: 40px 0; text-align: center; color: #94a3b8; font-size: 14px; }
+  .nav-foot { margin-top: 24px; padding-top: 16px; border-top: 1px solid #e5e7eb; font-size: 13.5px; display: flex; gap: 18px; flex-wrap: wrap; }
+  .nav-foot a { color: #1d4ed8; text-decoration: none; }
+  [dir="rtl"] .fg label, [dir="rtl"] thead th, [dir="rtl"] .dev-grp-label { letter-spacing: 0; }
+
+  @media (max-width: 700px) {
+    .fg-name input, .fg-area input, .fg-dev input { width: 100%; }
+    .yr-num { flex: 1; }
+    .filters { flex-direction: column; align-items: stretch; }
+    .col-dev, .col-yr, .col-pct { display: none; }
+  }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div class="breadcrumb"><a href="/ru/sales/">Дубай</a> › <span>Каталог зданий</span></div>
+  <div class="topbar">
+    <h1>Каталог зданий Дубая</h1>
+    <div class="topbar-controls">
+      <details class="langswitch-dd"><summary><span class="globe" aria-hidden="true">🌐</span><span class="lang-current">RU</span><span class="caret" aria-hidden="true">▾</span></summary><div class="lang-menu"><a class="active" href="https://dxbcompass.com/ru/buildings/" hreflang="ru" lang="ru">RU</a><a class="" href="https://dxbcompass.com/en/buildings/" hreflang="en" lang="en">EN</a><a class="" href="https://dxbcompass.com/ar/buildings/" hreflang="ar" lang="ar">AR</a><a class="" href="https://dxbcompass.com/hi/buildings/" hreflang="hi" lang="hi">HI</a><a class="" href="https://dxbcompass.com/zh/buildings/" hreflang="zh" lang="zh">ZH</a></div></details>
+      <a class="faq-link" href="/ru/faq/" title="FAQ" aria-label="FAQ">?</a>
+      <a class="blog-link" href="/ru/blog/" title="Blog">Blog</a>
+    </div>
+  </div>
+  <p class="lede">Зданий с историей сделок DLD: 4 850. Нажмите на здание, чтобы открыть цены и аренду по годам.</p>
+  <p class="load-err" id="loadErr" hidden>Не удалось загрузить каталог зданий. Обновите страницу.</p>
+
+  <div class="filters">
+    <div class="fg fg-name">
+      <label for="fName">Название здания</label>
+      <input id="fName" type="search" placeholder="Marina Gate, Burj…" autocomplete="off" spellcheck="false">
+    </div>
+    <div class="fg fg-area">
+      <label for="fArea">Район</label>
+      <input id="fArea" type="search" placeholder="Dubai Marina, JVC…" autocomplete="off" spellcheck="false">
+    </div>
+    <div class="fg fg-yr">
+      <label for="fYr1">Год постройки</label>
+      <div class="yr-row">
+        <input class="yr-num" id="fYr1" type="number" inputmode="numeric" placeholder="с" min="1960" max="2040">
+        <span class="yr-sep">—</span>
+        <input class="yr-num" id="fYr2" type="number" inputmode="numeric" placeholder="по" min="1960" max="2040" aria-label="Год постройки по">
+      </div>
+    </div>
+    <div class="fg fg-dev">
+      <label for="devTrigger">Застройщик / зона</label>
+      <input id="devTrigger" type="text" readonly placeholder="Все застройщики и зоны" autocomplete="off">
+      <span class="dev-arrow">▾</span>
+      <div class="dev-dropdown" id="devDropdown">
+        <div class="dev-search-wrap"><input class="dev-search" id="devSearch" type="text" placeholder="Поиск…" autocomplete="off"></div>
+        <div class="dev-chips" id="devChips"></div>
+        <div id="devList"></div>
+      </div>
+    </div>
+    <button class="btn-reset" id="btnReset" type="button">Сбросить</button>
+  </div>
+
+  <div class="proj-note" id="projNote" hidden><span id="projNoteText"></span><button type="button" id="projClear" aria-label="Сбросить">×</button></div>
+
+  <div class="results-bar">
+    <span id="resultCount">4 850 зданий</span>
+    <div class="sort-wrap">
+      <label for="sortBy">Сортировка:</label>
+      <select id="sortBy">
+        <option value="tx">Больше сделок</option>
+        <option value="yr_asc">Сначала старые</option>
+        <option value="yr_desc">Сначала новые</option>
+        <option value="az">По названию A–Z</option>
+      </select>
+    </div>
+  </div>
+
+  <div class="tbl-wrap">
+    <table>
+      <thead><tr>
+        <th>Здание</th>
+        <th class="col-yr num sortable" id="thBuilt">Год <span class="sort-icon" id="builtIcon">↕</span></th>
+        <th class="col-dev">Застройщик / зона</th>
+        <th class="col-pct" title="Статус проекта и процент готовности по RERA">Статус</th>
+        <th class="num">Продажи</th>
+        <th class="num" title="Договоры аренды Ejari. Ejari привязывает к проекту лишь меньшую часть договоров, поэтому у многих зданий аренды нет">Аренда</th>
+      </tr></thead>
+      <tbody id="tBody"><tr data-s="seven-city-jlt" data-h="/ru/buildings/seven-city-jlt/"><td class="td-name"><a class="bld-a" href="/ru/buildings/seven-city-jlt/">Seven City JLT</a><div class="td-area"><a class="area-a" href="/ru/sales/jlt-jumeirah-lake-towers/" title="Цены района">JLT (Jumeirah Lake Towers)</a></div></td><td class="num col-yr"><span class="mute">—</span></td><td class="col-dev"><span class="mute">—</span></td><td class="col-pct"><span class="stbadge stbadge-CONDITIONAL_ACTIVATING">Условно активен</span><span class="pct">28%</span></td><td class="num">3 568</td><td class="num"><span class="mute">—</span></td></tr><tr data-s="princess-tower" data-h="/ru/buildings/princess-tower/"><td class="td-name"><a class="bld-a" href="/ru/buildings/princess-tower/">PRINCESS TOWER</a><a class="btn-map" href="/ru/sales/?bld=princess-tower" title="Показать на карте">↗</a><div class="td-area"><a class="area-a" href="/ru/sales/dubai-marina/" title="Цены района">Dubai Marina</a></div></td><td class="num col-yr">2012</td><td class="col-dev">Emaar</td><td class="col-pct"><span class="stbadge stbadge-FINISHED">Сдан</span></td><td class="num">2 427</td><td class="num">5 323</td></tr><tr data-s="burj-khalifa" data-h="/ru/buildings/burj-khalifa/"><td class="td-name"><a class="bld-a" href="/ru/buildings/burj-khalifa/">Burj Khalifa</a><a class="btn-map" href="/ru/sales/?bld=burj-khalifa" title="Показать на карте">↗</a><div class="td-area"><a class="area-a" href="/ru/sales/downtown-dubai/" title="Цены района">Downtown Dubai</a></div></td><td class="num col-yr">2012</td><td class="col-dev">Emaar</td><td class="col-pct"><span class="stbadge stbadge-FINISHED">Сдан</span></td><td class="num">2 400</td><td class="num">4 825</td></tr><tr data-s="silicon-gates-1" data-h="/ru/buildings/silicon-gates-1/"><td class="td-name"><a class="bld-a" href="/ru/buildings/silicon-gates-1/">SILICON GATES 1</a><a class="btn-map" href="/ru/sales/?bld=silicon-gates-1" title="Показать на карте">↗</a><div class="td-area"><a class="area-a" href="/ru/sales/silicon-oasis/" title="Цены района">Silicon Oasis</a></div></td><td class="num col-yr">2014</td><td class="col-dev">DIEZ<span class="badge-zone">Зона</span></td><td class="col-pct"><span class="stbadge stbadge-FINISHED">Сдан</span></td><td class="num">2 365</td><td class="num">6 170</td></tr><tr data-s="marina-pinnacle" data-h="/ru/buildings/marina-pinnacle/"><td class="td-name"><a class="bld-a" href="/ru/buildings/marina-pinnacle/">Marina Pinnacle</a><a class="btn-map" href="/ru/sales/?bld=marina-pinnacle" title="Показать на карте">↗</a><div class="td-area"><a class="area-a" href="/ru/sales/dubai-marina/" title="Цены района">Dubai Marina</a></div></td><td class="num col-yr">2011</td><td class="col-dev">Emaar</td><td class="col-pct"><span class="stbadge stbadge-FINISHED">Сдан</span></td><td class="num">2 287</td><td class="num">4 460</td></tr><tr data-s="elite-residence" data-h="/ru/buildings/elite-residence/"><td class="td-name"><a class="bld-a" href="/ru/buildings/elite-residence/">ELITE RESIDENCE</a><a class="btn-map" href="/ru/sales/?bld=elite-residence" title="Показать на карте">↗</a><div class="td-area"><a class="area-a" href="/ru/sales/dubai-marina/" title="Цены района">Dubai Marina</a></div></td><td class="num col-yr">2012</td><td class="col-dev">Emaar</td><td class="col-pct"><span class="stbadge stbadge-FINISHED">Сдан</span></td><td class="num">2 212</td><td class="num">4 932</td></tr><tr data-s="ciel" data-h="/ru/buildings/ciel/"><td class="td-name"><a class="bld-a" href="/ru/buildings/ciel/">Ciel</a><a class="btn-map" href="/ru/sales/?bld=ciel" title="Показать на карте">↗</a><div class="td-area"><a class="area-a" href="/ru/sales/dubai-marina/" title="Цены района">Dubai Marina</a></div></td><td class="num col-yr">2025</td><td class="col-dev">Emaar</td><td class="col-pct"><span class="stbadge stbadge-FINISHED">Сдан</span></td><td class="num">2 093</td><td class="num"><span class="mute">—</span></td></tr><tr data-s="torch-tower" data-h="/ru/buildings/torch-tower/"><td class="td-name"><a class="bld-a" href="/ru/buildings/torch-tower/">Torch Tower</a><a class="btn-map" href="/ru/sales/?bld=torch-tower" title="Показать на карте">↗</a><div class="td-area"><a class="area-a" href="/ru/sales/dubai-marina/" title="Цены района">Dubai Marina</a></div></td><td class="num col-yr">2011</td><td class="col-dev">Emaar</td><td class="col-pct"><span class="stbadge stbadge-FINISHED">Сдан</span></td><td class="num">2 078</td><td class="num">5 029</td></tr><tr data-s="tamani-arts-office" data-h="/ru/buildings/tamani-arts-office/"><td class="td-name"><a class="bld-a" href="/ru/buildings/tamani-arts-office/">Tamani Arts Office</a><a class="btn-map" href="/ru/sales/?bld=tamani-arts-office" title="Показать на карте">↗</a><div class="td-area"><a class="area-a" href="/ru/sales/business-bay/" title="Цены района">Business Bay</a></div></td><td class="num col-yr">2017</td><td class="col-dev">Business Bay<span class="badge-zone">Зона</span></td><td class="col-pct"><span class="stbadge stbadge-FINISHED">Сдан</span></td><td class="num">1 942</td><td class="num"><span class="mute">—</span></td></tr><tr data-s="binghatti-elite" data-h="/ru/buildings/binghatti-elite/"><td class="td-name"><a class="bld-a" href="/ru/buildings/binghatti-elite/">Binghatti Elite</a><a class="btn-map" href="/ru/sales/?bld=binghatti-elite" title="Показать на карте">↗</a><div class="td-area"><a class="area-a" href="/ru/sales/impz-international-media-production-zone/" title="Цены района">IMPZ (International Media Production Zone)</a></div></td><td class="num col-yr"><span class="mute">—</span></td><td class="col-dev">TECOM<span class="badge-zone">Зона</span></td><td class="col-pct"><span class="stbadge stbadge-ACTIVE">Строится</span><span class="pct">53%</span></td><td class="num">1 791</td><td class="num"><span class="mute">—</span></td></tr><tr data-s="ocean-heights" data-h="/ru/buildings/ocean-heights/"><td class="td-name"><a class="bld-a" href="/ru/buildings/ocean-heights/">OCEAN HEIGHTS</a><a class="btn-map" href="/ru/sales/?bld=ocean-heights" title="Показать на карте">↗</a><div class="td-area"><a class="area-a" href="/ru/sales/dubai-marina/" title="Цены района">Dubai Marina</a></div></td><td class="num col-yr">2010</td><td class="col-dev">Emaar</td><td class="col-pct"><span class="stbadge stbadge-FINISHED">Сдан</span></td><td class="num">1 762</td><td class="num">4 276</td></tr><tr data-s="churchill-tower-1-commercial" data-h="/ru/buildings/churchill-tower-1-commercial/"><td class="td-name"><a class="bld-a" href="/ru/buildings/churchill-tower-1-commercial/">Churchill Tower 1-Commercial</a><a class="btn-map" href="/ru/sales/?bld=churchill-tower-1-commercial" title="Показать на карте">↗</a><div class="td-area"><a class="area-a" href="/ru/sales/business-bay/" title="Цены района">Business Bay</a></div></td><td class="num col-yr">2009</td><td class="col-dev">Dubai Properties<span class="badge-zone">Зона</span></td><td class="col-pct"><span class="stbadge stbadge-FINISHED">Сдан</span></td><td class="num">1 704</td><td class="num"><span class="rn-proj" title="Договоры Ejari по всему проекту (зданий в проекте: 2): Ejari не указывает конкретное здание">3 099</span></td></tr><tr data-s="burj-lake-hotel-the-address-downtown" data-h="/ru/buildings/burj-lake-hotel-the-address-downtown/"><td class="td-name"><a class="bld-a" href="/ru/buildings/burj-lake-hotel-the-address-downtown/">Burj Lake Hotel - The Address DownTown</a><a class="btn-map" href="/ru/sales/?bld=burj-lake-hotel-the-address-downtown" title="Показать на карте">↗</a><div class="td-area"><a class="area-a" href="/ru/sales/downtown-dubai/" title="Цены района">Downtown Dubai</a></div></td><td class="num col-yr"><span class="mute">—</span></td><td class="col-dev"><span class="mute">—</span></td><td class="col-pct"><span class="mute">—</span></td><td class="num">1 635</td><td class="num"><span class="mute">—</span></td></tr><tr data-s="dubai-marina-mall-hotel" data-h="/ru/buildings/dubai-marina-mall-hotel/"><td class="td-name"><a class="bld-a" href="/ru/buildings/dubai-marina-mall-hotel/">Dubai Marina Mall Hotel</a><a class="btn-map" href="/ru/sales/?bld=dubai-marina-mall-hotel" title="Показать на карте">↗</a><div class="td-area"><a class="area-a" href="/ru/sales/dubai-marina/" title="Цены района">Dubai Marina</a></div></td><td class="num col-yr">2009</td><td class="col-dev">Emaar</td><td class="col-pct"><span class="stbadge stbadge-FINISHED">Сдан</span></td><td class="num">1 596</td><td class="num">441</td></tr><tr data-s="binghatti-hillviews" data-h="/ru/buildings/binghatti-hillviews/"><td class="td-name"><a class="bld-a" href="/ru/buildings/binghatti-hillviews/">Binghatti Hillviews</a><div class="td-area"><a class="area-a" href="/ru/sales/dubai-science-park/" title="Цены района">Dubai Science Park</a></div></td><td class="num col-yr"><span class="mute">—</span></td><td class="col-dev">DHAM<span class="badge-zone">Зона</span></td><td class="col-pct"><span class="stbadge stbadge-ACTIVE">Строится</span><span class="pct">32%</span></td><td class="num">1 579</td><td class="num"><span class="mute">—</span></td></tr><tr data-s="cayan-tower" data-h="/ru/buildings/cayan-tower/"><td class="td-name"><a class="bld-a" href="/ru/buildings/cayan-tower/">CAYAN TOWER</a><a class="btn-map" href="/ru/sales/?bld=cayan-tower" title="Показать на карте">↗</a><div class="td-area"><a class="area-a" href="/ru/sales/dubai-marina/" title="Цены района">Dubai Marina</a></div></td><td class="num col-yr">2013</td><td class="col-dev">Emaar</td><td class="col-pct"><span class="stbadge stbadge-FINISHED">Сдан</span></td><td class="num">1 553</td><td class="num">3 142</td></tr><tr data-s="churchill-tower-2-residential" data-h="/ru/buildings/churchill-tower-2-residential/"><td class="td-name"><a class="bld-a" href="/ru/buildings/churchill-tower-2-residential/">Churchill Tower 2-Residential</a><a class="btn-map" href="/ru/sales/?bld=churchill-tower-2-residential" title="Показать на карте">↗</a><div class="td-area"><a class="area-a" href="/ru/sales/business-bay/" title="Цены района">Business Bay</a></div></td><td class="num col-yr">2009</td><td class="col-dev">Dubai Properties<span class="badge-zone">Зона</span></td><td class="col-pct"><span class="stbadge stbadge-FINISHED">Сдан</span></td><td class="num">1 533</td><td class="num"><span class="rn-proj" title="Договоры Ejari по всему проекту (зданий в проекте: 2): Ejari не указывает конкретное здание">3 099</span></td></tr><tr data-s="grande" data-h="/ru/buildings/grande/"><td class="td-name"><a class="bld-a" href="/ru/buildings/grande/">Grande</a><a class="btn-map" href="/ru/sales/?bld=grande" title="Показать на карте">↗</a><div class="td-area"><a class="area-a" href="/ru/sales/downtown-dubai/" title="Цены района">Downtown Dubai</a></div></td><td class="num col-yr">2022</td><td class="col-dev">Emaar</td><td class="col-pct"><span class="stbadge stbadge-FINISHED">Сдан</span></td><td class="num">1 529</td><td class="num">994</td></tr><tr data-s="binghatti-vintage" data-h="/ru/buildings/binghatti-vintage/"><td class="td-name"><a class="bld-a" href="/ru/buildings/binghatti-vintage/">Binghatti Vintage</a><a class="btn-map" href="/ru/sales/?bld=binghatti-vintage" title="Показать на карте">↗</a><div class="td-area"><a class="area-a" href="/ru/sales/majan/" title="Цены района">Majan</a></div></td><td class="num col-yr"><span class="mute">—</span></td><td class="col-dev"><span class="mute">—</span></td><td class="col-pct"><span class="stbadge stbadge-NOT_STARTED">Не начат</span><span class="pct">0%</span></td><td class="num">1 518</td><td class="num"><span class="mute">—</span></td></tr><tr data-s="aykon-city-tower-b" data-h="/ru/buildings/aykon-city-tower-b/"><td class="td-name"><a class="bld-a" href="/ru/buildings/aykon-city-tower-b/">AYKON CITY-TOWER B</a><a class="btn-map" href="/ru/sales/?bld=aykon-city-tower-b" title="Показать на карте">↗</a><div class="td-area"><a class="area-a" href="/ru/sales/business-bay/" title="Цены района">Business Bay</a></div></td><td class="num col-yr">2023</td><td class="col-dev">Meraas</td><td class="col-pct"><span class="stbadge stbadge-FINISHED">Сдан</span></td><td class="num">1 513</td><td class="num">1</td></tr><tr data-s="aykon-city-2-tower-c" data-h="/ru/buildings/aykon-city-2-tower-c/"><td class="td-name"><a class="bld-a" href="/ru/buildings/aykon-city-2-tower-c/">AYKON CITY (2) -TOWER C</a><a class="btn-map" href="/ru/sales/?bld=aykon-city-2-tower-c" title="Показать на карте">↗</a><div class="td-area"><a class="area-a" href="/ru/sales/business-bay/" title="Цены района">Business Bay</a></div></td><td class="num col-yr">2023</td><td class="col-dev">Meraas</td><td class="col-pct"><span class="stbadge stbadge-FINISHED">Сдан</span></td><td class="num">1 454</td><td class="num">1 221</td></tr><tr data-s="the-address-the-blvd" data-h="/ru/buildings/the-address-the-blvd/"><td class="td-name"><a class="bld-a" href="/ru/buildings/the-address-the-blvd/">The Address - The BLVD</a><a class="btn-map" href="/ru/sales/?bld=the-address-the-blvd" title="Показать на карте">↗</a><div class="td-area"><a class="area-a" href="/ru/sales/downtown-dubai/" title="Цены района">Downtown Dubai</a></div></td><td class="num col-yr">2017</td><td class="col-dev">Emaar</td><td class="col-pct"><span class="stbadge stbadge-FINISHED">Сдан</span></td><td class="num">1 442</td><td class="num">576</td></tr><tr data-s="mag218" data-h="/ru/buildings/mag218/"><td class="td-name"><a class="bld-a" href="/ru/buildings/mag218/">MAG218</a><a class="btn-map" href="/ru/sales/?bld=mag218" title="Показать на карте">↗</a><div class="td-area"><a class="area-a" href="/ru/sales/dubai-marina/" title="Цены района">Dubai Marina</a></div></td><td class="num col-yr">2010</td><td class="col-dev">Emaar</td><td class="col-pct"><span class="stbadge stbadge-FINISHED">Сдан</span></td><td class="num">1 429</td><td class="num">3 999</td></tr><tr data-s="palace-tower-t2" data-h="/ru/buildings/palace-tower-t2/"><td class="td-name"><a class="bld-a" href="/ru/buildings/palace-tower-t2/">PALACE TOWER T2</a><a class="btn-map" href="/ru/sales/?bld=palace-tower-t2" title="Показать на карте">↗</a><div class="td-area"><a class="area-a" href="/ru/sales/silicon-oasis/" title="Цены района">Silicon Oasis</a></div></td><td class="num col-yr">2009</td><td class="col-dev">DIEZ<span class="badge-zone">Зона</span></td><td class="col-pct"><span class="stbadge stbadge-FINISHED">Сдан</span></td><td class="num">1 406</td><td class="num"><span class="rn-proj" title="Договоры Ejari по всему проекту (зданий в проекте: 3): Ejari не указывает конкретное здание">2 770</span></td></tr><tr data-s="regalia" data-h="/ru/buildings/regalia/"><td class="td-name"><a class="bld-a" href="/ru/buildings/regalia/">Regalia</a><a class="btn-map" href="/ru/sales/?bld=regalia" title="Показать на карте">↗</a><div class="td-area"><a class="area-a" href="/ru/sales/business-bay/" title="Цены района">Business Bay</a></div></td><td class="num col-yr">2026</td><td class="col-dev">Business Bay<span class="badge-zone">Зона</span></td><td class="col-pct"><span class="stbadge stbadge-FINISHED">Сдан</span></td><td class="num">1 403</td><td class="num">153</td></tr><tr data-s="burlington-tower" data-h="/ru/buildings/burlington-tower/"><td class="td-name"><a class="bld-a" href="/ru/buildings/burlington-tower/">BURLINGTON TOWER</a><a class="btn-map" href="/ru/sales/?bld=burlington-tower" title="Показать на карте">↗</a><div class="td-area"><a class="area-a" href="/ru/sales/business-bay/" title="Цены района">Business Bay</a></div></td><td class="num col-yr">2013</td><td class="col-dev">Business Bay<span class="badge-zone">Зона</span></td><td class="col-pct"><span class="stbadge stbadge-FINISHED">Сдан</span></td><td class="num">1 386</td><td class="num"><span class="mute">—</span></td></tr><tr data-s="five-at-palm-jumeirah-dubai" data-h="/ru/buildings/five-at-palm-jumeirah-dubai/"><td class="td-name"><a class="bld-a" href="/ru/buildings/five-at-palm-jumeirah-dubai/">FIVE AT PALM JUMEIRAH DUBAI</a><a class="btn-map" href="/ru/sales/?bld=five-at-palm-jumeirah-dubai" title="Показать на карте">↗</a><div class="td-area"><a class="area-a" href="/ru/sales/palm-jumeirah/" title="Цены района">Palm Jumeirah</a></div></td><td class="num col-yr">2016</td><td class="col-dev">Nakheel</td><td class="col-pct"><span class="stbadge stbadge-FINISHED">Сдан</span></td><td class="num">1 377</td><td class="num">570</td></tr><tr data-s="lake-terrace" data-h="/ru/buildings/lake-terrace/"><td class="td-name"><a class="bld-a" href="/ru/buildings/lake-terrace/">LAKE TERRACE</a><a class="btn-map" href="/ru/sales/?bld=lake-terrace" title="Показать на карте">↗</a><div class="td-area"><a class="area-a" href="/ru/sales/jlt-jumeirah-lake-towers/" title="Цены района">JLT (Jumeirah Lake Towers)</a></div></td><td class="num col-yr">2008</td><td class="col-dev"><span class="mute">—</span></td><td class="col-pct"><span class="stbadge stbadge-FINISHED">Сдан</span></td><td class="num">1 341</td><td class="num">4 207</td></tr><tr data-s="skycourts-tower-f" data-h="/ru/buildings/skycourts-tower-f/"><td class="td-name"><a class="bld-a" href="/ru/buildings/skycourts-tower-f/">Skycourts Tower F</a><a class="btn-map" href="/ru/sales/?bld=skycourts-tower-f" title="Показать на карте">↗</a><div class="td-area"><a class="area-a" href="/ru/sales/dubai-land-residence-complex/" title="Цены района">Dubai Land Residence Complex</a></div></td><td class="num col-yr">2011</td><td class="col-dev">Dubai Land Residences<span class="badge-zone">Зона</span></td><td class="col-pct"><span class="stbadge stbadge-FINISHED">Сдан</span></td><td class="num">1 328</td><td class="num"><span class="rn-proj" title="Договоры Ejari по всему проекту (зданий в проекте: 6): Ejari не указывает конкретное здание">22 802</span></td></tr><tr data-s="the-dubai-mall-residences" data-h="/ru/buildings/the-dubai-mall-residences/"><td class="td-name"><a class="bld-a" href="/ru/buildings/the-dubai-mall-residences/">THE DUBAI MALL RESIDENCES</a><div class="td-area"><a class="area-a" href="/ru/sales/downtown-dubai/" title="Цены района">Downtown Dubai</a></div></td><td class="num col-yr">2008</td><td class="col-dev">Emaar</td><td class="col-pct"><span class="stbadge stbadge-FINISHED">Сдан</span></td><td class="num">1 324</td><td class="num">418</td></tr><tr data-s="sulafa-tower" data-h="/ru/buildings/sulafa-tower/"><td class="td-name"><a class="bld-a" href="/ru/buildings/sulafa-tower/">Sulafa Tower</a><a class="btn-map" href="/ru/sales/?bld=sulafa-tower" title="Показать на карте">↗</a><div class="td-area"><a class="area-a" href="/ru/sales/dubai-marina/" title="Цены района">Dubai Marina</a></div></td><td class="num col-yr">2010</td><td class="col-dev">Emaar</td><td class="col-pct"><span class="stbadge stbadge-FINISHED">Сдан</span></td><td class="num">1 321</td><td class="num">6 901</td></tr><tr data-s="al-habtoor-tower" data-h="/ru/buildings/al-habtoor-tower/"><td class="td-name"><a class="bld-a" href="/ru/buildings/al-habtoor-tower/">Al Habtoor Tower</a><a class="btn-map" href="/ru/sales/?bld=al-habtoor-tower" title="Показать на карте">↗</a><div class="td-area"><a class="area-a" href="/ru/sales/business-bay/" title="Цены района">Business Bay</a></div></td><td class="num col-yr"><span class="mute">—</span></td><td class="col-dev">Business Bay<span class="badge-zone">Зона</span></td><td class="col-pct"><span class="stbadge stbadge-ACTIVE">Строится</span><span class="pct">90%</span></td><td class="num">1 301</td><td class="num"><span class="mute">—</span></td></tr><tr data-s="the-edge" data-h="/ru/buildings/the-edge/"><td class="td-name"><a class="bld-a" href="/ru/buildings/the-edge/">THE EDGE</a><a class="btn-map" href="/ru/sales/?bld=the-edge" title="Показать на карте">↗</a><div class="td-area"><a class="area-a" href="/ru/sales/business-bay/" title="Цены района">Business Bay</a></div></td><td class="num col-yr">2026</td><td class="col-dev">Business Bay<span class="badge-zone">Зона</span></td><td class="col-pct"><span class="stbadge stbadge-FINISHED">Сдан</span></td><td class="num">1 300</td><td class="num">2</td></tr><tr data-s="skycourts-tower-d" data-h="/ru/buildings/skycourts-tower-d/"><td class="td-name"><a class="bld-a" href="/ru/buildings/skycourts-tower-d/">Skycourts Tower D</a><a class="btn-map" href="/ru/sales/?bld=skycourts-tower-d" title="Показать на карте">↗</a><div class="td-area"><a class="area-a" href="/ru/sales/dubai-land-residence-complex/" title="Цены района">Dubai Land Residence Complex</a></div></td><td class="num col-yr">2011</td><td class="col-dev">Dubai Land Residences<span class="badge-zone">Зона</span></td><td class="col-pct"><span class="stbadge stbadge-FINISHED">Сдан</span></td><td class="num">1 283</td><td class="num"><span class="rn-proj" title="Договоры Ejari по всему проекту (зданий в проекте: 6): Ejari не указывает конкретное здание">22 802</span></td></tr><tr data-s="sobha-hartland-crest-grande" data-h="/ru/buildings/sobha-hartland-crest-grande/"><td class="td-name"><a class="bld-a" href="/ru/buildings/sobha-hartland-crest-grande/">Sobha Hartland - Crest Grande</a><a class="btn-map" href="/ru/sales/?bld=sobha-hartland-crest-grande" title="Показать на карте">↗</a><div class="td-area"><a class="area-a" href="/ru/sales/sobha-hartland/" title="Цены района">Sobha Hartland</a></div></td><td class="num col-yr">2026</td><td class="col-dev">Sobha</td><td class="col-pct"><span class="stbadge stbadge-FINISHED">Сдан</span></td><td class="num">1 280</td><td class="num">462</td></tr><tr data-s="peninsula-three" data-h="/ru/buildings/peninsula-three/"><td class="td-name"><a class="bld-a" href="/ru/buildings/peninsula-three/">Peninsula Three</a><a class="btn-map" href="/ru/sales/?bld=peninsula-three" title="Показать на карте">↗</a><div class="td-area"><a class="area-a" href="/ru/sales/business-bay/" title="Цены района">Business Bay</a></div></td><td class="num col-yr">2025</td><td class="col-dev">Business Bay<span class="badge-zone">Зона</span></td><td class="col-pct"><span class="stbadge stbadge-FINISHED">Сдан</span></td><td class="num">1 273</td><td class="num">463</td></tr><tr data-s="almas-tower" data-h="/ru/buildings/almas-tower/"><td class="td-name"><a class="bld-a" href="/ru/buildings/almas-tower/">ALMAS TOWER</a><a class="btn-map" href="/ru/sales/?bld=almas-tower" title="Показать на карте">↗</a><div class="td-area"><a class="area-a" href="/ru/sales/jlt-jumeirah-lake-towers/" title="Цены района">JLT (Jumeirah Lake Towers)</a></div></td><td class="num col-yr">2008</td><td class="col-dev"><span class="mute">—</span></td><td class="col-pct"><span class="stbadge stbadge-FINISHED">Сдан</span></td><td class="num">1 263</td><td class="num"><span class="mute">—</span></td></tr><tr data-s="lakeshore-tower-1" data-h="/ru/buildings/lakeshore-tower-1/"><td class="td-name"><a class="bld-a" href="/ru/buildings/lakeshore-tower-1/">Lakeshore Tower 1</a><a class="btn-map" href="/ru/sales/?bld=lakeshore-tower-1" title="Показать на карте">↗</a><div class="td-area"><a class="area-a" href="/ru/sales/jlt-jumeirah-lake-towers/" title="Цены района">JLT (Jumeirah Lake Towers)</a></div></td><td class="num col-yr">2009</td><td class="col-dev">DMCC<span class="badge-zone">Зона</span></td><td class="col-pct"><span class="stbadge stbadge-FINISHED">Сдан</span></td><td class="num">1 260</td><td class="num">2 897</td></tr><tr data-s="skycourts-tower-a" data-h="/ru/buildings/skycourts-tower-a/"><td class="td-name"><a class="bld-a" href="/ru/buildings/skycourts-tower-a/">Skycourts Tower A</a><a class="btn-map" href="/ru/sales/?bld=skycourts-tower-a" title="Показать на карте">↗</a><div class="td-area"><a class="area-a" href="/ru/sales/dubai-land-residence-complex/" title="Цены района">Dubai Land Residence Complex</a></div></td><td class="num col-yr">2011</td><td class="col-dev">Dubai Land Residences<span class="badge-zone">Зона</span></td><td class="col-pct"><span class="stbadge stbadge-FINISHED">Сдан</span></td><td class="num">1 258</td><td class="num"><span class="rn-proj" title="Договоры Ejari по всему проекту (зданий в проекте: 6): Ejari не указывает конкретное здание">22 802</span></td></tr><tr data-s="lake-view" data-h="/ru/buildings/lake-view/"><td class="td-name"><a class="bld-a" href="/ru/buildings/lake-view/">LAKE VIEW</a><a class="btn-map" href="/ru/sales/?bld=lake-view" title="Показать на карте">↗</a><div class="td-area"><a class="area-a" href="/ru/sales/jlt-jumeirah-lake-towers/" title="Цены района">JLT (Jumeirah Lake Towers)</a></div></td><td class="num col-yr">2009</td><td class="col-dev"><span class="mute">—</span></td><td class="col-pct"><span class="stbadge stbadge-FINISHED">Сдан</span></td><td class="num">1 255</td><td class="num">4 269</td></tr><tr data-s="skycourts-tower-b" data-h="/ru/buildings/skycourts-tower-b/"><td class="td-name"><a class="bld-a" href="/ru/buildings/skycourts-tower-b/">Skycourts Tower B</a><a class="btn-map" href="/ru/sales/?bld=skycourts-tower-b" title="Показать на карте">↗</a><div class="td-area"><a class="area-a" href="/ru/sales/dubai-land-residence-complex/" title="Цены района">Dubai Land Residence Complex</a></div></td><td class="num col-yr">2011</td><td class="col-dev">Dubai Land Residences<span class="badge-zone">Зона</span></td><td class="col-pct"><span class="stbadge stbadge-FINISHED">Сдан</span></td><td class="num">1 255</td><td class="num"><span class="rn-proj" title="Договоры Ejari по всему проекту (зданий в проекте: 6): Ejari не указывает конкретное здание">22 802</span></td></tr><tr data-s="skycourts-tower-c" data-h="/ru/buildings/skycourts-tower-c/"><td class="td-name"><a class="bld-a" href="/ru/buildings/skycourts-tower-c/">Skycourts Tower C</a><a class="btn-map" href="/ru/sales/?bld=skycourts-tower-c" title="Показать на карте">↗</a><div class="td-area"><a class="area-a" href="/ru/sales/dubai-land-residence-complex/" title="Цены района">Dubai Land Residence Complex</a></div></td><td class="num col-yr">2011</td><td class="col-dev">Dubai Land Residences<span class="badge-zone">Зона</span></td><td class="col-pct"><span class="stbadge stbadge-FINISHED">Сдан</span></td><td class="num">1 253</td><td class="num"><span class="rn-proj" title="Договоры Ejari по всему проекту (зданий в проекте: 6): Ejari не указывает конкретное здание">22 802</span></td></tr><tr data-s="concorde-tower-1" data-h="/ru/buildings/concorde-tower-1/"><td class="td-name"><a class="bld-a" href="/ru/buildings/concorde-tower-1/">CONCORDE TOWER 1</a><a class="btn-map" href="/ru/sales/?bld=concorde-tower-1" title="Показать на карте">↗</a><div class="td-area"><a class="area-a" href="/ru/sales/jlt-jumeirah-lake-towers/" title="Цены района">JLT (Jumeirah Lake Towers)</a></div></td><td class="num col-yr">2008</td><td class="col-dev"><span class="mute">—</span></td><td class="col-pct"><span class="stbadge stbadge-FINISHED">Сдан</span></td><td class="num">1 247</td><td class="num">3 192</td></tr><tr data-s="goldcrest-executive" data-h="/ru/buildings/goldcrest-executive/"><td class="td-name"><a class="bld-a" href="/ru/buildings/goldcrest-executive/">GoldCrest Executive</a><a class="btn-map" href="/ru/sales/?bld=goldcrest-executive" title="Показать на карте">↗</a><div class="td-area"><a class="area-a" href="/ru/sales/jlt-jumeirah-lake-towers/" title="Цены района">JLT (Jumeirah Lake Towers)</a></div></td><td class="num col-yr">2009</td><td class="col-dev">Nakheel</td><td class="col-pct"><span class="stbadge stbadge-FINISHED">Сдан</span></td><td class="num">1 237</td><td class="num">2 433</td></tr><tr data-s="silver-tower" data-h="/ru/buildings/silver-tower/"><td class="td-name"><a class="bld-a" href="/ru/buildings/silver-tower/">Silver Tower</a><a class="btn-map" href="/ru/sales/?bld=silver-tower" title="Показать на карте">↗</a><div class="td-area"><a class="area-a" href="/ru/sales/jlt-jumeirah-lake-towers/" title="Цены района">JLT (Jumeirah Lake Towers)</a> · AU TOWER</div></td><td class="num col-yr">2009</td><td class="col-dev"><span class="mute">—</span></td><td class="col-pct"><span class="stbadge stbadge-FINISHED">Сдан</span></td><td class="num">1 219</td><td class="num"><span class="mute">—</span></td></tr><tr data-s="citadel-tower" data-h="/ru/buildings/citadel-tower/"><td class="td-name"><a class="bld-a" href="/ru/buildings/citadel-tower/">Citadel Tower</a><a class="btn-map" href="/ru/sales/?bld=citadel-tower" title="Показать на карте">↗</a><div class="td-area"><a class="area-a" href="/ru/sales/business-bay/" title="Цены района">Business Bay</a></div></td><td class="num col-yr">2010</td><td class="col-dev">Dubai Properties<span class="badge-zone">Зона</span></td><td class="col-pct"><span class="stbadge stbadge-FINISHED">Сдан</span></td><td class="num">1 218</td><td class="num"><span class="mute">—</span></td></tr><tr data-s="bayz-101-by-danube" data-h="/ru/buildings/bayz-101-by-danube/"><td class="td-name"><a class="bld-a" href="/ru/buildings/bayz-101-by-danube/">Bayz 101 By Danube</a><a class="btn-map" href="/ru/sales/?bld=bayz-101-by-danube" title="Показать на карте">↗</a><div class="td-area"><a class="area-a" href="/ru/sales/business-bay/" title="Цены района">Business Bay</a></div></td><td class="num col-yr"><span class="mute">—</span></td><td class="col-dev">Business Bay<span class="badge-zone">Зона</span></td><td class="col-pct"><span class="stbadge stbadge-FINISHED">Сдан</span></td><td class="num">1 217</td><td class="num"><span class="mute">—</span></td></tr><tr data-s="burj-vista-tower-1" data-h="/ru/buildings/burj-vista-tower-1/"><td class="td-name"><a class="bld-a" href="/ru/buildings/burj-vista-tower-1/">BURJ VISTA Tower 1</a><a class="btn-map" href="/ru/sales/?bld=burj-vista-tower-1" title="Показать на карте">↗</a><div class="td-area"><a class="area-a" href="/ru/sales/downtown-dubai/" title="Цены района">Downtown Dubai</a></div></td><td class="num col-yr">2017</td><td class="col-dev">Emaar</td><td class="col-pct"><span class="stbadge stbadge-FINISHED">Сдан</span></td><td class="num">1 204</td><td class="num"><span class="rn-proj" title="Договоры Ejari по всему проекту (зданий в проекте: 2): Ejari не указывает конкретное здание">3 337</span></td></tr><tr data-s="goldcrest-views-2" data-h="/ru/buildings/goldcrest-views-2/"><td class="td-name"><a class="bld-a" href="/ru/buildings/goldcrest-views-2/">GOLDCREST VIEWS 2</a><a class="btn-map" href="/ru/sales/?bld=goldcrest-views-2" title="Показать на карте">↗</a><div class="td-area"><a class="area-a" href="/ru/sales/jlt-jumeirah-lake-towers/" title="Цены района">JLT (Jumeirah Lake Towers)</a></div></td><td class="num col-yr">2010</td><td class="col-dev"><span class="mute">—</span></td><td class="col-pct"><span class="stbadge stbadge-FINISHED">Сдан</span></td><td class="num">1 197</td><td class="num">3 732</td></tr><tr data-s="sobha-creek-vistas-reserve" data-h="/ru/buildings/sobha-creek-vistas-reserve/"><td class="td-name"><a class="bld-a" href="/ru/buildings/sobha-creek-vistas-reserve/">Sobha Creek Vistas Reserve</a><a class="btn-map" href="/ru/sales/?bld=sobha-creek-vistas-reserve" title="Показать на карте">↗</a><div class="td-area"><a class="area-a" href="/ru/sales/sobha-hartland/" title="Цены района">Sobha Hartland</a></div></td><td class="num col-yr">2023</td><td class="col-dev">Sobha</td><td class="col-pct"><span class="stbadge stbadge-FINISHED">Сдан</span></td><td class="num">1 181</td><td class="num">1 597</td></tr><tr data-s="binghatti-skyrise-tower-c" data-h="/ru/buildings/binghatti-skyrise-tower-c/"><td class="td-name"><a class="bld-a" href="/ru/buildings/binghatti-skyrise-tower-c/">Binghatti Skyrise - TOWER C</a><a class="btn-map" href="/ru/sales/?bld=binghatti-skyrise-tower-c" title="Показать на карте">↗</a><div class="td-area"><a class="area-a" href="/ru/sales/business-bay/" title="Цены района">Business Bay</a></div></td><td class="num col-yr"><span class="mute">—</span></td><td class="col-dev">Business Bay<span class="badge-zone">Зона</span></td><td class="col-pct"><span class="stbadge stbadge-ACTIVE">Строится</span><span class="pct">35%</span></td><td class="num">1 179</td><td class="num"><span class="mute">—</span></td></tr><tr data-s="ghalia" data-h="/ru/buildings/ghalia/"><td class="td-name"><a class="bld-a" href="/ru/buildings/ghalia/">GHALIA</a><a class="btn-map" href="/ru/sales/?bld=ghalia" title="Показать на карте">↗</a><div class="td-area"><a class="area-a" href="/ru/sales/jumeirah-village-circle/" title="Цены района">Jumeirah Village Circle</a></div></td><td class="num col-yr">2019</td><td class="col-dev">JVC<span class="badge-zone">Зона</span></td><td class="col-pct"><span class="stbadge stbadge-FINISHED">Сдан</span></td><td class="num">1 178</td><td class="num">3 586</td></tr><tr data-s="gold-tower" data-h="/ru/buildings/gold-tower/"><td class="td-name"><a class="bld-a" href="/ru/buildings/gold-tower/">Gold Tower</a><a class="btn-map" href="/ru/sales/?bld=gold-tower" title="Показать на карте">↗</a><div class="td-area"><a class="area-a" href="/ru/sales/jlt-jumeirah-lake-towers/" title="Цены района">JLT (Jumeirah Lake Towers)</a></div></td><td class="num col-yr">2009</td><td class="col-dev"><span class="mute">—</span></td><td class="col-pct"><span class="stbadge stbadge-FINISHED">Сдан</span></td><td class="num">1 177</td><td class="num"><span class="rn-proj" title="Договоры Ejari по всему проекту (зданий в проекте: 2): Ejari не указывает конкретное здание">1 448</span></td></tr><tr data-s="dubai-gate-one" data-h="/ru/buildings/dubai-gate-one/"><td class="td-name"><a class="bld-a" href="/ru/buildings/dubai-gate-one/">DUBAI GATE ONE</a><a class="btn-map" href="/ru/sales/?bld=dubai-gate-one" title="Показать на карте">↗</a><div class="td-area"><a class="area-a" href="/ru/sales/jlt-jumeirah-lake-towers/" title="Цены района">JLT (Jumeirah Lake Towers)</a></div></td><td class="num col-yr">2010</td><td class="col-dev"><span class="mute">—</span></td><td class="col-pct"><span class="stbadge stbadge-FINISHED">Сдан</span></td><td class="num">1 164</td><td class="num">4 161</td></tr><tr data-s="timez-by-danube" data-h="/ru/buildings/timez-by-danube/"><td class="td-name"><a class="bld-a" href="/ru/buildings/timez-by-danube/">Timez By Danube</a><a class="btn-map" href="/ru/sales/?bld=timez-by-danube" title="Показать на карте">↗</a><div class="td-area"><a class="area-a" href="/ru/sales/silicon-oasis/" title="Цены района">Silicon Oasis</a></div></td><td class="num col-yr"><span class="mute">—</span></td><td class="col-dev">DIEZ<span class="badge-zone">Зона</span></td><td class="col-pct"><span class="stbadge stbadge-ACTIVE">Строится</span><span class="pct">21%</span></td><td class="num">1 142</td><td class="num"><span class="mute">—</span></td></tr><tr data-s="lago-vista-b" data-h="/ru/buildings/lago-vista-b/"><td class="td-name"><a class="bld-a" href="/ru/buildings/lago-vista-b/">LAGO VISTA-B</a><a class="btn-map" href="/ru/sales/?bld=lago-vista-b" title="Показать на карте">↗</a><div class="td-area"><a class="area-a" href="/ru/sales/impz-international-media-production-zone/" title="Цены района">IMPZ (International Media Production Zone)</a></div></td><td class="num col-yr">2011</td><td class="col-dev">TECOM<span class="badge-zone">Зона</span></td><td class="col-pct"><span class="stbadge stbadge-FINISHED">Сдан</span></td><td class="num">1 139</td><td class="num"><span class="rn-proj" title="Договоры Ejari по всему проекту (зданий в проекте: 3): Ejari не указывает конкретное здание">8 684</span></td></tr><tr data-s="i-rise-tower" data-h="/ru/buildings/i-rise-tower/"><td class="td-name"><a class="bld-a" href="/ru/buildings/i-rise-tower/">I RISE TOWER</a><a class="btn-map" href="/ru/sales/?bld=i-rise-tower" title="Показать на карте">↗</a><div class="td-area"><a class="area-a" href="/ru/sales/barsha-heights/" title="Цены района">Barsha Heights</a></div></td><td class="num col-yr">2011</td><td class="col-dev">TECOM<span class="badge-zone">Зона</span></td><td class="col-pct"><span class="stbadge stbadge-FINISHED">Сдан</span></td><td class="num">1 124</td><td class="num"><span class="mute">—</span></td></tr><tr data-s="diamondz-by-danube" data-h="/ru/buildings/diamondz-by-danube/"><td class="td-name"><a class="bld-a" href="/ru/buildings/diamondz-by-danube/">Diamondz By Danube</a><a class="btn-map" href="/ru/sales/?bld=diamondz-by-danube" title="Показать на карте">↗</a><div class="td-area"><a class="area-a" href="/ru/sales/jlt-jumeirah-lake-towers/" title="Цены района">JLT (Jumeirah Lake Towers)</a></div></td><td class="num col-yr"><span class="mute">—</span></td><td class="col-dev"><span class="mute">—</span></td><td class="col-pct"><span class="stbadge stbadge-ACTIVE">Строится</span><span class="pct">16%</span></td><td class="num">1 118</td><td class="num"><span class="mute">—</span></td></tr><tr data-s="binghatti-corner" data-h="/ru/buildings/binghatti-corner/"><td class="td-name"><a class="bld-a" href="/ru/buildings/binghatti-corner/">Binghatti Corner</a><a class="btn-map" href="/ru/sales/?bld=binghatti-corner" title="Показать на карте">↗</a><div class="td-area"><a class="area-a" href="/ru/sales/jumeirah-village-circle/" title="Цены района">Jumeirah Village Circle</a></div></td><td class="num col-yr">2024</td><td class="col-dev">JVC<span class="badge-zone">Зона</span></td><td class="col-pct"><span class="stbadge stbadge-FINISHED">Сдан</span></td><td class="num">1 116</td><td class="num">1 072</td></tr><tr data-s="burj-royale" data-h="/ru/buildings/burj-royale/"><td class="td-name"><a class="bld-a" href="/ru/buildings/burj-royale/">Burj Royale</a><a class="btn-map" href="/ru/sales/?bld=burj-royale" title="Показать на карте">↗</a><div class="td-area"><a class="area-a" href="/ru/sales/downtown-dubai/" title="Цены района">Downtown Dubai</a></div></td><td class="num col-yr">2022</td><td class="col-dev">Old Town Views</td><td class="col-pct"><span class="stbadge stbadge-FINISHED">Сдан</span></td><td class="num">1 116</td><td class="num">1 114</td></tr><tr data-s="bay-central-1" data-h="/ru/buildings/bay-central-1/"><td class="td-name"><a class="bld-a" href="/ru/buildings/bay-central-1/">BAY CENTRAL 1</a><a class="btn-map" href="/ru/sales/?bld=bay-central-1" title="Показать на карте">↗</a><div class="td-area"><a class="area-a" href="/ru/sales/dubai-marina/" title="Цены района">Dubai Marina</a></div></td><td class="num col-yr">2012</td><td class="col-dev">Emaar</td><td class="col-pct"><span class="stbadge stbadge-FINISHED">Сдан</span></td><td class="num">1 111</td><td class="num"><span class="rn-proj" title="Договоры Ejari по всему проекту (зданий в проекте: 3): Ejari не указывает конкретное здание">5 388</span></td></tr><tr data-s="skycourts-tower-e" data-h="/ru/buildings/skycourts-tower-e/"><td class="td-name"><a class="bld-a" href="/ru/buildings/skycourts-tower-e/">Skycourts Tower E</a><a class="btn-map" href="/ru/sales/?bld=skycourts-tower-e" title="Показать на карте">↗</a><div class="td-area"><a class="area-a" href="/ru/sales/dubai-land-residence-complex/" title="Цены района">Dubai Land Residence Complex</a></div></td><td class="num col-yr">2011</td><td class="col-dev">Dubai Land Residences<span class="badge-zone">Зона</span></td><td class="col-pct"><span class="stbadge stbadge-FINISHED">Сдан</span></td><td class="num">1 098</td><td class="num"><span class="rn-proj" title="Договоры Ejari по всему проекту (зданий в проекте: 6): Ejari не указывает конкретное здание">22 802</span></td></tr><tr data-s="dubai-star" data-h="/ru/buildings/dubai-star/"><td class="td-name"><a class="bld-a" href="/ru/buildings/dubai-star/">Dubai Star</a><a class="btn-map" href="/ru/sales/?bld=dubai-star" title="Показать на карте">↗</a><div class="td-area"><a class="area-a" href="/ru/sales/jlt-jumeirah-lake-towers/" title="Цены района">JLT (Jumeirah Lake Towers)</a></div></td><td class="num col-yr">2015</td><td class="col-dev"><span class="mute">—</span></td><td class="col-pct"><span class="stbadge stbadge-FINISHED">Сдан</span></td><td class="num">1 087</td><td class="num">781</td></tr><tr data-s="binghatti-skyrise-tower-b" data-h="/ru/buildings/binghatti-skyrise-tower-b/"><td class="td-name"><a class="bld-a" href="/ru/buildings/binghatti-skyrise-tower-b/">Binghatti Skyrise - TOWER B</a><a class="btn-map" href="/ru/sales/?bld=binghatti-skyrise-tower-b" title="Показать на карте">↗</a><div class="td-area"><a class="area-a" href="/ru/sales/business-bay/" title="Цены района">Business Bay</a></div></td><td class="num col-yr"><span class="mute">—</span></td><td class="col-dev">Business Bay<span class="badge-zone">Зона</span></td><td class="col-pct"><span class="stbadge stbadge-ACTIVE">Строится</span><span class="pct">35%</span></td><td class="num">1 086</td><td class="num"><span class="mute">—</span></td></tr><tr data-s="skyz-by-danube" data-h="/ru/buildings/skyz-by-danube/"><td class="td-name"><a class="bld-a" href="/ru/buildings/skyz-by-danube/">SKYZ BY DANUBE</a><a class="btn-map" href="/ru/sales/?bld=skyz-by-danube" title="Показать на карте">↗</a><div class="td-area"><a class="area-a" href="/ru/sales/arjan/" title="Цены района">Arjan</a></div></td><td class="num col-yr">2025</td><td class="col-dev"><span class="mute">—</span></td><td class="col-pct"><span class="stbadge stbadge-FINISHED">Сдан</span></td><td class="num">1 086</td><td class="num">609</td></tr><tr data-s="sls-dubai" data-h="/ru/buildings/sls-dubai/"><td class="td-name"><a class="bld-a" href="/ru/buildings/sls-dubai/">SLS DUBAI</a><a class="btn-map" href="/ru/sales/?bld=sls-dubai" title="Показать на карте">↗</a><div class="td-area"><a class="area-a" href="/ru/sales/business-bay/" title="Цены района">Business Bay</a></div></td><td class="num col-yr">2021</td><td class="col-dev">Business Bay<span class="badge-zone">Зона</span></td><td class="col-pct"><span class="stbadge stbadge-FINISHED">Сдан</span></td><td class="num">1 085</td><td class="num">1 100</td></tr><tr data-s="29-blvd-t1" data-h="/ru/buildings/29-blvd-t1/"><td class="td-name"><a class="bld-a" href="/ru/buildings/29-blvd-t1/">29 BLVD T1</a><a class="btn-map" href="/ru/sales/?bld=29-blvd-t1" title="Показать на карте">↗</a><div class="td-area"><a class="area-a" href="/ru/sales/downtown-dubai/" title="Цены района">Downtown Dubai</a></div></td><td class="num col-yr">2013</td><td class="col-dev">Emaar</td><td class="col-pct"><span class="stbadge stbadge-FINISHED">Сдан</span></td><td class="num">1 083</td><td class="num"><span class="rn-proj" title="Договоры Ejari по всему проекту (зданий в проекте: 3): Ejari не указывает конкретное здание">5 452</span></td></tr><tr data-s="park-lane" data-h="/ru/buildings/park-lane/"><td class="td-name"><a class="bld-a" href="/ru/buildings/park-lane/">Park Lane</a><a class="btn-map" href="/ru/sales/?bld=park-lane" title="Показать на карте">↗</a><div class="td-area"><a class="area-a" href="/ru/sales/business-bay/" title="Цены района">Business Bay</a></div></td><td class="num col-yr">2016</td><td class="col-dev">Business Bay<span class="badge-zone">Зона</span></td><td class="col-pct"><span class="stbadge stbadge-FINISHED">Сдан</span></td><td class="num">1 075</td><td class="num"><span class="mute">—</span></td></tr><tr data-s="paramount-tower-hotel-residences" data-h="/ru/buildings/paramount-tower-hotel-residences/"><td class="td-name"><a class="bld-a" href="/ru/buildings/paramount-tower-hotel-residences/">PARAMOUNT TOWER HOTEL &amp; RESIDENCES</a><a class="btn-map" href="/ru/sales/?bld=paramount-tower-hotel-residences" title="Показать на карте">↗</a><div class="td-area"><a class="area-a" href="/ru/sales/business-bay/" title="Цены района">Business Bay</a></div></td><td class="num col-yr">2022</td><td class="col-dev">Business Bay<span class="badge-zone">Зона</span></td><td class="col-pct"><span class="stbadge stbadge-FINISHED">Сдан</span></td><td class="num">1 073</td><td class="num">1 263</td></tr><tr data-s="binghatti-hills-2" data-h="/ru/buildings/binghatti-hills-2/"><td class="td-name"><a class="bld-a" href="/ru/buildings/binghatti-hills-2/">Binghatti Hills - 2</a><a class="btn-map" href="/ru/sales/?bld=binghatti-hills-2" title="Показать на карте">↗</a><div class="td-area"><a class="area-a" href="/ru/sales/dubai-science-park/" title="Цены района">Dubai Science Park</a></div></td><td class="num col-yr"><span class="mute">—</span></td><td class="col-dev">DHAM<span class="badge-zone">Зона</span></td><td class="col-pct"><span class="stbadge stbadge-FINISHED">Сдан</span></td><td class="num">1 065</td><td class="num"><span class="mute">—</span></td></tr><tr data-s="zada-tower" data-h="/ru/buildings/zada-tower/"><td class="td-name"><a class="bld-a" href="/ru/buildings/zada-tower/">ZADA TOWER</a><a class="btn-map" href="/ru/sales/?bld=zada-tower" title="Показать на карте">↗</a><div class="td-area"><a class="area-a" href="/ru/sales/business-bay/" title="Цены района">Business Bay</a></div></td><td class="num col-yr">2023</td><td class="col-dev">Business Bay<span class="badge-zone">Зона</span></td><td class="col-pct"><span class="stbadge stbadge-FINISHED">Сдан</span></td><td class="num">1 063</td><td class="num">1 624</td></tr><tr data-s="mazaya-business-avenue-aa1" data-h="/ru/buildings/mazaya-business-avenue-aa1/"><td class="td-name"><a class="bld-a" href="/ru/buildings/mazaya-business-avenue-aa1/">MAZAYA BUSINESS AVENUE AA1</a><a class="btn-map" href="/ru/sales/?bld=mazaya-business-avenue-aa1" title="Показать на карте">↗</a><div class="td-area"><a class="area-a" href="/ru/sales/jlt-jumeirah-lake-towers/" title="Цены района">JLT (Jumeirah Lake Towers)</a></div></td><td class="num col-yr">2011</td><td class="col-dev"><span class="mute">—</span></td><td class="col-pct"><span class="stbadge stbadge-FINISHED">Сдан</span></td><td class="num">1 062</td><td class="num"><span class="mute">—</span></td></tr><tr data-s="mazaya-business-avenue-bb1" data-h="/ru/buildings/mazaya-business-avenue-bb1/"><td class="td-name"><a class="bld-a" href="/ru/buildings/mazaya-business-avenue-bb1/">MAZAYA BUSINESS AVENUE BB1</a><a class="btn-map" href="/ru/sales/?bld=mazaya-business-avenue-bb1" title="Показать на карте">↗</a><div class="td-area"><a class="area-a" href="/ru/sales/jlt-jumeirah-lake-towers/" title="Цены района">JLT (Jumeirah Lake Towers)</a></div></td><td class="num col-yr">2011</td><td class="col-dev"><span class="mute">—</span></td><td class="col-pct"><span class="stbadge stbadge-FINISHED">Сдан</span></td><td class="num">1 056</td><td class="num"><span class="mute">—</span></td></tr><tr data-s="bay-central-2" data-h="/ru/buildings/bay-central-2/"><td class="td-name"><a class="bld-a" href="/ru/buildings/bay-central-2/">BAY CENTRAL 2</a><a class="btn-map" href="/ru/sales/?bld=bay-central-2" title="Показать на карте">↗</a><div class="td-area"><a class="area-a" href="/ru/sales/dubai-marina/" title="Цены района">Dubai Marina</a></div></td><td class="num col-yr">2012</td><td class="col-dev">Emaar</td><td class="col-pct"><span class="stbadge stbadge-FINISHED">Сдан</span></td><td class="num">1 050</td><td class="num"><span class="rn-proj" title="Договоры Ejari по всему проекту (зданий в проекте: 3): Ejari не указывает конкретное здание">5 388</span></td></tr><tr data-s="d1" data-h="/ru/buildings/d1/"><td class="td-name"><a class="bld-a" href="/ru/buildings/d1/">D1</a><a class="btn-map" href="/ru/sales/?bld=d1" title="Показать на карте">↗</a><div class="td-area"><a class="area-a" href="/ru/sales/jaddaf-waterfront/" title="Цены района">Jaddaf Waterfront</a></div></td><td class="num col-yr">2015</td><td class="col-dev">Dubai Properties<span class="badge-zone">Зона</span></td><td class="col-pct"><span class="stbadge stbadge-FINISHED">Сдан</span></td><td class="num">1 048</td><td class="num">2 710</td></tr><tr data-s="bd-standpoint-a" data-h="/ru/buildings/bd-standpoint-a/"><td class="td-name"><a class="bld-a" href="/ru/buildings/bd-standpoint-a/">BD Standpoint A</a><a class="btn-map" href="/ru/sales/?bld=bd-standpoint-a" title="Показать на карте">↗</a><div class="td-area"><a class="area-a" href="/ru/sales/downtown-dubai/" title="Цены района">Downtown Dubai</a></div></td><td class="num col-yr">2012</td><td class="col-dev">Emaar</td><td class="col-pct"><span class="stbadge stbadge-FINISHED">Сдан</span></td><td class="num">1 047</td><td class="num"><span class="rn-proj" title="Договоры Ejari по всему проекту (зданий в проекте: 2): Ejari не указывает конкретное здание">3 641</span></td></tr><tr data-s="botanica-tower-1" data-h="/ru/buildings/botanica-tower-1/"><td class="td-name"><a class="bld-a" href="/ru/buildings/botanica-tower-1/">BOTANICA TOWER-1</a><a class="btn-map" href="/ru/sales/?bld=botanica-tower-1" title="Показать на карте">↗</a><div class="td-area"><a class="area-a" href="/ru/sales/dubai-marina/" title="Цены района">Dubai Marina</a></div></td><td class="num col-yr">2011</td><td class="col-dev">Emaar</td><td class="col-pct"><span class="stbadge stbadge-FINISHED">Сдан</span></td><td class="num">1 047</td><td class="num">2 524</td></tr><tr data-s="lakeside-b" data-h="/ru/buildings/lakeside-b/"><td class="td-name"><a class="bld-a" href="/ru/buildings/lakeside-b/">LAKESIDE B</a><a class="btn-map" href="/ru/sales/?bld=lakeside-b" title="Показать на карте">↗</a><div class="td-area"><a class="area-a" href="/ru/sales/impz-international-media-production-zone/" title="Цены района">IMPZ (International Media Production Zone)</a></div></td><td class="num col-yr">2014</td><td class="col-dev">TECOM<span class="badge-zone">Зона</span></td><td class="col-pct"><span class="stbadge stbadge-FINISHED">Сдан</span></td><td class="num">1 044</td><td class="num"><span class="rn-proj" title="Договоры Ejari по всему проекту (зданий в проекте: 5): Ejari не указывает конкретное здание">18 193</span></td></tr><tr data-s="mazaya-business-avenue-bb2" data-h="/ru/buildings/mazaya-business-avenue-bb2/"><td class="td-name"><a class="bld-a" href="/ru/buildings/mazaya-business-avenue-bb2/">MAZAYA BUSINESS AVENUE BB2</a><a class="btn-map" href="/ru/sales/?bld=mazaya-business-avenue-bb2" title="Показать на карте">↗</a><div class="td-area"><a class="area-a" href="/ru/sales/jlt-jumeirah-lake-towers/" title="Цены района">JLT (Jumeirah Lake Towers)</a></div></td><td class="num col-yr">2010</td><td class="col-dev"><span class="mute">—</span></td><td class="col-pct"><span class="stbadge stbadge-FINISHED">Сдан</span></td><td class="num">1 039</td><td class="num"><span class="mute">—</span></td></tr><tr data-s="jumeirah-business-centre-1" data-h="/ru/buildings/jumeirah-business-centre-1/"><td class="td-name"><a class="bld-a" href="/ru/buildings/jumeirah-business-centre-1/">JUMEIRAH BUSINESS CENTRE 1</a><a class="btn-map" href="/ru/sales/?bld=jumeirah-business-centre-1" title="Показать на карте">↗</a><div class="td-area"><a class="area-a" href="/ru/sales/jlt-jumeirah-lake-towers/" title="Цены района">JLT (Jumeirah Lake Towers)</a></div></td><td class="num col-yr">2011</td><td class="col-dev"><span class="mute">—</span></td><td class="col-pct"><span class="stbadge stbadge-FINISHED">Сдан</span></td><td class="num">1 034</td><td class="num"><span class="mute">—</span></td></tr><tr data-s="arabian-gate" data-h="/ru/buildings/arabian-gate/"><td class="td-name"><a class="bld-a" href="/ru/buildings/arabian-gate/">ARABIAN GATE</a><a class="btn-map" href="/ru/sales/?bld=arabian-gate" title="Показать на карте">↗</a><div class="td-area"><a class="area-a" href="/ru/sales/silicon-oasis/" title="Цены района">Silicon Oasis</a></div></td><td class="num col-yr">2020</td><td class="col-dev">DIEZ<span class="badge-zone">Зона</span></td><td class="col-pct"><span class="stbadge stbadge-FINISHED">Сдан</span></td><td class="num">1 032</td><td class="num">2 601</td></tr><tr data-s="damac-heights" data-h="/ru/buildings/damac-heights/"><td class="td-name"><a class="bld-a" href="/ru/buildings/damac-heights/">DAMAC HEIGHTS</a><a class="btn-map" href="/ru/sales/?bld=damac-heights" title="Показать на карте">↗</a><div class="td-area"><a class="area-a" href="/ru/sales/dubai-marina/" title="Цены района">Dubai Marina</a></div></td><td class="num col-yr">2018</td><td class="col-dev">Emaar</td><td class="col-pct"><span class="stbadge stbadge-FINISHED">Сдан</span></td><td class="num">1 032</td><td class="num">2 935</td></tr><tr data-s="palace-residences" data-h="/ru/buildings/palace-residences/"><td class="td-name"><a class="bld-a" href="/ru/buildings/palace-residences/">Palace Residences</a><a class="btn-map" href="/ru/sales/?bld=palace-residences" title="Показать на карте">↗</a><div class="td-area"><a class="area-a" href="/ru/sales/dubai-creek-harbour/" title="Цены района">Dubai Creek Harbour</a></div></td><td class="num col-yr">2022</td><td class="col-dev">The Lagoons<span class="badge-zone">Зона</span></td><td class="col-pct"><span class="stbadge stbadge-FINISHED">Сдан</span></td><td class="num">1 032</td><td class="num">975</td></tr><tr data-s="jumairah-bay-tower-x2" data-h="/ru/buildings/jumairah-bay-tower-x2/"><td class="td-name"><a class="bld-a" href="/ru/buildings/jumairah-bay-tower-x2/">JUMAIRAH BAY TOWER-X2</a><a class="btn-map" href="/ru/sales/?bld=jumairah-bay-tower-x2" title="Показать на карте">↗</a><div class="td-area"><a class="area-a" href="/ru/sales/jlt-jumeirah-lake-towers/" title="Цены района">JLT (Jumeirah Lake Towers)</a></div></td><td class="num col-yr"><span class="mute">—</span></td><td class="col-dev"><span class="mute">—</span></td><td class="col-pct"><span class="mute">—</span></td><td class="num">1 028</td><td class="num"><span class="mute">—</span></td></tr><tr data-s="lakeside-c" data-h="/ru/buildings/lakeside-c/"><td class="td-name"><a class="bld-a" href="/ru/buildings/lakeside-c/">LAKESIDE C</a><a class="btn-map" href="/ru/sales/?bld=lakeside-c" title="Показать на карте">↗</a><div class="td-area"><a class="area-a" href="/ru/sales/impz-international-media-production-zone/" title="Цены района">IMPZ (International Media Production Zone)</a></div></td><td class="num col-yr">2014</td><td class="col-dev">TECOM<span class="badge-zone">Зона</span></td><td class="col-pct"><span class="stbadge stbadge-FINISHED">Сдан</span></td><td class="num">1 027</td><td class="num"><span class="rn-proj" title="Договоры Ejari по всему проекту (зданий в проекте: 5): Ejari не указывает конкретное здание">18 193</span></td></tr><tr data-s="bd-29-blvd-t2" data-h="/ru/buildings/bd-29-blvd-t2/"><td class="td-name"><a class="bld-a" href="/ru/buildings/bd-29-blvd-t2/">BD 29 BLVD T2</a><a class="btn-map" href="/ru/sales/?bld=bd-29-blvd-t2" title="Показать на карте">↗</a><div class="td-area"><a class="area-a" href="/ru/sales/downtown-dubai/" title="Цены района">Downtown Dubai</a></div></td><td class="num col-yr">2013</td><td class="col-dev">Emaar</td><td class="col-pct"><span class="stbadge stbadge-FINISHED">Сдан</span></td><td class="num">1 018</td><td class="num"><span class="rn-proj" title="Договоры Ejari по всему проекту (зданий в проекте: 3): Ejari не указывает конкретное здание">5 452</span></td></tr><tr data-s="binghatti-skyrise-tower-a" data-h="/ru/buildings/binghatti-skyrise-tower-a/"><td class="td-name"><a class="bld-a" href="/ru/buildings/binghatti-skyrise-tower-a/">Binghatti Skyrise - TOWER A</a><a class="btn-map" href="/ru/sales/?bld=binghatti-skyrise-tower-a" title="Показать на карте">↗</a><div class="td-area"><a class="area-a" href="/ru/sales/business-bay/" title="Цены района">Business Bay</a></div></td><td class="num col-yr"><span class="mute">—</span></td><td class="col-dev">Business Bay<span class="badge-zone">Зона</span></td><td class="col-pct"><span class="stbadge stbadge-ACTIVE">Строится</span><span class="pct">35%</span></td><td class="num">1 014</td><td class="num"><span class="mute">—</span></td></tr><tr data-s="silverene-towers-b" data-h="/ru/buildings/silverene-towers-b/"><td class="td-name"><a class="bld-a" href="/ru/buildings/silverene-towers-b/">Silverene Towers B</a><a class="btn-map" href="/ru/sales/?bld=silverene-towers-b" title="Показать на карте">↗</a><div class="td-area"><a class="area-a" href="/ru/sales/dubai-marina/" title="Цены района">Dubai Marina</a></div></td><td class="num col-yr">2011</td><td class="col-dev">Emaar</td><td class="col-pct"><span class="stbadge stbadge-FINISHED">Сдан</span></td><td class="num">1 008</td><td class="num"><span class="rn-proj" title="Договоры Ejari по всему проекту (зданий в проекте: 2): Ejari не указывает конкретное здание">4 199</span></td></tr><tr data-s="lago-vista-a" data-h="/ru/buildings/lago-vista-a/"><td class="td-name"><a class="bld-a" href="/ru/buildings/lago-vista-a/">LAGO VISTA-A</a><a class="btn-map" href="/ru/sales/?bld=lago-vista-a" title="Показать на карте">↗</a><div class="td-area"><a class="area-a" href="/ru/sales/impz-international-media-production-zone/" title="Цены района">IMPZ (International Media Production Zone)</a></div></td><td class="num col-yr">2011</td><td class="col-dev">TECOM<span class="badge-zone">Зона</span></td><td class="col-pct"><span class="stbadge stbadge-FINISHED">Сдан</span></td><td class="num">1 006</td><td class="num"><span class="rn-proj" title="Договоры Ejari по всему проекту (зданий в проекте: 3): Ejari не указывает конкретное здание">8 684</span></td></tr><tr data-s="seven-hotel-apartments-the-palm-a" data-h="/ru/buildings/seven-hotel-apartments-the-palm-a/"><td class="td-name"><a class="bld-a" href="/ru/buildings/seven-hotel-apartments-the-palm-a/">SEVEN HOTEL &amp; APARTMENTS THE PALM - A</a><a class="btn-map" href="/ru/sales/?bld=seven-hotel-apartments-the-palm-a" title="Показать на карте">↗</a><div class="td-area"><a class="area-a" href="/ru/sales/palm-jumeirah/" title="Цены района">Palm Jumeirah</a></div></td><td class="num col-yr">2022</td><td class="col-dev">JVC<span class="badge-zone">Зона</span></td><td class="col-pct"><span class="stbadge stbadge-FINISHED">Сдан</span></td><td class="num">1 003</td><td class="num"><span class="rn-proj" title="Договоры Ejari по всему проекту (зданий в проекте: 2): Ejari не указывает конкретное здание">593</span></td></tr><tr data-s="mosela" data-h="/ru/buildings/mosela/"><td class="td-name"><a class="bld-a" href="/ru/buildings/mosela/">MOSELA</a><a class="btn-map" href="/ru/sales/?bld=mosela" title="Показать на карте">↗</a><div class="td-area"><a class="area-a" href="/ru/sales/the-greens/" title="Цены района">The Greens</a></div></td><td class="num col-yr">2010</td><td class="col-dev">Emaar</td><td class="col-pct"><span class="stbadge stbadge-FINISHED">Сдан</span></td><td class="num">1 002</td><td class="num">2 729</td></tr><tr data-s="downtown-views-ii-t1" data-h="/ru/buildings/downtown-views-ii-t1/"><td class="td-name"><a class="bld-a" href="/ru/buildings/downtown-views-ii-t1/">Downtown Views II T1</a><a class="btn-map" href="/ru/sales/?bld=downtown-views-ii-t1" title="Показать на карте">↗</a><div class="td-area"><a class="area-a" href="/ru/sales/za-abeel/" title="Цены района">Za&#x27;abeel</a></div></td><td class="num col-yr">2022</td><td class="col-dev">Emaar</td><td class="col-pct"><span class="stbadge stbadge-FINISHED">Сдан</span></td><td class="num">994</td><td class="num"><span class="rn-proj" title="Договоры Ejari по всему проекту (зданий в проекте: 3): Ejari не указывает конкретное здание">2 718</span></td></tr><tr data-s="the-cosmopolitan" data-h="/ru/buildings/the-cosmopolitan/"><td class="td-name"><a class="bld-a" href="/ru/buildings/the-cosmopolitan/">The Cosmopolitan</a><div class="td-area"><a class="area-a" href="/ru/sales/business-bay/" title="Цены района">Business Bay</a></div></td><td class="num col-yr">2014</td><td class="col-dev">Business Bay<span class="badge-zone">Зона</span></td><td class="col-pct"><span class="stbadge stbadge-FINISHED">Сдан</span></td><td class="num">989</td><td class="num">2 394</td></tr><tr data-s="giovanni-boutique-suites" data-h="/ru/buildings/giovanni-boutique-suites/"><td class="td-name"><a class="bld-a" href="/ru/buildings/giovanni-boutique-suites/">Giovanni Boutique Suites</a><a class="btn-map" href="/ru/sales/?bld=giovanni-boutique-suites" title="Показать на карте">↗</a><div class="td-area"><a class="area-a" href="/ru/sales/dubai-sports-city/" title="Цены района">Dubai Sports City</a></div></td><td class="num col-yr">2014</td><td class="col-dev">Dubai Sports City<span class="badge-zone">Зона</span></td><td class="col-pct"><span class="stbadge stbadge-FINISHED">Сдан</span></td><td class="num">980</td><td class="num">2 078</td></tr><tr data-s="lakeside-d" data-h="/ru/buildings/lakeside-d/"><td class="td-name"><a class="bld-a" href="/ru/buildings/lakeside-d/">LAKESIDE D</a><a class="btn-map" href="/ru/sales/?bld=lakeside-d" title="Показать на карте">↗</a><div class="td-area"><a class="area-a" href="/ru/sales/impz-international-media-production-zone/" title="Цены района">IMPZ (International Media Production Zone)</a></div></td><td class="num col-yr">2014</td><td class="col-dev">TECOM<span class="badge-zone">Зона</span></td><td class="col-pct"><span class="stbadge stbadge-FINISHED">Сдан</span></td><td class="num">979</td><td class="num"><span class="rn-proj" title="Договоры Ejari по всему проекту (зданий в проекте: 5): Ejari не указывает конкретное здание">18 193</span></td></tr><tr data-s="madison-residency" data-h="/ru/buildings/madison-residency/"><td class="td-name"><a class="bld-a" href="/ru/buildings/madison-residency/">Madison Residency</a><a class="btn-map" href="/ru/sales/?bld=madison-residency" title="Показать на карте">↗</a><div class="td-area"><a class="area-a" href="/ru/sales/barsha-heights/" title="Цены района">Barsha Heights</a></div></td><td class="num col-yr">2009</td><td class="col-dev">TECOM<span class="badge-zone">Зона</span></td><td class="col-pct"><span class="stbadge stbadge-FINISHED">Сдан</span></td><td class="num">977</td><td class="num">2 536</td></tr><tr data-s="lago-vista-c" data-h="/ru/buildings/lago-vista-c/"><td class="td-name"><a class="bld-a" href="/ru/buildings/lago-vista-c/">LAGO VISTA-C</a><a class="btn-map" href="/ru/sales/?bld=lago-vista-c" title="Показать на карте">↗</a><div class="td-area"><a class="area-a" href="/ru/sales/impz-international-media-production-zone/" title="Цены района">IMPZ (International Media Production Zone)</a></div></td><td class="num col-yr">2011</td><td class="col-dev">TECOM<span class="badge-zone">Зона</span></td><td class="col-pct"><span class="stbadge stbadge-FINISHED">Сдан</span></td><td class="num">976</td><td class="num"><span class="rn-proj" title="Договоры Ejari по всему проекту (зданий в проекте: 3): Ejari не указывает конкретное здание">8 684</span></td></tr><tr data-s="east-heights-4" data-h="/ru/buildings/east-heights-4/"><td class="td-name"><a class="bld-a" href="/ru/buildings/east-heights-4/">EAST HEIGHTS 4</a><a class="btn-map" href="/ru/sales/?bld=east-heights-4" title="Показать на карте">↗</a><div class="td-area"><a class="area-a" href="/ru/sales/business-bay/" title="Цены района">Business Bay</a></div></td><td class="num col-yr"><span class="mute">—</span></td><td class="col-dev"><span class="mute">—</span></td><td class="col-pct"><span class="mute">—</span></td><td class="num">973</td><td class="num"><span class="mute">—</span></td></tr><tr data-s="reva-residences" data-h="/ru/buildings/reva-residences/"><td class="td-name"><a class="bld-a" href="/ru/buildings/reva-residences/">REVA RESIDENCES</a><a class="btn-map" href="/ru/sales/?bld=reva-residences" title="Показать на карте">↗</a><div class="td-area"><a class="area-a" href="/ru/sales/business-bay/" title="Цены района">Business Bay</a></div></td><td class="num col-yr">2022</td><td class="col-dev">Business Bay<span class="badge-zone">Зона</span></td><td class="col-pct"><span class="stbadge stbadge-FINISHED">Сдан</span></td><td class="num">971</td><td class="num">1 489</td></tr><tr data-s="al-manara" data-h="/ru/buildings/al-manara/"><td class="td-name"><a class="bld-a" href="/ru/buildings/al-manara/">AL MANARA</a><a class="btn-map" href="/ru/sales/?bld=al-manara" title="Показать на карте">↗</a><div class="td-area"><a class="area-a" href="/ru/sales/business-bay/" title="Цены района">Business Bay</a></div></td><td class="num col-yr">2011</td><td class="col-dev">Dubai Properties<span class="badge-zone">Зона</span></td><td class="col-pct"><span class="stbadge stbadge-FINISHED">Сдан</span></td><td class="num">968</td><td class="num"><span class="mute">—</span></td></tr></tbody>
+    </table>
+    <div class="empty" id="emptyMsg" style="display:none;">Нет зданий под эти фильтры.</div>
+  </div>
+
+  <div class="pager" id="pager">
+    <button id="pPrev" type="button" disabled>← Назад</button>
+    <span class="pi" id="pInfo">Страница 1 из 49</span>
+    <button id="pNext" type="button">Вперёд →</button>
+  </div>
+
+  <div class="nav-foot">
+    <a href="/ru/sales/">← К карте</a>
+    <a href="/ru/construction/">Стройки Дубая →</a>
+    <a href="/search/">Поиск по зданию →</a>
+  </div>
+</div>
+<script>
+const COPY = {"h1": "Каталог зданий Дубая", "crumb_home": "Дубай", "crumb": "Каталог зданий", "f_name": "Название здания", "f_area": "Район", "f_built": "Год постройки", "f_from": "с", "f_to": "по", "f_dev": "Застройщик / зона", "f_dev_all": "Все застройщики и зоны", "f_search": "Поиск…", "grp_brand": "Застройщики", "grp_zone": "Мастер-девелоперы / зоны", "zone_badge": "Зона", "no_matches": "Ничего не найдено", "reset": "Сбросить", "sort_lbl": "Сортировка:", "sort_tx": "Больше сделок", "sort_yr_asc": "Сначала старые", "sort_yr_desc": "Сначала новые", "sort_az": "По названию A–Z", "th_building": "Здание", "th_built": "Год", "th_dev": "Застройщик / зона", "th_status": "Статус", "th_status_title": "Статус проекта и процент готовности по RERA", "th_sales": "Продажи", "th_rents": "Аренда", "empty": "Нет зданий под эти фильтры.", "prev": "← Назад", "next": "Вперёд →", "page": "Страница {p} из {n}", "map_title": "Показать на карте", "load_error": "Не удалось загрузить каталог зданий. Обновите страницу.", "nav_construction": "Стройки Дубая →", "nav_search": "Поиск по зданию →", "yr_plan": "план", "yr_plan_title": "Плановый срок сдачи по RERA", "yr_est_title": "Оценка: проект сдан, год взят из плановой даты RERA", "rn_proj_title": "Договоры Ejari по всему проекту (зданий в проекте: {n}): Ejari не указывает конкретное здание", "th_rents_title": "Договоры аренды Ejari. Ejari привязывает к проекту лишь меньшую часть договоров, поэтому у многих зданий аренды нет", "project_filter": "Здания проекта RERA №{no}", "area_title": "Цены района", "count": {"one": "{n} здание", "few": "{n} здания", "many": "{n} зданий", "other": "{n} здания"}, "nav_map": "← К карте", "st_FINISHED": "Сдан", "st_ACTIVE": "Строится", "st_NOT_STARTED": "Не начат", "st_PENDING": "Ожидание", "st_CONDITIONAL_ACTIVATING": "Условно активен", "st_FRIEZED": "Заморожен"};
+const LANG = "ru";
+const INTL_LOCALE = "ru-RU";
+const AREAS = {"JLT (Jumeirah Lake Towers)": ["jlt-jumeirah-lake-towers"], "Dubai Marina": ["dubai-marina"], "Downtown Dubai": ["downtown-dubai"], "Silicon Oasis": ["silicon-oasis"], "Business Bay": ["business-bay"], "IMPZ (International Media Production Zone)": ["impz-international-media-production-zone"], "Dubai Science Park": ["dubai-science-park"], "Majan": ["majan"], "Palm Jumeirah": ["palm-jumeirah"], "Dubai Land Residence Complex": ["dubai-land-residence-complex"], "Sobha Hartland": ["sobha-hartland"], "Jumeirah Village Circle": ["jumeirah-village-circle"], "Barsha Heights": ["barsha-heights"], "Arjan": ["arjan"], "Jaddaf Waterfront": ["jaddaf-waterfront"], "Dubai Creek Harbour": ["dubai-creek-harbour"], "The Greens": ["the-greens"], "Za'abeel": ["za-abeel"], "Dubai Sports City": ["dubai-sports-city"], "Al Jadaf": ["al-jadaf"], "Madinat Dubai Almelaheyah": ["madinat-dubai-almelaheyah"], "Ras Al Khor Industrial First": ["ras-al-khor-industrial-first"], "JBR (Jumeirah Beach Residence)": ["jbr-jumeirah-beach-residence"], "Bukadra": ["bukadra"], "Motor City": ["motor-city"], "Trade Center Second": ["trade-center-second"], "Jumeirah Village Triangle": ["jumeirah-village-triangle"], "Downtown Jebel Ali": ["downtown-jebel-ali"], "Dubai Hills": ["dubai-hills"], "DAMAC Hills": ["damac-hills"], "Marsa Dubai": ["marsa-dubai"], "Dubai South Residential": ["dubai-south-residential"], "Jabal Ali First": ["jabal-ali-first"], "Dubai South": ["dubai-south"], "Meydan": ["meydan"], "Town Square Dubai": ["town-square-dubai"], "Wadi Al Safa 4": ["wadi-al-safa-4"], "Al Furjan": ["al-furjan"], "Dubai Harbour": ["dubai-harbour"], "Dubai Investment Park First": ["dubai-investment-park-first"], "Wasl 1": ["wasl-1"], "Al Safouh Second": ["al-safouh-second"], "City Walk": ["city-walk"], "Liwan": ["liwan"], "Dubai Water Canal": ["dubai-water-canal"], "DAMAC Hills 2": ["damac-hills-2"], "Sufouh Gardens": ["sufouh-gardens"], "Dubai Studio City": ["dubai-studio-city"], "Meydan One": ["meydan-one"], "Al Thanyah Third": ["al-thanyah-third"], "Dubai Investment Park Second": ["dubai-investment-park-second"], "Zaabeel First": ["zaabeel-first"], "International City Phase 1": ["international-city-phase-1"], "Rukan": ["rukan"], "DAMAC Lagoons": ["damac-lagoons"], "Wasl Gate": ["wasl-gate"], "Discovery Gardens": ["discovery-gardens"], "Trade Center First": ["trade-center-first"], "Jumeirah Islands": ["jumeirah-islands"], "Al Goze Fourth": ["al-goze-fourth"], "Al Barari": ["al-barari"], "Remraam": ["remraam"], "Palm Deira": ["palm-deira"], "Warsan Fourth": ["warsan-fourth"], "Al Barsha First": ["al-barsha-first"], "Living Legends": ["living-legends"], "Expo City Dubai": ["expo-city-dubai"], "Mudon": ["mudon"], "Dubai Design District": ["dubai-design-district"], "Port Saeed": ["port-saeed"], "MBR City District 1": ["mbr-city-district-1"], "Saih Shuaib 2": ["saih-shuaib-2"], "Um Suqaim Third": ["um-suqaim-third"], "Wadi Al Safa 5": ["wadi-al-safa-5"], "Jumeirah Golf Estates": ["jumeirah-golf-estates"], "La Mer": ["la-mer"], "World Islands": ["world-islands"], "Al Satwa": ["al-satwa"], "Wadi Al Safa 2": ["wadi-al-safa-2"], "Mirdif": ["mirdif"], "MBR City District 7": ["mbr-city-district-7"], "Bluewaters Island": ["bluewaters-island"], "Um Hurair Second": ["um-hurair-second"], "The Valley": ["the-valley"], "Rega Al Buteen": ["rega-al-buteen"], "Jumeirah Second": ["jumeirah-second"], "Dubai Festival City": ["dubai-festival-city"], "Al Qusais Industrial Fourth": ["al-qusais-industrial-fourth"], "Jumeirah Heights": ["jumeirah-heights"], "Muhaisanah First": ["muhaisanah-first"], "MBR City District 11": ["mbr-city-district-11"], "Palm Jabal Ali": ["palm-jabal-ali"], "Al Wasl": ["al-wasl"], "Jumeira Bay": ["jumeira-bay"], "Al Qusais Industrial Fifth": ["al-qusais-industrial-fifth"], "Badra": ["badra"], "Pearl Jumeira": ["pearl-jumeira"], "Nad Al Hamar": ["nad-al-hamar"], "Wadi Al Safa 3": ["wadi-al-safa-3"], "Wadi Al Safa 7": ["wadi-al-safa-7"], "Al Waha Villas": ["al-waha-villas"]};
+
+const PAGE = 100;
+let ALL = [], FILTERED = [], DEV_LIST = [], page = 0;
+let selectedDevs = new Set();
+let yrSort = null;
+
+const $ = id => document.getElementById(id);
+const fName = $('fName'), fArea = $('fArea'), fYr1 = $('fYr1'), fYr2 = $('fYr2');
+const thBuilt = $('thBuilt'), builtIcon = $('builtIcon');
+const devTrigger = $('devTrigger'), devDrop = $('devDropdown'), devSearch = $('devSearch');
+const devChips = $('devChips'), devList = $('devList'), sortBy = $('sortBy');
+const tBody = $('tBody'), pager = $('pager'), pInfo = $('pInfo'), pPrev = $('pPrev'), pNext = $('pNext');
+const emptyMsg = $('emptyMsg'), resCount = $('resultCount');
+
+const NUM_FMT = new Intl.NumberFormat(INTL_LOCALE);
+const PLURAL = new Intl.PluralRules(INTL_LOCALE);
+function fmt(n){ return n != null ? NUM_FMT.format(n) : '—'; }
+function esc(s){ return String(s ?? '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
+function lc(s){ return (s || '').toLowerCase(); }
+function tpl(s, o){ return s.replace(/\{(\w+)\}/g, (_, k) => o[k]); }
+function countLabel(n){ return tpl(COPY.count[PLURAL.select(n)] || COPY.count.other, {n: fmt(n)}); }
+const MUTE = '<span class="mute">—</span>';
+
+function yrPass(byr){
+  const lo = parseInt(fYr1.value) || null, hi = parseInt(fYr2.value) || null;
+  if (!lo && !hi) return true;
+  if (byr == null) return true; // unknown year is not excluded
+  if (lo && byr < lo) return false;
+  if (hi && byr > hi) return false;
+  return true;
+}
+
+thBuilt.addEventListener('click', () => {
+  yrSort = yrSort === 'asc' ? 'desc' : 'asc';
+  sortBy.value = yrSort === 'asc' ? 'yr_asc' : 'yr_desc';
+  builtIcon.textContent = yrSort === 'asc' ? '↑' : '↓';
+  thBuilt.classList.add('sort-active');
+  applyFilters();
+});
+sortBy.addEventListener('change', () => {
+  if (!sortBy.value.startsWith('yr')){ yrSort = null; builtIcon.textContent = '↕'; thBuilt.classList.remove('sort-active'); }
+  applyFilters();
+});
+
+function buildDevList(){
+  const brands = new Set(), zones = new Set();
+  ALL.forEach(b => { if (b.dev) (b.dz ? zones : brands).add(b.dev); });
+  DEV_LIST = [
+    ...[...brands].sort().map(n => ({name: n, isZone: false})),
+    ...[...zones].sort().map(n => ({name: n, isZone: true})),
+  ];
+}
+function optHtml(d){
+  const s = selectedDevs.has(d.name);
+  return `<div class="dev-opt${s ? ' sel' : ''}" data-dev="${esc(d.name)}">
+    <span class="dev-opt-check">${s ? '✓' : ''}</span>
+    <span class="dev-opt-name">${esc(d.name)}</span>
+    ${d.isZone ? `<span class="dev-opt-badge">${esc(COPY.zone_badge)}</span>` : ''}
+  </div>`;
+}
+function renderDevList(){
+  const q = lc(devSearch.value);
+  const items = q ? DEV_LIST.filter(d => lc(d.name).includes(q)) : DEV_LIST;
+  if (!items.length){ devList.innerHTML = `<div class="dev-empty">${esc(COPY.no_matches)}</div>`; return; }
+  const brands = items.filter(d => !d.isZone), zones = items.filter(d => d.isZone);
+  let h = '';
+  if (brands.length){ if (!q) h += `<div class="dev-grp-label">${esc(COPY.grp_brand)}</div>`; brands.forEach(d => h += optHtml(d)); }
+  if (zones.length){ if (!q) h += `<div class="dev-grp-label">${esc(COPY.grp_zone)}</div>`; zones.forEach(d => h += optHtml(d)); }
+  devList.innerHTML = h;
+}
+function renderChips(){
+  devChips.innerHTML = [...selectedDevs].map(name => {
+    const d = DEV_LIST.find(x => x.name === name);
+    return `<span class="dev-chip${d && d.isZone ? ' zone' : ''}">${esc(name)}<button class="chip-x" data-dev="${esc(name)}">×</button></span>`;
+  }).join('');
+}
+function updateTriggerText(){
+  if (!selectedDevs.size){ devTrigger.value = ''; devTrigger.classList.remove('has-selection'); return; }
+  const names = [...selectedDevs];
+  devTrigger.value = names.length === 1 ? names[0] : names.slice(0, 2).join(', ') + (names.length > 2 ? ` +${names.length - 2}` : '');
+  devTrigger.classList.add('has-selection');
+}
+function toggleDev(name){
+  selectedDevs.has(name) ? selectedDevs.delete(name) : selectedDevs.add(name);
+  renderChips(); renderDevList(); updateTriggerText(); applyFilters();
+}
+devTrigger.addEventListener('mousedown', e => {
+  e.preventDefault();
+  const wasOpen = devDrop.classList.contains('open');
+  devDrop.classList.toggle('open', !wasOpen);
+  if (!wasOpen){ devSearch.value = ''; renderDevList(); devSearch.focus(); }
+});
+devSearch.addEventListener('input', renderDevList);
+devList.addEventListener('mousedown', e => { e.preventDefault(); const o = e.target.closest('.dev-opt'); if (o) toggleDev(o.dataset.dev); });
+devChips.addEventListener('mousedown', e => { e.preventDefault(); const x = e.target.closest('.chip-x'); if (x) toggleDev(x.dataset.dev); });
+document.addEventListener('mousedown', e => { if (!e.target.closest('.fg-dev')) devDrop.classList.remove('open'); });
+
+function areaName(b){ return b.ad || b.a || ''; }
+function bname(b){ return (LANG === 'ar' && b.na) || b.n; }
+function areaLabel(b){ const a = areaName(b), m = AREAS[a]; return (LANG === 'ar' && m && m[1]) || a; }
+function areaHay(b){ return lc(b.a + '|' + areaName(b) + '|' + areaLabel(b)); }
+
+function applyFilters(){
+  const name = lc(fName.value.trim()), area = lc(fArea.value.trim());
+  FILTERED = ALL.filter(b =>
+    (!PROJ_SLUGS || PROJ_SLUGS.has(b.s)) &&
+    (!name || lc(b.n).includes(name) || (b.na && b.na.includes(name)) || (b.pj && lc(b.pj).includes(name))) &&
+    (!area || areaHay(b).includes(area)) &&
+    yrPass(b.yr) &&
+    (!selectedDevs.size || selectedDevs.has(b.dev))
+  );
+  const s = sortBy.value;
+  FILTERED.sort((a, b) =>
+    s === 'tx' ? b.tx - a.tx :
+    s === 'az' ? bname(a).localeCompare(bname(b)) :
+    s === 'yr_asc' ? (a.yr ?? 9999) - (b.yr ?? 9999) :
+                     (b.yr ?? -1) - (a.yr ?? -1)
+  );
+  page = 0; render();
+}
+
+function statusHtml(b){
+  if (!b.st) return MUTE;
+  const pct = b.pct != null && b.st !== 'FINISHED' ? `<span class="pct">${fmt(b.pct)}%</span>` : '';
+  return `<span class="stbadge stbadge-${esc(b.st)}">${esc(COPY['st_' + b.st] || b.st)}</span>${pct}`;
+}
+function yrHtml(b){
+  if (b.yr == null) return MUTE;
+  if (b.yp) return `<span class="yr-plan" title="${esc(COPY.yr_plan_title)}">${b.yr} · ${esc(COPY.yr_plan)}</span>`;
+  if (b.yre) return `<span class="yr-est" title="${esc(COPY.yr_est_title)}">≈${b.yr}</span>`;
+  return String(b.yr);
+}
+function rnHtml(b){
+  if (!b.rn) return MUTE;
+  return b.rs ? `<span class="rn-proj" title="${esc(tpl(COPY.rn_proj_title, {n: b.rs}))}">${fmt(b.rn)}</span>` : fmt(b.rn);
+}
+function areaHtml(b){
+  const m = AREAS[areaName(b)], label = esc(areaLabel(b));
+  let h = m && m[0] ? `<a class="area-a" href="/${LANG}/sales/${m[0]}/" title="${esc(COPY.area_title)}">${label}</a>` : label;
+  return b.pj ? h + ' · ' + esc(b.pj) : h;
+}
+function rowHtml(b){
+  const s = encodeURIComponent(b.s);
+  const dev = b.dev ? esc(b.dev) + (b.dz ? `<span class="badge-zone">${esc(COPY.zone_badge)}</span>` : '') : MUTE;
+  const mp = b.m ? `<a class="btn-map" href="/${LANG}/sales/?bld=${s}" title="${esc(COPY.map_title)}">↗</a>` : '';
+  const href = b.pg ? `/${LANG}/buildings/${s}/` : `/search/#${s}`;
+  return `<tr data-s="${esc(b.s)}" data-h="${href}"><td class="td-name"><a class="bld-a" href="${href}">${esc(bname(b))}</a>${mp}`
+    + `<div class="td-area">${areaHtml(b)}</div></td>`
+    + `<td class="num col-yr">${yrHtml(b)}</td><td class="col-dev">${dev}</td>`
+    + `<td class="col-pct">${statusHtml(b)}</td>`
+    + `<td class="num">${fmt(b.tx)}</td><td class="num">${rnHtml(b)}</td></tr>`;
+}
+function render(){
+  const total = FILTERED.length;
+  const pages = Math.max(1, Math.ceil(total / PAGE));
+  page = Math.min(page, pages - 1);
+  const slice = FILTERED.slice(page * PAGE, page * PAGE + PAGE);
+  resCount.textContent = countLabel(total);
+  if (!slice.length){ tBody.innerHTML = ''; emptyMsg.style.display = ''; pager.style.display = 'none'; return; }
+  emptyMsg.style.display = 'none';
+  tBody.innerHTML = slice.map(rowHtml).join('');
+  if (pages > 1){
+    pager.style.display = '';
+    pInfo.textContent = tpl(COPY.page, {p: fmt(page + 1), n: fmt(pages)});
+    pPrev.disabled = page === 0; pNext.disabled = page >= pages - 1;
+  } else pager.style.display = 'none';
+}
+
+tBody.addEventListener('click', e => {
+  if (e.target.closest('a')) return;
+  const tr = e.target.closest('tr[data-h]');
+  if (tr) location.href = tr.dataset.h;
+});
+[fName, fArea, fYr1, fYr2].forEach(el => el.addEventListener('input', applyFilters));
+pPrev.addEventListener('click', () => { page--; render(); window.scrollTo(0, 0); });
+pNext.addEventListener('click', () => { page++; render(); window.scrollTo(0, 0); });
+function clearProject(){
+  PROJ_SLUGS = null; $('projNote').hidden = true;
+  const u = new URL(location.href); u.searchParams.delete('project'); history.replaceState(null, '', u);
+}
+$('projClear').addEventListener('click', () => { clearProject(); applyFilters(); });
+$('btnReset').addEventListener('click', () => {
+  if (PROJ_SLUGS) clearProject();
+  fName.value = ''; fArea.value = ''; fYr1.value = ''; fYr2.value = '';
+  selectedDevs.clear(); renderChips(); updateTriggerText();
+  yrSort = null; builtIcon.textContent = '↕'; thBuilt.classList.remove('sort-active');
+  sortBy.value = 'tx'; applyFilters();
+});
+
+const params = new URLSearchParams(location.search);
+if (params.get('q')) fName.value = params.get('q');
+const projParam = params.get('project');
+let PROJ_SLUGS = null;
+const projReady = !projParam ? Promise.resolve() :
+  fetch('/buildings/project-index.json').then(r => r.json()).then(d => {
+    PROJ_SLUGS = new Set(d[projParam] || []);
+    $('projNoteText').textContent = tpl(COPY.project_filter, {no: projParam});
+    $('projNote').hidden = false;
+  }).catch(() => {});
+
+Promise.all([fetch('/buildings/search-index.json').then(r => { if (!r.ok) throw 0; return r.json(); }), projReady])
+  .then(([data]) => { ALL = data; buildDevList(); applyFilters(); })
+  .catch(() => { $('loadErr').hidden = false; });
+</script>
+</body>
+</html>
